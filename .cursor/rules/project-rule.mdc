@@ -12,7 +12,17 @@ Code Style and Structure
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
 - Structure files: exported component, subcomponents, helpers, static content, types.
 - Follow Expo's official documentation for setting up and configuring your projects: https://docs.expo.dev/
-- Use feature-based Architecture
+
+- Use feature-based Architecture:
+  - Organize code by features, not by file types
+  - Each feature should have its own directory: features/[feature-name]/
+  - Feature structure: components/, hooks/, services/, types/, index.ts
+  - Export feature components through feature/index.ts
+  - Avoid barrel exports from individual component files
+  - Import from feature root: import { Component } from '../features/auth'
+  - Each feature should be self-contained and independent
+  - Shared utilities go in shared/ directory
+  - UI components go in shared/ui/ directory
 
 Naming Conventions
 

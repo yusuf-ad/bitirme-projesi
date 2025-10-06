@@ -1,9 +1,9 @@
 import { Text, View } from "react-native";
 
-export default function LoginTab() {
+export function SignupTab() {
   return (
     <View>
-      <Text>login tab</Text>
+      <Text>signup tab</Text>
     </View>
   );
 }

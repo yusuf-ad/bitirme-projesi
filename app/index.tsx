@@ -2,7 +2,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { StatusBar } from "expo-status-bar";
 import { useRef } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { AuthModal } from "../components/auth/auth-modal";
+import { AuthModal } from "../features/auth";
 
 export default function WelcomeScreen() {
   const authModalRef = useRef<BottomSheetModal>(null);
