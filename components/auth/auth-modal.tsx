@@ -3,44 +3,78 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { forwardRef, useCallback } from "react";
-import { StyleSheet, Text } from "react-native";
+import { forwardRef, useCallback, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import LoginTab from "./login-tab";
 
-interface AuthModalProps {
-  // Add any props you might need in the future
-}
+export const AuthModal = forwardRef<BottomSheetModal>((props, ref) => {
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
-export const AuthModal = forwardRef<BottomSheetModal, AuthModalProps>(
-  (props, ref) => {
-    const handleSheetChanges = useCallback((index: number) => {
-      console.log("handleSheetChanges", index);
-    }, []);
+  const handleSheetChanges = useCallback((index: number) => {
+    console.log("handleSheetChanges", index);
+  }, []);
 
-    // Callbacks
-    const renderBackdrop = useCallback(
-      (props: any) => (
-        <BottomSheetBackdrop
-          {...props}
-          disappearsOnIndex={-1}
-          appearsOnIndex={0}
-        />
-      ),
-      []
-    );
+  // Callbacks
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+      />
+    ),
+    []
+  );
 
-    return (
-      <BottomSheetModal
-        ref={ref}
-        onChange={handleSheetChanges}
-        backdropComponent={renderBackdrop}
-      >
-        <BottomSheetView style={styles.contentContainer}>
-          <Text>Awesome 🎉</Text>
-        </BottomSheetView>
-      </BottomSheetModal>
-    );
-  }
-);
+  return (
+    <BottomSheetModal
+      ref={ref}
+      onChange={handleSheetChanges}
+      backdropComponent={renderBackdrop}
+    >
+      <BottomSheetView style={styles.contentContainer}>
+        <View style={styles.tabContainer}>
+          <Pressable style={styles.tab} onPress={() => setActiveTab("signup")}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "signup" && styles.activeTabText,
+              ]}
+            >
+              Create Account
+            </Text>
+            <View
+              style={[
+                styles.tabIndicator,
+                activeTab === "signup" && styles.activeTabIndicator,
+              ]}
+            />
+          </Pressable>
+          <Pressable style={styles.tab} onPress={() => setActiveTab("login")}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "login" && styles.activeTabText,
+              ]}
+            >
+              Login
+            </Text>
+            <View
+              style={[
+                styles.tabIndicator,
+                activeTab === "login" && styles.activeTabIndicator,
+                { width: activeTab === "login" ? 22 : 77 },
+              ]}
+            />
+          </Pressable>
+        </View>
+
+        {activeTab === "login" && <LoginTab />}
+        {activeTab === "signup" && <LoginTab />}
+      </BottomSheetView>
+    </BottomSheetModal>
+  );
+});
 
 AuthModal.displayName = "AuthModal";
 
@@ -50,5 +84,31 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 40,
     alignItems: "center",
+  },
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 36,
+  },
+  tab: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  tabText: {
+    marginVertical: 8,
+    fontWeight: "semibold",
+  },
+  tabIndicator: {
+    marginTop: "auto",
+    height: 4,
+    backgroundColor: "transparent",
+  },
+  activeTabIndicator: {
+    backgroundColor: "#875EC5",
+  },
+  activeTabText: {
+    color: "#875EC5",
   },
 });
