@@ -12,8 +12,8 @@ export default function Index() {
 
       <View style={styles.contentContainer}>
         <Text style={styles.title}>
-          Mutfak yönetimi, akıllı tarifler ve israfsız planlama tek bir yerde
-          buluşuyor.
+          Kitchen management, smart recipes and waste-free planning in one
+          place.
         </Text>
 
         <Pressable style={styles.getStartedButton}>
@@ -49,7 +49,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 24,
     lineHeight: 29,
-    textAlign: "center",
     color: "#000000",
     marginBottom: 40,
     paddingHorizontal: 10,
