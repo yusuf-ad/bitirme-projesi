@@ -1,7 +1,12 @@
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { StatusBar } from "expo-status-bar";
+import { useRef } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { AuthModal } from "../components/auth/auth-modal";
 
-export default function Index() {
+export default function WelcomeScreen() {
+  const authModalRef = useRef<BottomSheetModal>(null);
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor="transparent" />
@@ -20,10 +25,15 @@ export default function Index() {
           <Text style={styles.getStartedText}>Get Started</Text>
         </Pressable>
 
-        <Pressable style={styles.loginButton}>
+        <Pressable
+          style={styles.loginButton}
+          onPress={() => authModalRef.current?.present()}
+        >
           <Text style={styles.loginText}>Log in</Text>
         </Pressable>
       </View>
+
+      <AuthModal ref={authModalRef} />
     </View>
   );
 }
