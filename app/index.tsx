@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 export default function Index() {
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor="transparent" />
       <Image
         source={require("../assets/images/image.png")}
         style={styles.image}
