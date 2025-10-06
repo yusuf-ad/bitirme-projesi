@@ -33,7 +33,7 @@ export function LoginTab() {
         </View>
 
         <Pressable>
-          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          <Text style={styles.forgotPasswordText}>Forget password?</Text>
         </Pressable>
       </View>
 
