@@ -57,7 +57,6 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 36,
   },
   tab: {
     flex: 1,
