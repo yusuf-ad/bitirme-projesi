@@ -1,36 +1,26 @@
 import CustomButton from "@/shared/components/custom-button";
+import { CustomTextInput } from "@/shared/components/custom-text-input";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export function LoginTab() {
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
-        <View>
-          <Text style={styles.inputLabel}>Email address</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-        </View>
-
-        <View>
-          <Text style={styles.inputLabel}>Password</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter your password"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-        </View>
+        <CustomTextInput
+          label="Email address"
+          placeholder="Enter your email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <CustomTextInput
+          label="Password"
+          placeholder="Enter your password"
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
 
         <Pressable>
           <Text style={styles.forgotPasswordText}>Forget password?</Text>
@@ -58,31 +48,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    paddingHorizontal: 12,
   },
   formContainer: {
     gap: 12,
     marginTop: 32,
     marginBottom: 52,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#9CA3AF",
-    lineHeight: 36,
-    paddingLeft: 16,
-  },
-  inputContainer: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#BEC5D1",
-    height: 48,
-    justifyContent: "center",
-  },
-  textInput: {
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: "#000000",
   },
   buttonContainer: {
     gap: 16,
