@@ -47,6 +47,7 @@ export const AuthModal = forwardRef<BottomSheetModal>((props, ref) => {
               style={[
                 styles.tabIndicator,
                 activeTab === "signup" && styles.activeTabIndicator,
+                { width: activeTab === "signup" ? 77 : 22 },
               ]}
             />
           </Pressable>
@@ -97,12 +98,14 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   tabText: {
-    marginVertical: 8,
-    fontWeight: "semibold",
+    marginVertical: 10,
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#A1A4AA",
   },
   tabIndicator: {
     marginTop: "auto",
-    height: 4,
+    height: 3,
     backgroundColor: "transparent",
   },
   activeTabIndicator: {
