@@ -1,7 +1,8 @@
+import CustomButton from "@/shared/components/custom-button";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { StatusBar } from "expo-status-bar";
 import { useRef } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { AuthModal } from "../features/auth";
 
 export default function WelcomeScreen() {
@@ -21,16 +22,16 @@ export default function WelcomeScreen() {
           place.
         </Text>
 
-        <Pressable style={styles.getStartedButton}>
+        <CustomButton containerStyle={styles.getStartedButton}>
           <Text style={styles.getStartedText}>Get Started</Text>
-        </Pressable>
+        </CustomButton>
 
-        <Pressable
-          style={styles.loginButton}
+        <CustomButton
+          containerStyle={styles.loginButton}
           onPress={() => authModalRef.current?.present()}
         >
           <Text style={styles.loginText}>Log in</Text>
-        </Pressable>
+        </CustomButton>
       </View>
 
       <AuthModal ref={authModalRef} />
@@ -65,12 +66,7 @@ const styles = StyleSheet.create({
   },
   getStartedButton: {
     backgroundColor: "#7849B6",
-    borderRadius: 8,
-    paddingVertical: 19,
-    paddingHorizontal: 115,
     marginBottom: 12,
-    width: "100%",
-    alignItems: "center",
   },
   getStartedText: {
     fontFamily: "Inter",
@@ -81,11 +77,6 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: "#ECEDEE",
-    borderRadius: 8,
-    paddingVertical: 19,
-    paddingHorizontal: 115,
-    width: "100%",
-    alignItems: "center",
   },
   loginText: {
     fontFamily: "Inter",
