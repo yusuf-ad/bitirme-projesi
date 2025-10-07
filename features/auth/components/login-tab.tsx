@@ -2,10 +2,17 @@ import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export function LoginTab() {
   return (
-    <View style={styles.container}>
+    <KeyboardAwareScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      enableOnAndroid={true}
+      extraScrollHeight={20}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.formContainer}>
         <CustomTextInput
           label="Email address"
@@ -40,7 +47,7 @@ export function LoginTab() {
           </Text>
         </CustomButton>
       </View>
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -48,6 +55,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 12,
   },
   formContainer: {
     gap: 12,
