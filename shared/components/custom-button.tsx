@@ -16,7 +16,11 @@ export default function CustomButton({
 }: CustomButtonProps) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.button, containerStyle]}
+      style={({ pressed }) => [
+        styles.button,
+        containerStyle,
+        pressed && styles.buttonPressed,
+      ]}
       {...props}
     >
       {props.children}
@@ -32,5 +36,9 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
+  },
+  buttonPressed: {
+    opacity: 0.98,
+    transform: [{ scale: 0.98 }],
   },
 });
