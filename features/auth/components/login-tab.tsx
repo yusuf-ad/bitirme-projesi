@@ -1,6 +1,6 @@
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
@@ -41,7 +41,10 @@ export function LoginTab() {
 
         <View style={styles.divider} />
         <CustomButton containerStyle={styles.googleButton}>
-          <AntDesign name="google" size={24} color="black" />
+          <Image
+            source={require("@/assets/icons/google-icon.svg")}
+            style={styles.googleIcon}
+          />
           <Text style={[styles.buttonText, styles.googleButtonText]}>
             Login with Google
           </Text>
@@ -94,6 +97,10 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: "#000000",
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
   },
   forgotPasswordText: {
     fontSize: 14,
