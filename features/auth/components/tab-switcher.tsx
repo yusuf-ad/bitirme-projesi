@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface TabButtonProps {
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     fontWeight: "bold",
     fontSize: 16,
-    color: "#A1A4AA",
+    color: Colors.gray[300],
   },
   tabIndicator: {
     marginTop: "auto",
@@ -76,9 +77,9 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   activeTabIndicator: {
-    backgroundColor: "#875EC5",
+    backgroundColor: Colors.lilac[800],
   },
   activeTabText: {
-    color: "#875EC5",
+    color: Colors.lilac[800],
   },
 });

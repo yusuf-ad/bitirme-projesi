@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { AuthModal } from "@/features/auth";
 import CustomButton from "@/shared/components/custom-button";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -42,7 +43,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.primary,
   },
   image: {
     flex: 1,
@@ -60,12 +61,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 24,
     lineHeight: 29,
-    color: "#000000",
+    color: Colors.text.primary,
     marginBottom: 40,
     paddingHorizontal: 10,
   },
   getStartedButton: {
-    backgroundColor: "#7849B6",
+    backgroundColor: Colors.lilac[900],
     marginBottom: 12,
   },
   getStartedText: {
@@ -73,16 +74,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 16,
     lineHeight: 19,
-    color: "#FFFFFF",
+    color: Colors.text.inverse,
   },
   loginButton: {
-    backgroundColor: "#ECEDEE",
+    backgroundColor: Colors.gray[100],
   },
   loginText: {
     fontFamily: "Inter",
     fontWeight: "500",
     fontSize: 16,
     lineHeight: 19,
-    color: "#000000",
+    color: Colors.text.primary,
   },
 });

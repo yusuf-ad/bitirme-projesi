@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import { Image } from "expo-image";
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 0.5,
-    backgroundColor: "#D2D4D8",
+    backgroundColor: Colors.gray[200],
     width: "50%",
   },
   buttonText: {
@@ -84,19 +85,19 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   loginButton: {
-    backgroundColor: "#7849B6",
+    backgroundColor: Colors.lilac[900],
   },
   loginButtonText: {
-    color: "#FFFFFF",
+    color: Colors.text.inverse,
   },
   googleButton: {
-    backgroundColor: "#ECEDEE",
+    backgroundColor: Colors.gray[100],
     flexDirection: "row",
     gap: 10,
     alignItems: "center",
   },
   googleButtonText: {
-    color: "#000000",
+    color: Colors.text.primary,
   },
   googleIcon: {
     width: 24,
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#875EC5",
+    color: Colors.lilac[800],
     alignSelf: "flex-end",
   },
 });
