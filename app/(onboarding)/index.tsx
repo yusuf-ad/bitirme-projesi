@@ -1,9 +1,9 @@
+import { AuthModal } from "@/features/auth";
 import CustomButton from "@/shared/components/custom-button";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { StatusBar } from "expo-status-bar";
 import { useRef } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { AuthModal } from "../features/auth";
 
 export default function WelcomeScreen() {
   const authModalRef = useRef<BottomSheetModal>(null);
@@ -12,7 +12,7 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor="transparent" />
       <Image
-        source={require("../assets/images/image.png")}
+        source={require("@/assets/images/image.png")}
         style={styles.image}
       />
 
