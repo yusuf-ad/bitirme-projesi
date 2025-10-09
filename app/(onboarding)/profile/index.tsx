@@ -1,7 +1,50 @@
 import CustomButton from "@/shared/components/custom-button";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useState } from "react";
 import { ImageBackground, StyleSheet, Text, View } from "react-native";
 
+const onboardingPages = [
+  {
+    title: "Define Your Goal",
+    description:
+      "Let's get started! Choose your main goal to reach results faster and stay motivated",
+  },
+  {
+    title: "Track Your Progress",
+    description:
+      "Monitor your journey with detailed insights and achieve your goals step by step",
+  },
+  {
+    title: "Stay Motivated",
+    description:
+      "Get personalized tips and reminders to keep you on track every day",
+  },
+];
+
 export default function OnboardingScreen() {
+  const [currentPage, setCurrentPage] = useState(0);
+
+  function handleBack() {
+    if (currentPage === 0) {
+      router.back();
+    } else {
+      setCurrentPage(currentPage - 1);
+    }
+  }
+
+  function handleNext() {
+    if (currentPage === onboardingPages.length - 1) {
+      // Navigate to main app or next screen
+      // TODO: Update this path when main app route is ready
+      console.log("Onboarding completed");
+    } else {
+      setCurrentPage(currentPage + 1);
+    }
+  }
+
+  const page = onboardingPages[currentPage];
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -15,29 +58,28 @@ export default function OnboardingScreen() {
         {/* Content */}
         <View style={styles.content}>
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Define Your Goal</Text>
-            <Text style={styles.description}>
-              Let&apos;s get started! Choose your main goal to reach results
-              faster and stay motivated
-            </Text>
+            <Text style={styles.title}>{page.title}</Text>
+            <Text style={styles.description}>{page.description}</Text>
           </View>
+        </View>
 
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            <CustomButton
-              containerStyle={styles.skipButton}
-              accessibilityLabel="Skip"
-            >
-              <View style={styles.skipButtonContent} />
-            </CustomButton>
+        {/* Buttons */}
+        <View style={styles.buttonContainer}>
+          <CustomButton
+            containerStyle={styles.backButton}
+            accessibilityLabel="Go Back"
+            onPress={handleBack}
+          >
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          </CustomButton>
 
-            <CustomButton
-              containerStyle={styles.diveInButton}
-              accessibilityLabel="Dive In"
-            >
-              <Text style={styles.buttonText}>Dive In!</Text>
-            </CustomButton>
-          </View>
+          <CustomButton
+            containerStyle={styles.diveInButton}
+            accessibilityLabel="Dive In"
+            onPress={handleNext}
+          >
+            <Text style={styles.buttonText}>Dive In!</Text>
+          </CustomButton>
         </View>
       </ImageBackground>
     </View>
@@ -59,9 +101,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "space-between",
     paddingTop: 267,
-    paddingBottom: 88,
   },
   textContainer: {
     paddingHorizontal: 27,
@@ -88,18 +128,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
-  skipButton: {
+  backButton: {
     width: 56,
     height: 56,
     backgroundColor: "rgba(161, 164, 170, 0.5)",
     borderRadius: 8,
     padding: 0,
-  },
-  skipButtonContent: {
-    width: 24,
-    height: 24,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   diveInButton: {
     flex: 1,
