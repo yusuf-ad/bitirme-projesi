@@ -5,6 +5,7 @@ export default function OnboardingLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="profile/index" options={{ headerShown: false }} />
+      <Stack.Screen name="goals/index" options={{ headerShown: false }} />
     </Stack>
   );
 }

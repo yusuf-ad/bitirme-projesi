@@ -10,16 +10,6 @@ const onboardingPages = [
     description:
       "Let's get started! Choose your main goal to reach results faster and stay motivated",
   },
-  {
-    title: "Track Your Progress",
-    description:
-      "Monitor your journey with detailed insights and achieve your goals step by step",
-  },
-  {
-    title: "Stay Motivated",
-    description:
-      "Get personalized tips and reminders to keep you on track every day",
-  },
 ];
 
 export default function OnboardingScreen() {
@@ -35,9 +25,8 @@ export default function OnboardingScreen() {
 
   function handleNext() {
     if (currentPage === onboardingPages.length - 1) {
-      // Navigate to main app or next screen
-      // TODO: Update this path when main app route is ready
-      console.log("Onboarding completed");
+      // Navigate to goals page
+      router.push("/(onboarding)/goals");
     } else {
       setCurrentPage(currentPage + 1);
     }
