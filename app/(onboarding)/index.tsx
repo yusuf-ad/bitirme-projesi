@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import { AuthModal } from "@/features/auth";
 import CustomButton from "@/shared/components/custom-button";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useRef } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
@@ -23,7 +24,10 @@ export default function WelcomeScreen() {
           place.
         </Text>
 
-        <CustomButton containerStyle={styles.getStartedButton}>
+        <CustomButton
+          onPress={() => router.push("/(onboarding)/onboarding")}
+          containerStyle={styles.getStartedButton}
+        >
           <Text style={styles.getStartedText}>Get Started</Text>
         </CustomButton>
 
