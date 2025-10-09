@@ -6,7 +6,7 @@ import { ImageBackground, StyleSheet, Text, View } from "react-native";
 
 const onboardingPages = [
   {
-    title: "Define Your Goal",
+    title: "Define Your goals",
     description:
       "Let's get started! Choose your main goal to reach results faster and stay motivated",
   },
