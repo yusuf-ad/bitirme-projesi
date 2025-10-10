@@ -24,12 +24,14 @@ export default function OnboardingScreen() {
   }
 
   function handleNext() {
-    if (currentPage === onboardingPages.length - 1) {
-      // Navigate to goals page
-      router.push("/(onboarding)/goals");
-    } else {
-      setCurrentPage(currentPage + 1);
-    }
+    // Navigate to flow with goals section
+    router.push({
+      pathname: "/(onboarding)/flow",
+      params: {
+        section: "goals",
+        step: "0",
+      },
+    });
   }
 
   const page = onboardingPages[currentPage];

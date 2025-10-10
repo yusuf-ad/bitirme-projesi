@@ -25,7 +25,12 @@ export default function WelcomeScreen() {
         </Text>
 
         <CustomButton
-          onPress={() => router.push("/(onboarding)/profile")}
+          onPress={() =>
+            router.push({
+              pathname: "/(onboarding)/flow",
+              params: { section: "goals", step: "0" },
+            })
+          }
           containerStyle={styles.getStartedButton}
         >
           <Text style={styles.getStartedText}>Get Started</Text>
