@@ -1,10 +1,13 @@
 import { ImageBackground, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingLayoutProps } from "../types/onboarding.types";
 
 export function OnboardingLayout({
   children,
   blurRadius = 48,
 }: OnboardingLayoutProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -15,8 +18,17 @@ export function OnboardingLayout({
         {/* Overlay for better text readability */}
         <View style={styles.overlay} />
 
-        {/* Content */}
-        {children}
+        {/* Content with safe area padding */}
+        <View
+          style={[
+            styles.contentContainer,
+            {
+              paddingTop: insets.top,
+            },
+          ]}
+        >
+          {children}
+        </View>
       </ImageBackground>
     </View>
   );
@@ -34,5 +46,8 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  contentContainer: {
+    flex: 1,
   },
 });

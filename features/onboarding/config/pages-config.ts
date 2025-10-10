@@ -13,7 +13,7 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
     section: "goals",
     step: 0,
     component: "goals-cover",
-    title: "Defines Your goals",
+    title: "Define\nYour goals",
     description:
       "Let's get started! Choose your main goal to reach results faster and stay motivated",
   },
@@ -21,9 +21,9 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
     section: "goals",
     step: 1,
     component: "goals-content",
-    title: "Hedefler",
+    title: "Goals",
     description:
-      "Hedeflerinize ulaşmanıza yardımcı olacak kişiselleştirilmiş öneriler sunacağız",
+      "We'll help you achieve your goals with personalized recommendations",
   },
 
   // Body Section (placeholder - to be implemented)
