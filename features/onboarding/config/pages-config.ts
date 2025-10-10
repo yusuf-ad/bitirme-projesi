@@ -6,7 +6,7 @@ export interface OnboardingPageConfig {
   description?: string;
 }
 
-// Total 21 pages across 3 sections
+// Total 21 pages across ... sections
 export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
   // Goals Section (2 pages)
   {
