@@ -180,7 +180,6 @@ function GoalOption({ option, isSelected, onPress }: GoalOptionProps) {
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    paddingTop: 28,
   },
   scrollContainer: {
     flex: 1,

@@ -18,16 +18,17 @@ export function OnboardingLayout({
         {/* Overlay for better text readability */}
         <View style={styles.overlay} />
 
-        {/* Content with safe area padding */}
+        {/* Safe area wrapper with top padding only */}
         <View
           style={[
-            styles.contentContainer,
+            styles.safeAreaWrapper,
             {
               paddingTop: insets.top,
             },
           ]}
         >
-          {children}
+          {/* Content container */}
+          <View style={styles.contentContainer}>{children}</View>
         </View>
       </ImageBackground>
     </View>
@@ -46,6 +47,9 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  safeAreaWrapper: {
+    flex: 1,
   },
   contentContainer: {
     flex: 1,

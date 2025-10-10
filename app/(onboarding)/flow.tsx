@@ -1,8 +1,13 @@
-import { OnboardingLayout, OnboardingNavigation } from "@/features/onboarding";
+import {
+  OnboardingLayout,
+  OnboardingNavigation,
+  ProgressBar,
+} from "@/features/onboarding";
 import {
   getNextPage,
   getPageIndex,
   getPreviousPage,
+  getTotalPages,
   ONBOARDING_PAGES,
 } from "@/features/onboarding/config/pages-config";
 import { GoalsContent } from "@/features/onboarding/sections/goals/goals-content";
@@ -129,10 +134,21 @@ export default function OnboardingFlowScreen() {
     return "Next";
   }
 
+  // Check if current page is a cover page
+  const isCoverPage = currentPage.component.includes("-cover");
+
   return (
     <OnboardingLayout
       blurRadius={currentPage.component === "goals-cover" ? 24 : 48}
     >
+      {/* Progress bar only for content pages */}
+      {!isCoverPage && (
+        <ProgressBar
+          currentStep={currentIndex + 1}
+          totalSteps={getTotalPages()}
+        />
+      )}
+
       {renderPageContent()}
 
       <OnboardingNavigation
