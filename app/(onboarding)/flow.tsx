@@ -138,9 +138,7 @@ export default function OnboardingFlowScreen() {
   const isCoverPage = currentPage.component.includes("-cover");
 
   return (
-    <OnboardingLayout
-      blurRadius={currentPage.component === "goals-cover" ? 24 : 48}
-    >
+    <OnboardingLayout blurRadius={isCoverPage ? 24 : 96}>
       {/* Progress bar only for content pages */}
       {!isCoverPage && (
         <ProgressBar
