@@ -26,19 +26,73 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
       "We'll help you achieve your goals with personalized recommendations",
   },
 
-  // Body Section (placeholder - to be implemented)
+  // Body Section (5 pages)
   {
     section: "body",
     step: 0,
     component: "body-cover",
-    title: "Body Information",
+    title: "A Bit About\nYour Body",
+    description:
+      "Your age, weight and other details will help us create a more personalized plan",
   },
-  // Meal-time Section (placeholder - to be implemented)
+  {
+    section: "body",
+    step: 1,
+    component: "body-gender",
+    title: "Gender",
+    description:
+      "Which term best describes you? Information to be used to calculate your calorie intake.",
+  },
+  {
+    section: "body",
+    step: 2,
+    component: "body-age",
+    title: "Age",
+    description: "How old are you?",
+  },
+  {
+    section: "body",
+    step: 3,
+    component: "body-height",
+    title: "Height",
+    description: "How tall are you?",
+  },
+  {
+    section: "body",
+    step: 4,
+    component: "body-weight",
+    title: "Weight",
+    description: "What is your current weight?",
+  },
+  // Meal-time Section (4 pages)
   {
     section: "meal-time",
     step: 0,
     component: "meal-time-cover",
-    title: "Meal Time Preferences",
+    title: "What's Your Meal Routine?",
+    description:
+      "Tell us your usual meal times so we can create a plan that fits perfectly into your life.",
+  },
+  {
+    section: "meal-time",
+    step: 1,
+    component: "meal-time-breakfast",
+    title: "Breakfast time",
+    description: "When do you usually start your breakfast?",
+  },
+  {
+    section: "meal-time",
+    step: 2,
+    component: "meal-time-lunch",
+    title: "Lunch time",
+    description: "What time do you typically have lunch?",
+  },
+  {
+    section: "meal-time",
+    step: 3,
+    component: "meal-time-dinner",
+    title: "Dinner time",
+    description: "What's your usual time for dinner?",
   },
 ];
 

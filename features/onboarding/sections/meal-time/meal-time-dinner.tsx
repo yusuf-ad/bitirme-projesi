@@ -1,17 +1,38 @@
 import { Colors } from "@/constants/theme";
 import { StyleSheet, Text, View } from "react-native";
+import { TimePicker } from "./components/time-picker";
 
-interface GoalsCoverProps {
+interface MealTimeDinnerProps {
   title: string;
   description?: string;
+  onTimeChange?: (hour: number, minute: number, period: "AM" | "PM") => void;
+  initialHour?: number;
+  initialMinute?: number;
+  initialPeriod?: "AM" | "PM";
 }
 
-export function GoalsCover({ title, description }: GoalsCoverProps) {
+export function MealTimeDinner({
+  title,
+  description,
+  onTimeChange,
+  initialHour = 6,
+  initialMinute = 0,
+  initialPeriod = "PM",
+}: MealTimeDinnerProps) {
   return (
     <View style={styles.content}>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
         {description && <Text style={styles.description}>{description}</Text>}
+      </View>
+
+      <View style={styles.pickerContainer}>
+        <TimePicker
+          onTimeChange={onTimeChange}
+          initialHour={initialHour}
+          initialMinute={initialMinute}
+          initialPeriod={initialPeriod}
+        />
       </View>
     </View>
   );
@@ -20,7 +41,6 @@ export function GoalsCover({ title, description }: GoalsCoverProps) {
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    paddingTop: 267,
   },
   textContainer: {
     paddingHorizontal: 27,
@@ -41,5 +61,10 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     color: Colors.text.inverse,
     maxWidth: 317,
+  },
+  pickerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

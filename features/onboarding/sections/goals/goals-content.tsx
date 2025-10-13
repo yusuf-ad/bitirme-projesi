@@ -14,42 +14,42 @@ interface GoalsContentProps {
 const goalOptions = [
   {
     id: "healthy-eating",
-    title: "Sağlıklı beslenin",
+    title: "Eat healthy",
     icon: require("@/assets/icons/carrot-icon.svg"),
   },
   {
     id: "learn-cooking",
-    title: "Yemek yapmayı öğren",
+    title: "Learn to cook",
     icon: require("@/assets/icons/chef-icon.svg"),
   },
   {
     id: "lose-weight",
-    title: "Kilo verin",
+    title: "Lose weight",
     icon: require("@/assets/icons/scale-icon.svg"),
   },
   {
     id: "gain-weight",
-    title: "Kilo alın",
+    title: "Gain weight",
     icon: require("@/assets/icons/weight-icon.svg"),
   },
   {
     id: "try-recipes",
-    title: "Yeni tarifler\ndeneyin",
+    title: "Try new\nrecipes",
     icon: require("@/assets/icons/recipe-icon.svg"),
   },
   {
     id: "stay-on-diet",
-    title: "Diyetime\nsadık kalın",
+    title: "Stick to\nyour diet",
     icon: require("@/assets/icons/diet-icon.svg"),
   },
   {
     id: "build-muscle",
-    title: "Kas yapın",
+    title: "Build muscle",
     icon: require("@/assets/icons/muscle-icon.svg"),
   },
   {
     id: "save-time",
-    title: "Zaman\nkazanın",
+    title: "Save\ntime",
     icon: require("@/assets/icons/time-icon.svg"),
   },
 ];
@@ -74,8 +74,10 @@ export function GoalsContent({
 
   return (
     <View style={styles.content}>
-      <Text style={styles.title}>{title}</Text>
-      {description && <Text style={styles.description}>{description}</Text>}
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{title}</Text>
+        {description && <Text style={styles.description}>{description}</Text>}
+      </View>
 
       <ScrollView
         style={styles.scrollContainer}
@@ -181,9 +183,13 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  textContainer: {
+    paddingHorizontal: 27,
+  },
   scrollContainer: {
     flex: 1,
-    paddingHorizontal: 11,
+    paddingHorizontal: 27,
+    marginTop: 42,
   },
   scrollContent: {
     paddingBottom: 20,
@@ -191,21 +197,19 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Inter",
     fontWeight: "500",
-    fontSize: 24,
-    lineHeight: 29,
+    fontSize: 48,
+    lineHeight: 58,
     color: Colors.text.inverse,
-    marginBottom: 19,
-    marginHorizontal: 11,
+    marginBottom: 42,
+    maxWidth: 344,
   },
   description: {
     fontFamily: "Inter",
-    fontWeight: "500",
+    fontWeight: "400",
     fontSize: 16,
-    lineHeight: 19.36,
+    lineHeight: 28,
     color: Colors.text.inverse,
-    marginBottom: 33,
-    maxWidth: 371,
-    marginHorizontal: 11,
+    maxWidth: 317,
   },
   optionsContainer: {
     gap: 12,

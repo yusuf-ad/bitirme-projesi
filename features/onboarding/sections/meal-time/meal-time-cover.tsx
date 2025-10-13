@@ -1,12 +1,12 @@
 import { Colors } from "@/constants/theme";
 import { StyleSheet, Text, View } from "react-native";
 
-interface GoalsCoverProps {
+interface MealTimeCoverProps {
   title: string;
   description?: string;
 }
 
-export function GoalsCover({ title, description }: GoalsCoverProps) {
+export function MealTimeCover({ title, description }: MealTimeCoverProps) {
   return (
     <View style={styles.content}>
       <View style={styles.textContainer}>

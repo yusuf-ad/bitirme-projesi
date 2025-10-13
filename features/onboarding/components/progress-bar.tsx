@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   progressBarActive: {
-    backgroundColor: Colors.gray[100],
+    backgroundColor: Colors.green[600],
     opacity: 1,
   },
 });

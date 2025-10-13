@@ -5,9 +5,31 @@ import { OnboardingLayoutProps } from "../types/onboarding.types";
 export function OnboardingLayout({
   children,
   blurRadius = 48,
+  backgroundColor,
 }: OnboardingLayoutProps) {
   const insets = useSafeAreaInsets();
 
+  // If backgroundColor is provided, use solid color background
+  if (backgroundColor) {
+    return (
+      <View style={[styles.container, { backgroundColor }]}>
+        {/* Safe area wrapper with top padding only */}
+        <View
+          style={[
+            styles.safeAreaWrapper,
+            {
+              paddingTop: insets.top,
+            },
+          ]}
+        >
+          {/* Content container */}
+          <View style={styles.contentContainer}>{children}</View>
+        </View>
+      </View>
+    );
+  }
+
+  // Default: Use image background with blur
   return (
     <View style={styles.container}>
       <ImageBackground

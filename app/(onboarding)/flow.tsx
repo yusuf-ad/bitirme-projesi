@@ -10,8 +10,19 @@ import {
   getTotalPages,
   ONBOARDING_PAGES,
 } from "@/features/onboarding/config/pages-config";
+import { BodyAge } from "@/features/onboarding/sections/body/body-age";
+import { BodyCover } from "@/features/onboarding/sections/body/body-cover";
+import { BodyGender } from "@/features/onboarding/sections/body/body-gender";
+import { BodyHeight } from "@/features/onboarding/sections/body/body-height";
+import { BodyWeight } from "@/features/onboarding/sections/body/body-weight";
 import { GoalsContent } from "@/features/onboarding/sections/goals/goals-content";
 import { GoalsCover } from "@/features/onboarding/sections/goals/goals-cover";
+import {
+  MealTimeBreakfast,
+  MealTimeCover,
+  MealTimeDinner,
+  MealTimeLunch,
+} from "@/features/onboarding/sections/meal-time";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -31,6 +42,27 @@ export default function OnboardingFlowScreen() {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([
     "healthy-eating",
   ]);
+  const [selectedGender, setSelectedGender] = useState<string | undefined>();
+  const [age, setAge] = useState<number>(30);
+  const [height, setHeight] = useState<number>(177);
+  const [weight, setWeight] = useState<number>(75);
+
+  // Meal time state
+  const [breakfastTime, setBreakfastTime] = useState({
+    hour: 10,
+    minute: 0,
+    period: "AM" as "AM" | "PM",
+  });
+  const [lunchTime, setLunchTime] = useState({
+    hour: 2,
+    minute: 30,
+    period: "PM" as "AM" | "PM",
+  });
+  const [dinnerTime, setDinnerTime] = useState({
+    hour: 6,
+    minute: 0,
+    period: "PM" as "AM" | "PM",
+  });
 
   function handleBack() {
     const previousPage = getPreviousPage(currentPage.section, currentPage.step);
@@ -85,14 +117,102 @@ export default function OnboardingFlowScreen() {
           />
         );
 
+      case "body-cover":
+        return <BodyCover title={title || ""} description={description} />;
+
+      case "body-gender":
+        return (
+          <BodyGender
+            title={title || ""}
+            description={description}
+            onSelectionChange={setSelectedGender}
+            initialSelection={selectedGender}
+          />
+        );
+
+      case "body-age":
+        return (
+          <BodyAge
+            title={title || ""}
+            description={description}
+            onValueChange={setAge}
+            initialValue={age}
+          />
+        );
+
+      case "body-height":
+        return (
+          <BodyHeight
+            title={title || ""}
+            description={description}
+            onValueChange={(value) => setHeight(value)}
+            initialValue={height}
+          />
+        );
+
+      case "body-weight":
+        return (
+          <BodyWeight
+            title={title || ""}
+            description={description}
+            onValueChange={(value) => setWeight(value)}
+            initialValue={weight}
+          />
+        );
+
+      // Meal time section
+      case "meal-time-cover":
+        return <MealTimeCover title={title || ""} description={description} />;
+
+      case "meal-time-breakfast":
+        return (
+          <MealTimeBreakfast
+            title={title || ""}
+            description={description}
+            onTimeChange={(hour, minute, period) =>
+              setBreakfastTime({ hour, minute, period })
+            }
+            initialHour={breakfastTime.hour}
+            initialMinute={breakfastTime.minute}
+            initialPeriod={breakfastTime.period}
+          />
+        );
+
+      case "meal-time-lunch":
+        return (
+          <MealTimeLunch
+            title={title || ""}
+            description={description}
+            onTimeChange={(hour, minute, period) =>
+              setLunchTime({ hour, minute, period })
+            }
+            initialHour={lunchTime.hour}
+            initialMinute={lunchTime.minute}
+            initialPeriod={lunchTime.period}
+          />
+        );
+
+      case "meal-time-dinner":
+        return (
+          <MealTimeDinner
+            title={title || ""}
+            description={description}
+            onTimeChange={(hour, minute, period) =>
+              setDinnerTime({ hour, minute, period })
+            }
+            initialHour={dinnerTime.hour}
+            initialMinute={dinnerTime.minute}
+            initialPeriod={dinnerTime.period}
+          />
+        );
+
       // Placeholder for other sections
       case "body-cover":
-      case "meal-time-cover":
         return (
           <View style={styles.placeholderContent}>
             <GoalsCover
               title={title || "Coming Soon"}
-              description="This section will be implemented next"
+              description="Your age, weight and other details will help us create a more personalized plan"
             />
           </View>
         );
@@ -115,6 +235,10 @@ export default function OnboardingFlowScreen() {
     if (currentPage.component === "goals-content") {
       return selectedGoals.length === 0;
     }
+    // For body-gender, require a selection
+    if (currentPage.component === "body-gender") {
+      return !selectedGender;
+    }
     return false;
   }
 
@@ -130,15 +254,44 @@ export default function OnboardingFlowScreen() {
     if (currentPage.component === "goals-cover") {
       return "Dive In!";
     }
+    if (currentPage.component === "body-cover") {
+      return "Let's Do This!";
+    }
+    if (currentPage.component === "meal-time-cover") {
+      return "Set Your Schedule!";
+    }
+    if (
+      currentPage.component === "meal-time-breakfast" ||
+      currentPage.component === "meal-time-lunch" ||
+      currentPage.component === "meal-time-dinner"
+    ) {
+      return "Save";
+    }
 
     return "Next";
+  }
+
+  // Check if should show skip button (for meal-time pages)
+  function shouldShowSkipButton(): boolean {
+    return (
+      currentPage.component === "meal-time-breakfast" ||
+      currentPage.component === "meal-time-lunch" ||
+      currentPage.component === "meal-time-dinner"
+    );
   }
 
   // Check if current page is a cover page
   const isCoverPage = currentPage.component.includes("-cover");
 
+  // Determine background color for specific pages
+  const backgroundColor =
+    currentPage.component === "body-gender" ? "#FCF0D6" : undefined;
+
   return (
-    <OnboardingLayout blurRadius={isCoverPage ? 24 : 96}>
+    <OnboardingLayout
+      blurRadius={isCoverPage ? 24 : 96}
+      backgroundColor={backgroundColor}
+    >
       {/* Progress bar only for content pages */}
       {!isCoverPage && (
         <ProgressBar
@@ -154,6 +307,8 @@ export default function OnboardingFlowScreen() {
         onNext={handleNext}
         nextButtonText={getNextButtonText()}
         isNextDisabled={isNextDisabled()}
+        showSkipButton={shouldShowSkipButton()}
+        onSkip={handleNext}
       />
     </OnboardingLayout>
   );
