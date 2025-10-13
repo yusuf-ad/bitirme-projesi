@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
+import OnboardingProgressBar from "@/shared/components/onboarding-progress-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -16,45 +17,48 @@ import {
 const goalOptions = [
   {
     id: "healthy-eating",
-    title: "Sağlıklı beslenin",
+    title: "Eat healthy",
     icon: require("@/assets/icons/carrot-icon.svg"),
   },
   {
     id: "learn-cooking",
-    title: "Yemek yapmayı öğren",
+    title: "Learn how to\ncook",
     icon: require("@/assets/icons/chef-icon.svg"),
   },
   {
     id: "lose-weight",
-    title: "Kilo verin",
+    title: "Lose weight",
     icon: require("@/assets/icons/scale-icon.svg"),
   },
   {
     id: "gain-weight",
-    title: "Kilo alın",
+    title: "Gain weight",
     icon: require("@/assets/icons/weight-icon.svg"),
   },
   {
     id: "try-recipes",
-    title: "Yeni tarifler\ndeneyin",
+    title: "Try new\nrecipes",
     icon: require("@/assets/icons/recipe-icon.svg"),
   },
   {
     id: "stay-on-diet",
-    title: "Diyetime\nsadık kalın",
+    title: "Stick to my\ndiet",
     icon: require("@/assets/icons/diet-icon.svg"),
   },
   {
     id: "build-muscle",
-    title: "Kas yapın",
+    title: "Build muscle",
     icon: require("@/assets/icons/muscle-icon.svg"),
   },
   {
     id: "save-time",
-    title: "Zaman\nkazanın",
+    title: "Save time",
     icon: require("@/assets/icons/time-icon.svg"),
   },
 ];
+
+// Total number of onboarding steps
+const TOTAL_ONBOARDING_STEPS = 1;
 
 export default function GoalsScreen() {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([
@@ -86,21 +90,17 @@ export default function GoalsScreen() {
 
         {/* Content */}
         <View style={styles.content}>
-          {/* Progress Indicators */}
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, styles.progressBarActive]} />
-            <View style={styles.progressBarGroup}>
-              <View style={styles.progressBar} />
-              <View style={styles.progressBar} />
-              <View style={styles.progressBar} />
-            </View>
-          </View>
+          {/* Progress Bar */}
+          <OnboardingProgressBar
+            currentStep={1}
+            totalSteps={TOTAL_ONBOARDING_STEPS}
+          />
 
           {/* Title and Description */}
-          <Text style={styles.title}>Hedefler</Text>
+          <Text style={styles.title}>Goals</Text>
           <Text style={styles.description}>
-            Hedeflerinize ulaşmanıza yardımcı olacak kişiselleştirilmiş öneriler
-            sunacağız
+            What goals could we help you accomplish? We will personalize our
+            recommendations to help you achieve them
           </Text>
 
           {/* Scrollable Goal Options Grid */}
@@ -249,29 +249,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
-  },
-  progressContainer: {
-    flexDirection: "row",
-    gap: 3,
-    padding: 4,
-    backgroundColor: Colors.gray[300],
-    borderRadius: 12,
-    marginBottom: 19,
-    marginHorizontal: 11,
-    height: 24,
-  },
-  progressBar: {
-    flex: 1,
-    backgroundColor: Colors.gray[100],
-    borderRadius: 12,
-  },
-  progressBarActive: {
-    backgroundColor: Colors.gray[100],
-  },
-  progressBarGroup: {
-    flex: 3,
-    flexDirection: "row",
-    gap: 3,
   },
   title: {
     fontFamily: "Inter",
