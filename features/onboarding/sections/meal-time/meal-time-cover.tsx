@@ -1,4 +1,3 @@
-import { Colors } from "@/constants/theme";
 import { StyleSheet, Text, View } from "react-native";
 
 interface MealTimeCoverProps {
@@ -27,10 +26,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "Inter",
-    fontWeight: "500",
+    fontWeight: "600",
     fontSize: 48,
     lineHeight: 58,
-    color: Colors.text.inverse,
+    color: "#2D3142",
     marginBottom: 42,
     maxWidth: 344,
   },
@@ -39,7 +38,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     fontSize: 16,
     lineHeight: 28,
-    color: Colors.text.inverse,
+    color: "#5D6270",
     maxWidth: 317,
   },
 });

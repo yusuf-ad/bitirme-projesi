@@ -1,7 +1,14 @@
-import { Colors } from "@/constants/theme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 type WeightUnit = "kg" | "lbs";
 
@@ -17,13 +24,52 @@ export function BodyWeight({
   title,
   description,
   onValueChange,
-  initialValue = 75,
+  initialValue = 70,
   initialUnit = "kg",
 }: BodyWeightProps) {
   const [weight, setWeight] = useState<number>(initialValue);
   const [unit, setUnit] = useState<WeightUnit>(initialUnit);
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(initialValue.toString());
+
+  // Gesture handler for draggable drop icon
+  const translateX = useSharedValue(0);
+  const startX = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  function updateWeight(newWeight: number) {
+    const clampedWeight = Math.max(30, Math.min(300, newWeight));
+    setWeight(clampedWeight);
+    onValueChange?.(clampedWeight, unit);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      startX.value = translateX.value;
+      scale.value = withSpring(1.2);
+    })
+    .onUpdate((event) => {
+      translateX.value = startX.value + event.translationX;
+
+      // Calculate new weight based on drag distance
+      const dragDistance = translateX.value;
+      const weightChange = Math.round(dragDistance / 20); // 20px = 1kg (daha az hassas)
+      const newWeight = weight + weightChange;
+
+      if (weightChange !== 0) {
+        runOnJS(updateWeight)(newWeight);
+      }
+    })
+    .onEnd(() => {
+      translateX.value = withSpring(0);
+      scale.value = withSpring(1);
+      startX.value = 0;
+    });
+
+  const animatedDropStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }, { scale: scale.value }],
+  }));
 
   function handleEdit() {
     setIsEditing(true);
@@ -62,33 +108,7 @@ export function BodyWeight({
       </View>
 
       <View style={styles.inputContainer}>
-        {isEditing ? (
-          <TextInput
-            style={styles.input}
-            value={inputValue}
-            onChangeText={handleChangeText}
-            onBlur={handleBlur}
-            keyboardType="number-pad"
-            autoFocus
-            maxLength={3}
-            selectTextOnFocus
-          />
-        ) : (
-          <View style={styles.displayContainer}>
-            <View style={styles.displayBox}>
-              <Text style={styles.displayText}>{weight}</Text>
-            </View>
-            <Pressable onPress={handleEdit} style={styles.editButton}>
-              <MaterialCommunityIcons
-                name="pencil"
-                size={28}
-                color={Colors.text.secondary}
-              />
-            </Pressable>
-          </View>
-        )}
-
-        {/* Unit Toggle */}
+        {/* Unit Toggle - Now on top */}
         <View style={styles.unitToggleContainer}>
           <Pressable
             style={[
@@ -125,6 +145,85 @@ export function BodyWeight({
             </Text>
           </Pressable>
         </View>
+
+        {/* Display Box with yellow/orange background */}
+        <View style={styles.displayWrapper}>
+          {/* Main Display */}
+          {isEditing ? (
+            <View style={styles.displayInnerContainer}>
+              <TextInput
+                style={styles.input}
+                value={inputValue}
+                onChangeText={handleChangeText}
+                onBlur={handleBlur}
+                keyboardType="number-pad"
+                autoFocus
+                maxLength={3}
+                selectTextOnFocus
+              />
+              <Pressable onPress={handleBlur} style={styles.editButton}>
+                <MaterialCommunityIcons
+                  name="pencil"
+                  size={24}
+                  color="#2D3142"
+                />
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.displayInnerContainer}>
+              <View style={styles.displayBox}>
+                <Text style={styles.displayText}>{weight}</Text>
+              </View>
+              <Pressable onPress={handleEdit} style={styles.editButton}>
+                <MaterialCommunityIcons
+                  name="pencil"
+                  size={24}
+                  color="#2D3142"
+                />
+              </Pressable>
+            </View>
+          )}
+
+          {/* Ruler Scale */}
+          <View style={styles.rulerContainer}>
+            {/* Ruler marks */}
+            <View style={styles.rulerMarks}>
+              {Array.from({ length: 41 }, (_, i) => {
+                const value = weight - 20 + i;
+                const isMajorMark = i % 10 === 0;
+                const isMidMark = i % 5 === 0 && !isMajorMark;
+                const isCenter = i === 20;
+
+                return (
+                  <View key={i} style={styles.markContainer}>
+                    <View
+                      style={[
+                        styles.mark,
+                        isMidMark && styles.midMark,
+                        isMajorMark && styles.majorMark,
+                        isCenter && styles.currentMark,
+                      ]}
+                    />
+                    {isMajorMark && (
+                      <Text style={styles.markLabel}>{value}</Text>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+
+        {/* Draggable Water drop icon */}
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.dropContainer, animatedDropStyle]}>
+            <MaterialCommunityIcons
+              name="water-outline"
+              size={56}
+              color="#2D3648"
+            />
+          </Animated.View>
+        </GestureDetector>
       </View>
     </View>
   );
@@ -139,98 +238,168 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 48,
-    lineHeight: 58,
-    color: Colors.text.inverse,
-    marginBottom: 42,
+    fontWeight: "600",
+    fontSize: 32,
+    lineHeight: 40,
+    color: "#2D3142",
+    marginBottom: 16,
     maxWidth: 344,
   },
   description: {
     fontFamily: "Inter",
     fontWeight: "400",
     fontSize: 16,
-    lineHeight: 28,
-    color: Colors.text.inverse,
+    lineHeight: 24,
+    color: "#5D6270",
     maxWidth: 317,
   },
   inputContainer: {
     alignItems: "center",
-    marginTop: 80,
-  },
-  displayContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    marginBottom: 20,
-  },
-  displayBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 20,
-    paddingHorizontal: 32,
-    minWidth: 180,
-    alignItems: "center",
-  },
-  displayText: {
-    fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 32,
-    lineHeight: 38.73,
-    color: Colors.text.primary,
-  },
-  editButton: {
-    padding: 12,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 20,
-    paddingHorizontal: 32,
-    minWidth: 180,
-    fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 32,
-    lineHeight: 38.73,
-    color: Colors.text.primary,
-    textAlign: "center",
-    marginBottom: 20,
+    marginTop: 60,
+    paddingHorizontal: 20,
   },
   unitToggleContainer: {
     flexDirection: "row",
-    borderWidth: 1,
-    borderColor: Colors.gray[100],
-    borderRadius: 8,
-    padding: 4,
-    gap: 8,
-    width: 371,
-    maxWidth: "100%",
+    borderRadius: 12,
+    overflow: "hidden",
+    width: "100%",
+    maxWidth: 400,
+    marginBottom: 32,
   },
   unitButton: {
     flex: 1,
-    paddingVertical: 17,
+    paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#E8E9EB",
   },
   unitButtonLeft: {
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
   },
   unitButtonRight: {
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
   },
   unitButtonActive: {
-    backgroundColor: Colors.lilac[900],
+    backgroundColor: "#2D3648",
   },
   unitButtonText: {
     fontFamily: "Inter",
     fontWeight: "500",
     fontSize: 16,
-    lineHeight: 19.36,
-    color: Colors.text.primary,
+    lineHeight: 24,
+    color: "#2D3142",
   },
   unitButtonTextActive: {
-    color: Colors.text.inverse,
+    color: "#FFFFFF",
+  },
+  displayWrapper: {
+    backgroundColor: "#F2C94C",
+    borderRadius: 24,
+    padding: 32,
+    width: "100%",
+    maxWidth: 480,
+    minHeight: 380,
+    justifyContent: "space-between",
+  },
+  displayInnerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    marginBottom: 40,
+  },
+  displayBox: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 48,
+    minWidth: 160,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  displayText: {
+    fontFamily: "Inter",
+    fontWeight: "700",
+    fontSize: 48,
+    lineHeight: 56,
+    color: "#2D3142",
+  },
+  editButton: {
+    padding: 8,
+  },
+  input: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 48,
+    minWidth: 160,
+    fontFamily: "Inter",
+    fontWeight: "700",
+    fontSize: 48,
+    lineHeight: 56,
+    color: "#2D3142",
+    textAlign: "center",
+  },
+  rulerContainer: {
+    width: "100%",
+    marginTop: 20,
+    paddingHorizontal: 8,
+  },
+  rulerMarks: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    height: 100,
+  },
+  markContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    minWidth: 2,
+  },
+  mark: {
+    width: 1.5,
+    height: 16,
+    backgroundColor: "#2D3142",
+    opacity: 0.25,
+  },
+  midMark: {
+    height: 24,
+    width: 2,
+    opacity: 0.4,
+  },
+  majorMark: {
+    height: 36,
+    width: 2.5,
+    opacity: 0.7,
+  },
+  currentMark: {
+    height: 48,
+    width: 3.5,
+    backgroundColor: "#2D3648",
+    opacity: 1,
+  },
+  markLabel: {
+    fontFamily: "Inter",
+    fontWeight: "600",
+    fontSize: 12,
+    lineHeight: 16,
+    color: "#2D3142",
+    marginTop: 6,
+    opacity: 0.8,
+  },
+  dropContainer: {
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 20,
   },
 });

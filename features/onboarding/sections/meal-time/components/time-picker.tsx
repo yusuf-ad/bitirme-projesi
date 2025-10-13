@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useCallback, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -16,7 +16,7 @@ interface TimePickerProps {
   initialPeriod?: "AM" | "PM";
 }
 
-const ITEM_HEIGHT = 60;
+const ITEM_HEIGHT = 70;
 const VISIBLE_ITEMS = 5;
 
 export function TimePicker({
@@ -38,10 +38,33 @@ export function TimePicker({
   const hours = Array.from({ length: 12 }, (_, i) =>
     (i + 1).toString().padStart(2, "0")
   );
-  const minutes = Array.from({ length: 60 }, (_, i) =>
-    i.toString().padStart(2, "0")
+  const minutes = Array.from({ length: 12 }, (_, i) =>
+    (i * 5).toString().padStart(2, "0")
   );
   const periods = ["AM", "PM"];
+
+  useEffect(() => {
+    const hourIndex = hours.findIndex((h) => parseInt(h, 10) === initialHour);
+    const minuteIndex = minutes.findIndex(
+      (m) => parseInt(m, 10) === initialMinute
+    );
+    const periodIndex = periods.indexOf(initialPeriod);
+
+    setTimeout(() => {
+      hourScrollRef.current?.scrollTo({
+        y: hourIndex * ITEM_HEIGHT,
+        animated: false,
+      });
+      minuteScrollRef.current?.scrollTo({
+        y: minuteIndex * ITEM_HEIGHT,
+        animated: false,
+      });
+      periodScrollRef.current?.scrollTo({
+        y: periodIndex * ITEM_HEIGHT,
+        animated: false,
+      });
+    }, 100);
+  }, []);
 
   const handleScroll = useCallback(
     (
@@ -54,6 +77,8 @@ export function TimePicker({
       const index = Math.round(offsetY / ITEM_HEIGHT);
       const clampedIndex = Math.max(0, Math.min(items.length - 1, index));
       const value = items[clampedIndex];
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       if (type === "hour") {
         const hourNum = parseInt(value, 10);
@@ -77,15 +102,16 @@ export function TimePicker({
   const getOpacity = (index: number, selectedIndex: number): number => {
     const distance = Math.abs(index - selectedIndex);
     if (distance === 0) return 1;
-    if (distance === 1) return 0.4;
-    return 0.2;
+    if (distance === 1) return 0.5;
+    return 0.3;
   };
 
   function renderPickerColumn(
     items: string[],
     selectedValue: number | string,
     onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void,
-    scrollRef: React.RefObject<ScrollView | null>
+    scrollRef: React.RefObject<ScrollView | null>,
+    width: number = 80
   ) {
     const selectedIndex =
       typeof selectedValue === "number"
@@ -93,7 +119,7 @@ export function TimePicker({
         : items.indexOf(selectedValue as string);
 
     return (
-      <View style={styles.pickerColumn}>
+      <View style={[styles.pickerColumn, { width }]}>
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
@@ -139,23 +165,9 @@ export function TimePicker({
 
   return (
     <View style={styles.container}>
-      {/* Time Display */}
-      <View style={styles.displayContainer}>
-        <View style={styles.timeDisplay}>
-          <Text style={styles.timeText}>
-            {selectedHour.toString().padStart(2, "0")}
-          </Text>
-          <Text style={styles.timeSeparator}>:</Text>
-          <Text style={styles.timeText}>
-            {selectedMinute.toString().padStart(2, "0")}
-          </Text>
-          <Text style={styles.periodText}>{selectedPeriod}</Text>
-        </View>
-      </View>
-
       {/* Picker Wheels */}
       <View style={styles.pickerContainer}>
-        {/* Selection Indicator */}
+        {/* Selection Indicator - White rounded box */}
         <View style={styles.selectionIndicator} />
 
         {/* Hour Picker */}
@@ -163,7 +175,8 @@ export function TimePicker({
           hours,
           selectedHour,
           (e) => handleScroll(e, hours, setSelectedHour, "hour"),
-          hourScrollRef
+          hourScrollRef,
+          100
         )}
 
         <View style={styles.separator}>
@@ -175,7 +188,8 @@ export function TimePicker({
           minutes,
           selectedMinute,
           (e) => handleScroll(e, minutes, setSelectedMinute, "minute"),
-          minuteScrollRef
+          minuteScrollRef,
+          100
         )}
 
         {/* Period Picker */}
@@ -183,7 +197,8 @@ export function TimePicker({
           periods,
           selectedPeriod,
           (e) => handleScroll(e, periods, setSelectedPeriod, "period"),
-          periodScrollRef
+          periodScrollRef,
+          80
         )}
       </View>
     </View>
@@ -193,37 +208,7 @@ export function TimePicker({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    paddingVertical: 20,
-  },
-  displayContainer: {
-    marginBottom: 40,
-  },
-  timeDisplay: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  timeText: {
-    fontFamily: "Inter",
-    fontWeight: "700",
-    fontSize: 48,
-    lineHeight: 58,
-    color: "#FFFFFF",
-  },
-  timeSeparator: {
-    fontFamily: "Inter",
-    fontWeight: "700",
-    fontSize: 48,
-    lineHeight: 58,
-    color: "#FFFFFF",
-  },
-  periodText: {
-    fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 24,
-    lineHeight: 29,
-    color: "#FFFFFF",
-    marginLeft: 8,
+    justifyContent: "center",
   },
   pickerContainer: {
     flexDirection: "row",
@@ -237,15 +222,20 @@ const styles = StyleSheet.create({
     right: 0,
     top: ITEM_HEIGHT * 2,
     height: ITEM_HEIGHT,
-    backgroundColor: "rgba(158, 139, 139, 0.77)",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.lilac[900],
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     zIndex: -1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   pickerColumn: {
     height: ITEM_HEIGHT * VISIBLE_ITEMS,
-    width: 70,
   },
   scrollContent: {
     paddingVertical: 0,
@@ -260,26 +250,26 @@ const styles = StyleSheet.create({
   },
   pickerText: {
     fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 32,
-    lineHeight: 38.73,
-    color: "rgba(255, 255, 255, 0.4)",
+    fontWeight: "400",
+    fontSize: 40,
+    lineHeight: 48,
+    color: "#2D3142",
   },
   pickerTextSelected: {
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontWeight: "600",
+    color: "#2D3142",
   },
   separator: {
-    width: 20,
+    width: 8,
     height: ITEM_HEIGHT,
     justifyContent: "center",
     alignItems: "center",
   },
   separatorText: {
     fontFamily: "Inter",
-    fontWeight: "700",
-    fontSize: 32,
-    lineHeight: 38.73,
-    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 40,
+    lineHeight: 48,
+    color: "#2D3142",
   },
 });

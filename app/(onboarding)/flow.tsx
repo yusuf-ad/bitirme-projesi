@@ -283,15 +283,27 @@ export default function OnboardingFlowScreen() {
   // Check if current page is a cover page
   const isCoverPage = currentPage.component.includes("-cover");
 
-  // Determine background color for specific pages
-  const backgroundColor =
-    currentPage.component === "body-gender" ? "#FCF0D6" : undefined;
+  // Determine background color based on section
+  function getBackgroundColor(): string {
+    const section = currentPage.section;
+
+    // Goals section - Light purple/lavender
+    if (section === "goals") return "#E8D9F5";
+
+    // Body section - Light peach/cream
+    if (section === "body") return "#FCF0D6";
+
+    // Meal-time section - Light pink/rose
+    if (section === "meal-time") return "#F5D6D6";
+
+    // Default fallback
+    return "#FFFFFF";
+  }
+
+  const backgroundColor = getBackgroundColor();
 
   return (
-    <OnboardingLayout
-      blurRadius={isCoverPage ? 24 : 96}
-      backgroundColor={backgroundColor}
-    >
+    <OnboardingLayout backgroundColor={backgroundColor}>
       {/* Progress bar only for content pages */}
       {!isCoverPage && (
         <ProgressBar

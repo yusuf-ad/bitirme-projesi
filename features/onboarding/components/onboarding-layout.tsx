@@ -1,58 +1,33 @@
-import { ImageBackground, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingLayoutProps } from "../types/onboarding.types";
 
 export function OnboardingLayout({
   children,
-  blurRadius = 48,
   backgroundColor,
 }: OnboardingLayoutProps) {
   const insets = useSafeAreaInsets();
 
-  // If backgroundColor is provided, use solid color background
-  if (backgroundColor) {
-    return (
-      <View style={[styles.container, { backgroundColor }]}>
-        {/* Safe area wrapper with top padding only */}
-        <View
-          style={[
-            styles.safeAreaWrapper,
-            {
-              paddingTop: insets.top,
-            },
-          ]}
-        >
-          {/* Content container */}
-          <View style={styles.contentContainer}>{children}</View>
-        </View>
-      </View>
-    );
-  }
-
-  // Default: Use image background with blur
+  // Always use solid color background - no image background
   return (
-    <View style={styles.container}>
-      <ImageBackground
-        source={require("@/assets/images/onboarding-bg.png")}
-        style={styles.backgroundImage}
-        blurRadius={blurRadius}
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: backgroundColor || "#FFFFFF" },
+      ]}
+    >
+      {/* Safe area wrapper with top padding only */}
+      <View
+        style={[
+          styles.safeAreaWrapper,
+          {
+            paddingTop: insets.top,
+          },
+        ]}
       >
-        {/* Overlay for better text readability */}
-        <View style={styles.overlay} />
-
-        {/* Safe area wrapper with top padding only */}
-        <View
-          style={[
-            styles.safeAreaWrapper,
-            {
-              paddingTop: insets.top,
-            },
-          ]}
-        >
-          {/* Content container */}
-          <View style={styles.contentContainer}>{children}</View>
-        </View>
-      </ImageBackground>
+        {/* Content container */}
+        <View style={styles.contentContainer}>{children}</View>
+      </View>
     </View>
   );
 }
@@ -60,15 +35,6 @@ export function OnboardingLayout({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  backgroundImage: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   safeAreaWrapper: {
     flex: 1,

@@ -15,6 +15,5 @@ export interface OnboardingNavigationProps {
 
 export interface OnboardingLayoutProps {
   children: React.ReactNode;
-  blurRadius?: number;
   backgroundColor?: string;
 }
