@@ -1,4 +1,3 @@
-import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
@@ -33,7 +32,7 @@ export function OnboardingNavigation({
           accessibilityLabel="Go Back"
           onPress={onBack}
         >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={28} color="#2D3142" />
         </CustomButton>
 
         <CustomButton
@@ -56,16 +55,17 @@ export function OnboardingNavigation({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 8,
+    gap: 16,
   },
   skipContainer: {
     alignItems: "center",
     paddingVertical: 8,
   },
   skipButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    backgroundColor: "#E8E9EB",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
     shadowColor: "transparent",
     shadowOffset: {
       width: 0,
@@ -79,66 +79,64 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontWeight: "400",
     fontSize: 16,
-    lineHeight: 19.36,
-    color: Colors.text.inverse,
-    textDecorationLine: "underline",
+    lineHeight: 24,
+    color: "#5D6270",
     textAlign: "center",
   },
   buttonContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingBottom: 40,
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
     paddingTop: 8,
   },
   backButton: {
-    width: 56,
-    height: 56,
-    backgroundColor: "rgba(161, 164, 170, 0.5)",
-    borderRadius: 12,
+    width: 64,
+    height: 64,
+    backgroundColor: "#E8E9EB",
+    borderRadius: 16,
     padding: 0,
     paddingVertical: 0,
     paddingHorizontal: 0,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 3,
+      height: 2,
     },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 6,
+    elevation: 2,
     overflow: "hidden",
   },
   nextButton: {
     flex: 1,
-    backgroundColor: Colors.lilac[900],
-    borderRadius: 12,
-    paddingVertical: 19,
-    paddingHorizontal: 24,
-    shadowColor: Colors.lilac[900],
+    backgroundColor: "#2D3648",
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 32,
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 4,
     overflow: "hidden",
   },
   nextButtonDisabled: {
-    backgroundColor: Colors.gray[300],
-    opacity: 0.6,
-    shadowOpacity: 0.1,
+    backgroundColor: "#B8BCC4",
+    opacity: 0.5,
+    shadowOpacity: 0.05,
   },
   buttonText: {
     fontFamily: "Inter",
     fontWeight: "600",
-    fontSize: 16,
-    lineHeight: 19.36,
-    color: Colors.text.inverse,
+    fontSize: 18,
+    lineHeight: 24,
+    color: "#FFFFFF",
     textAlign: "center",
-    letterSpacing: 0.3,
   },
 });
