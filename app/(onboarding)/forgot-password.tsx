@@ -32,7 +32,10 @@ export default function ForgotPasswordScreen() {
 
           <Text style={styles.rememberText}>
             Remember the password?{" "}
-            <Link href="/(onboarding)" style={styles.signInLink}>
+            <Link
+              href={{ pathname: "/(onboarding)", params: { openAuth: "1" } }}
+              style={styles.signInLink}
+            >
               Sign in
             </Link>
           </Text>
