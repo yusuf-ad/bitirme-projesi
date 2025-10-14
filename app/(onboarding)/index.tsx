@@ -2,13 +2,26 @@ import { Colors } from "@/constants/theme";
 import { AuthModal } from "@/features/auth";
 import CustomButton from "@/shared/components/custom-button";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function WelcomeScreen() {
   const authModalRef = useRef<BottomSheetModal>(null);
+  const params = useLocalSearchParams();
+  const openAuth = useMemo(() => {
+    const value = (params as any)?.openAuth;
+    return Array.isArray(value) ? value[0] : value;
+  }, [params]);
+
+  // Open auth modal if redirected with query ?openAuth=1
+  useEffect(() => {
+    if (openAuth === "1") {
+      const id = setTimeout(() => authModalRef.current?.present(), 0);
+      return () => clearTimeout(id);
+    }
+  }, [openAuth]);
 
   return (
     <View style={styles.container}>
