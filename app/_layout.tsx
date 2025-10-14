@@ -7,6 +7,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <Stack>
+          <Stack.Screen name="(app)" options={{ headerShown: false }} />
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         </Stack>
       </BottomSheetModalProvider>
