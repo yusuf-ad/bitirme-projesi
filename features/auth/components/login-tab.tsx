@@ -1,11 +1,23 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
+import { useBottomSheetModal } from "@gorhom/bottom-sheet";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export function LoginTab() {
+  const router = useRouter();
+  const { dismissAll } = useBottomSheetModal();
+
+  function handleForgotPasswordPress() {
+    // Close the bottom sheet with a short animation, then navigate
+    dismissAll();
+    setTimeout(() => {
+      router.push("/(onboarding)/forgot-password");
+    }, 220);
+  }
   return (
     <KeyboardAwareScrollView
       style={styles.container}
@@ -30,7 +42,7 @@ export function LoginTab() {
           autoCorrect={false}
         />
 
-        <Pressable>
+        <Pressable onPress={handleForgotPasswordPress}>
           <Text style={styles.forgotPasswordText}>Forget password?</Text>
         </Pressable>
       </View>
