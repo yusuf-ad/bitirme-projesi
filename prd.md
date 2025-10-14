@@ -1223,11 +1223,10 @@ constants/
 
 ### Phase 1: Foundation (Weeks 1-2)
 
-- [ ] Project setup (Expo, TypeScript, ESLint)
+- [x] Project setup (Expo, TypeScript, ESLint)
 - [ ] Supabase project configuration
 - [ ] Database schema implementation
 - [ ] Authentication system (Email/Password)
-- [ ] Basic UI components library
 - [ ] User profile setup flow
 
 ### Phase 2: Core Features (Weeks 3-5)
@@ -1257,7 +1256,7 @@ constants/
 
 ### Phase 5: Enhancements (Weeks 10-11)
 
-- [ ] OAuth integration (Google, Apple)
+- [ ] OAuth integration (Google)
 - [ ] Notifications system
 - [ ] Advanced filtering
 - [ ] Recipe reviews and ratings
@@ -1273,9 +1272,6 @@ constants/
 
 ### Phase 7: Deployment (Week 14)
 
-- [ ] Beta testing
-- [ ] App Store submission
-- [ ] Play Store submission
 - [ ] Final documentation
 - [ ] Project presentation preparation
 
