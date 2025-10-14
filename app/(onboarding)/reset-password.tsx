@@ -1,8 +1,16 @@
+import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
-import { Link, useRouter } from "expo-router";
-import { useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -11,16 +19,42 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-export default function ForgotPasswordScreen() {
+export default function ResetPasswordScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const token = useMemo(() => {
+    const v = (params as any)?.token;
+    return Array.isArray(v) ? v[0] : v;
+  }, [params]);
+
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  function validate(): boolean {
+    if (!password || !confirmPassword) {
+      setError("Please fill in all fields");
+      return false;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return false;
+    }
+    setError("");
+    return true;
+  }
+
   function handleSubmit() {
-    // TODO: integrate with API
     if (isSubmitting) return;
+    if (!validate()) return;
+    // TODO: call API with token + new password
     setIsSubmitting(true);
-    // Simulate API latency; replace with real request
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSuccess(true);
@@ -28,7 +62,10 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.container}
+    >
       <View style={styles.content}>
         {isSuccess ? (
           <>
@@ -58,9 +95,9 @@ export default function ForgotPasswordScreen() {
                   />
                 </Svg>
               </View>
-              <Text style={styles.successTitle}>Check your email</Text>
+              <Text style={styles.successTitle}>Password changed</Text>
               <Text style={styles.successSubtitle}>
-                We’ve sent a password reset link to your email address.
+                Your password has been successfully updated.
               </Text>
             </View>
             <CustomButton
@@ -72,31 +109,50 @@ export default function ForgotPasswordScreen() {
                 })
               }
             >
-              <Text style={styles.submitText}>Back to Sign In</Text>
+              <Text style={styles.primaryText}>Back to Sign In</Text>
             </CustomButton>
           </>
         ) : (
           <>
             <View style={styles.topSection}>
-              <Text style={styles.title}>Forget Password</Text>
+              <Text style={styles.title}>Reset Password</Text>
               <Text style={styles.subtitle}>
-                Enter your registered email below
+                Enter your new password and confirm it below.
               </Text>
 
               <View style={styles.form}>
                 <CustomTextInput
-                  label="Email address"
+                  label="New Password"
                   labelStyle={styles.inputLabel}
-                  placeholder="Eg namaemail@emailkamu.com"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
+                  placeholder="••••••••"
+                  placeholderTextColor={Colors.gray[400]}
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
                 />
+                <View style={{ height: 16 }} />
+                <CustomTextInput
+                  label="Confirm Password"
+                  labelStyle={styles.inputLabel}
+                  placeholder="••••••••"
+                  placeholderTextColor={Colors.gray[400]}
+                  secureTextEntry
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+                {!!error && <Text style={styles.errorText}>{error}</Text>}
+                {!!token && (
+                  <Text
+                    style={styles.tokenHint}
+                    accessibilityHint="reset token"
+                  >
+                    Token detected
+                  </Text>
+                )}
               </View>
 
               <Text style={styles.rememberText}>
-                Remember the password?{" "}
+                Remember your password?{" "}
                 <Link
                   href={{
                     pathname: "/(onboarding)",
@@ -107,49 +163,32 @@ export default function ForgotPasswordScreen() {
                   Sign in
                 </Link>
               </Text>
-
-              {/* TEMP: test navigation to reset-password screen */}
-              <CustomButton
-                containerStyle={styles.testButton}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(onboarding)/reset-password",
-                    params: { token: "demo" },
-                  })
-                }
-                accessibilityLabel="Go to reset password test"
-              >
-                <Text style={styles.testButtonText}>Test Reset Page</Text>
-              </CustomButton>
             </View>
 
             <CustomButton
-              containerStyle={[
-                styles.primaryButton,
-                isSubmitting && styles.primaryButtonDisabled,
-              ]}
+              containerStyle={styles.primaryButton}
               onPress={handleSubmit}
               disabled={isSubmitting}
               accessibilityRole="button"
-              accessibilityLabel="Submit forgot password form"
+              accessibilityLabel="Submit new password"
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={Colors.text.inverse} />
               ) : (
-                <Text style={styles.submitText}>Submit</Text>
+                <Text style={styles.primaryText}>Submit</Text>
               )}
             </CustomButton>
           </>
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.background.inverse ?? "#FFFFFF",
   },
   content: {
     paddingHorizontal: 24,
@@ -164,59 +203,52 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#111827",
+    color: Colors.text.primary,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#9CA3AF",
+    color: Colors.gray[400],
     marginTop: 4,
   },
   form: {
     marginTop: 56,
   },
   inputLabel: {
-    color: "#111827",
+    color: Colors.text.primary,
     fontWeight: "600",
     lineHeight: 36,
   },
-  submitButton: {
-    backgroundColor: "#7E3AF2",
-    alignSelf: "stretch",
-    borderRadius: 16,
-  },
   primaryButton: {
-    backgroundColor: "#7E3AF2",
+    backgroundColor: Colors.lilac[900],
     alignSelf: "stretch",
     borderRadius: 16,
   },
-  primaryButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitText: {
+  primaryText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.inverse,
   },
   rememberText: {
     marginTop: 24,
     fontSize: 16,
     fontWeight: "500",
-    color: "#6B7280",
+    color: Colors.gray[500],
   },
   signInLink: {
-    color: "#7E3AF2",
+    color: Colors.lilac[900],
     fontWeight: "700",
   },
-  testButton: {
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
+  errorText: {
     marginTop: 12,
-  },
-  testButtonText: {
-    color: "#111827",
+    color: "#EF4444",
     fontSize: 14,
     fontWeight: "600",
+  },
+  tokenHint: {
+    marginTop: 8,
+    color: Colors.gray[400],
+    fontSize: 12,
   },
   successWrapper: {
     flex: 1,
@@ -234,14 +266,14 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#111827",
+    color: Colors.text.primary,
     textAlign: "center",
     marginTop: 8,
   },
   successSubtitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#6B7280",
+    color: Colors.gray[500],
     textAlign: "center",
     marginBottom: 24,
   },

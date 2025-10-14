@@ -6,6 +6,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="flow" options={{ headerShown: false }} />
       <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+      <Stack.Screen name="reset-password" options={{ headerShown: false }} />
     </Stack>
   );
 }
