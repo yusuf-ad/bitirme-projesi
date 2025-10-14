@@ -8,6 +8,7 @@ export default function RootLayout() {
       <BottomSheetModalProvider>
         <Stack>
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+          <Stack.Screen name="(app)" options={{ headerShown: false }} />
         </Stack>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
