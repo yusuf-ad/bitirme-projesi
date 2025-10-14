@@ -20,8 +20,7 @@ export default function WelcomeScreen() {
 
       <View style={styles.contentContainer}>
         <Text style={styles.title}>
-          Kitchen management, smart recipes and waste-free planning in one
-          place.
+          Kitchen management smart recipes and waste-free planning in one place.
         </Text>
 
         <CustomButton
