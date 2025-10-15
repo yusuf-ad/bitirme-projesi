@@ -1,5 +1,10 @@
-export { default as CalendarDay } from "./components/calendar-day";
+export { default as CalendarDayComponent } from "./components/calendar-day";
+export { default as CalendarSection } from "./components/calendar-section";
+export { default as DailyOverview } from "./components/daily-overview";
+export { default as Header } from "./components/header";
+export { default as MacroCardsSection } from "./components/macro-cards-section";
 export { default as MealCard } from "./components/meal-card";
 export { default as ProgressChart } from "./components/progress-chart";
+export { default as TodayMealsSection } from "./components/today-meals-section";
 export * from "./data/mock-data";
 export * from "./types/home.types";

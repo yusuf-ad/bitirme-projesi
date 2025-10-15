@@ -26,7 +26,7 @@ export default function MacroCard({
 
   // Progress bar üzerinde gösterilecek süsleri hesapla
   const decorations = [];
-  const decorationSpacing = 12;
+  const decorationSpacing = 16;
   const filledWidth = (progressBarWidth * progressPercentage) / 100;
   for (let i = decorationSpacing; i < filledWidth - 8; i += decorationSpacing) {
     decorations.push(i);
