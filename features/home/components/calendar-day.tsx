@@ -36,6 +36,8 @@ const styles = StyleSheet.create({
     gap: 4,
     justifyContent: "center",
     alignItems: "center",
+    width: 52,
+    height: 64,
   },
   selectedContainer: {
     backgroundColor: Colors.lilac[900],

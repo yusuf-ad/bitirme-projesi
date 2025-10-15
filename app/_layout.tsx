@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 // Separate RootNavigator so we can access the AuthContext
 function RootNavigator() {
   const { isLoggedIn } = useAuthContext();
+
   return (
     <Stack>
       <Stack.Protected guard={isLoggedIn}>

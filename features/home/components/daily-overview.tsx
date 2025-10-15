@@ -1,49 +1,32 @@
+import EnergyIcon from "@/assets/icons/energy-icon";
 import { Colors } from "@/constants/theme";
-import { AntDesign } from "@expo/vector-icons";
+import CalorieProgressBar from "@/shared/components/calorie-progress-bar";
 import Feather from "@expo/vector-icons/Feather";
-import { Image } from "expo-image";
-import {
-  ImageSourcePropType,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
-interface MealCardProps {
-  mealType: string;
-  mealTime: string;
-  mealIcon: ImageSourcePropType;
-  recipeName: string;
-  recipeDescription: string;
-  recipeImage: ImageSourcePropType;
-  prepTime: string;
-  calories: string;
-  onPress?: () => void;
-}
+export default function DailyOverview() {
+  const goalCalories = 2200;
+  const consumedCalories = 250;
 
-export default function MealCard({
-  mealType,
-  mealTime,
-  mealIcon,
-  recipeName,
-  recipeDescription,
-  recipeImage,
-  prepTime,
-  calories,
-  onPress,
-}: MealCardProps) {
   return (
     <View style={styles.container}>
       {/* Meal Header */}
       <View style={styles.header}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <View style={styles.mealIconContainer}>
-            <Image source={mealIcon} style={styles.mealIcon} />
-          </View>
+        <View>
           <View style={styles.mealInfo}>
-            <Text style={styles.mealType}>{mealType}</Text>
-            <Text style={styles.mealTime}>{mealTime}</Text>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <EnergyIcon width={20} height={20} />
+              <Text style={styles.mealType}>Daily Overview</Text>
+            </View>
+            <Text style={styles.mealTime}>
+              Goal Calorie{" "}
+              <Text style={{ color: Colors.lilac[900], fontWeight: "bold" }}>
+                {goalCalories.toLocaleString()}
+              </Text>{" "}
+              Kcal
+            </Text>
           </View>
         </View>
 
@@ -54,58 +37,18 @@ export default function MealCard({
               height: 36,
               alignItems: "center",
               justifyContent: "center",
-              borderRadius: 4,
-              borderWidth: 1,
-              borderColor: Colors.lilac[200],
             }}
           >
             <Feather name="edit-3" size={20} color={Colors.gray[500]} />
           </View>
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 4,
-              borderWidth: 1,
-              borderColor: Colors.lilac[200],
-            }}
-          >
-            <AntDesign name="plus" size={20} color={Colors.gray[500]} />
-          </View>
         </View>
       </View>
 
-      {/* Recipe Card */}
-      <Pressable onPress={onPress} style={styles.recipeCard}>
-        <Image source={recipeImage} style={styles.recipeImage} />
-        <View style={styles.recipeInfo}>
-          <View style={styles.recipeTextContainer}>
-            <Text style={styles.recipeName}>{recipeName}</Text>
-            <Text style={styles.recipeDescription} numberOfLines={2}>
-              {recipeDescription}
-            </Text>
-            <View style={styles.recipeMetaContainer}>
-              <View style={styles.metaItem}>
-                <Image
-                  source={require("@/assets/icons/clock-icon.svg")}
-                  style={styles.metaIcon}
-                />
-                <Text style={styles.metaText}>{prepTime}</Text>
-              </View>
-              <Text style={styles.separator}>|</Text>
-              <View style={styles.metaItem}>
-                <Image
-                  source={require("@/assets/icons/flame-icon.svg")}
-                  style={styles.metaIcon}
-                />
-                <Text style={styles.metaText}>{calories}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Pressable>
+      {/* Progress bar */}
+      <CalorieProgressBar
+        currentValue={consumedCalories}
+        goalValue={goalCalories}
+      />
     </View>
   );
 }
@@ -114,6 +57,7 @@ const styles = StyleSheet.create({
   container: {
     gap: 10,
     paddingHorizontal: 12,
+    marginBottom: 16,
     paddingBottom: 12,
     backgroundColor: Colors.background.surface,
     borderWidth: 1,
@@ -123,7 +67,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lilac[200],
@@ -143,6 +87,7 @@ const styles = StyleSheet.create({
   },
   mealInfo: {
     justifyContent: "center",
+    gap: 4,
   },
   mealType: {
     fontFamily: "Inter",

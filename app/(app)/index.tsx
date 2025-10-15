@@ -1,13 +1,10 @@
 import { Colors } from "@/constants/theme";
 import CalendarDay from "@/features/home/components/calendar-day";
+import DailyOverview from "@/features/home/components/daily-overview";
 import MealCard from "@/features/home/components/meal-card";
-import ProgressChart from "@/features/home/components/progress-chart";
-import {
-  mockCalendarDays,
-  mockMeals,
-  mockTodayProgress,
-} from "@/features/home/data/mock-data";
+import { mockCalendarDays, mockMeals } from "@/features/home/data/mock-data";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import MacroCard from "@/shared/components/macro-card";
 import { Image } from "expo-image";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
@@ -32,11 +29,12 @@ export default function HomeTab() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: bottom * 3 }}
+        // safe araea boşluğu + tabbar yüksekliği
+        contentContainerStyle={{ paddingBottom: bottom + 52 }}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -73,34 +71,38 @@ export default function HomeTab() {
           ))}
         </ScrollView>
 
-        {/* Today's Progress */}
-        <View style={styles.todayProgressSection}>
-          <View style={styles.todayProgressHeader}>
-            <Text style={styles.sectionTitle}>Today&apos;s Progress</Text>
-          </View>
-          <View style={styles.todayProgressCard}>
-            <View style={styles.caloriesContainer}>
-              <Text style={styles.caloriesLabel}>Calories</Text>
-              <View style={styles.caloriesValueContainer}>
-                <Image
-                  source={require("@/assets/icons/fire-icon.svg")}
-                  style={styles.fireIcon}
-                />
-                <Text style={styles.caloriesValue}>
-                  {mockTodayProgress.calories.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.macroProgressContainer}>
-              {mockTodayProgress.macros.map((macro) => (
-                <ProgressChart
-                  key={macro.type}
-                  type={macro.type}
-                  percentage={macro.percentage}
-                />
-              ))}
-            </View>
-          </View>
+        {/* Daily overview */}
+        <DailyOverview />
+
+        {/* Macro Cards */}
+        <View style={styles.macroCardsContainer}>
+          <MacroCard
+            label="Carbs"
+            currentValue={241}
+            maxValue={359}
+            unit="g"
+            color="#5B9FFF"
+            lightColor="#DDE8FF"
+            decorationColor="#A3C8FF"
+          />
+          <MacroCard
+            label="Protein"
+            currentValue={120}
+            maxValue={143}
+            unit="g"
+            color="#4CAF50"
+            lightColor="#D7F0D9"
+            decorationColor="#337735ff"
+          />
+          <MacroCard
+            label="Fat"
+            currentValue={179}
+            maxValue={370}
+            unit="g"
+            color="#FFB84D"
+            lightColor="#FFF0D9"
+            decorationColor="#a57733ff"
+          />
         </View>
 
         {/* Today's Meals */}
@@ -242,6 +244,11 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 12,
     paddingHorizontal: 32,
+  },
+  macroCardsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
   },
   todayMealsSection: {
     gap: 12,
