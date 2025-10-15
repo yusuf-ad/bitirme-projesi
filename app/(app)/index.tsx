@@ -15,8 +15,6 @@ export default function HomeTab() {
   const { session } = useAuthContext();
   const { bottom } = useSafeAreaInsets();
 
-  console.log("sesssiisisisison:", session, "fgdfjkhgdfjkghdfgkjdfhkdjhkfhdkj");
-
   // Extract first name from user data or use default
   const firstName = session?.user.email || "User";
 
