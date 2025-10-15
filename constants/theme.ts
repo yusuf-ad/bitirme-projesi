@@ -109,7 +109,7 @@ export const Colors = {
 
   // Background Colors
   background: {
-    primary: "#FFFFFF", // Main background
+    primary: "#F3F3F3", // Main background
     secondary: "#F2F0F4", // Secondary background
     tertiary: "#E1DDE6", // Tertiary background
     dark: "#111215", // Dark background
