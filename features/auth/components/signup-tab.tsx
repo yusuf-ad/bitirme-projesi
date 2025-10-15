@@ -1,11 +1,42 @@
 import { Colors } from "@/constants/theme";
+import { supabase } from "@/lib/supabase";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export function SignupTab() {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  async function handleSignup() {
+    if (
+      fullName.trim() === "" ||
+      email.trim() === "" ||
+      password.trim() === ""
+    ) {
+      Alert.alert("Please fill in all fields");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    console.log(data);
+
+    if (error) {
+      Alert.alert("Error signing up", error.message);
+      return;
+    }
+
+    Alert.alert("Sign up successful");
+  }
+
   return (
     <KeyboardAwareScrollView
       style={styles.container}
@@ -20,6 +51,8 @@ export function SignupTab() {
           placeholder="Enter your full name"
           autoCapitalize="words"
           autoCorrect={false}
+          value={fullName}
+          onChangeText={setFullName}
         />
         <CustomTextInput
           label="Email address"
@@ -27,6 +60,8 @@ export function SignupTab() {
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
+          value={email}
+          onChangeText={setEmail}
         />
         <CustomTextInput
           label="Password"
@@ -34,11 +69,16 @@ export function SignupTab() {
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
+          value={password}
+          onChangeText={setPassword}
         />
       </View>
 
       <View style={styles.buttonContainer}>
-        <CustomButton containerStyle={styles.signupButton}>
+        <CustomButton
+          containerStyle={styles.signupButton}
+          onPress={handleSignup}
+        >
           <Text style={[styles.buttonText, styles.signupButtonText]}>
             Sign up
           </Text>
