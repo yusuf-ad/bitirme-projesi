@@ -2,7 +2,6 @@ import AntDesign from "@expo/vector-icons/build/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   interpolate,
@@ -87,7 +86,6 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   return (
     <View style={[styles.tabBar, { bottom: insets.bottom }]}>
-      <StatusBar style="dark" />
       <View style={styles.tabBarInner}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];

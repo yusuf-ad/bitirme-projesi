@@ -3,6 +3,7 @@ import { useAuthContext } from "@/hooks/use-auth-context";
 import AuthProvider from "@/providers/auth-provider";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Separate RootNavigator so we can access the AuthContext
@@ -28,6 +29,7 @@ export default function RootLayout() {
         <BottomSheetModalProvider>
           <SplashScreenController />
           <RootNavigator />
+          <StatusBar style="dark" />
         </BottomSheetModalProvider>
       </GestureHandlerRootView>
     </AuthProvider>
