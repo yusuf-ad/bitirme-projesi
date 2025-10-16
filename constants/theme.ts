@@ -109,8 +109,8 @@ export const Colors = {
 
   // Background Colors
   background: {
-    primary: "#FFFFFF", // Main background
-    secondary: "#F2F0F4", // Secondary background
+    primary: "#ffff", // Main background
+    secondary: "#F3f3f3", // Secondary background
     tertiary: "#E1DDE6", // Tertiary background
     dark: "#111215", // Dark background
     surface: "#FFFFFF", // Surface/card background

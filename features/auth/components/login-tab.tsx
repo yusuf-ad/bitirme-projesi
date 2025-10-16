@@ -1,15 +1,40 @@
 import { Colors } from "@/constants/theme";
+import { supabase } from "@/lib/supabase";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import { useBottomSheetModal } from "@gorhom/bottom-sheet";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export function LoginTab() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter();
   const { dismissAll } = useBottomSheetModal();
+
+  async function handleLogin() {
+    if (email.trim() === "" || password.trim() === "") {
+      Alert.alert("Please fill in all fields");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    console.log(data);
+
+    if (error) {
+      Alert.alert("Error logging in", error.message);
+      return;
+    }
+
+    Alert.alert("Login successful");
+  }
 
   function handleForgotPasswordPress() {
     // Close the bottom sheet with a short animation, then navigate
@@ -33,6 +58,8 @@ export function LoginTab() {
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
+          value={email}
+          onChangeText={setEmail}
         />
         <CustomTextInput
           label="Password"
@@ -40,6 +67,8 @@ export function LoginTab() {
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
+          value={password}
+          onChangeText={setPassword}
         />
 
         <Pressable onPress={handleForgotPasswordPress}>
@@ -48,7 +77,7 @@ export function LoginTab() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <CustomButton containerStyle={styles.loginButton}>
+        <CustomButton containerStyle={styles.loginButton} onPress={handleLogin}>
           <Text style={[styles.buttonText, styles.loginButtonText]}>Login</Text>
         </CustomButton>
 
