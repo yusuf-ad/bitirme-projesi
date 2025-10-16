@@ -2,7 +2,6 @@ import { Colors } from "@/constants/theme";
 import CalendarSection from "@/features/home/components/calendar-section";
 import DailyOverview from "@/features/home/components/daily-overview";
 import Header from "@/features/home/components/header";
-import MacroCardsSection from "@/features/home/components/macro-cards-section";
 import TodayMealsSection from "@/features/home/components/today-meals-section";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { ScrollView, StyleSheet } from "react-native";
@@ -16,7 +15,8 @@ export default function HomeTab() {
   const { bottom } = useSafeAreaInsets();
 
   // Extract first name from user data or use default
-  const firstName = session?.user.email || "User";
+  const fullName = session?.user?.user_metadata?.fullName || "User";
+  const firstName = fullName.split(" ")[0];
 
   // Format current date
   const currentDate = new Date();
@@ -44,7 +44,6 @@ export default function HomeTab() {
         <DailyOverview />
 
         {/* Macro Cards */}
-        <MacroCardsSection />
 
         {/* Today's Meals */}
         <TodayMealsSection />

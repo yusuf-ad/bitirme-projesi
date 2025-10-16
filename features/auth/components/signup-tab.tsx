@@ -25,6 +25,11 @@ export function SignupTab() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          fullName: fullName.trim(),
+        },
+      },
     });
 
     console.log(data);
