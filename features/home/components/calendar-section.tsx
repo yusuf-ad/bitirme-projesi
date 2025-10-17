@@ -14,7 +14,7 @@ export default function CalendarSection() {
           position: "absolute",
           left: -16,
           top: 0,
-          width: 48,
+          width: 40,
           height: 64,
           zIndex: 10,
         }}
@@ -44,7 +44,7 @@ export default function CalendarSection() {
           position: "absolute",
           right: -16,
           top: 0,
-          width: 48,
+          width: 40,
           height: 64,
           zIndex: 10,
         }}

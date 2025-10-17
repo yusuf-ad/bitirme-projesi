@@ -4,7 +4,7 @@ import DailyOverview from "@/features/home/components/daily-overview";
 import Header from "@/features/home/components/header";
 import TodayMealsSection from "@/features/home/components/today-meals-section";
 import { useAuthContext } from "@/hooks/use-auth-context";
-import { ScrollView, StyleSheet } from "react-native";
+import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeTab() {
@@ -27,8 +27,10 @@ export default function HomeTab() {
     <ScrollView
       style={[styles.container, { paddingTop: top }]}
       showsVerticalScrollIndicator={false}
-      // safe araea boşluğu + tabbar yüksekliği
-      contentContainerStyle={{ paddingBottom: bottom + 52 }}
+      // safe area boşluğu + tabbar yüksekliği
+      contentContainerStyle={{
+        paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
+      }}
     >
       {/* Header */}
       <Header firstName={firstName} formattedDate={formattedDate} />
