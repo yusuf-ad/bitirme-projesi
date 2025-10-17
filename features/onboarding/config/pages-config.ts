@@ -1,5 +1,5 @@
 export interface OnboardingPageConfig {
-  section: "goals" | "body" | "meal-time";
+  section: "goals" | "body" | "meal-time" | "taste";
   step: number;
   component: string;
   title?: string;
@@ -93,6 +93,56 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
     component: "meal-time-dinner",
     title: "Dinner time",
     description: "What's your usual time for dinner?",
+  },
+  // Taste Section (1 page)
+  {
+    section: "taste",
+    step: 0,
+    component: "taste-cover",
+    title: "What's\nYour Taste?",
+    description:
+      "Share your preferences and eating habits to get meal recommendations you'll love",
+  },
+  // Taste Section (meals selection)
+  {
+    section: "taste",
+    step: 1,
+    component: "taste-meals",
+    title: "Meals",
+    description: "Select the meals you would like to plan",
+  },
+  // Taste Section (cuisines selection)
+  {
+    section: "taste",
+    step: 2,
+    component: "taste-cuisines",
+    title: "Cuisines",
+    description:
+      "Do you have particular likes or dislikes with any of these cuisines?",
+  },
+  // Taste Section (allergies/dislikes)
+  {
+    section: "taste",
+    step: 3,
+    component: "taste-allergies",
+    title: "Allergies/(Dislikes)",
+    description: "What products do you dislike or don't eat?",
+  },
+  // Taste Section (diet preferences)
+  {
+    section: "taste",
+    step: 4,
+    component: "taste-diet-preferences",
+    title: "Diet Preferences",
+    description: "Choose your dietary lifestyle",
+  },
+  // Taste Section (cooking skills)
+  {
+    section: "taste",
+    step: 5,
+    component: "taste-cooking-skills",
+    title: "Cooking Skills",
+    description: "How would you describe your cooking skills?",
   },
 ];
 
