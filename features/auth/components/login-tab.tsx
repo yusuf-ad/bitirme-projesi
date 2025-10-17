@@ -22,7 +22,7 @@ export function LoginTab() {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<z.output<typeof LoginFormSchema>>({
     resolver: zodResolver(LoginFormSchema),
   });
@@ -130,7 +130,9 @@ export function LoginTab() {
           containerStyle={styles.loginButton}
           onPress={handleSubmit(handleLogin)}
         >
-          <Text style={[styles.buttonText, styles.loginButtonText]}>Login</Text>
+          <Text style={[styles.buttonText, styles.loginButtonText]}>
+            {isSubmitting ? "Loading..." : "Login"}
+          </Text>
         </CustomButton>
 
         <View style={styles.divider} />

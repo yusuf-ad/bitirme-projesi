@@ -25,7 +25,7 @@ export function SignupTab() {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<z.output<typeof SignupFormSchema>>({
     resolver: zodResolver(SignupFormSchema),
   });
@@ -128,7 +128,7 @@ export function SignupTab() {
           onPress={handleSubmit(handleSignup)}
         >
           <Text style={[styles.buttonText, styles.signupButtonText]}>
-            Sign up
+            {isSubmitting ? "Loading..." : "Sign Up"}
           </Text>
         </CustomButton>
 
