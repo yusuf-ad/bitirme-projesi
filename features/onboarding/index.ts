@@ -12,13 +12,12 @@ export type {
 
 // Config
 export {
-  calculateProgress,
+  ONBOARDING_PAGES,
   getNextPage,
   getPageByIndex,
   getPageIndex,
   getPreviousPage,
   getTotalPages,
-  ONBOARDING_PAGES,
 } from "./config/pages-config";
 
 export type { OnboardingPageConfig } from "./config/pages-config";
