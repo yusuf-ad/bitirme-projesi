@@ -4,15 +4,12 @@ import DailyOverview from "@/features/home/components/daily-overview";
 import Header from "@/features/home/components/header";
 import TodayMealsSection from "@/features/home/components/today-meals-section";
 import { useAuthContext } from "@/hooks/use-auth-context";
-import { ScrollView, StyleSheet } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { Platform, ScrollView, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeTab() {
   const { session } = useAuthContext();
-  const { bottom } = useSafeAreaInsets();
+  const { bottom, top } = useSafeAreaInsets();
 
   // Extract first name from user data or use default
   const fullName = session?.user?.user_metadata?.fullName || "User";
@@ -27,26 +24,26 @@ export default function HomeTab() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        // safe araea boşluğu + tabbar yüksekliği
-        contentContainerStyle={{ paddingBottom: bottom + 52 }}
-      >
-        {/* Header */}
-        <Header firstName={firstName} formattedDate={formattedDate} />
+    <ScrollView
+      style={[styles.container, { paddingTop: top }]}
+      showsVerticalScrollIndicator={false}
+      // safe area boşluğu + tabbar yüksekliği
+      contentContainerStyle={{
+        paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
+      }}
+    >
+      {/* Header */}
+      <Header firstName={firstName} formattedDate={formattedDate} />
 
-        {/* Calendar */}
-        <CalendarSection />
+      {/* Calendar */}
+      <CalendarSection />
 
-        {/* Daily overview */}
-        <DailyOverview />
+      {/* Daily overview */}
+      <DailyOverview />
 
-        {/* Today's Meals */}
-        <TodayMealsSection />
-      </ScrollView>
-    </SafeAreaView>
+      {/* Today's Meals */}
+      <TodayMealsSection />
+    </ScrollView>
   );
 }
 
