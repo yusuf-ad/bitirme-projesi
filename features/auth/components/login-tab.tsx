@@ -3,29 +3,44 @@ import { supabase } from "@/lib/supabase";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { z } from "zod";
+
+const LoginFormSchema = z.object({
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters." }),
+});
 
 export function LoginTab() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<z.output<typeof LoginFormSchema>>({
+    resolver: zodResolver(LoginFormSchema),
+  });
+
   const router = useRouter();
 
-  async function handleLogin() {
-    if (email.trim() === "" || password.trim() === "") {
+  async function handleLogin(formData: z.output<typeof LoginFormSchema>) {
+    console.log(formData);
+
+    if (formData.email.trim() === "" || formData.password.trim() === "") {
       Alert.alert("Please fill in all fields");
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
     });
-
-    console.log(data);
 
     if (error) {
       Alert.alert("Error logging in", error.message);
@@ -77,26 +92,28 @@ export function LoginTab() {
       {/* Form Container */}
       <View style={styles.formContainer}>
         <CustomTextInput
+          control={control}
+          name="email"
           label="Email address"
           placeholder="Enter your email"
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
-          value={email}
-          onChangeText={setEmail}
           containerStyle={styles.inputContainerStyle}
           labelStyle={styles.labelStyle}
+          error={errors.email?.message}
         />
         <CustomTextInput
+          control={control}
+          name="password"
           label="Password"
           placeholder="Enter your password"
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
-          value={password}
-          onChangeText={setPassword}
           containerStyle={styles.inputContainerStyle}
           labelStyle={styles.labelStyle}
+          error={errors.password?.message}
         />
 
         <Pressable
@@ -109,7 +126,10 @@ export function LoginTab() {
 
       {/* Buttons Container */}
       <View style={styles.buttonContainer}>
-        <CustomButton containerStyle={styles.loginButton} onPress={handleLogin}>
+        <CustomButton
+          containerStyle={styles.loginButton}
+          onPress={handleSubmit(handleLogin)}
+        >
           <Text style={[styles.buttonText, styles.loginButtonText]}>Login</Text>
         </CustomButton>
 

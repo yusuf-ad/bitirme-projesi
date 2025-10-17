@@ -3,39 +3,45 @@ import { supabase } from "@/lib/supabase";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { useForm } from "react-hook-form";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { z } from "zod";
+
+const SignupFormSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, { message: "Full name must be at least 2 characters." }),
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters." }),
+});
 
 export function SignupTab() {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<z.output<typeof SignupFormSchema>>({
+    resolver: zodResolver(SignupFormSchema),
+  });
+
   const router = useRouter();
 
-  async function handleSignup() {
-    if (
-      fullName.trim() === "" ||
-      email.trim() === "" ||
-      password.trim() === ""
-    ) {
-      Alert.alert("Please fill in all fields");
-      return;
-    }
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+  async function handleSignup(formData: z.output<typeof SignupFormSchema>) {
+    const { error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
       options: {
         data: {
-          fullName: fullName.trim(),
+          fullName: formData.fullName.trim(),
         },
       },
     });
-
-    console.log(data);
 
     if (error) {
       Alert.alert("Error signing up", error.message);
@@ -61,13 +67,16 @@ export function SignupTab() {
     >
       {/* Back Button */}
       <View style={styles.headerContainer}>
-        <Pressable onPress={handleBackPress} style={styles.backButton}>
+        <CustomButton
+          onPress={handleBackPress}
+          containerStyle={styles.backButton}
+        >
           <MaterialCommunityIcons
             name="keyboard-backspace"
             size={24}
             color={Colors.lilac[900]}
           />
-        </Pressable>
+        </CustomButton>
       </View>
 
       {/* Title */}
@@ -76,36 +85,39 @@ export function SignupTab() {
       {/* Form Container */}
       <View style={styles.formContainer}>
         <CustomTextInput
+          control={control}
+          name="fullName"
           label="Full name"
           placeholder="Enter your full name"
           autoCapitalize="words"
           autoCorrect={false}
-          value={fullName}
-          onChangeText={setFullName}
           containerStyle={styles.inputContainerStyle}
           labelStyle={styles.labelStyle}
+          error={errors.fullName?.message}
         />
         <CustomTextInput
+          control={control}
+          name="email"
           label="Email address"
           placeholder="Enter your email"
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
-          value={email}
-          onChangeText={setEmail}
           containerStyle={styles.inputContainerStyle}
           labelStyle={styles.labelStyle}
+          error={errors.email?.message}
         />
         <CustomTextInput
+          control={control}
+          name="password"
           label="Password"
           placeholder="Enter your password"
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
-          value={password}
-          onChangeText={setPassword}
           containerStyle={styles.inputContainerStyle}
           labelStyle={styles.labelStyle}
+          error={errors.password?.message}
         />
       </View>
 
@@ -113,7 +125,7 @@ export function SignupTab() {
       <View style={styles.buttonContainer}>
         <CustomButton
           containerStyle={styles.signupButton}
-          onPress={handleSignup}
+          onPress={handleSubmit(handleSignup)}
         >
           <Text style={[styles.buttonText, styles.signupButtonText]}>
             Sign up
@@ -154,6 +166,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lilac[100],
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   title: {
     fontSize: 28,
