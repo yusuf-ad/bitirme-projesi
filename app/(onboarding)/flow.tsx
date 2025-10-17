@@ -23,12 +23,21 @@ import {
   MealTimeDinner,
   MealTimeLunch,
 } from "@/features/onboarding/sections/meal-time";
+import {
+  TasteAllergies,
+  TasteCookingSkills,
+  TasteCover,
+  TasteCuisines,
+  TasteDietPreferences,
+  TasteMeals,
+} from "@/features/onboarding/sections/taste";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 export default function OnboardingFlowScreen() {
   const params = useLocalSearchParams<{ section?: string; step?: string }>();
+  const onboarding = useOnboarding();
 
   // Default to first page if no params
   const section = params.section || "goals";
@@ -38,31 +47,37 @@ export default function OnboardingFlowScreen() {
   const currentIndex = getPageIndex(section, step);
   const currentPage = ONBOARDING_PAGES[currentIndex] || ONBOARDING_PAGES[0];
 
-  // State for goals selection (we'll expand this for other sections)
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([
-    "healthy-eating",
-  ]);
-  const [selectedGender, setSelectedGender] = useState<string | undefined>();
-  const [age, setAge] = useState<number>(30);
-  const [height, setHeight] = useState<number>(177);
-  const [weight, setWeight] = useState<number>(75);
+  // Use context state instead of local state
+  const selectedGoals = onboarding.selectedGoals;
+  const setSelectedGoals = onboarding.setSelectedGoals;
+  const selectedGender = onboarding.selectedGender;
+  const setSelectedGender = onboarding.setSelectedGender;
+  const age = onboarding.age;
+  const setAge = onboarding.setAge;
+  const height = onboarding.height;
+  const setHeight = onboarding.setHeight;
+  const weight = onboarding.weight;
+  const setWeight = onboarding.setWeight;
 
-  // Meal time state
-  const [breakfastTime, setBreakfastTime] = useState({
-    hour: 10,
-    minute: 0,
-    period: "AM" as "AM" | "PM",
-  });
-  const [lunchTime, setLunchTime] = useState({
-    hour: 2,
-    minute: 30,
-    period: "PM" as "AM" | "PM",
-  });
-  const [dinnerTime, setDinnerTime] = useState({
-    hour: 6,
-    minute: 0,
-    period: "PM" as "AM" | "PM",
-  });
+  // Meal time state from context
+  const breakfastTime = onboarding.breakfastTime;
+  const setBreakfastTime = onboarding.setBreakfastTime;
+  const lunchTime = onboarding.lunchTime;
+  const setLunchTime = onboarding.setLunchTime;
+  const dinnerTime = onboarding.dinnerTime;
+  const setDinnerTime = onboarding.setDinnerTime;
+
+  // Taste section state from context
+  const selectedMeals = onboarding.selectedMeals;
+  const setSelectedMeals = onboarding.setSelectedMeals;
+  const selectedCuisines = onboarding.selectedCuisines;
+  const setSelectedCuisines = onboarding.setSelectedCuisines;
+  const selectedAllergies = onboarding.selectedAllergies;
+  const setSelectedAllergies = onboarding.setSelectedAllergies;
+  const selectedDietPreferences = onboarding.selectedDietPreferences;
+  const setSelectedDietPreferences = onboarding.setSelectedDietPreferences;
+  const selectedCookingSkill = onboarding.selectedCookingSkill;
+  const setSelectedCookingSkill = onboarding.setSelectedCookingSkill;
 
   function handleBack() {
     const previousPage = getPreviousPage(currentPage.section, currentPage.step);
@@ -206,6 +221,59 @@ export default function OnboardingFlowScreen() {
           />
         );
 
+      case "taste-cover":
+        return <TasteCover title={title || ""} description={description} />;
+
+      case "taste-meals":
+        return (
+          <TasteMeals
+            title={title || ""}
+            description={description}
+            onSelectionChange={setSelectedMeals}
+            initialSelection={selectedMeals}
+          />
+        );
+
+      case "taste-cuisines":
+        return (
+          <TasteCuisines
+            title={title || ""}
+            description={description}
+            onSelectionChange={setSelectedCuisines}
+            initialSelection={selectedCuisines}
+          />
+        );
+
+      case "taste-allergies":
+        return (
+          <TasteAllergies
+            title={title || ""}
+            description={description}
+            onSelectionChange={setSelectedAllergies}
+            initialSelection={selectedAllergies}
+          />
+        );
+
+      case "taste-diet-preferences":
+        return (
+          <TasteDietPreferences
+            title={title || ""}
+            description={description}
+            onSelectionChange={setSelectedDietPreferences}
+            initialSelection={selectedDietPreferences}
+          />
+        );
+
+      case "taste-cooking-skills":
+        return (
+          <TasteCookingSkills
+            title={title || ""}
+            description={description}
+            onSelectionChange={setSelectedCookingSkill}
+            initialSelection={selectedCookingSkill}
+          />
+        );
+
       // Placeholder for other sections
       case "body-cover":
         return (
@@ -239,6 +307,26 @@ export default function OnboardingFlowScreen() {
     if (currentPage.component === "body-gender") {
       return !selectedGender;
     }
+    // For taste-meals, require at least one meal selection
+    if (currentPage.component === "taste-meals") {
+      return selectedMeals.length === 0;
+    }
+    // For taste-cuisines, require at least one cuisine selection
+    if (currentPage.component === "taste-cuisines") {
+      return selectedCuisines.length === 0;
+    }
+    // For taste-allergies, require at least one allergy selection
+    if (currentPage.component === "taste-allergies") {
+      return selectedAllergies.length === 0;
+    }
+    // For taste-diet-preferences, require at least one diet preference
+    if (currentPage.component === "taste-diet-preferences") {
+      return selectedDietPreferences.length === 0;
+    }
+    // For taste-cooking-skills, require a skill selection
+    if (currentPage.component === "taste-cooking-skills") {
+      return !selectedCookingSkill;
+    }
     return false;
   }
 
@@ -259,6 +347,9 @@ export default function OnboardingFlowScreen() {
     }
     if (currentPage.component === "meal-time-cover") {
       return "Set Your Schedule!";
+    }
+    if (currentPage.component === "taste-cover") {
+      return "Jump in!";
     }
     if (
       currentPage.component === "meal-time-breakfast" ||
@@ -295,6 +386,9 @@ export default function OnboardingFlowScreen() {
 
     // Meal-time section - Light pink/rose
     if (section === "meal-time") return "#F5D6D6";
+
+    // Taste section - Light blue/periwinkle
+    if (section === "taste") return "#B0BEEC";
 
     // Default fallback
     return "#FFFFFF";

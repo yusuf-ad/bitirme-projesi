@@ -1,6 +1,7 @@
 import { SplashScreenController } from "@/features/splash-screen/splash-screen-controller";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import AuthProvider from "@/providers/auth-provider";
+import { OnboardingProvider } from "@/providers/onboarding-provider";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -25,13 +26,15 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <BottomSheetModalProvider>
-          <SplashScreenController />
-          <RootNavigator />
-          <StatusBar style="dark" />
-        </BottomSheetModalProvider>
-      </GestureHandlerRootView>
+      <OnboardingProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <BottomSheetModalProvider>
+            <SplashScreenController />
+            <RootNavigator />
+            <StatusBar style="dark" />
+          </BottomSheetModalProvider>
+        </GestureHandlerRootView>
+      </OnboardingProvider>
     </AuthProvider>
   );
 }
