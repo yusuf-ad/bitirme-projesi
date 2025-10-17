@@ -2,15 +2,18 @@ import { Colors } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export function SignupTab() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
   async function handleSignup() {
     if (
@@ -40,6 +43,11 @@ export function SignupTab() {
     }
 
     Alert.alert("Sign up successful");
+    router.push("/(app)");
+  }
+
+  function handleBackPress() {
+    router.back();
   }
 
   return (
@@ -49,7 +57,23 @@ export function SignupTab() {
       enableOnAndroid={true}
       extraScrollHeight={20}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
+      {/* Back Button */}
+      <View style={styles.headerContainer}>
+        <Pressable onPress={handleBackPress} style={styles.backButton}>
+          <MaterialCommunityIcons
+            name="keyboard-backspace"
+            size={24}
+            color={Colors.lilac[900]}
+          />
+        </Pressable>
+      </View>
+
+      {/* Title */}
+      <Text style={styles.title}>Create your account</Text>
+
+      {/* Form Container */}
       <View style={styles.formContainer}>
         <CustomTextInput
           label="Full name"
@@ -58,6 +82,8 @@ export function SignupTab() {
           autoCorrect={false}
           value={fullName}
           onChangeText={setFullName}
+          containerStyle={styles.inputContainerStyle}
+          labelStyle={styles.labelStyle}
         />
         <CustomTextInput
           label="Email address"
@@ -67,6 +93,8 @@ export function SignupTab() {
           autoCorrect={false}
           value={email}
           onChangeText={setEmail}
+          containerStyle={styles.inputContainerStyle}
+          labelStyle={styles.labelStyle}
         />
         <CustomTextInput
           label="Password"
@@ -76,9 +104,12 @@ export function SignupTab() {
           autoCorrect={false}
           value={password}
           onChangeText={setPassword}
+          containerStyle={styles.inputContainerStyle}
+          labelStyle={styles.labelStyle}
         />
       </View>
 
+      {/* Buttons Container */}
       <View style={styles.buttonContainer}>
         <CustomButton
           containerStyle={styles.signupButton}
@@ -108,20 +139,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    height: 540,
-    maxHeight: 540,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 40,
+  },
+  headerContainer: {
+    marginBottom: 24,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.lilac[100],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: Colors.lilac[900],
+    marginBottom: 32,
   },
   formContainer: {
-    gap: 12,
-    marginTop: 32,
-    marginBottom: 52,
+    gap: 20,
+    marginBottom: 32,
+  },
+  inputContainerStyle: {
+    marginBottom: 0,
+  },
+  labelStyle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.gray[400],
+    paddingLeft: 0,
+    marginBottom: 8,
+    lineHeight: 14,
   },
   buttonContainer: {
     gap: 16,
     alignItems: "center",
+    marginBottom: 32,
   },
   divider: {
     height: 0.5,
@@ -151,5 +209,17 @@ const styles = StyleSheet.create({
   googleIcon: {
     width: 24,
     height: 24,
+  },
+  loginContainer: {
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[300],
+    paddingTop: 24,
+  },
+  loginText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text.primary,
+    textDecorationLine: "underline",
   },
 });

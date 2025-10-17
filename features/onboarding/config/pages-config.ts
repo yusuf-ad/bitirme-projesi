@@ -132,9 +132,3 @@ export function getPreviousPage(
   }
   return ONBOARDING_PAGES[currentIndex - 1];
 }
-
-export function calculateProgress(section: string, step: number): number {
-  const currentIndex = getPageIndex(section, step);
-  if (currentIndex === -1) return 0;
-  return Math.round(((currentIndex + 1) / ONBOARDING_PAGES.length) * 100);
-}

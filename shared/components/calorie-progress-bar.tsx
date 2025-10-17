@@ -41,7 +41,8 @@ export default function CalorieProgressBar({
   return (
     <View style={styles.container}>
       <Text style={styles.remainingText}>
-        <Text style={styles.remainingNumber}>{remainingValue}</Text> kcal left
+        <Text style={styles.remainingNumber}>{remainingValue}</Text> /
+        {goalValue} cal goal
       </Text>
 
       <View
@@ -89,13 +90,6 @@ export default function CalorieProgressBar({
           ]}
         />
       </View>
-
-      <View style={styles.progressLabels}>
-        <Text style={styles.progressLabel}>0 kcal</Text>
-        <Text style={styles.progressLabel}>
-          {goalValue.toLocaleString()} kcal
-        </Text>
-      </View>
     </View>
   );
 }
@@ -103,7 +97,6 @@ export default function CalorieProgressBar({
 const styles = StyleSheet.create({
   container: {
     gap: 8,
-    paddingTop: 4,
   },
   remainingText: {
     fontFamily: "Inter",
@@ -122,7 +115,6 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     width: "100%",
     height: 12,
-    marginVertical: 4,
     flexDirection: "row",
     alignItems: "center",
   },

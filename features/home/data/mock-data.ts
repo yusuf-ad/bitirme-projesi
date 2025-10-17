@@ -1,49 +1,26 @@
 import { CalendarDay, Meal, TodayProgress } from "../types/home.types";
 
-export const mockCalendarDays: CalendarDay[] = [
-  {
-    day: "05",
-    dayOfWeek: "Sun",
-    date: new Date(2024, 9, 5),
-    isSelected: false,
-  },
-  {
-    day: "06",
-    dayOfWeek: "Mon",
-    date: new Date(2024, 9, 6),
-    isSelected: false,
-  },
-  {
-    day: "07",
-    dayOfWeek: "Tue",
-    date: new Date(2024, 9, 7),
-    isSelected: false,
-  },
-  {
-    day: "08",
-    dayOfWeek: "Wed",
-    date: new Date(2024, 9, 8),
-    isSelected: true,
-  },
-  {
-    day: "09",
-    dayOfWeek: "Thu",
-    date: new Date(2024, 9, 9),
-    isSelected: false,
-  },
-  {
-    day: "10",
-    dayOfWeek: "Fri",
-    date: new Date(2024, 9, 10),
-    isSelected: false,
-  },
-  {
-    day: "11",
-    dayOfWeek: "Sat",
-    date: new Date(2024, 9, 11),
-    isSelected: false,
-  },
-];
+export const mockCalendarDays: CalendarDay[] = (() => {
+  const days: CalendarDay[] = [];
+  const startDate = new Date(2025, 8, 27); // September 27, 2024
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+
+    days.push({
+      day: String(date.getDate()).padStart(2, "0"),
+      dayOfWeek: dayNames[date.getDay()],
+      date: date,
+      isSelected: date.toDateString() === today.toDateString(), // Select today's date
+    });
+  }
+
+  return days;
+})();
 
 export const mockTodayProgress: TodayProgress = {
   calories: 1284,

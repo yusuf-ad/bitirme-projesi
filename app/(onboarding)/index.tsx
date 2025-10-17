@@ -1,31 +1,25 @@
 import { Colors } from "@/constants/theme";
-import { AuthModal } from "@/features/auth";
 import CustomButton from "@/shared/components/custom-button";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { router, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function WelcomeScreen() {
-  const authModalRef = useRef<BottomSheetModal>(null);
   const params = useLocalSearchParams();
   const openAuth = useMemo(() => {
     const value = (params as any)?.openAuth;
     return Array.isArray(value) ? value[0] : value;
   }, [params]);
 
-  // Open auth modal if redirected with query ?openAuth=1
+  // Navigate to login if redirected with query ?openAuth=1
   useEffect(() => {
     if (openAuth === "1") {
-      const id = setTimeout(() => authModalRef.current?.present(), 0);
-      return () => clearTimeout(id);
+      router.push("/(onboarding)/login");
     }
   }, [openAuth]);
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" backgroundColor="transparent" />
       <Image
         source={require("@/assets/images/image.png")}
         style={styles.image}
@@ -51,13 +45,11 @@ export default function WelcomeScreen() {
 
         <CustomButton
           containerStyle={styles.loginButton}
-          onPress={() => authModalRef.current?.present()}
+          onPress={() => router.push("/(onboarding)/login")}
         >
           <Text style={styles.loginText}>Log in</Text>
         </CustomButton>
       </View>
-
-      <AuthModal ref={authModalRef} />
     </View>
   );
 }

@@ -1,37 +1,28 @@
 import EnergyIcon from "@/assets/icons/energy-icon";
 import { Colors } from "@/constants/theme";
 import CalorieProgressBar from "@/shared/components/calorie-progress-bar";
-import Feather from "@expo/vector-icons/Feather";
-import { StyleSheet, Text, View } from "react-native";
+import Entypo from "@expo/vector-icons/Entypo";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import MacroCardsSection from "./macro-cards-section";
 
 export default function DailyOverview() {
   const goalCalories = 2200;
-  const consumedCalories = 250;
+  const consumedCalories = 1500;
 
   return (
     <View style={styles.container}>
       {/* Meal Header */}
       <View style={styles.header}>
-        <View>
-          <View style={styles.mealInfo}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-            >
-              <EnergyIcon width={20} height={20} />
-              <Text style={styles.mealType}>Daily Overview</Text>
-            </View>
-            <Text style={styles.mealTime}>
-              Goal Calorie{" "}
-              <Text style={{ color: Colors.lilac[900], fontWeight: "bold" }}>
-                {goalCalories.toLocaleString()}
-              </Text>{" "}
-              Kcal
-            </Text>
+        <View style={styles.mealInfo}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <EnergyIcon color={"#FF7F50"} width={20} height={20} />
+            <Text style={styles.mealType}>Daily Overview</Text>
           </View>
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View
+          <Pressable
+            hitSlop={12}
             style={{
               width: 36,
               height: 36,
@@ -39,8 +30,8 @@ export default function DailyOverview() {
               justifyContent: "center",
             }}
           >
-            <Feather name="edit-3" size={20} color={Colors.gray[500]} />
-          </View>
+            <Entypo name="chevron-right" size={20} color="black" />
+          </Pressable>
         </View>
       </View>
 
@@ -49,6 +40,9 @@ export default function DailyOverview() {
         currentValue={consumedCalories}
         goalValue={goalCalories}
       />
+
+      {/* Macro Cards */}
+      <MacroCardsSection />
     </View>
   );
 }
@@ -67,8 +61,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingVertical: 12,
+    alignItems: "center",
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lilac[200],
   },

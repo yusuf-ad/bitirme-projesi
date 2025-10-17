@@ -43,8 +43,6 @@ export default function HomeTab() {
         {/* Daily overview */}
         <DailyOverview />
 
-        {/* Macro Cards */}
-
         {/* Today's Meals */}
         <TodayMealsSection />
       </ScrollView>
