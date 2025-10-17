@@ -45,7 +45,7 @@ export function LoginTab() {
   }
 
   function handleSignupPress() {
-    router.push("/(onboarding)/signup");
+    router.push("/(onboarding)/flow");
   }
 
   return (
@@ -59,13 +59,16 @@ export function LoginTab() {
     >
       {/* Back Button */}
       <View style={styles.headerContainer}>
-        <Pressable onPress={handleBackPress} style={styles.backButton}>
+        <CustomButton
+          onPress={handleBackPress}
+          containerStyle={styles.backButton}
+        >
           <MaterialCommunityIcons
             name="keyboard-backspace"
             size={24}
             color={Colors.lilac[900]}
           />
-        </Pressable>
+        </CustomButton>
       </View>
 
       {/* Title */}
@@ -151,6 +154,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lilac[100],
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   title: {
     fontSize: 24,
