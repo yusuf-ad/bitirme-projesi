@@ -58,14 +58,14 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     width: 6,
     height: 32,
-    backgroundColor: "#CC643D75",
+    backgroundColor: Colors.lilac[100],
     borderRadius: 24,
   },
   progressBar: {
     position: "absolute",
     bottom: 0,
     width: "100%",
-    backgroundColor: "#FF7F50",
+    backgroundColor: Colors.lilac[800],
     borderRadius: 24,
   },
   label: {
