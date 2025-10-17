@@ -15,7 +15,7 @@ export default function DailyOverview() {
       <View style={styles.header}>
         <View style={styles.mealInfo}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <EnergyIcon width={20} height={20} />
+            <EnergyIcon color={"#FF7F50"} width={20} height={20} />
             <Text style={styles.mealType}>Daily Overview</Text>
           </View>
         </View>
