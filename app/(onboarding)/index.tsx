@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
           containerStyle={styles.loginButton}
           onPress={() => router.push("/(onboarding)/login")}
         >
-          <Text style={styles.loginText}>Log in</Text>
+          <Text style={styles.loginText}>Login</Text>
         </CustomButton>
       </View>
     </View>

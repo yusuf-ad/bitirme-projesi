@@ -77,13 +77,7 @@ export function BodyAge({
             <MaterialCommunityIcons
               name="minus"
               size={32}
-              color={
-                age <= MIN_AGE
-                  ? Colors.text.tertiary
-                  : pressed
-                  ? Colors.accent.lilac
-                  : Colors.text.inverse
-              }
+              color={Colors.text.tertiary}
             />
           )}
         </Pressable>
@@ -106,13 +100,7 @@ export function BodyAge({
             <MaterialCommunityIcons
               name="plus"
               size={32}
-              color={
-                age >= MAX_AGE
-                  ? Colors.text.tertiary
-                  : pressed
-                  ? Colors.accent.lilac
-                  : Colors.text.inverse
-              }
+              color={Colors.text.tertiary}
             />
           )}
         </Pressable>
@@ -154,7 +142,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.3)",
     alignItems: "center",

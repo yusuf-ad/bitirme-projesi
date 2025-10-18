@@ -17,8 +17,8 @@ export default function CalorieProgressBar({
   goalValue,
   showDecorations = true,
   decorationSpacing = 16,
-  decorationColor = "#CC643D75",
-  filledColor = "#FF7F50",
+  decorationColor = Colors.lilac[600],
+  filledColor = Colors.lilac[800],
   emptyColor = Colors.lilac[100],
 }: CalorieProgressBarProps) {
   const [progressBarWidth, setProgressBarWidth] = useState(0);
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   remainingNumber: {
     fontFamily: "Inter",
     fontWeight: "700",
-    fontSize: 32,
+    fontSize: 28,
     lineHeight: 40,
     color: Colors.text.primary,
   },

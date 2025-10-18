@@ -4,7 +4,6 @@ import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -72,15 +71,10 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   };
 
   const plusIconStyle = useAnimatedStyle(() => {
-    const moveValue = interpolate(Number(isExpanded.value), [0, 1], [0, 2]);
-    const translateValue = withTiming(moveValue);
     const rotateValue = isExpanded.value ? "45deg" : "0deg";
 
     return {
-      transform: [
-        { translateX: translateValue },
-        { rotate: withTiming(rotateValue) },
-      ],
+      transform: [{ rotate: withTiming(rotateValue) }],
     };
   });
 
