@@ -25,13 +25,6 @@ const mealOptions = [
     color: "#6BCF7F",
   },
   {
-    id: "snack",
-    label: "Snack",
-    description: "Quick bites",
-    icon: "food-apple",
-    color: "#FF9F43",
-  },
-  {
     id: "dinner",
     label: "Dinner",
     description: "Evening meals",
