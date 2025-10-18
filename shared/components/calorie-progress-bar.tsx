@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   remainingNumber: {
     fontFamily: "Inter",
     fontWeight: "700",
-    fontSize: 32,
+    fontSize: 28,
     lineHeight: 40,
     color: Colors.text.primary,
   },

@@ -1,7 +1,11 @@
+import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Svg, {
   Circle,
@@ -10,21 +14,37 @@ import Svg, {
   RadialGradient,
   Stop,
 } from "react-native-svg";
+import { z } from "zod";
+
+const ForgotPasswordFormSchema = z.object({
+  email: z.string().email({ message: "Invalid email address." }),
+});
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  function handleSubmit() {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<z.output<typeof ForgotPasswordFormSchema>>({
+    resolver: zodResolver(ForgotPasswordFormSchema),
+  });
+
+  async function handleFormSubmit(
+    formData: z.output<typeof ForgotPasswordFormSchema>
+  ) {
+    console.log(formData);
     // TODO: integrate with API
-    if (isSubmitting) return;
-    setIsSubmitting(true);
     // Simulate API latency; replace with real request
     setTimeout(() => {
-      setIsSubmitting(false);
       setIsSuccess(true);
     }, 900);
+  }
+
+  function handleBackPress() {
+    router.back();
   }
 
   return (
@@ -67,8 +87,7 @@ export default function ForgotPasswordScreen() {
               containerStyle={styles.primaryButton}
               onPress={() =>
                 router.replace({
-                  pathname: "/(onboarding)",
-                  params: { openAuth: "1" },
+                  pathname: "/(onboarding)/login",
                 })
               }
             >
@@ -78,6 +97,16 @@ export default function ForgotPasswordScreen() {
         ) : (
           <>
             <View style={styles.topSection}>
+              <CustomButton
+                onPress={handleBackPress}
+                containerStyle={styles.backButton}
+              >
+                <MaterialCommunityIcons
+                  name="keyboard-backspace"
+                  size={24}
+                  color={Colors.lilac[900]}
+                />
+              </CustomButton>
               <Text style={styles.title}>Forget Password</Text>
               <Text style={styles.subtitle}>
                 Enter your registered email below
@@ -85,6 +114,8 @@ export default function ForgotPasswordScreen() {
 
               <View style={styles.form}>
                 <CustomTextInput
+                  control={control}
+                  name="email"
                   label="Email address"
                   labelStyle={styles.inputLabel}
                   placeholder="Eg namaemail@emailkamu.com"
@@ -92,6 +123,7 @@ export default function ForgotPasswordScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  error={errors.email?.message}
                 />
               </View>
 
@@ -99,8 +131,7 @@ export default function ForgotPasswordScreen() {
                 Remember the password?{" "}
                 <Link
                   href={{
-                    pathname: "/(onboarding)",
-                    params: { openAuth: "1" },
+                    pathname: "/(onboarding)/login",
                   }}
                   style={styles.signInLink}
                 >
@@ -128,7 +159,7 @@ export default function ForgotPasswordScreen() {
                 styles.primaryButton,
                 isSubmitting && styles.primaryButtonDisabled,
               ]}
-              onPress={handleSubmit}
+              onPress={handleSubmit(handleFormSubmit)}
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel="Submit forgot password form"
@@ -161,6 +192,17 @@ const styles = StyleSheet.create({
   topSection: {
     gap: 24,
   },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.lilac[100],
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    alignSelf: "flex-start",
+  },
   title: {
     fontSize: 32,
     fontWeight: "700",
@@ -186,7 +228,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   primaryButton: {
-    backgroundColor: "#7E3AF2",
+    backgroundColor: Colors.lilac[900],
     alignSelf: "stretch",
     borderRadius: 16,
   },
