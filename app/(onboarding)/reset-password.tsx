@@ -1,8 +1,11 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -18,6 +21,19 @@ import Svg, {
   RadialGradient,
   Stop,
 } from "react-native-svg";
+import { z } from "zod";
+
+const ResetPasswordFormSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters." }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -27,38 +43,29 @@ export default function ResetPasswordScreen() {
     return Array.isArray(v) ? v[0] : v;
   }, [params]);
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  function validate(): boolean {
-    if (!password || !confirmPassword) {
-      setError("Please fill in all fields");
-      return false;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return false;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return false;
-    }
-    setError("");
-    return true;
-  }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<z.output<typeof ResetPasswordFormSchema>>({
+    resolver: zodResolver(ResetPasswordFormSchema),
+  });
 
-  function handleSubmit() {
-    if (isSubmitting) return;
-    if (!validate()) return;
+  async function handleFormSubmit(
+    formData: z.output<typeof ResetPasswordFormSchema>
+  ) {
+    console.log(formData);
     // TODO: call API with token + new password
-    setIsSubmitting(true);
+    // Simulate API latency; replace with real request
     setTimeout(() => {
-      setIsSubmitting(false);
       setIsSuccess(true);
     }, 900);
+  }
+
+  function handleBackPress() {
+    router.back();
   }
 
   return (
@@ -115,6 +122,16 @@ export default function ResetPasswordScreen() {
         ) : (
           <>
             <View style={styles.topSection}>
+              <CustomButton
+                onPress={handleBackPress}
+                containerStyle={styles.backButton}
+              >
+                <MaterialCommunityIcons
+                  name="keyboard-backspace"
+                  size={24}
+                  color={Colors.lilac[900]}
+                />
+              </CustomButton>
               <Text style={styles.title}>Reset Password</Text>
               <Text style={styles.subtitle}>
                 Enter your new password and confirm it below.
@@ -122,25 +139,26 @@ export default function ResetPasswordScreen() {
 
               <View style={styles.form}>
                 <CustomTextInput
+                  control={control}
+                  name="password"
                   label="New Password"
                   labelStyle={styles.inputLabel}
                   placeholder="••••••••"
                   placeholderTextColor={Colors.gray[400]}
                   secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
+                  error={errors.password?.message}
                 />
                 <View style={{ height: 16 }} />
                 <CustomTextInput
+                  control={control}
+                  name="confirmPassword"
                   label="Confirm Password"
                   labelStyle={styles.inputLabel}
                   placeholder="••••••••"
                   placeholderTextColor={Colors.gray[400]}
                   secureTextEntry
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
+                  error={errors.confirmPassword?.message}
                 />
-                {!!error && <Text style={styles.errorText}>{error}</Text>}
                 {!!token && (
                   <Text
                     style={styles.tokenHint}
@@ -167,7 +185,7 @@ export default function ResetPasswordScreen() {
 
             <CustomButton
               containerStyle={styles.primaryButton}
-              onPress={handleSubmit}
+              onPress={handleSubmit(handleFormSubmit)}
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel="Submit new password"
@@ -188,7 +206,7 @@ export default function ResetPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.inverse ?? "#FFFFFF",
+    backgroundColor: "#FFFFFF",
   },
   content: {
     paddingHorizontal: 24,
@@ -199,6 +217,17 @@ const styles = StyleSheet.create({
   },
   topSection: {
     gap: 24,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.lilac[100],
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    alignSelf: "flex-start",
   },
   title: {
     fontSize: 32,

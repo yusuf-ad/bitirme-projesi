@@ -55,6 +55,7 @@ export function BodyGender({
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        bounces={false}
       >
         <View style={styles.optionsContainer}>
           {genderOptions.map((option) => (
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     marginTop: 262,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingVertical: 20,
   },
   title: {
     fontFamily: "Inter",

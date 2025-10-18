@@ -7,16 +7,24 @@ export default function CalendarSection() {
   return (
     <View>
       <LinearGradient
-        colors={["#f3f4f6", "#f3f4f650"]}
+        colors={["#f3f4f6", "#f3f4f600"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={{
           position: "absolute",
           left: -16,
           top: 0,
-          width: 40,
+          width: 48,
           height: 64,
           zIndex: 10,
+          shadowColor: "#fff",
+          shadowOffset: {
+            width: 24,
+            height: 24,
+          },
+          shadowOpacity: 1,
+          shadowRadius: 50,
+          elevation: 16,
         }}
       />
 
@@ -37,16 +45,24 @@ export default function CalendarSection() {
       </ScrollView>
 
       <LinearGradient
-        colors={["#f3f4f650", "#f3f4f6"]}
+        colors={["#f3f4f635", "#f3f4f6"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={{
           position: "absolute",
           right: -16,
           top: 0,
-          width: 40,
+          width: 48,
           height: 64,
           zIndex: 10,
+          shadowColor: "#fff",
+          shadowOffset: {
+            width: 24,
+            height: 24,
+          },
+          shadowOpacity: 1,
+          shadowRadius: 50,
+          elevation: 16,
         }}
       />
     </View>
