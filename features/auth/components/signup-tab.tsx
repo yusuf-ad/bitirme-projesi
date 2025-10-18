@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -13,7 +14,9 @@ export function SignupTab() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { saveAllOnboardingDataToSupabase } = useOnboarding();
 
   async function handleSignup() {
     if (
@@ -25,25 +28,58 @@ export function SignupTab() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          fullName: fullName.trim(),
+    try {
+      setIsLoading(true);
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            fullName: fullName.trim(),
+          },
         },
-      },
-    });
+      });
 
-    console.log(data);
+      if (error) {
+        Alert.alert("Error signing up", error.message);
+        setIsLoading(false);
+        return;
+      }
 
-    if (error) {
-      Alert.alert("Error signing up", error.message);
-      return;
+      if (!data.user) {
+        Alert.alert("Error", "No user data received");
+        setIsLoading(false);
+        return;
+      }
+
+      // Wait a bit for session to be fully established
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Save onboarding data from AsyncStorage to Supabase
+      try {
+        await saveAllOnboardingDataToSupabase(data.user.id);
+      } catch (saveError: any) {
+        console.error("Error saving onboarding data:", saveError);
+        Alert.alert(
+          "Warning",
+          "Account created but some profile data could not be saved. You can update it later in settings."
+        );
+      }
+
+      Alert.alert("Sign up successful", "Your profile has been created!");
+
+      // Navigate to main app
+      router.replace("/(app)");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      Alert.alert(
+        "Error",
+        error?.message || "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
-
-    Alert.alert("Sign up successful");
-    router.push("/(app)");
   }
 
   function handleBackPress() {
@@ -114,9 +150,10 @@ export function SignupTab() {
         <CustomButton
           containerStyle={styles.signupButton}
           onPress={handleSignup}
+          disabled={isLoading}
         >
           <Text style={[styles.buttonText, styles.signupButtonText]}>
-            Sign up
+            {isLoading ? "Creating account..." : "Sign up"}
           </Text>
         </CustomButton>
 

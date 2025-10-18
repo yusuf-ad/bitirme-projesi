@@ -33,11 +33,13 @@ import {
 } from "@/features/onboarding/sections/taste";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import { router, useLocalSearchParams } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, StyleSheet, View } from "react-native";
 
 export default function OnboardingFlowScreen() {
   const params = useLocalSearchParams<{ section?: string; step?: string }>();
   const onboarding = useOnboarding();
+  const [isSaving, setIsSaving] = useState(false);
 
   // Default to first page if no params
   const section = params.section || "goals";
@@ -79,6 +81,11 @@ export default function OnboardingFlowScreen() {
   const selectedCookingSkill = onboarding.selectedCookingSkill;
   const setSelectedCookingSkill = onboarding.setSelectedCookingSkill;
 
+  // Load data on mount
+  useEffect(() => {
+    onboarding.loadOnboardingData();
+  }, []);
+
   function handleBack() {
     const previousPage = getPreviousPage(currentPage.section, currentPage.step);
 
@@ -96,21 +103,51 @@ export default function OnboardingFlowScreen() {
     }
   }
 
-  function handleNext() {
+  async function handleNext() {
     const nextPage = getNextPage(currentPage.section, currentPage.step);
 
-    if (nextPage) {
-      router.push({
-        pathname: "/(onboarding)/flow",
-        params: {
-          section: nextPage.section,
-          step: nextPage.step.toString(),
-        },
-      });
-    } else {
-      // Onboarding complete - navigate to main app
-      console.log("Onboarding complete!");
-      // router.replace("/(tabs)");
+    try {
+      setIsSaving(true);
+
+      // Save data based on current section when leaving it
+      if (
+        currentPage.section === "goals" &&
+        !nextPage?.section?.includes("goals")
+      ) {
+        await onboarding.saveGoals(onboarding.selectedGoals);
+      } else if (
+        currentPage.section === "body" &&
+        !nextPage?.section?.includes("body")
+      ) {
+        await onboarding.saveBodyMetrics();
+      } else if (
+        currentPage.section === "meal-time" &&
+        !nextPage?.section?.includes("meal-time")
+      ) {
+        await onboarding.saveMealTimes();
+      } else if (currentPage.section === "taste" && !nextPage) {
+        // Last section - save all remaining data
+        await onboarding.saveTastePreferences();
+      }
+
+      setIsSaving(false);
+
+      if (nextPage) {
+        router.push({
+          pathname: "/(onboarding)/flow",
+          params: {
+            section: nextPage.section,
+            step: nextPage.step.toString(),
+          },
+        });
+      } else {
+        // Onboarding complete - redirect to signup
+        router.push("/(onboarding)/signup");
+      }
+    } catch (error) {
+      setIsSaving(false);
+      console.error("Error saving onboarding data:", error);
+      Alert.alert("❌ Hata", "Veriler kaydedilemedi. Lütfen tekrar deneyin.");
     }
   }
 
@@ -411,8 +448,8 @@ export default function OnboardingFlowScreen() {
       <OnboardingNavigation
         onBack={handleBack}
         onNext={handleNext}
-        nextButtonText={getNextButtonText()}
-        isNextDisabled={isNextDisabled()}
+        nextButtonText={isSaving ? "Kaydediliyor..." : getNextButtonText()}
+        isNextDisabled={isNextDisabled() || isSaving}
         showSkipButton={shouldShowSkipButton()}
         onSkip={handleNext}
       />

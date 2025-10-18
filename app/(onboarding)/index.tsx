@@ -6,6 +6,7 @@ import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function WelcomeScreen() {
   const params = useLocalSearchParams();
+
   const openAuth = useMemo(() => {
     const value = (params as any)?.openAuth;
     return Array.isArray(value) ? value[0] : value;
