@@ -111,6 +111,7 @@ export default function OnboardingFlowScreen() {
       // Onboarding complete - navigate to main app
       console.log("Onboarding complete!");
       // router.replace("/(tabs)");
+      router.replace("/(onboarding)/login");
     }
   }
 
