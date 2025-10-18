@@ -275,17 +275,6 @@ export default function OnboardingFlowScreen() {
           />
         );
 
-      // Placeholder for other sections
-      case "body-cover":
-        return (
-          <View style={styles.placeholderContent}>
-            <GoalsCover
-              title={title || "Coming Soon"}
-              description="Your age, weight and other details will help us create a more personalized plan"
-            />
-          </View>
-        );
-
       default:
         return (
           <View style={styles.placeholderContent}>
