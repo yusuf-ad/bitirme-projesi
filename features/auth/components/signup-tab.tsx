@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { CustomTextInput } from "@/shared/components/custom-text-input";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -31,6 +32,7 @@ export function SignupTab() {
   });
 
   const router = useRouter();
+  const { saveAllOnboardingDataToSupabase } = useOnboarding();
 
   async function handleSignup(formData: z.output<typeof SignupFormSchema>) {
     const { error } = await supabase.auth.signUp({
@@ -43,13 +45,45 @@ export function SignupTab() {
       },
     });
 
-    if (error) {
-      Alert.alert("Error signing up", error.message);
-      return;
-    }
+      if (error) {
+        Alert.alert("Error signing up", error.message);
+        setIsLoading(false);
+        return;
+      }
 
-    Alert.alert("Sign up successful");
-    router.push("/(app)");
+      if (!data.user) {
+        Alert.alert("Error", "No user data received");
+        setIsLoading(false);
+        return;
+      }
+
+      // Wait a bit for session to be fully established
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Save onboarding data from AsyncStorage to Supabase
+      try {
+        await saveAllOnboardingDataToSupabase(data.user.id);
+      } catch (saveError: any) {
+        console.error("Error saving onboarding data:", saveError);
+        Alert.alert(
+          "Warning",
+          "Account created but some profile data could not be saved. You can update it later in settings."
+        );
+      }
+
+      Alert.alert("Sign up successful", "Your profile has been created!");
+
+      // Navigate to main app
+      router.replace("/(app)");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      Alert.alert(
+        "Error",
+        error?.message || "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleBackPress() {
