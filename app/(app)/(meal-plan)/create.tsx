@@ -11,14 +11,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function CreateMealPlan() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const dateModalRef = useRef<BottomSheetModal>(null);
+  const startDateModalRef = useRef<BottomSheetModal>(null);
+  const endDateModalRef = useRef<BottomSheetModal>(null);
 
-  const [startDate] = useState<Date>(
-    new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
-  ); // Tomorrow
-  const [endDate] = useState<Date>(
-    new Date(new Date().getTime() + 6 * 24 * 60 * 60 * 1000)
-  ); // 6 days from now (Sunday)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [startDate, setStartDate] = useState<Date>(new Date(today));
+  const [endDate, setEndDate] = useState<Date>(
+    new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000)
+  ); // 6 days from now
 
   const formatDateDisplay = (date: Date): { day: string; date: string } => {
     const daysOfWeek = [
@@ -43,11 +45,27 @@ export default function CreateMealPlan() {
   const endDateDisplay = formatDateDisplay(endDate);
 
   const handleStartDatePress = () => {
-    dateModalRef.current?.present();
+    startDateModalRef.current?.present();
   };
 
   const handleEndDatePress = () => {
-    dateModalRef.current?.present();
+    endDateModalRef.current?.present();
+  };
+
+  const handleStartDateSelect = (date: Date) => {
+    setStartDate(date);
+    startDateModalRef.current?.close();
+    // If end date is before or equal to new start date, update it
+    if (endDate <= date) {
+      const newEndDate = new Date(date);
+      newEndDate.setDate(newEndDate.getDate() + 6);
+      setEndDate(newEndDate);
+    }
+  };
+
+  const handleEndDateSelect = (date: Date) => {
+    setEndDate(date);
+    endDateModalRef.current?.close();
   };
 
   return (
@@ -137,7 +155,19 @@ export default function CreateMealPlan() {
         </CustomButton>
       </View>
 
-      <DateModal ref={dateModalRef} />
+      <DateModal
+        ref={startDateModalRef}
+        dateType="start"
+        currentDate={startDate}
+        onDateSelect={handleStartDateSelect}
+      />
+      <DateModal
+        ref={endDateModalRef}
+        dateType="end"
+        selectedStartDate={startDate}
+        currentDate={endDate}
+        onDateSelect={handleEndDateSelect}
+      />
     </View>
   );
 }
