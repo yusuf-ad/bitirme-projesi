@@ -3,10 +3,18 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { forwardRef, useCallback } from "react";
-import { StyleSheet, Text } from "react-native";
+import WheelPicker from "@quidone/react-native-wheel-picker";
+import { forwardRef, useCallback, useState } from "react";
+import { StyleSheet } from "react-native";
+
+const data = [...Array(100).keys()].map((index) => ({
+  value: index,
+  label: index.toString(),
+}));
 
 export const DateModal = forwardRef<BottomSheetModal>((props, ref) => {
+  const [value, setValue] = useState(0);
+
   const handleSheetChanges = useCallback((index: number) => {
     console.log("handleSheetChanges", index);
   }, []);
@@ -30,7 +38,12 @@ export const DateModal = forwardRef<BottomSheetModal>((props, ref) => {
       backdropComponent={renderBackdrop}
     >
       <BottomSheetView style={styles.contentContainer}>
-        <Text>Date Modal</Text>
+        <WheelPicker
+          data={data}
+          value={value}
+          onValueChanged={({ item: { value } }) => setValue(value)}
+          enableScrollByTapOnItem={true}
+        />
       </BottomSheetView>
     </BottomSheetModal>
   );

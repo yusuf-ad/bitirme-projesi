@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import CustomButton from "@/shared/components/custom-button";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 
 // SVG Icons as strings
@@ -68,15 +69,12 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
 
       {/* Create Meal Plan Button */}
       <View style={styles.buttonContainer}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.createButton,
-            pressed && styles.createButtonPressed,
-          ]}
+        <CustomButton
+          containerStyle={[styles.createButton]}
           onPress={onCreatePress}
         >
           <Text style={styles.buttonText}>+ Create meal plan</Text>
-        </Pressable>
+        </CustomButton>
       </View>
     </>
   );
@@ -125,12 +123,10 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: Colors.lilac[600],
-
-    borderRadius: 24,
-    height: 48,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   createButtonPressed: {
     opacity: 0.8,

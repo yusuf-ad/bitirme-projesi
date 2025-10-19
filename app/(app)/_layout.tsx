@@ -215,6 +215,7 @@ export default function TabLayout() {
         name="(meal-plan)/create"
         options={{
           href: null,
+          animation: "shift",
         }}
       />
     </Tabs>
