@@ -15,6 +15,7 @@ function RootNavigator() {
     <Stack>
       <Stack.Protected guard={isLoggedIn}>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
+        <Stack.Screen name="(plan)/create" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />

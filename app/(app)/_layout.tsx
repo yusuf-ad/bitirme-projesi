@@ -70,6 +70,10 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     isExpanded.value = !isExpanded.value;
   };
 
+  const routes = state.routes.filter(
+    (route) => route.name !== "(meal-plan)/create"
+  );
+
   const plusIconStyle = useAnimatedStyle(() => {
     const rotateValue = isExpanded.value ? "45deg" : "0deg";
 
@@ -78,10 +82,15 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     };
   });
 
+  // Hide tab bar if on create meal plan screen
+  if (navigation.getState().index === 4) {
+    return null;
+  }
+
   return (
     <View style={[styles.tabBar, { bottom: insets.bottom }]}>
       <View style={styles.tabBarInner}>
-        {state.routes.map((route, index) => {
+        {routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label = options.title || route.name;
           const isFocused = state.index === index;
@@ -108,7 +117,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           // Get icon name based on route
           let iconName: string = "circle";
           if (route.name === "index") iconName = "home";
-          else if (route.name === "meal-plan") iconName = "calendar";
+          else if (route.name === "(meal-plan)/index") iconName = "calendar";
           else if (route.name === "groceries") iconName = "shopping-cart";
           else if (route.name === "profile") iconName = "user";
 
@@ -184,7 +193,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="meal-plan"
+        name="(meal-plan)/index"
         options={{
           title: "Meal Plan",
         }}
@@ -199,6 +208,13 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profile",
+        }}
+      />
+
+      <Tabs.Screen
+        name="(meal-plan)/create"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

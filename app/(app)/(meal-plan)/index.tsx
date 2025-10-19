@@ -1,8 +1,9 @@
 import { Colors } from "@/constants/theme";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MealPlanEmptyState } from "../../features/meal-plan";
+import { MealPlanEmptyState } from "../../../features/meal-plan";
 
 export default function MealPlanTab() {
   const { bottom, top } = useSafeAreaInsets();
@@ -10,8 +11,7 @@ export default function MealPlanTab() {
   const [hasMealPlan] = useState(false);
 
   function handleCreateMealPlan() {
-    // TODO: Navigate to meal plan creation flow
-    console.log("Create meal plan pressed");
+    router.push("/(app)/(meal-plan)/create");
   }
 
   return (
