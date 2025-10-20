@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/theme";
 import SignOutButton from "@/features/auth/components/sign-out-button";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import CustomButton from "@/shared/components/custom-button";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useEffect, useState } from "react";
 import {
@@ -32,6 +34,7 @@ export default function ProfileTab() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const { session } = useAuthContext();
 
   useEffect(() => {
     loadProfileData();
@@ -59,6 +62,54 @@ export default function ProfileTab() {
       });
     } catch (error) {
       console.error("Error loading profile data:", error);
+    }
+  };
+
+  const handleSignupSpoonacular = async () => {
+    try {
+      /*
+      const user_metadata = session?.user?.user_metadata;
+      const [firstName, lastName] = user_metadata?.fullName.split(" ");
+
+      const userData = {
+        username: `${firstName.toLowerCase()}.${lastName?.toLowerCase()}`,
+        email: session?.user?.email,
+        firstName: firstName,
+        lastName: lastName,
+      };
+
+      // API key'inizi buraya ekleyin
+      const API_KEY = "fc1057b7d70f4475a7c41d1edc8368a5";
+
+      const response = await fetch(
+        `https://api.spoonacular.com/users/connect?apiKey=${API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(userData),
+        }
+      );
+
+      const data = await response.json();
+      console.log("Spoonacular API Response:", data);
+      */ // API key'inizi buraya ekleyin
+      const API_KEY = "fc1057b7d70f4475a7c41d1edc8368a5";
+
+      const response = await fetch(
+        `https://api.spoonacular.com/mealplanner/generate?timeFrame=day&apiKey=${API_KEY}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      console.log("Spoonacular API Response:", data);
+    } catch (error) {
+      console.error("Error signing up with Spoonacular:", error);
     }
   };
 
@@ -319,6 +370,10 @@ export default function ProfileTab() {
           )}
         </View>
       )}
+
+      <CustomButton onPress={handleSignupSpoonacular}>
+        <Text>Sign up with Spoonacular</Text>
+      </CustomButton>
 
       {/* Sign Out Button */}
       <View style={styles.signOutContainer}>
