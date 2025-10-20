@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ProfileData {
   goals: string[];
@@ -29,6 +30,7 @@ interface ProfileData {
 
 export default function ProfileTab() {
   const onboarding = useOnboarding();
+  const { top, bottom } = useSafeAreaInsets();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
 
   useEffect(() => {
@@ -110,7 +112,21 @@ export default function ProfileTab() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[
+        styles.container,
+        {
+          paddingTop: top,
+          paddingBottom: bottom,
+        },
+      ]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingBottom: bottom + 52 * 2,
+        },
+      ]}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>My Profile</Text>
@@ -319,8 +335,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,

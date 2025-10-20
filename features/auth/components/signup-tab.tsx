@@ -35,25 +35,24 @@ export function SignupTab() {
   const { saveAllOnboardingDataToSupabase } = useOnboarding();
 
   async function handleSignup(formData: z.output<typeof SignupFormSchema>) {
-    const { error } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        data: {
-          fullName: formData.fullName.trim(),
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            fullName: formData.fullName.trim(),
+          },
         },
-      },
-    });
+      });
 
       if (error) {
         Alert.alert("Error signing up", error.message);
-        setIsLoading(false);
         return;
       }
 
       if (!data.user) {
         Alert.alert("Error", "No user data received");
-        setIsLoading(false);
         return;
       }
 
@@ -81,8 +80,6 @@ export function SignupTab() {
         "Error",
         error?.message || "Something went wrong. Please try again."
       );
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -160,9 +157,10 @@ export function SignupTab() {
         <CustomButton
           containerStyle={styles.signupButton}
           onPress={handleSubmit(handleSignup)}
+          disabled={isSubmitting}
         >
           <Text style={[styles.buttonText, styles.signupButtonText]}>
-            {isSubmitting ? "Loading..." : "Sign Up"}
+            {isSubmitting ? "Creating account..." : "Sign up"}
           </Text>
         </CustomButton>
 
