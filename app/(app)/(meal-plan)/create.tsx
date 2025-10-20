@@ -143,10 +143,7 @@ export default function CreateMealPlan() {
 
       <View style={styles.footer}>
         <CustomButton
-          containerStyle={[
-            styles.nextButton,
-            { backgroundColor: Colors.lilac[600] },
-          ]}
+          containerStyle={[styles.nextButton]}
           onPress={() => {
             // TODO: Navigate to next step with selected dates
           }}
@@ -226,7 +223,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.lilac[200],
+    backgroundColor: Colors.lilac[300],
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -250,6 +247,7 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     paddingVertical: 16,
+    backgroundColor: Colors.lilac[900],
   },
   nextButtonText: {
     fontSize: 16,

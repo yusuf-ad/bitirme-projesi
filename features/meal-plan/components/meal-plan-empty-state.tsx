@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   createButton: {
-    backgroundColor: Colors.lilac[600],
+    backgroundColor: Colors.lilac[900],
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
