@@ -1,71 +1,70 @@
 import CalendarDay from "@/features/home/components/calendar-day";
 import { mockCalendarDays } from "@/features/home/data/mock-data";
-import { LinearGradient } from "expo-linear-gradient";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { FlatList, StyleSheet } from "react-native";
+
+const ITEM_WIDTH = 52 + 12; // width + gap
 
 export default function CalendarSection() {
+  const ref = useRef<FlatList>(null);
+  const [index, setIndex] = useState(0);
+
+  const getItemLayout = (_: any, index: number) => ({
+    length: ITEM_WIDTH,
+    offset: ITEM_WIDTH * index,
+    index,
+  });
+
+  useEffect(() => {
+    // Find today's index and set it with animation
+    const todayIndex = mockCalendarDays.findIndex((day) => day.isSelected);
+    if (todayIndex !== -1) {
+      setIndex(todayIndex);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Scroll to the selected index with animation
+    const timer = setTimeout(() => {
+      ref.current?.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [index]);
+
   return (
-    <View>
-      <LinearGradient
-        colors={["#f3f4f6", "#f3f4f600"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          position: "absolute",
-          left: -16,
-          top: 0,
-          width: 48,
-          height: 64,
-          zIndex: 10,
-          shadowColor: "#fff",
-          shadowOffset: {
-            width: 24,
-            height: 24,
-          },
-          shadowOpacity: 1,
-          shadowRadius: 50,
-          elevation: 16,
-        }}
-      />
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.calendarScrollView}
-        contentContainerStyle={styles.calendarContent}
-      >
-        {mockCalendarDays.map((day) => (
-          <CalendarDay
-            key={day.day}
-            day={day.day}
-            dayOfWeek={day.dayOfWeek}
-            isSelected={day.isSelected}
-          />
-        ))}
-      </ScrollView>
-
-      <LinearGradient
-        colors={["#f3f4f635", "#f3f4f6"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          position: "absolute",
-          right: -16,
-          top: 0,
-          width: 48,
-          height: 64,
-          zIndex: 10,
-          shadowColor: "#fff",
-          shadowOffset: {
-            width: 24,
-            height: 24,
-          },
-          shadowOpacity: 1,
-          shadowRadius: 50,
-          elevation: 16,
-        }}
-      />
-    </View>
+    <FlatList
+      ref={ref}
+      getItemLayout={getItemLayout}
+      onScrollToIndexFailed={(info) => {
+        const wait = new Promise((resolve) => setTimeout(resolve, 500));
+        wait.then(() => {
+          ref.current?.scrollToIndex({
+            index: info.index,
+            animated: true,
+            viewPosition: 0.5,
+          });
+        });
+      }}
+      data={mockCalendarDays}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.calendarScrollView}
+      contentContainerStyle={styles.calendarContent}
+      keyExtractor={(item) => item.day.toString()}
+      renderItem={({ item, index: itemIndex }) => (
+        <CalendarDay
+          day={item.day}
+          dayOfWeek={item.dayOfWeek}
+          isSelected={index === itemIndex}
+          onPress={() => setIndex(itemIndex)}
+        />
+      )}
+    />
   );
 }
 

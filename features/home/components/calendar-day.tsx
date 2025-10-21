@@ -1,35 +1,52 @@
 import { Colors } from "@/constants/theme";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, PressableProps, StyleSheet, Text } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 
-interface CalendarDayProps {
+interface CalendarDayProps extends PressableProps {
   day: string;
   dayOfWeek: string;
   isSelected?: boolean;
   onPress?: () => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function CalendarDay({
   day,
   dayOfWeek,
   isSelected = false,
   onPress,
+  ...props
 }: CalendarDayProps) {
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: withTiming(
+        isSelected ? Colors.lilac[900] : Colors.background.surface,
+        { duration: 100 }
+      ),
+      opacity: withTiming(isSelected ? 1 : 0.5, { duration: 300 }),
+    };
+  });
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
-      style={[styles.container, isSelected && styles.selectedContainer]}
+      style={[styles.container, animatedStyle]}
+      {...props}
     >
       <Text style={[styles.day, isSelected && styles.selectedText]}>{day}</Text>
       <Text style={[styles.dayOfWeek, isSelected && styles.selectedText]}>
         {dayOfWeek}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.background.surface,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 12,
@@ -38,9 +55,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 52,
     height: 64,
-  },
-  selectedContainer: {
-    backgroundColor: Colors.lilac[900],
   },
   day: {
     fontFamily: "Inter",
