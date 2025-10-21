@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: Colors.lilac[600],
     borderRadius: 12,
-    height: 48,
+    paddingVertical: 14,
     justifyContent: "center",
     alignItems: "center",
   },

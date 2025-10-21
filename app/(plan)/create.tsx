@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   generateButton: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     backgroundColor: Colors.lilac[900],
   },
   generateButtonText: {
