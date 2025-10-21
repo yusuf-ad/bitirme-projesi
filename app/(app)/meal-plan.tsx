@@ -24,6 +24,7 @@ export default function MealPlanTab() {
           paddingTop: top,
         },
       ]}
+      bounces={false}
       showsVerticalScrollIndicator={false}
     >
       {/* Header Section */}

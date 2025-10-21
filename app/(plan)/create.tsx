@@ -108,7 +108,7 @@ export default function CreateMealPlan() {
       // Navigate to preview page with meal plan data
       if (data) {
         router.push({
-          pathname: "/(app)/(meal-plan)/preview",
+          pathname: "/(plan)/preview",
           params: { mealPlanData: JSON.stringify(data) },
         });
       }
@@ -157,8 +157,8 @@ export default function CreateMealPlan() {
             {/* Start Date */}
             <View style={styles.dateSection}>
               <Text style={styles.dateLabel}>Start</Text>
-              <Pressable
-                style={styles.dateButton}
+              <CustomButton
+                containerStyle={styles.dateButton}
                 onPress={handleStartDatePress}
               >
                 <View style={styles.dateContent}>
@@ -170,13 +170,16 @@ export default function CreateMealPlan() {
                   size={24}
                   color={Colors.text.primary}
                 />
-              </Pressable>
+              </CustomButton>
             </View>
 
             {/* End Date */}
             <View style={styles.dateSection}>
               <Text style={styles.dateLabel}>End</Text>
-              <Pressable style={styles.dateButton} onPress={handleEndDatePress}>
+              <CustomButton
+                containerStyle={styles.dateButton}
+                onPress={handleEndDatePress}
+              >
                 <View style={styles.dateContent}>
                   <Text style={styles.dayText}>{endDateDisplay.day}</Text>
                   <Text style={styles.dateText}>{endDateDisplay.date}</Text>
@@ -186,7 +189,7 @@ export default function CreateMealPlan() {
                   size={24}
                   color={Colors.text.primary}
                 />
-              </Pressable>
+              </CustomButton>
             </View>
           </View>
         </View>
