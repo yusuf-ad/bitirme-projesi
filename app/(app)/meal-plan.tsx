@@ -1,14 +1,23 @@
 import { Colors } from "@/constants/theme";
+import CalendarSection from "@/features/home/components/calendar-section";
+import DailyOverview from "@/features/home/components/daily-overview";
+import Header from "@/features/home/components/header";
+import TodayMealsSection from "@/features/home/components/today-meals-section";
+import { MealPlanEmptyState } from "@/features/meal-plan";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MealPlanEmptyState } from "../../features/meal-plan";
 
-export default function MealPlanTab() {
+export default function MealplanTab() {
+  const { session } = useAuthContext();
   const { bottom, top } = useSafeAreaInsets();
-  // TODO: This will be set to true after meal plan is created
-  const [hasMealPlan] = useState(false);
+  const [hasMealPlan, setHasMealPlan] = useState(false);
+
+  // Extract first name from user data or use default
+  const fullName = session?.user?.user_metadata?.fullName || "User";
+  const firstName = fullName.split(" ")[0];
 
   function handleCreateMealPlan() {
     router.push("/(plan)/create");
@@ -16,92 +25,41 @@ export default function MealPlanTab() {
 
   return (
     <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={[
-        styles.scrollContent,
-        {
-          paddingBottom: bottom + (Platform.OS === "ios" ? 52 : 52 * 2),
-          paddingTop: top,
-        },
-      ]}
-      bounces={false}
+      style={[styles.container, { paddingTop: top }]}
       showsVerticalScrollIndicator={false}
+      // safe area boşluğu + tabbar yüksekliği
+      contentContainerStyle={{
+        paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
+      }}
     >
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Meal Plan</Text>
-      </View>
+      {/* Header */}
+      <Header firstName={firstName} motivationText="Let's plan your meals!" />
 
-      {/* Subtitle - only show when no meal plan */}
-      {!hasMealPlan && (
-        <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>
-            Get balanced meal schedule for your goals and tastes.
-          </Text>
-        </View>
-      )}
+      {/* Calendar */}
+      <CalendarSection />
 
-      {/* Content - Empty State or Meal Plan */}
-      {!hasMealPlan ? (
-        <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
+      {/* Daily overview */}
+
+      {/* Today's Meals */}
+      {hasMealPlan ? (
+        <>
+          <DailyOverview />
+          <TodayMealsSection />
+        </>
       ) : (
-        <View style={styles.mealPlanContent}>
-          <Text style={styles.placeholderText}>
-            Your meal plan will appear here
-          </Text>
-        </View>
+        <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
       )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  safeArea: {
     flex: 1,
     backgroundColor: Colors.background.secondary,
   },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    alignItems: "center",
-  },
-  title: {
-    fontFamily: "Inter",
-    fontWeight: "700",
-    fontSize: 22,
-    lineHeight: 28,
-    color: "#120F1A",
-    textAlign: "center",
-  },
-  subtitleContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 12,
-    alignItems: "center",
-  },
-  subtitle: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#120F1A",
-    textAlign: "center",
-  },
-  mealPlanContent: {
+  container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  placeholderText: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#737780",
-    textAlign: "center",
+    paddingHorizontal: 16,
   },
 });

@@ -82,7 +82,6 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
 
 const styles = StyleSheet.create({
   imageContainer: {
-    paddingHorizontal: 16,
     paddingTop: 16,
   },
   imageWrapper: {
@@ -90,14 +89,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     width: "100%",
-    aspectRatio: 1,
+    aspectRatio: 12 / 9,
   },
   heroImage: {
     width: "100%",
     height: "100%",
   },
   featuresList: {
-    paddingHorizontal: 16,
     paddingTop: 16,
   },
   featureItem: {
@@ -117,7 +115,6 @@ const styles = StyleSheet.create({
     color: "#120F1A",
   },
   buttonContainer: {
-    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 16,
   },

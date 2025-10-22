@@ -15,14 +15,6 @@ export default function HomeTab() {
   const fullName = session?.user?.user_metadata?.fullName || "User";
   const firstName = fullName.split(" ")[0];
 
-  // Format current date
-  const currentDate = new Date();
-  const formattedDate = currentDate.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
     <ScrollView
       style={[styles.container, { paddingTop: top }]}
@@ -33,7 +25,7 @@ export default function HomeTab() {
       }}
     >
       {/* Header */}
-      <Header firstName={firstName} formattedDate={formattedDate} />
+      <Header firstName={firstName} motivationText="Let's plan your meals" />
 
       {/* Calendar */}
       <CalendarSection />

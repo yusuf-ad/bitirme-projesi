@@ -71,7 +71,7 @@ export default function CalendarSection() {
 const styles = StyleSheet.create({
   calendarScrollView: {
     marginHorizontal: -16,
-    marginBottom: 24,
+    marginBottom: 8,
   },
   calendarContent: {
     paddingHorizontal: 16,
