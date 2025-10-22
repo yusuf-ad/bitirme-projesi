@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   saveButton: {
-    backgroundColor: Colors.lilac[600],
+    backgroundColor: Colors.lilac[900],
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: "center",
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     lineHeight: 24,
-    color: Colors.text.primary,
+    color: "#fff",
     textAlign: "center",
   },
 });
