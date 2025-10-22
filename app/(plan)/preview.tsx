@@ -4,15 +4,8 @@ import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// Meal type badge colors
-const MEAL_COLORS = {
-  breakfast: "#A8D8C0",
-  lunch: "#F8F2E6",
-  dinner: "#C3B1E1",
-};
 
 interface Meal {
   id: number;
@@ -20,125 +13,66 @@ interface Meal {
   readyInMinutes?: number;
   servings?: number;
   imageType?: string;
-}
-
-interface DayMeals {
-  meals: Meal[];
-  nutrients?: {
-    calories: number;
-    protein: number;
-    fat: number;
-    carbohydrates: number;
+  image?: string;
+  sourceUrl?: string;
+  nutrition?: {
+    calories?: number;
+    carbs?: number;
+    fat?: number;
+    protein?: number;
   };
 }
 
-interface WeekMealPlan {
-  week: {
-    monday: DayMeals;
-    tuesday: DayMeals;
-    wednesday: DayMeals;
-    thursday: DayMeals;
-    friday: DayMeals;
-    saturday: DayMeals;
-    sunday: DayMeals;
-  };
+interface MealTypeData {
+  results: Meal[];
+  totalResults: number;
 }
 
-// Mock data - bu gerçek API response'dan gelecek
-const mockMealPlan: WeekMealPlan = {
-  week: {
-    monday: {
-      meals: [
-        { id: 1, title: "Quinoa Breakfast With Apples And Cinnamon" },
-        { id: 2, title: "Southwest Chicken And Barley Soup" },
-        { id: 3, title: "Zesty Orange & Chili Chicken" },
-      ],
-      nutrients: { calories: 2000, protein: 150, fat: 50, carbohydrates: 250 },
-    },
-    tuesday: {
-      meals: [
-        { id: 4, title: "Spicy Soba Noodle Salad" },
-        { id: 5, title: "Tropical BBQ Pizza" },
-      ],
-      nutrients: { calories: 1800, protein: 140, fat: 45, carbohydrates: 230 },
-    },
-    wednesday: {
-      meals: [],
-      nutrients: { calories: 0, protein: 0, fat: 0, carbohydrates: 0 },
-    },
-    thursday: {
-      meals: [],
-      nutrients: { calories: 0, protein: 0, fat: 0, carbohydrates: 0 },
-    },
-    friday: {
-      meals: [],
-      nutrients: { calories: 0, protein: 0, fat: 0, carbohydrates: 0 },
-    },
-    saturday: {
-      meals: [],
-      nutrients: { calories: 0, protein: 0, fat: 0, carbohydrates: 0 },
-    },
-    sunday: {
-      meals: [],
-      nutrients: { calories: 0, protein: 0, fat: 0, carbohydrates: 0 },
-    },
-  },
-};
-
-const MEAL_TYPES = ["breakfast", "lunch", "dinner"] as const;
-
-const formatDate = (dayName: string): string => {
-  const daysMap: { [key: string]: number } = {
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
-    sunday: 0,
-  };
-
-  const today = new Date();
-  const currentDay = today.getDay();
-  const targetDay = daysMap[dayName.toLowerCase()];
-  const daysToAdd = (targetDay - currentDay + 7) % 7;
-
-  const targetDate = new Date(today);
-  targetDate.setDate(today.getDate() + daysToAdd);
-
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  const dayNameCapitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-  const month = monthNames[targetDate.getMonth()];
-  const day = targetDate.getDate();
-
-  return `${dayNameCapitalized}, ${month} ${day}`;
-};
+interface MealPlan {
+  breakfast: MealTypeData;
+  lunch: MealTypeData;
+  dinner: MealTypeData;
+}
 
 export default function MealPlanPreview() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
-  const [mealPlan, setMealPlan] = useState<WeekMealPlan>(mockMealPlan);
+  const [mealPlan, setMealPlan] = useState<MealPlan>();
+  const [selectedMealIndices, setSelectedMealIndices] = useState<{
+    breakfast: number;
+    lunch: number;
+    dinner: number;
+  }>({
+    breakfast: 0,
+    lunch: 0,
+    dinner: 0,
+  });
 
   useEffect(() => {
     if (params.mealPlanData) {
       try {
         const data = JSON.parse(params.mealPlanData as string);
-        setMealPlan(data);
+
+        // Check if data has breakfast, lunch, dinner structure
+        if (
+          data &&
+          data.breakfast &&
+          data.lunch &&
+          data.dinner &&
+          data.breakfast.results &&
+          data.lunch.results &&
+          data.dinner.results
+        ) {
+          setMealPlan(data);
+          setSelectedMealIndices({
+            breakfast: 0,
+            lunch: 0,
+            dinner: 0,
+          });
+        } else {
+          console.error("Invalid meal plan structure:", data);
+        }
       } catch (error) {
         console.error("Error parsing meal plan data:", error);
       }
@@ -151,33 +85,51 @@ export default function MealPlanPreview() {
   };
 
   const getMealImageUrl = (meal: Meal): string => {
-    if (meal.id && meal.imageType) {
-      return `https://spoonacular.com/recipeImages/${meal.id}-312x231.${meal.imageType}`;
+    // First check if there's a direct image property from API
+    if (meal.image) {
+      // If it's already a full URL
+      if (meal.image.startsWith("http")) {
+        return meal.image;
+      }
+      // If it's just filename, construct URL
+      return `https://spoonacular.com/recipeImages/${meal.image}`;
+    }
+    // Fallback to constructing URL from id
+    if (meal.id) {
+      return `https://spoonacular.com/recipeImages/${meal.id}-312x231.jpg`;
     }
     return "";
   };
 
-  const renderMealBadge = (mealType: string) => {
-    const backgroundColor =
-      MEAL_COLORS[mealType.toLowerCase() as keyof typeof MEAL_COLORS] ||
-      MEAL_COLORS.breakfast;
-    const label = mealType.charAt(0).toUpperCase() + mealType.slice(1);
-
-    return (
-      <View
-        style={[
-          styles.mealBadge,
-          { backgroundColor, borderColor: Colors.lilac[900] },
-        ]}
-      >
-        <Text style={styles.mealBadgeText}>{label}</Text>
-      </View>
-    );
-  };
-
-  const renderMealItem = (meal: Meal, index: number) => {
-    const mealType = MEAL_TYPES[index % 3];
+  const renderMealItem = (
+    meal: Meal,
+    mealType: "breakfast" | "lunch" | "dinner"
+  ) => {
     const imageUrl = getMealImageUrl(meal);
+
+    const handleReplace = () => {
+      const currentIndex = selectedMealIndices[mealType];
+      const mealTypeData = mealPlan?.[mealType];
+
+      if (!mealTypeData) return;
+
+      const nextIndex = currentIndex + 1;
+
+      // Check if next index exists
+      if (nextIndex >= mealTypeData.results.length) {
+        Alert.alert(
+          "No more recipes",
+          `No more ${mealType} recipes available. You've reached the end of the list.`
+        );
+        return;
+      }
+
+      // Update to next recipe
+      setSelectedMealIndices((prev) => ({
+        ...prev,
+        [mealType]: nextIndex,
+      }));
+    };
 
     return (
       <View key={meal.id} style={styles.mealItem}>
@@ -187,27 +139,56 @@ export default function MealPlanPreview() {
               source={{ uri: imageUrl }}
               style={styles.mealImage}
               resizeMode="cover"
+              onError={(error) => {
+                console.log("Image failed to load:", imageUrl, error);
+              }}
             />
-          ) : null}
+          ) : (
+            <View style={[styles.mealImage, styles.placeholderImage]} />
+          )}
           <View style={styles.mealInfo}>
             <Text style={styles.mealTitle}>{meal.title}</Text>
-            {renderMealBadge(mealType)}
+            <View style={styles.mealDetails}>
+              {meal.nutrition?.calories && (
+                <Text style={styles.mealDetailText}>
+                  {Math.round(meal.nutrition.calories)} cal
+                </Text>
+              )}
+              <Text>|</Text>
+              {meal.readyInMinutes && (
+                <Text style={styles.mealDetailText}>
+                  {meal.readyInMinutes} min
+                </Text>
+              )}
+            </View>
           </View>
         </View>
-        <View style={styles.replaceButton}>
+        <CustomButton
+          containerStyle={styles.replaceButton}
+          onPress={handleReplace}
+        >
           <ReplaceIcon />
-        </View>
+        </CustomButton>
       </View>
     );
   };
 
-  const renderDaySection = (dayKey: string, dayData: DayMeals) => {
-    if (!dayData.meals || dayData.meals.length === 0) return null;
+  const renderDayMeals = (mealType: "breakfast" | "lunch" | "dinner") => {
+    const dayData = mealPlan?.[mealType];
+
+    if (!dayData || dayData.results.length === 0) return null;
+
+    const currentIndex = selectedMealIndices[mealType];
+    const currentMeal = dayData.results[currentIndex];
+
+    if (!currentMeal) return null;
 
     return (
-      <View key={dayKey} style={styles.daySection}>
-        <Text style={styles.dayHeader}>{formatDate(dayKey)}</Text>
-        {dayData.meals.map((meal, index) => renderMealItem(meal, index))}
+      <View key={mealType}>
+        <Text style={styles.mealTypeHeader}>
+          {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+        </Text>
+        {renderMealItem(currentMeal, mealType)}
       </View>
     );
   };
@@ -246,10 +227,10 @@ export default function MealPlanPreview() {
           to swap out any that you don&apos;t like!
         </Text>
 
-        {/* Days */}
-        {Object.entries(mealPlan.week).map(([dayKey, dayData]) =>
-          renderDaySection(dayKey, dayData)
-        )}
+        {/* Meal Types */}
+        {renderDayMeals("breakfast")}
+        {renderDayMeals("lunch")}
+        {renderDayMeals("dinner")}
       </ScrollView>
 
       {/* Footer */}
@@ -305,16 +286,6 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     marginBottom: 12,
   },
-  daySection: {
-    marginBottom: 0,
-  },
-  dayHeader: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#141217",
-    marginTop: 20,
-    marginBottom: 12,
-  },
   mealItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -333,9 +304,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: Colors.gray[200],
   },
+  placeholderImage: {
+    backgroundColor: Colors.gray[300],
+  },
   mealInfo: {
     flex: 1,
-    justifyContent: "center",
     gap: 6,
   },
   mealTitle: {
@@ -343,6 +316,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 24,
     color: Colors.text.primary,
+  },
+  mealDetails: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  mealDetailText: {
+    fontSize: 12,
+    fontWeight: "400",
+    lineHeight: 18,
+    color: Colors.text.secondary,
   },
   mealBadge: {
     alignSelf: "flex-start",
@@ -355,6 +338,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     color: "#000000",
+  },
+  mealTypeHeader: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#141217",
+    marginTop: 20,
   },
   replaceButton: {
     width: 48,

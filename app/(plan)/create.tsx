@@ -1,5 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { DateModal } from "@/features/meal-plan/components/date-modal";
+import { CUISINES } from "@/lib/constants";
+
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -14,6 +16,26 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+interface Meal {
+  id: number;
+  title: string;
+  image: string;
+  imageType: string;
+  readyInMinutes?: number;
+  nutrition?: {
+    nutrients?: {
+      name: string;
+      amount: number;
+      unitShort: string;
+    }[];
+    calories?: number;
+    carbs?: number;
+    fat?: number;
+    protein?: number;
+  };
+  summary?: string;
+}
 
 export default function CreateMealPlan() {
   const router = useRouter();
@@ -77,41 +99,126 @@ export default function CreateMealPlan() {
     endDateModalRef.current?.close();
   };
 
-  const calculateDaysDifference = (start: Date, end: Date): number => {
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
-  };
-
   const handleGenerateMealPlan = async () => {
     setIsGenerating(true);
     setMealPlanData(null);
 
     try {
-      const days = calculateDaysDifference(startDate, endDate);
-      const timeFrame = days === 1 ? "day" : "week";
       const API_KEY = "fc1057b7d70f4475a7c41d1edc8368a5";
 
-      const response = await fetch(
-        `https://api.spoonacular.com/mealplanner/generate?timeFrame=${timeFrame}&exclude=pork&diet=vegan&apiKey=${API_KEY}`,
+      const mealPlan = {
+        breakfast: {
+          results: [] as Meal[],
+          totalResults: 0,
+        },
+        lunch: {
+          results: [] as Meal[],
+          totalResults: 0,
+        },
+        dinner: {
+          results: [] as Meal[],
+          totalResults: 0,
+        },
+      };
+
+      const includedCuisines = [CUISINES.MEDITERRANEAN];
+      const excludedIngredients = ["pork", "shellfish"];
+
+      // Different ingredients for each meal type
+      const mealTypes = [
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+          type: "breakfast",
+          includedIngredients: ["eggs", "spinach"],
+        },
+        {
+          type: "lunch",
+          includedIngredients: ["chicken", "vegetables"],
+        },
+        {
+          type: "dinner",
+          includedIngredients: ["fish", "rice"],
+        },
+      ];
 
-      const data = await response.json();
-      console.log("Spoonacular API Response:", data);
-      setMealPlanData(data);
-
-      // Navigate to preview page with meal plan data
-      if (data) {
-        router.push({
-          pathname: "/(plan)/preview",
-          params: { mealPlanData: JSON.stringify(data) },
+      // Fetch recipes for each meal type
+      for (const meal of mealTypes) {
+        // Build query parameters
+        const params = new URLSearchParams({
+          apiKey: API_KEY,
+          addRecipeInformation: "true",
+          number: "12",
+          fillNutrients: "true",
         });
+
+        if (includedCuisines.length > 0) {
+          params.append("cuisine", includedCuisines.join(","));
+        }
+
+        if (excludedIngredients.length > 0) {
+          params.append("excludeIngredients", excludedIngredients.join(","));
+        }
+
+        if (meal.type) {
+          params.append("type", meal.type);
+        }
+
+        if (meal.includedIngredients.length > 0) {
+          params.append(
+            "includeIngredients",
+            meal.includedIngredients.join(",")
+          );
+        }
+
+        const response = await fetch(
+          `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+        console.log(`${meal.type} API Response:`, data);
+
+        // Process results to extract calorie information from summary
+        const processedResults = data.results.map((recipe: any) => {
+          let calories: number | undefined;
+
+          // Try to extract calories from summary (e.g., "343 calories")
+          if (recipe.summary) {
+            const calorieMatch = recipe.summary.match(/(\d+)\s+calories/i);
+            if (calorieMatch) {
+              calories = parseInt(calorieMatch[1], 10);
+            }
+          }
+
+          return {
+            ...recipe,
+            nutrition: {
+              calories,
+            },
+          };
+        });
+
+        // Assign results to the appropriate meal type
+        mealPlan[meal.type as keyof typeof mealPlan].results = processedResults;
+        mealPlan[meal.type as keyof typeof mealPlan].totalResults =
+          data.totalResults;
       }
+
+      console.log("Generated Meal Plan:", mealPlan);
+      setMealPlanData(mealPlan);
+
+      // Navigate to preview with meal plan data
+      setTimeout(() => {
+        router.push({
+          pathname: "/preview",
+          params: {
+            mealPlanData: JSON.stringify(mealPlan),
+          },
+        });
+      }, 500);
     } catch (error) {
       console.error("Error generating meal plan:", error);
     } finally {
