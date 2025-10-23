@@ -4,16 +4,16 @@ import { StyleSheet, Text, View } from "react-native";
 
 interface HeaderProps {
   firstName: string;
-  formattedDate: string;
+  motivationText?: string;
 }
 
-export default function Header({ firstName, formattedDate }: HeaderProps) {
+export default function Header({ firstName, motivationText }: HeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
         <View>
           <Text style={styles.greeting}>Hello, {firstName}!</Text>
-          <Text style={styles.date}>{formattedDate}</Text>
+          <Text style={styles.date}>{motivationText}</Text>
         </View>
       </View>
       <View style={styles.headerRight}>

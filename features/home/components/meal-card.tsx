@@ -59,7 +59,7 @@ export default function MealCard({
               borderColor: Colors.lilac[200],
             }}
           >
-            <Feather name="edit-3" size={20} color={Colors.gray[500]} />
+            <Feather name="edit-3" size={20} color={Colors.lilac[900]} />
           </View>
           <View
             style={{
@@ -72,7 +72,7 @@ export default function MealCard({
               borderColor: Colors.lilac[200],
             }}
           >
-            <AntDesign name="plus" size={20} color={Colors.gray[500]} />
+            <AntDesign name="plus" size={20} color={Colors.lilac[900]} />
           </View>
         </View>
       </View>

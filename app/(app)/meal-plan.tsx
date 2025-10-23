@@ -3,17 +3,25 @@ import CalendarSection from "@/features/home/components/calendar-section";
 import DailyOverview from "@/features/home/components/daily-overview";
 import Header from "@/features/home/components/header";
 import TodayMealsSection from "@/features/home/components/today-meals-section";
+import { MealPlanEmptyState } from "@/features/meal-plan";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { router } from "expo-router";
+import { useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function HomeTab() {
+export default function MealplanTab() {
   const { session } = useAuthContext();
   const { bottom, top } = useSafeAreaInsets();
+  const [hasMealPlan, setHasMealPlan] = useState(false);
 
   // Extract first name from user data or use default
   const fullName = session?.user?.user_metadata?.fullName || "User";
   const firstName = fullName.split(" ")[0];
+
+  function handleCreateMealPlan() {
+    router.push("/(plan)/create");
+  }
 
   return (
     <ScrollView
@@ -23,18 +31,25 @@ export default function HomeTab() {
       contentContainerStyle={{
         paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
       }}
+      bounces={false}
     >
       {/* Header */}
-      <Header firstName={firstName} motivationText="Let's plan your meals" />
+      <Header firstName={firstName} motivationText="Let's plan your meals!" />
 
       {/* Calendar */}
       <CalendarSection />
 
       {/* Daily overview */}
-      <DailyOverview />
 
       {/* Today's Meals */}
-      <TodayMealsSection />
+      {hasMealPlan ? (
+        <>
+          <DailyOverview />
+          <TodayMealsSection />
+        </>
+      ) : (
+        <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
+      )}
     </ScrollView>
   );
 }
