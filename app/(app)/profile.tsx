@@ -38,11 +38,9 @@ export default function ProfileTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadProfileData = async () => {
-    try {
-      await onboarding.loadOnboardingData();
-
-      // Get data from context after loading
+  // Update profile data whenever context values change
+  useEffect(() => {
+    if (!onboarding.isLoading) {
       setProfileData({
         goals: onboarding.selectedGoals,
         gender: onboarding.selectedGender,
@@ -58,6 +56,27 @@ export default function ProfileTab() {
         dietPreferences: onboarding.selectedDietPreferences,
         cookingSkill: onboarding.selectedCookingSkill,
       });
+    }
+  }, [
+    onboarding.isLoading,
+    onboarding.selectedGoals,
+    onboarding.selectedGender,
+    onboarding.age,
+    onboarding.height,
+    onboarding.weight,
+    onboarding.breakfastTime,
+    onboarding.lunchTime,
+    onboarding.dinnerTime,
+    onboarding.selectedMeals,
+    onboarding.selectedCuisines,
+    onboarding.selectedAllergies,
+    onboarding.selectedDietPreferences,
+    onboarding.selectedCookingSkill,
+  ]);
+
+  const loadProfileData = async () => {
+    try {
+      await onboarding.loadOnboardingData();
     } catch (error) {
       console.error("Error loading profile data:", error);
     }
@@ -68,9 +87,8 @@ export default function ProfileTab() {
     minute: number;
     period: "AM" | "PM";
   }) => {
-    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${
-      time.period
-    }`;
+    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${time.period
+      }`;
   };
 
   const getCookingSkillEmoji = (skill?: string) => {
@@ -174,8 +192,8 @@ export default function ProfileTab() {
                   {profileData.gender === "male"
                     ? "Male"
                     : profileData.gender === "female"
-                    ? "Female"
-                    : "Prefer not to say"}
+                      ? "Female"
+                      : "Prefer not to say"}
                 </Text>
               </View>
             )}
@@ -205,121 +223,121 @@ export default function ProfileTab() {
       {(profileData?.breakfastTime ||
         profileData?.lunchTime ||
         profileData?.dinnerTime) && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="clock-outline"
-              size={20}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.sectionTitle}>Meal Times</Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons
+                name="clock-outline"
+                size={20}
+                color={Colors.lilac[900]}
+              />
+              <Text style={styles.sectionTitle}>Meal Times</Text>
+            </View>
+            <View style={styles.timeContainer}>
+              {profileData.breakfastTime && (
+                <View style={styles.timeItem}>
+                  <Text style={styles.timeLabel}>Breakfast</Text>
+                  <Text style={styles.timeValue}>
+                    {profileData.breakfastTime}
+                  </Text>
+                </View>
+              )}
+              {profileData.lunchTime && (
+                <View style={styles.timeItem}>
+                  <Text style={styles.timeLabel}>Lunch</Text>
+                  <Text style={styles.timeValue}>{profileData.lunchTime}</Text>
+                </View>
+              )}
+              {profileData.dinnerTime && (
+                <View style={styles.timeItem}>
+                  <Text style={styles.timeLabel}>Dinner</Text>
+                  <Text style={styles.timeValue}>{profileData.dinnerTime}</Text>
+                </View>
+              )}
+            </View>
           </View>
-          <View style={styles.timeContainer}>
-            {profileData.breakfastTime && (
-              <View style={styles.timeItem}>
-                <Text style={styles.timeLabel}>Breakfast</Text>
-                <Text style={styles.timeValue}>
-                  {profileData.breakfastTime}
-                </Text>
-              </View>
-            )}
-            {profileData.lunchTime && (
-              <View style={styles.timeItem}>
-                <Text style={styles.timeLabel}>Lunch</Text>
-                <Text style={styles.timeValue}>{profileData.lunchTime}</Text>
-              </View>
-            )}
-            {profileData.dinnerTime && (
-              <View style={styles.timeItem}>
-                <Text style={styles.timeLabel}>Dinner</Text>
-                <Text style={styles.timeValue}>{profileData.dinnerTime}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      )}
+        )}
 
       {/* Taste Preferences Section */}
       {(profileData?.meals.length ||
         profileData?.cuisines.length ||
         profileData?.cookingSkill) && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="food"
-              size={20}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.sectionTitle}>Taste Preferences</Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons
+                name="food"
+                size={20}
+                color={Colors.lilac[900]}
+              />
+              <Text style={styles.sectionTitle}>Taste Preferences</Text>
+            </View>
+
+            {profileData.cookingSkill && (
+              <View style={styles.cookingSkillContainer}>
+                <Text style={styles.cookingSkillLabel}>Cooking Skill</Text>
+                <View style={styles.cookingSkillBadge}>
+                  <Text style={styles.cookingSkillEmoji}>
+                    {getCookingSkillEmoji(profileData.cookingSkill)}
+                  </Text>
+                  <Text style={styles.cookingSkillText}>
+                    {getCookingSkillLabel(profileData.cookingSkill)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {profileData.meals.length > 0 && (
+              <View style={styles.preferenceGroup}>
+                <Text style={styles.preferenceLabel}>Meal Types</Text>
+                <View style={styles.tagsContainer}>
+                  {profileData.meals.map((meal, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{meal}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {profileData.cuisines.length > 0 && (
+              <View style={styles.preferenceGroup}>
+                <Text style={styles.preferenceLabel}>Cuisines</Text>
+                <View style={styles.tagsContainer}>
+                  {profileData.cuisines.map((cuisine, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{cuisine}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {profileData.dietPreferences.length > 0 && (
+              <View style={styles.preferenceGroup}>
+                <Text style={styles.preferenceLabel}>Diet Preferences</Text>
+                <View style={styles.tagsContainer}>
+                  {profileData.dietPreferences.map((diet, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{diet}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {profileData.allergies.length > 0 && (
+              <View style={styles.preferenceGroup}>
+                <Text style={styles.preferenceLabel}>Allergies & Dislikes</Text>
+                <View style={styles.tagsContainer}>
+                  {profileData.allergies.map((allergy, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{allergy}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
-
-          {profileData.cookingSkill && (
-            <View style={styles.cookingSkillContainer}>
-              <Text style={styles.cookingSkillLabel}>Cooking Skill</Text>
-              <View style={styles.cookingSkillBadge}>
-                <Text style={styles.cookingSkillEmoji}>
-                  {getCookingSkillEmoji(profileData.cookingSkill)}
-                </Text>
-                <Text style={styles.cookingSkillText}>
-                  {getCookingSkillLabel(profileData.cookingSkill)}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {profileData.meals.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Meal Types</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.meals.map((meal, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{meal}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {profileData.cuisines.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Cuisines</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.cuisines.map((cuisine, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{cuisine}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {profileData.dietPreferences.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Diet Preferences</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.dietPreferences.map((diet, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{diet}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {profileData.allergies.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Allergies & Dislikes</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.allergies.map((allergy, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{allergy}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-      )}
+        )}
 
       {/* Sign Out Button */}
       <View style={styles.signOutContainer}>

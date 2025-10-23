@@ -422,6 +422,19 @@ export default function OnboardingFlowScreen() {
 
   const backgroundColor = getBackgroundColor();
 
+  function handleStepPress(stepIndex: number) {
+    const targetPage = ONBOARDING_PAGES[stepIndex];
+    if (targetPage) {
+      router.push({
+        pathname: "/(onboarding)/flow",
+        params: {
+          section: targetPage.section,
+          step: targetPage.step.toString(),
+        },
+      });
+    }
+  }
+
   return (
     <OnboardingLayout backgroundColor={backgroundColor}>
       {/* Progress bar only for content pages */}
@@ -429,6 +442,7 @@ export default function OnboardingFlowScreen() {
         <ProgressBar
           currentStep={currentIndex + 1}
           totalSteps={getTotalPages()}
+          onStepPress={handleStepPress}
         />
       )}
 

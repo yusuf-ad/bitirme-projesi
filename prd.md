@@ -1224,15 +1224,15 @@ constants/
 ### Phase 1: Foundation (Weeks 1-2)
 
 - [x] Project setup (Expo, TypeScript, ESLint)
-- [ ] Supabase project configuration
-- [ ] Database schema implementation
-- [ ] Authentication system (Email/Password)
-- [ ] User profile setup flow
+- [x] Supabase project configuration
+- [x] Database schema implementation
+- [x] Authentication system (Email/Password)
+- [x] User profile setup flow
 
 ### Phase 2: Core Features (Weeks 3-5)
 
 - [ ] Ingredient management (CRUD operations)
-- [ ] Edamam API integration
+- [ ] Spoonacular API integration
 - [ ] Recipe search and display
 - [ ] Recipe detail view
 - [ ] Save favorite recipes

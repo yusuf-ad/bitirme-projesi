@@ -1,11 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import {
-  convertMealTimesFromDB,
-  getUserOnboardingProfile,
-  updateUserBodyMetrics,
-  updateUserGoals,
-  updateUserMealTimes,
-  updateUserTastePreferences,
+    convertMealTimesFromDB,
+    getUserOnboardingProfile,
+    updateUserBodyMetrics,
+    updateUserGoals,
+    updateUserMealTimes,
+    updateUserTastePreferences,
 } from "@/lib/supabase-onboarding";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useState } from "react";
@@ -227,90 +227,114 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
 
-      // First try to load from AsyncStorage (for new users during onboarding)
-      const goalsData = await AsyncStorage.getItem("onboarding_goals");
-      const bodyData = await AsyncStorage.getItem("onboarding_body");
-      const mealsData = await AsyncStorage.getItem("onboarding_meals");
-      const tasteData = await AsyncStorage.getItem("onboarding_taste");
-
-      if (goalsData) {
-        setSelectedGoals(JSON.parse(goalsData));
-      }
-      if (bodyData) {
-        const body = JSON.parse(bodyData);
-        setSelectedGender(body.gender);
-        setAge(body.age);
-        setHeight(body.height_cm);
-        setWeight(body.weight_kg);
-      }
-      if (mealsData) {
-        const meals = JSON.parse(mealsData);
-        setBreakfastTime(meals.breakfast);
-        setLunchTime(meals.lunch);
-        setDinnerTime(meals.dinner);
-      }
-      if (tasteData) {
-        const taste = JSON.parse(tasteData);
-        setSelectedMeals(taste.meal_types || []);
-        setSelectedCuisines(taste.cuisines || []);
-        setSelectedAllergies(taste.allergies_dislikes || []);
-        setSelectedDietPreferences(taste.diet_preferences || []);
-        setSelectedCookingSkill(taste.cooking_skill_level || "");
-      }
-
-      // Then try to load from Supabase (for existing users)
+      // Check if user is logged in
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) {
-        return;
-      }
 
-      const profile = await getUserOnboardingProfile(user.id);
+      if (user) {
+        // User is logged in - load from Supabase (priority)
+        console.log("Loading onboarding data from Supabase for user:", user.id);
+        const profile = await getUserOnboardingProfile(user.id);
 
-      if (profile.goals?.goal_ids) {
-        setSelectedGoals(profile.goals.goal_ids);
-      }
+        // Load goals
+        if (profile.goals?.goal_ids && profile.goals.goal_ids.length > 0) {
+          setSelectedGoals(profile.goals.goal_ids);
+        }
 
-      if (profile.bodyMetrics) {
-        if (profile.bodyMetrics.gender) {
-          setSelectedGender(profile.bodyMetrics.gender);
+        // Load body metrics
+        if (profile.bodyMetrics) {
+          if (profile.bodyMetrics.gender) {
+            setSelectedGender(profile.bodyMetrics.gender);
+          }
+          if (profile.bodyMetrics.age) {
+            setAge(profile.bodyMetrics.age);
+          }
+          if (profile.bodyMetrics.height_cm) {
+            setHeight(profile.bodyMetrics.height_cm);
+          }
+          if (profile.bodyMetrics.weight_kg) {
+            setWeight(profile.bodyMetrics.weight_kg);
+          }
         }
-        if (profile.bodyMetrics.age) {
-          setAge(profile.bodyMetrics.age);
-        }
-        if (profile.bodyMetrics.height_cm) {
-          setHeight(profile.bodyMetrics.height_cm);
-        }
-        if (profile.bodyMetrics.weight_kg) {
-          setWeight(profile.bodyMetrics.weight_kg);
-        }
-      }
 
-      if (profile.mealTimes) {
-        const convertedTimes = convertMealTimesFromDB(profile.mealTimes);
-        if (convertedTimes) {
-          setBreakfastTime(convertedTimes.breakfast);
-          setLunchTime(convertedTimes.lunch);
-          setDinnerTime(convertedTimes.dinner);
+        // Load meal times
+        if (profile.mealTimes) {
+          const convertedTimes = convertMealTimesFromDB(profile.mealTimes);
+          if (convertedTimes) {
+            setBreakfastTime(convertedTimes.breakfast);
+            setLunchTime(convertedTimes.lunch);
+            setDinnerTime(convertedTimes.dinner);
+          }
         }
-      }
 
-      if (profile.tastePreferences) {
-        if (profile.tastePreferences.meal_types) {
-          setSelectedMeals(profile.tastePreferences.meal_types);
+        // Load taste preferences
+        if (profile.tastePreferences) {
+          if (
+            profile.tastePreferences.meal_types &&
+            profile.tastePreferences.meal_types.length > 0
+          ) {
+            setSelectedMeals(profile.tastePreferences.meal_types);
+          }
+          if (
+            profile.tastePreferences.cuisines &&
+            profile.tastePreferences.cuisines.length > 0
+          ) {
+            setSelectedCuisines(profile.tastePreferences.cuisines);
+          }
+          if (
+            profile.tastePreferences.allergies_dislikes &&
+            profile.tastePreferences.allergies_dislikes.length > 0
+          ) {
+            setSelectedAllergies(profile.tastePreferences.allergies_dislikes);
+          }
+          if (
+            profile.tastePreferences.diet_preferences &&
+            profile.tastePreferences.diet_preferences.length > 0
+          ) {
+            setSelectedDietPreferences(
+              profile.tastePreferences.diet_preferences
+            );
+          }
+          if (profile.tastePreferences.cooking_skill_level) {
+            setSelectedCookingSkill(
+              profile.tastePreferences.cooking_skill_level
+            );
+          }
         }
-        if (profile.tastePreferences.cuisines) {
-          setSelectedCuisines(profile.tastePreferences.cuisines);
+
+        console.log("Successfully loaded data from Supabase");
+      } else {
+        // No user logged in - load from AsyncStorage (for onboarding flow)
+        console.log("Loading onboarding data from AsyncStorage");
+        const goalsData = await AsyncStorage.getItem("onboarding_goals");
+        const bodyData = await AsyncStorage.getItem("onboarding_body");
+        const mealsData = await AsyncStorage.getItem("onboarding_meals");
+        const tasteData = await AsyncStorage.getItem("onboarding_taste");
+
+        if (goalsData) {
+          setSelectedGoals(JSON.parse(goalsData));
         }
-        if (profile.tastePreferences.allergies_dislikes) {
-          setSelectedAllergies(profile.tastePreferences.allergies_dislikes);
+        if (bodyData) {
+          const body = JSON.parse(bodyData);
+          setSelectedGender(body.gender);
+          setAge(body.age);
+          setHeight(body.height_cm);
+          setWeight(body.weight_kg);
         }
-        if (profile.tastePreferences.diet_preferences) {
-          setSelectedDietPreferences(profile.tastePreferences.diet_preferences);
+        if (mealsData) {
+          const meals = JSON.parse(mealsData);
+          setBreakfastTime(meals.breakfast);
+          setLunchTime(meals.lunch);
+          setDinnerTime(meals.dinner);
         }
-        if (profile.tastePreferences.cooking_skill_level) {
-          setSelectedCookingSkill(profile.tastePreferences.cooking_skill_level);
+        if (tasteData) {
+          const taste = JSON.parse(tasteData);
+          setSelectedMeals(taste.meal_types || []);
+          setSelectedCuisines(taste.cuisines || []);
+          setSelectedAllergies(taste.allergies_dislikes || []);
+          setSelectedDietPreferences(taste.diet_preferences || []);
+          setSelectedCookingSkill(taste.cooking_skill_level || "");
         }
       }
     } catch (error) {

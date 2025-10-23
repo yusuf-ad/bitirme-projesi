@@ -1,6 +1,7 @@
 export interface ProgressBarProps {
   currentStep: number;
   totalSteps: number;
+  onStepPress?: (stepIndex: number) => void;
 }
 
 export interface OnboardingNavigationProps {
