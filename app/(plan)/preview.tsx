@@ -1,5 +1,14 @@
 import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { supabase } from "@/lib/supabase";
+import {
+  createMealItem,
+  getMealImageUrl,
+  Meal,
+  MealPlan,
+  MealType,
+} from "@/lib/utils";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -7,37 +16,11 @@ import { useEffect, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-interface Meal {
-  id: number;
-  title: string;
-  readyInMinutes?: number;
-  servings?: number;
-  imageType?: string;
-  image?: string;
-  sourceUrl?: string;
-  nutrition?: {
-    calories?: number;
-    carbs?: number;
-    fat?: number;
-    protein?: number;
-  };
-}
-
-interface MealTypeData {
-  results: Meal[];
-  totalResults: number;
-}
-
-interface MealPlan {
-  breakfast: MealTypeData;
-  lunch: MealTypeData;
-  dinner: MealTypeData;
-}
-
 export default function MealPlanPreview() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
+  const { session } = useAuthContext();
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [selectedMealIndices, setSelectedMealIndices] = useState<{
     breakfast: number;
@@ -79,32 +62,72 @@ export default function MealPlanPreview() {
     }
   }, [params.mealPlanData]);
 
-  const handleSaveMealPlan = () => {
+  const handleSaveMealPlan = async () => {
+    const breakfastMealItem = createMealItem(
+      mealPlan,
+      "breakfast",
+      selectedMealIndices.breakfast
+    );
+    const lunchMealItem = createMealItem(
+      mealPlan,
+      "lunch",
+      selectedMealIndices.lunch
+    );
+    const dinnerMealItem = createMealItem(
+      mealPlan,
+      "dinner",
+      selectedMealIndices.dinner
+    );
+
+    const mealPlanData = {
+      breakfast: breakfastMealItem,
+      lunch: lunchMealItem,
+      dinner: dinnerMealItem,
+    };
+
     // TODO: Save meal plan logic
-    console.log("Saving meal plan...");
+    console.log("Saving meal plan...", mealPlanData);
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const formatDate = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const { data: planData, error: planError } = await supabase
+      .from("meal_plans")
+      .insert([
+        {
+          user_id: session?.user.id,
+          name: `my meal plan ${formatDate(today)}`,
+          start_date: formatDate(today),
+          end_date: formatDate(tomorrow),
+        },
+      ])
+      .select();
+
+    console.log("Insert meal plan response:", planData);
+
+    if (planError) {
+      Alert.alert("Error saving meal plan", planError.message);
+    }
+
+    const { error: itemsError } = await supabase
+      .from("meal_plan_items")
+      .insert([
+        { meal_plan_id: planData?.[0].id, ...breakfastMealItem },
+        { meal_plan_id: planData?.[0].id, ...lunchMealItem },
+        { meal_plan_id: planData?.[0].id, ...dinnerMealItem },
+      ]);
+
+    if (itemsError) {
+      Alert.alert("Error saving meal items :(", itemsError.message);
+    }
   };
 
-  const getMealImageUrl = (meal: Meal): string => {
-    // First check if there's a direct image property from API
-    if (meal.image) {
-      // If it's already a full URL
-      if (meal.image.startsWith("http")) {
-        return meal.image;
-      }
-      // If it's just filename, construct URL
-      return `https://spoonacular.com/recipeImages/${meal.image}`;
-    }
-    // Fallback to constructing URL from id
-    if (meal.id) {
-      return `https://spoonacular.com/recipeImages/${meal.id}-312x231.jpg`;
-    }
-    return "";
-  };
-
-  const renderMealItem = (
-    meal: Meal,
-    mealType: "breakfast" | "lunch" | "dinner"
-  ) => {
+  const renderMealItem = (meal: Meal, mealType: MealType) => {
     const imageUrl = getMealImageUrl(meal);
 
     const handleReplace = () => {
@@ -173,7 +196,7 @@ export default function MealPlanPreview() {
     );
   };
 
-  const renderDayMeals = (mealType: "breakfast" | "lunch" | "dinner") => {
+  const renderDayMeals = (mealType: MealType) => {
     const dayData = mealPlan?.[mealType];
 
     if (!dayData || dayData.results.length === 0) return null;

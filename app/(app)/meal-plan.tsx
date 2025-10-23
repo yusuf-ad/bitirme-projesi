@@ -31,6 +31,7 @@ export default function MealplanTab() {
       contentContainerStyle={{
         paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
       }}
+      bounces={false}
     >
       {/* Header */}
       <Header firstName={firstName} motivationText="Let's plan your meals!" />
