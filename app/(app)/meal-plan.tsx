@@ -139,13 +139,6 @@ export default function MealplanTab() {
         onDateSelect={handleDateSelect}
       />
 
-      {/* Daily overview */}
-      {activePlan ? (
-        <View style={styles.section}>
-          <DailyOverview />
-        </View>
-      ) : null}
-
       {/* Meals for selected date */}
       <View
         style={[
@@ -160,7 +153,13 @@ export default function MealplanTab() {
             <ActivityIndicator color={Colors.lilac[900]} />
           </View>
         ) : hasMeals ? (
-          <DailyMealsList items={dailyItems} selectedDate={selectedDate} />
+          <>
+            <View style={styles.section}>
+              <DailyOverview />
+            </View>
+
+            <DailyMealsList items={dailyItems} selectedDate={selectedDate} />
+          </>
         ) : (
           <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
         )}
