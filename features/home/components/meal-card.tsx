@@ -15,7 +15,6 @@ interface MealCardProps {
   mealTime: string;
   mealIcon: ImageSourcePropType;
   recipeName: string;
-  recipeDescription: string;
   recipeImage: ImageSourcePropType;
   prepTime: string;
   calories: string;
@@ -27,7 +26,6 @@ export default function MealCard({
   mealTime,
   mealIcon,
   recipeName,
-  recipeDescription,
   recipeImage,
   prepTime,
   calories,
@@ -83,9 +81,7 @@ export default function MealCard({
         <View style={styles.recipeInfo}>
           <View style={styles.recipeTextContainer}>
             <Text style={styles.recipeName}>{recipeName}</Text>
-            <Text style={styles.recipeDescription} numberOfLines={2}>
-              {recipeDescription}
-            </Text>
+
             <View style={styles.recipeMetaContainer}>
               <View style={styles.metaItem}>
                 <Image

@@ -1,8 +1,5 @@
 import { Colors } from "@/constants/theme";
-import CalendarSection from "@/features/home/components/calendar-section";
-import DailyOverview from "@/features/home/components/daily-overview";
 import Header from "@/features/home/components/header";
-import TodayMealsSection from "@/features/home/components/today-meals-section";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useCallback, useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
@@ -39,18 +36,6 @@ export default function HomeTab() {
     >
       {/* Header */}
       <Header firstName={firstName} motivationText="Let's plan your meals" />
-
-      {/* Calendar */}
-      <CalendarSection
-        selectedDate={selectedDate}
-        onDateSelect={handleDateSelect}
-      />
-
-      {/* Daily overview */}
-      <DailyOverview />
-
-      {/* Today's Meals */}
-      <TodayMealsSection />
     </ScrollView>
   );
 }

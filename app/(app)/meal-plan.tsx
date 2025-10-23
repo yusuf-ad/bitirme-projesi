@@ -1,9 +1,9 @@
 import { Colors } from "@/constants/theme";
+import { DailyOverview } from "@/features/home";
 import CalendarSection from "@/features/home/components/calendar-section";
-import DailyOverview from "@/features/home/components/daily-overview";
 import Header from "@/features/home/components/header";
 import type { MealPlanItemRecord, MealPlanRecord } from "@/features/meal-plan";
-import { DailyMealsList, EmptyStateForDate } from "@/features/meal-plan";
+import { DailyMealsList, MealPlanEmptyState } from "@/features/meal-plan";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
@@ -147,23 +147,22 @@ export default function MealplanTab() {
       ) : null}
 
       {/* Meals for selected date */}
-      <View style={styles.section}>
+      <View
+        style={[
+          styles.section,
+          {
+            paddingBottom: bottom,
+          },
+        ]}
+      >
         {isLoading ? (
           <View style={styles.loaderContainer}>
             <ActivityIndicator color={Colors.lilac[900]} />
           </View>
         ) : hasMeals ? (
-          <DailyMealsList
-            items={dailyItems}
-            selectedDate={selectedDate}
-            planName={activePlan?.name}
-          />
+          <DailyMealsList items={dailyItems} selectedDate={selectedDate} />
         ) : (
-          <EmptyStateForDate
-            selectedDate={selectedDate}
-            onCreatePress={handleCreateMealPlan}
-            errorMessage={error}
-          />
+          <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
         )}
       </View>
     </ScrollView>
@@ -180,7 +179,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   section: {
-    paddingTop: 16,
+    paddingTop: 8,
   },
   loaderContainer: {
     paddingVertical: 32,

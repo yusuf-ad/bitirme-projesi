@@ -12,7 +12,6 @@ export default function TodayMealsSection() {
           mealTime={meal.mealTime}
           mealIcon={meal.mealIcon}
           recipeName={meal.recipeName}
-          recipeDescription={meal.recipeDescription}
           recipeImage={meal.recipeImage}
           prepTime={meal.prepTime}
           calories={meal.calories}
