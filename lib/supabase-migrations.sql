@@ -193,3 +193,143 @@ CREATE TRIGGER update_user_meal_times_updated_at BEFORE UPDATE ON user_meal_time
 
 CREATE TRIGGER update_user_taste_preferences_updated_at BEFORE UPDATE ON user_taste_preferences
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- 1. Meal Plans (Başlık Tablosu)
+-- Bir kullanıcının planını (örn: "Bu Haftanın Planı") tanımlar.
+CREATE TABLE public.meal_plans (
+  id serial PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name text NOT NULL DEFAULT 'Yemek Planım',
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  
+  CONSTRAINT check_dates CHECK (end_date >= start_date)
+);
+
+-- 2. Meal Plan Items (Detay Tablosu)
+-- Bir Spoonacular tarifini belirli bir plana, tarihe ve öğüne bağlar.
+CREATE TABLE public.meal_plan_items (
+  id serial PRIMARY KEY,
+  
+  -- Ana plana bağlantı (RLS politikasının çalışması için kritik)
+  meal_plan_id integer NOT NULL REFERENCES public.meal_plans(id) ON DELETE CASCADE,
+  
+  -- === SPOONACULAR ENTEGRASYONU ===
+  -- Tarif detayları için kullanılacak ID
+  spoonacular_recipe_id integer NOT NULL, 
+  
+  -- === PERFORMANS İÇİN ÖNBELLEK (CACHING) ===
+  -- Bu alanlar, planı görüntülerken API çağrısı yapmamak için kullanılır.
+  recipe_name text NOT NULL,
+  recipe_image_url text,
+  calories_per_serving integer, -- İstediğiniz kalori bilgisi
+  ready_in_minutes integer,     -- İstediğiniz hazırlık süresi bilgisi
+  
+  -- === PLANLAMA DETAYLARI ===
+  meal_date date NOT NULL,
+  meal_type text NOT NULL CHECK (meal_type = ANY (ARRAY['breakfast'::text, 'lunch'::text, 'dinner'::text, 'snack'::text])),
+  
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Bir kullanıcı aynı tarifi aynı yuvaya iki kez ekleyememeli
+  CONSTRAINT uq_plan_slot UNIQUE (meal_plan_id, meal_date, meal_type, spoonacular_recipe_id)
+);
+
+-- ==========================================
+-- RLS Policies for Meal Plans Tables
+-- ==========================================
+
+-- Enable RLS for meal_plans
+ALTER TABLE public.meal_plans ENABLE ROW LEVEL SECURITY;
+
+-- Create indexes for faster lookups
+CREATE INDEX IF NOT EXISTS idx_meal_plans_user_id ON public.meal_plans(user_id);
+CREATE INDEX IF NOT EXISTS idx_meal_plans_dates ON public.meal_plans(start_date, end_date);
+
+-- RLS Policy: Users can only view their own meal plans
+CREATE POLICY "Users can view their own meal plans" ON public.meal_plans
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- RLS Policy: Users can only insert their own meal plans
+CREATE POLICY "Users can insert their own meal plans" ON public.meal_plans
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- RLS Policy: Users can only update their own meal plans
+CREATE POLICY "Users can update their own meal plans" ON public.meal_plans
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- RLS Policy: Users can only delete their own meal plans
+CREATE POLICY "Users can delete their own meal plans" ON public.meal_plans
+  FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Enable RLS for meal_plan_items
+ALTER TABLE public.meal_plan_items ENABLE ROW LEVEL SECURITY;
+
+-- Create indexes for faster lookups
+CREATE INDEX IF NOT EXISTS idx_meal_plan_items_meal_plan_id ON public.meal_plan_items(meal_plan_id);
+CREATE INDEX IF NOT EXISTS idx_meal_plan_items_meal_date ON public.meal_plan_items(meal_date);
+CREATE INDEX IF NOT EXISTS idx_meal_plan_items_spoonacular_id ON public.meal_plan_items(spoonacular_recipe_id);
+
+-- RLS Policy: Users can only view meal plan items from their own meal plans
+CREATE POLICY "Users can view their own meal plan items" ON public.meal_plan_items
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.meal_plans 
+      WHERE meal_plans.id = meal_plan_items.meal_plan_id 
+      AND meal_plans.user_id = auth.uid()
+    )
+  );
+
+-- RLS Policy: Users can only insert meal plan items to their own meal plans
+CREATE POLICY "Users can insert their own meal plan items" ON public.meal_plan_items
+  FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.meal_plans 
+      WHERE meal_plans.id = meal_plan_items.meal_plan_id 
+      AND meal_plans.user_id = auth.uid()
+    )
+  );
+
+-- RLS Policy: Users can only update meal plan items from their own meal plans
+CREATE POLICY "Users can update their own meal plan items" ON public.meal_plan_items
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.meal_plans 
+      WHERE meal_plans.id = meal_plan_items.meal_plan_id 
+      AND meal_plans.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.meal_plans 
+      WHERE meal_plans.id = meal_plan_items.meal_plan_id 
+      AND meal_plans.user_id = auth.uid()
+    )
+  );
+
+-- RLS Policy: Users can only delete meal plan items from their own meal plans
+CREATE POLICY "Users can delete their own meal plan items" ON public.meal_plan_items
+  FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.meal_plans 
+      WHERE meal_plans.id = meal_plan_items.meal_plan_id 
+      AND meal_plans.user_id = auth.uid()
+    )
+  );
+
+-- Apply trigger to meal_plans table for updated_at
+CREATE TRIGGER update_meal_plans_updated_at BEFORE UPDATE ON public.meal_plans
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
