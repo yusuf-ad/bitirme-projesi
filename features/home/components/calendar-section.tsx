@@ -1,13 +1,35 @@
 import CalendarDay from "@/features/home/components/calendar-day";
 import { mockCalendarDays } from "@/features/home/data/mock-data";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { FlatList, StyleSheet } from "react-native";
 
 const ITEM_WIDTH = 52 + 12; // width + gap
 
-export default function CalendarSection() {
+interface CalendarSectionProps {
+  selectedDate: Date;
+  onDateSelect: (date: Date) => void;
+}
+
+const isSameDay = (a: Date, b: Date) => {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+};
+
+export default function CalendarSection({
+  selectedDate,
+  onDateSelect,
+}: CalendarSectionProps) {
   const ref = useRef<FlatList>(null);
-  const [index, setIndex] = useState(0);
+
+  const calendarDays = useMemo(() => mockCalendarDays, []);
+
+  const computedIndex = calendarDays.findIndex((day) =>
+    isSameDay(day.date, selectedDate)
+  );
+  const selectedIndex = computedIndex >= 0 ? computedIndex : 0;
 
   const getItemLayout = (_: any, index: number) => ({
     length: ITEM_WIDTH,
@@ -16,25 +38,19 @@ export default function CalendarSection() {
   });
 
   useEffect(() => {
-    // Find today's index and set it with animation
-    const todayIndex = mockCalendarDays.findIndex((day) => day.isSelected);
-    if (todayIndex !== -1) {
-      setIndex(todayIndex);
-    }
-  }, []);
-
-  useEffect(() => {
     // Scroll to the selected index with animation
     const timer = setTimeout(() => {
-      ref.current?.scrollToIndex({
-        index,
-        animated: true,
-        viewPosition: 0.5,
-      });
+      if (selectedIndex >= 0) {
+        ref.current?.scrollToIndex({
+          index: selectedIndex,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      }
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [index]);
+  }, [selectedIndex]);
 
   return (
     <FlatList
@@ -50,18 +66,22 @@ export default function CalendarSection() {
           });
         });
       }}
-      data={mockCalendarDays}
+      data={calendarDays}
       horizontal
       showsHorizontalScrollIndicator={false}
       style={styles.calendarScrollView}
       contentContainerStyle={styles.calendarContent}
-      keyExtractor={(item) => item.day.toString()}
+      keyExtractor={(item) => item.date.toISOString()}
       renderItem={({ item, index: itemIndex }) => (
         <CalendarDay
           day={item.day}
           dayOfWeek={item.dayOfWeek}
-          isSelected={index === itemIndex}
-          onPress={() => setIndex(itemIndex)}
+          isSelected={selectedIndex === itemIndex}
+          onPress={() => {
+            const normalizedDate = new Date(item.date);
+            normalizedDate.setHours(0, 0, 0, 0);
+            onDateSelect(normalizedDate);
+          }}
         />
       )}
     />

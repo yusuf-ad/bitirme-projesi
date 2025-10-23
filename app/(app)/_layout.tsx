@@ -28,51 +28,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="(profile)"
         options={{
           title: "Profile",
-        }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="preferences"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="goals-metrics"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="meal-times"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="taste-preferences"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="allergies-diet"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="cooking-skill"
-        options={{
-          href: null,
         }}
       />
     </Tabs>

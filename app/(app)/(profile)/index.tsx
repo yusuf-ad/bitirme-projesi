@@ -130,25 +130,25 @@ export default function ProfileTab() {
       id: "account",
       title: "Account",
       icon: "account-circle-outline",
-      onPress: () => router.push("/(app)/account"),
+      onPress: () => router.push("/(app)/(profile)/account"),
     },
     {
       id: "preferences",
       title: "Preferences",
       icon: "tune",
-      onPress: () => router.push("/(app)/preferences"),
+      onPress: () => router.push("/(app)/(profile)/preferences"),
     },
     {
       id: "goals",
       title: "Goals & Metrics",
       icon: "target",
-      onPress: () => router.push("/(app)/goals-metrics"),
+      onPress: () => router.push("/(app)/(profile)/goals-metrics"),
     },
     {
       id: "meal-times",
       title: "Meal Times",
       icon: "clock-outline",
-      onPress: () => router.push("/(app)/meal-times"),
+      onPress: () => router.push("/(app)/(profile)/meal-times"),
     },
   ];
 
@@ -157,19 +157,19 @@ export default function ProfileTab() {
       id: "taste",
       title: "Taste Preferences",
       icon: "food",
-      onPress: () => router.push("/(app)/taste-preferences"),
+      onPress: () => router.push("/(app)/(profile)/taste-preferences"),
     },
     {
       id: "allergies",
       title: "Allergies & Diet",
       icon: "alert-circle-outline",
-      onPress: () => router.push("/(app)/allergies-diet"),
+      onPress: () => router.push("/(app)/(profile)/allergies-diet"),
     },
     {
       id: "cooking",
       title: "Cooking Skill",
       icon: "chef-hat",
-      onPress: () => router.push("/(app)/cooking-skill"),
+      onPress: () => router.push("/(app)/(profile)/cooking-skill"),
     },
   ];
 
@@ -178,8 +178,9 @@ export default function ProfileTab() {
     minute: number;
     period: "AM" | "PM";
   }) => {
-    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${time.period
-      }`;
+    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${
+      time.period
+    }`;
   };
 
   const getCookingSkillEmoji = (skill?: string) => {
@@ -213,9 +214,8 @@ export default function ProfileTab() {
   };
 
   const renderMenuItem = (item: MenuItem, index: number, array: MenuItem[]) => (
-    <>
+    <View key={item.id}>
       <Pressable
-        key={item.id}
         style={({ pressed }) => [
           styles.menuItem,
           pressed && styles.menuItemPressed,
@@ -239,7 +239,7 @@ export default function ProfileTab() {
         />
       </Pressable>
       {index < array.length - 1 && <View style={styles.separator} />}
-    </>
+    </View>
   );
 
   if (onboarding.isLoading || authLoading) {

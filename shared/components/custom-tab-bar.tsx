@@ -66,7 +66,7 @@ export function CustomTabBar({
           if (route.name === "index") iconName = "home";
           else if (route.name === "meal-plan") iconName = "calendar";
           else if (route.name === "groceries") iconName = "shopping-cart";
-          else if (route.name === "profile") iconName = "user";
+          else if (route.name === "(profile)") iconName = "user";
 
           return (
             <AnimatedPressable
