@@ -1,29 +1,20 @@
 import { Colors } from "@/constants/theme";
-import Header from "@/features/home/components/header";
-import { useAuthContext } from "@/hooks/use-auth-context";
-import { useCallback, useState } from "react";
-import { Platform, ScrollView, StyleSheet } from "react-native";
+import { useState } from "react";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+type TabType = "discover" | "favorites";
+
 export default function HomeTab() {
-  const { session } = useAuthContext();
   const { bottom, top } = useSafeAreaInsets();
-
-  const [selectedDate, setSelectedDate] = useState<Date>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  });
-
-  const handleDateSelect = useCallback((date: Date) => {
-    const normalized = new Date(date);
-    normalized.setHours(0, 0, 0, 0);
-    setSelectedDate(normalized);
-  }, []);
-
-  // Extract first name from user data or use default
-  const fullName = session?.user?.user_metadata?.fullName || "User";
-  const firstName = fullName.split(" ")[0];
+  const [activeTab, setActiveTab] = useState<TabType>("discover");
 
   return (
     <ScrollView
@@ -35,7 +26,57 @@ export default function HomeTab() {
       }}
     >
       {/* Header */}
-      <Header firstName={firstName} motivationText="Let's plan your meals" />
+      <View style={styles.headerContainer}>
+        <Pressable
+          onPress={() => setActiveTab("discover")}
+          style={[
+            styles.tabButton,
+            activeTab === "discover"
+              ? styles.tabButtonActive
+              : styles.tabButtonInactive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "discover"
+                ? styles.activeTabText
+                : styles.inactiveTabText,
+            ]}
+          >
+            Discover
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setActiveTab("favorites")}
+          style={[
+            styles.tabButton,
+            activeTab === "favorites"
+              ? styles.tabButtonActive
+              : styles.tabButtonInactive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "favorites"
+                ? styles.activeTabText
+                : styles.inactiveTabText,
+            ]}
+          >
+            Favorites
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* Content */}
+      {activeTab === "discover" && (
+        <View>{/* Discover content buraya gelecek */}</View>
+      )}
+
+      {activeTab === "favorites" && (
+        <View>{/* Favorites content buraya gelecek */}</View>
+      )}
     </ScrollView>
   );
 }
@@ -48,5 +89,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  headerContainer: {
+    flexDirection: "row",
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingTop: 12,
+  },
+  tabButtonActive: {
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.lilac[900],
+  },
+  tabButtonInactive: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lilac[300],
+  },
+  tabText: {
+    textAlign: "center",
+  },
+  activeTabText: {
+    color: Colors.lilac[900],
+    fontWeight: "bold",
+  },
+  inactiveTabText: {
+    color: Colors.gray[500],
   },
 });

@@ -1,5 +1,6 @@
 import AntDesign from "@expo/vector-icons/build/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
@@ -82,11 +83,19 @@ export function CustomTabBar({
                 isFocused ? styles.tabItemActive : styles.tabItemInactive,
               ]}
             >
-              <FontAwesome
-                name={iconName as any}
-                size={20}
-                color={isFocused ? "#FFFFFF" : "#737780"}
-              />
+              {route.name === "index" ? (
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={24}
+                  color={isFocused ? "#FFFFFF" : "#737780"}
+                />
+              ) : (
+                <FontAwesome
+                  name={iconName as any}
+                  size={20}
+                  color={isFocused ? "#FFFFFF" : "#737780"}
+                />
+              )}
               {isFocused && (
                 <Animated.Text
                   entering={FadeIn.duration(400)}
