@@ -13,17 +13,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 type TabType = "discover" | "favorites";
 
 export default function HomeTab() {
-  const { bottom, top } = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: top }]}
-      showsVerticalScrollIndicator={false}
-      // safe area boşluğu + tabbar yüksekliği
-      contentContainerStyle={{
-        paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
-      }}
+    <View
+      style={[
+        styles.mainContainer,
+        {
+          paddingTop: top,
+        },
+      ]}
     >
       {/* Header */}
       <View style={styles.headerContainer}>
@@ -69,15 +69,35 @@ export default function HomeTab() {
         </Pressable>
       </View>
 
-      {/* Content */}
-      {activeTab === "discover" && (
-        <View>{/* Discover content buraya gelecek */}</View>
-      )}
+      {/* Content - Scrollable */}
+      <ScrollView
+        style={styles.contentScroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
+        }}
+      >
+        {/* Content */}
+        {activeTab === "discover" && (
+          <View style={styles.discoverContainer}>
+            <View style={styles.gridContainer}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
+                <View key={item} style={styles.gridItem}>
+                  <View style={styles.itemCard}>
+                    <Text style={styles.itemText}>Item {item}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
-      {activeTab === "favorites" && (
-        <View>{/* Favorites content buraya gelecek */}</View>
-      )}
-    </ScrollView>
+        {activeTab === "favorites" && (
+          <View>{/* Favorites content buraya gelecek */}</View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -86,12 +106,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background.secondary,
   },
-  container: {
+  mainContainer: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   headerContainer: {
     flexDirection: "row",
+    paddingHorizontal: 16,
+  },
+  contentScroll: {
+    flex: 1,
   },
   tabButton: {
     flex: 1,
@@ -115,5 +138,30 @@ const styles = StyleSheet.create({
   },
   inactiveTabText: {
     color: Colors.gray[500],
+  },
+  discoverContainer: {
+    marginTop: 16,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "48%",
+  },
+  itemCard: {
+    backgroundColor: Colors.lilac[400],
+    borderRadius: 12,
+    padding: 16,
+    aspectRatio: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.lilac[900],
   },
 });
