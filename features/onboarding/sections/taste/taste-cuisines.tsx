@@ -18,22 +18,10 @@ interface TasteCuisinesProps {
 
 const cuisineOptions = [
   {
-    id: "turkish",
-    label: "Turkish",
-    description: "Rich flavors & traditions",
+    id: "african",
+    label: "African",
+    description: "Rich & diverse flavors",
     image: require("@/assets/images/grilled-chicken.png"),
-  },
-  {
-    id: "italian",
-    label: "Italian",
-    description: "Pasta, risotto, pizza",
-    image: require("@/assets/images/italian-breakfast.png"),
-  },
-  {
-    id: "mediterranean",
-    label: "Mediterranean",
-    description: "Fresh, healthy & colorful",
-    image: require("@/assets/images/spaghetti-carbonara.png"),
   },
   {
     id: "asian",
@@ -48,21 +36,15 @@ const cuisineOptions = [
     image: require("@/assets/images/italian-breakfast.png"),
   },
   {
-    id: "mexican",
-    label: "Mexican",
-    description: "Bold & flavorful",
+    id: "european",
+    label: "European",
+    description: "Traditional & refined",
     image: require("@/assets/images/spaghetti-carbonara.png"),
   },
   {
-    id: "indian",
-    label: "Indian",
-    description: "Aromatic & spicy",
-    image: require("@/assets/images/grilled-chicken.png"),
-  },
-  {
-    id: "french",
-    label: "French",
-    description: "Elegant & refined",
+    id: "italian",
+    label: "Italian",
+    description: "Pasta, risotto, pizza",
     image: require("@/assets/images/italian-breakfast.png"),
   },
   {
@@ -70,6 +52,18 @@ const cuisineOptions = [
     label: "Japanese",
     description: "Delicate & precise",
     image: require("@/assets/images/spaghetti-carbonara.png"),
+  },
+  {
+    id: "mediterranean",
+    label: "Mediterranean",
+    description: "Fresh, healthy & colorful",
+    image: require("@/assets/images/spaghetti-carbonara.png"),
+  },
+  {
+    id: "middleeastern",
+    label: "Middle Eastern",
+    description: "Aromatic & flavorful",
+    image: require("@/assets/images/grilled-chicken.png"),
   },
 ];
 
@@ -88,39 +82,54 @@ export function TasteCuisines({
   const toggleCuisine = (cuisineId: string, like: boolean) => {
     if (like) {
       // Like button pressed
-      const updatedSelection = likedCuisines.includes(cuisineId)
-        ? likedCuisines.filter((c) => c !== cuisineId)
-        : [...likedCuisines, cuisineId];
+      const isCurrentlyLiked = likedCuisines.includes(cuisineId);
 
-      setLikedCuisines(updatedSelection);
-      onSelectionChange?.(updatedSelection);
+      if (isCurrentlyLiked) {
+        // Remove from liked
+        const updatedSelection = likedCuisines.filter((c) => c !== cuisineId);
+        setLikedCuisines(updatedSelection);
+        onSelectionChange?.(updatedSelection);
+      } else {
+        // Add to liked and remove from disliked if exists
+        const updatedSelection = [...likedCuisines, cuisineId];
+        setLikedCuisines(updatedSelection);
+        setDislikedCuisines(dislikedCuisines.filter((c) => c !== cuisineId));
+        onSelectionChange?.(updatedSelection);
 
-      // Auto scroll to next card
-      setTimeout(() => {
-        if (currentIndex < cuisineOptions.length - 1) {
-          flatListRef.current?.scrollToIndex({
-            index: currentIndex + 1,
-            animated: true,
-          });
-        }
-      }, 300);
+        // Auto scroll to next card
+        setTimeout(() => {
+          if (currentIndex < cuisineOptions.length - 1) {
+            flatListRef.current?.scrollToIndex({
+              index: currentIndex + 1,
+              animated: true,
+            });
+          }
+        }, 300);
+      }
     } else {
       // Dislike button pressed
-      const updatedDisliked = dislikedCuisines.includes(cuisineId)
-        ? dislikedCuisines.filter((c) => c !== cuisineId)
-        : [...dislikedCuisines, cuisineId];
+      const isCurrentlyDisliked = dislikedCuisines.includes(cuisineId);
 
-      setDislikedCuisines(updatedDisliked);
+      if (isCurrentlyDisliked) {
+        // Remove from disliked
+        setDislikedCuisines(dislikedCuisines.filter((c) => c !== cuisineId));
+      } else {
+        // Add to disliked and remove from liked if exists
+        setDislikedCuisines([...dislikedCuisines, cuisineId]);
+        const updatedSelection = likedCuisines.filter((c) => c !== cuisineId);
+        setLikedCuisines(updatedSelection);
+        onSelectionChange?.(updatedSelection);
 
-      // Auto scroll to next card
-      setTimeout(() => {
-        if (currentIndex < cuisineOptions.length - 1) {
-          flatListRef.current?.scrollToIndex({
-            index: currentIndex + 1,
-            animated: true,
-          });
-        }
-      }, 300);
+        // Auto scroll to next card
+        setTimeout(() => {
+          if (currentIndex < cuisineOptions.length - 1) {
+            flatListRef.current?.scrollToIndex({
+              index: currentIndex + 1,
+              animated: true,
+            });
+          }
+        }, 300);
+      }
     }
   };
 

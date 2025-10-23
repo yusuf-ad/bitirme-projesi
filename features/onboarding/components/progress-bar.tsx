@@ -1,7 +1,11 @@
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { ProgressBarProps } from "../types/onboarding.types";
 
-export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
+export function ProgressBar({
+  currentStep,
+  totalSteps,
+  onStepPress,
+}: ProgressBarProps) {
   const steps = Array.from({ length: totalSteps }, (_, index) => index);
 
   function getProgressColor(index: number): string {
@@ -23,8 +27,9 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
   return (
     <View style={styles.progressContainer}>
       {steps.map((index) => (
-        <View
+        <Pressable
           key={index}
+          onPress={() => onStepPress?.(index)}
           style={[
             styles.progressBar,
             { backgroundColor: getProgressColor(index) },

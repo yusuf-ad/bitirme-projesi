@@ -1,10 +1,12 @@
 import { Colors } from "@/constants/theme";
-import SignOutButton from "@/features/auth/components/sign-out-button";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,7 +30,15 @@ interface ProfileData {
   cookingSkill?: string;
 }
 
+interface MenuItem {
+  id: string;
+  title: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  onPress: () => void;
+}
+
 export default function ProfileTab() {
+  const { profile, session, isLoading: authLoading } = useAuthContext();
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -38,11 +48,9 @@ export default function ProfileTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadProfileData = async () => {
-    try {
-      await onboarding.loadOnboardingData();
-
-      // Get data from context after loading
+  // Update profile data whenever context values change
+  useEffect(() => {
+    if (!onboarding.isLoading) {
       setProfileData({
         goals: onboarding.selectedGoals,
         gender: onboarding.selectedGender,
@@ -58,19 +66,120 @@ export default function ProfileTab() {
         dietPreferences: onboarding.selectedDietPreferences,
         cookingSkill: onboarding.selectedCookingSkill,
       });
+    }
+  }, [
+    onboarding.isLoading,
+    onboarding.selectedGoals,
+    onboarding.selectedGender,
+    onboarding.age,
+    onboarding.height,
+    onboarding.weight,
+    onboarding.breakfastTime,
+    onboarding.lunchTime,
+    onboarding.dinnerTime,
+    onboarding.selectedMeals,
+    onboarding.selectedCuisines,
+    onboarding.selectedAllergies,
+    onboarding.selectedDietPreferences,
+    onboarding.selectedCookingSkill,
+  ]);
+
+  const loadProfileData = async () => {
+    try {
+      await onboarding.loadOnboardingData();
     } catch (error) {
       console.error("Error loading profile data:", error);
     }
   };
+
+  const getUserInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    if (session?.user?.email) {
+      return session.user.email.slice(0, 2).toUpperCase();
+    }
+    return "SC";
+  };
+
+  const getUserDisplayName = () => {
+    if (profile?.full_name) return profile.full_name;
+    if (session?.user?.email) return session.user.email.split("@")[0];
+    return "User";
+  };
+
+  const getMemberSinceDate = () => {
+    if (session?.user?.created_at) {
+      const date = new Date(session.user.created_at);
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    return "Recently";
+  };
+
+  const generalMenuItems: MenuItem[] = [
+    {
+      id: "account",
+      title: "Account",
+      icon: "account-circle-outline",
+      onPress: () => router.push("/(app)/account"),
+    },
+    {
+      id: "preferences",
+      title: "Preferences",
+      icon: "tune",
+      onPress: () => router.push("/(app)/preferences"),
+    },
+    {
+      id: "goals",
+      title: "Goals & Metrics",
+      icon: "target",
+      onPress: () => router.push("/(app)/goals-metrics"),
+    },
+    {
+      id: "meal-times",
+      title: "Meal Times",
+      icon: "clock-outline",
+      onPress: () => router.push("/(app)/meal-times"),
+    },
+  ];
+
+  const featureMenuItems: MenuItem[] = [
+    {
+      id: "taste",
+      title: "Taste Preferences",
+      icon: "food",
+      onPress: () => router.push("/(app)/taste-preferences"),
+    },
+    {
+      id: "allergies",
+      title: "Allergies & Diet",
+      icon: "alert-circle-outline",
+      onPress: () => router.push("/(app)/allergies-diet"),
+    },
+    {
+      id: "cooking",
+      title: "Cooking Skill",
+      icon: "chef-hat",
+      onPress: () => router.push("/(app)/cooking-skill"),
+    },
+  ];
 
   const formatTime = (time: {
     hour: number;
     minute: number;
     period: "AM" | "PM";
   }) => {
-    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${
-      time.period
-    }`;
+    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${time.period
+      }`;
   };
 
   const getCookingSkillEmoji = (skill?: string) => {
@@ -103,7 +212,37 @@ export default function ProfileTab() {
     }
   };
 
-  if (onboarding.isLoading) {
+  const renderMenuItem = (item: MenuItem, index: number, array: MenuItem[]) => (
+    <>
+      <Pressable
+        key={item.id}
+        style={({ pressed }) => [
+          styles.menuItem,
+          pressed && styles.menuItemPressed,
+        ]}
+        onPress={item.onPress}
+      >
+        <View style={styles.menuItemLeft}>
+          <View style={styles.menuIconContainer}>
+            <MaterialCommunityIcons
+              name={item.icon}
+              size={24}
+              color={Colors.text.primary}
+            />
+          </View>
+          <Text style={styles.menuItemText}>{item.title}</Text>
+        </View>
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={24}
+          color={Colors.text.tertiary}
+        />
+      </Pressable>
+      {index < array.length - 1 && <View style={styles.separator} />}
+    </>
+  );
+
+  if (onboarding.isLoading || authLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.lilac[900]} />
@@ -114,216 +253,44 @@ export default function ProfileTab() {
 
   return (
     <ScrollView
-      style={[
-        styles.container,
-        {
-          paddingTop: top,
-          paddingBottom: bottom,
-        },
-      ]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingBottom: bottom + 52 * 2,
-        },
-      ]}
+      style={[styles.container, { paddingTop: top }]}
+      contentContainerStyle={[styles.content, { paddingBottom: bottom + 100 }]}
+      showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My Profile</Text>
-        <Text style={styles.subtitle}>Your personalized settings</Text>
+      {/* Page Title */}
+      <Text style={styles.pageTitle}>More</Text>
+
+      {/* User Profile Header */}
+      <View style={styles.profileHeader}>
+        <View style={styles.avatarContainer}>
+          <Text style={styles.avatarText}>{getUserInitials()}</Text>
+        </View>
+        <View style={styles.profileInfo}>
+          <Text style={styles.profileName}>{getUserDisplayName()}</Text>
+          <Text style={styles.profileMemberSince}>
+            Member Since {getMemberSinceDate()}
+          </Text>
+        </View>
       </View>
 
-      {/* Goals Section */}
-      {profileData?.goals && profileData.goals.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="target"
-              size={20}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.sectionTitle}>Goals</Text>
-          </View>
-          <View style={styles.tagsContainer}>
-            {profileData.goals.map((goal, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{goal}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* Body Metrics Section */}
-      {(profileData?.age || profileData?.height || profileData?.weight) && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="account"
-              size={20}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.sectionTitle}>Body Metrics</Text>
-          </View>
-          <View style={styles.metricsGrid}>
-            {profileData.gender && (
-              <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Gender</Text>
-                <Text style={styles.metricValue}>
-                  {profileData.gender === "male"
-                    ? "Male"
-                    : profileData.gender === "female"
-                    ? "Female"
-                    : "Prefer not to say"}
-                </Text>
-              </View>
-            )}
-            {profileData.age && (
-              <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Age</Text>
-                <Text style={styles.metricValue}>{profileData.age} years</Text>
-              </View>
-            )}
-            {profileData.height && (
-              <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Height</Text>
-                <Text style={styles.metricValue}>{profileData.height} cm</Text>
-              </View>
-            )}
-            {profileData.weight && (
-              <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Weight</Text>
-                <Text style={styles.metricValue}>{profileData.weight} kg</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      )}
-
-      {/* Meal Times Section */}
-      {(profileData?.breakfastTime ||
-        profileData?.lunchTime ||
-        profileData?.dinnerTime) && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="clock-outline"
-              size={20}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.sectionTitle}>Meal Times</Text>
-          </View>
-          <View style={styles.timeContainer}>
-            {profileData.breakfastTime && (
-              <View style={styles.timeItem}>
-                <Text style={styles.timeLabel}>Breakfast</Text>
-                <Text style={styles.timeValue}>
-                  {profileData.breakfastTime}
-                </Text>
-              </View>
-            )}
-            {profileData.lunchTime && (
-              <View style={styles.timeItem}>
-                <Text style={styles.timeLabel}>Lunch</Text>
-                <Text style={styles.timeValue}>{profileData.lunchTime}</Text>
-              </View>
-            )}
-            {profileData.dinnerTime && (
-              <View style={styles.timeItem}>
-                <Text style={styles.timeLabel}>Dinner</Text>
-                <Text style={styles.timeValue}>{profileData.dinnerTime}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      )}
-
-      {/* Taste Preferences Section */}
-      {(profileData?.meals.length ||
-        profileData?.cuisines.length ||
-        profileData?.cookingSkill) && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="food"
-              size={20}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.sectionTitle}>Taste Preferences</Text>
-          </View>
-
-          {profileData.cookingSkill && (
-            <View style={styles.cookingSkillContainer}>
-              <Text style={styles.cookingSkillLabel}>Cooking Skill</Text>
-              <View style={styles.cookingSkillBadge}>
-                <Text style={styles.cookingSkillEmoji}>
-                  {getCookingSkillEmoji(profileData.cookingSkill)}
-                </Text>
-                <Text style={styles.cookingSkillText}>
-                  {getCookingSkillLabel(profileData.cookingSkill)}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {profileData.meals.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Meal Types</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.meals.map((meal, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{meal}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {profileData.cuisines.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Cuisines</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.cuisines.map((cuisine, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{cuisine}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {profileData.dietPreferences.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Diet Preferences</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.dietPreferences.map((diet, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{diet}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {profileData.allergies.length > 0 && (
-            <View style={styles.preferenceGroup}>
-              <Text style={styles.preferenceLabel}>Allergies & Dislikes</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.allergies.map((allergy, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{allergy}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
+      {/* General Section */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>General</Text>
+        <View style={styles.menuContainer}>
+          {generalMenuItems.map((item, index, array) =>
+            renderMenuItem(item, index, array)
           )}
         </View>
-      )}
+      </View>
 
-      {/* Sign Out Button */}
-      <View style={styles.signOutContainer}>
-        <SignOutButton />
+      {/* Feature Settings Section */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Feature Settings</Text>
+        <View style={styles.menuContainer}>
+          {featureMenuItems.map((item, index, array) =>
+            renderMenuItem(item, index, array)
+          )}
+        </View>
       </View>
     </ScrollView>
   );
@@ -332,152 +299,108 @@ export default function ProfileTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: "#F5F5F5",
   },
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.background.primary,
+    backgroundColor: "#F5F5F5",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
     color: Colors.text.secondary,
   },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
+  pageTitle: {
+    fontSize: 32,
     fontWeight: "700",
-    color: Colors.lilac[900],
-    marginBottom: 4,
+    color: Colors.text.primary,
+    marginBottom: 24,
+    marginTop: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.text.secondary,
-  },
-  section: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  sectionHeader: {
+  profileHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    gap: 16,
   },
-  sectionTitle: {
+  avatarContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.text.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
     fontSize: 18,
     fontWeight: "600",
     color: Colors.text.primary,
-  },
-  tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tag: {
-    backgroundColor: Colors.lilac[100],
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  tagText: {
-    fontSize: 14,
-    color: Colors.lilac[900],
-    fontWeight: "500",
-  },
-  metricsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  metricItem: {
-    flex: 1,
-    minWidth: "45%",
-  },
-  metricLabel: {
-    fontSize: 14,
-    color: Colors.text.secondary,
     marginBottom: 4,
   },
-  metricValue: {
+  profileMemberSince: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+  },
+  sectionContainer: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: Colors.text.secondary,
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
-  timeContainer: {
+  menuContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  menuItemPressed: {
+    backgroundColor: "#F8F8F8",
+  },
+  menuItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
-  timeItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  menuIconContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
   },
-  timeLabel: {
+  menuItemText: {
     fontSize: 16,
-    color: Colors.text.secondary,
-  },
-  timeValue: {
-    fontSize: 16,
-    fontWeight: "600",
     color: Colors.text.primary,
+    fontWeight: "400",
   },
-  cookingSkillContainer: {
-    marginBottom: 16,
-  },
-  cookingSkillLabel: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginBottom: 8,
-  },
-  cookingSkillBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.lilac[100],
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-    gap: 8,
-  },
-  cookingSkillEmoji: {
-    fontSize: 20,
-  },
-  cookingSkillText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.lilac[900],
-  },
-  preferenceGroup: {
-    marginBottom: 16,
-  },
-  preferenceLabel: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  signOutContainer: {
-    marginTop: 24,
-    alignItems: "center",
+  separator: {
+    height: 1,
+    backgroundColor: "#F0F0F0",
+    marginLeft: 60,
   },
 });
