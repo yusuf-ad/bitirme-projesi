@@ -104,7 +104,11 @@ export default function CreateMealPlan() {
     setMealPlanData(null);
 
     try {
-      const API_KEY = "fc1057b7d70f4475a7c41d1edc8368a5";
+      const API_KEY = process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY;
+
+      if (!API_KEY) {
+        throw new Error("Spoonacular API key is not configured");
+      }
 
       const mealPlan = {
         breakfast: {

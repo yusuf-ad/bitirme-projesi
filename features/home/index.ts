@@ -1,10 +1,18 @@
 export { default as CalendarDayComponent } from "./components/calendar-day";
 export { default as CalendarSection } from "./components/calendar-section";
 export { default as DailyOverview } from "./components/daily-overview";
+export { EmptyState } from "./components/empty-state";
+export { EndMessage } from "./components/end-message";
+export { ErrorState } from "./components/error-state";
+export { FilterChips } from "./components/filter-chips";
 export { default as Header } from "./components/header";
+export { HomeHeader } from "./components/home-header";
+export { LoadingState } from "./components/loading-state";
 export { default as MacroCardsSection } from "./components/macro-cards-section";
 export { default as MealCard } from "./components/meal-card";
 export { default as ProgressChart } from "./components/progress-chart";
+export { RecipeGrid } from "./components/recipe-grid";
+export { SearchBar } from "./components/search-bar";
 export { default as TodayMealsSection } from "./components/today-meals-section";
 export * from "./data/mock-data";
 export * from "./types/home.types";
