@@ -122,8 +122,8 @@ export default function HomeTab() {
             )}
 
             <View style={styles.gridContainer}>
-              {recipes.map((recipe) => (
-                <View key={recipe.id} style={styles.gridItem}>
+              {recipes.map((recipe, index) => (
+                <View key={recipe.id + index} style={styles.gridItem}>
                   <RecipeCard recipe={recipe} />
                 </View>
               ))}

@@ -9,6 +9,11 @@ interface RecipeCardProps {
 }
 
 export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
+  // Calorie bilgisini nutrition.nutrients array'inden çek
+  const calories = recipe.nutrition?.nutrients?.find(
+    (n) => n.name === "Calories"
+  )?.amount;
+
   return (
     <Pressable style={styles.itemCard} onPress={onPress}>
       <Image
@@ -39,13 +44,13 @@ export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
           )}
           <Text style={styles.separator}>|</Text>
 
-          {recipe.servings && (
+          {calories && (
             <View style={styles.metaItem}>
               <Image
                 source={require("@/assets/icons/flame-icon.svg")}
                 style={styles.metaIcon}
               />
-              <Text style={styles.metaText}>{recipe.servings} servings</Text>
+              <Text style={styles.metaText}>{Math.round(calories)} cal</Text>
             </View>
           )}
         </View>
@@ -58,7 +63,6 @@ const styles = StyleSheet.create({
   itemCard: {
     backgroundColor: Colors.background.surface,
     borderRadius: 12,
-    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -71,6 +75,8 @@ const styles = StyleSheet.create({
   },
   itemImage: {
     width: "100%",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     aspectRatio: 10 / 9,
     backgroundColor: Colors.gray[300],
   },

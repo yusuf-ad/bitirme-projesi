@@ -51,7 +51,13 @@ export function useInfiniteScroll(
         totalResultsRef.current = result.totalResults;
       } else {
         // Random modunda
-        newRecipes = await getRandomRecipes(initialPageSize);
+        newRecipes = await getRandomRecipes(10, {
+          cuisine: "italian",
+          includeIngredients: "chicken",
+          excludeIngredients: "pork",
+        });
+        console.log("Fetched random recipes:", newRecipes);
+
         totalResultsRef.current = newRecipes.length;
       }
 
@@ -95,7 +101,11 @@ export function useInfiniteScroll(
         }
       } else {
         // Random modunda daha çek
-        const newRecipes = await getRandomRecipes(pageSize);
+        const newRecipes = await getRandomRecipes(10, {
+          cuisine: "italian",
+          includeIngredients: "chicken",
+          excludeIngredients: "pork",
+        });
         if (newRecipes.length > 0) {
           setRecipes((prev) => [...prev, ...newRecipes]);
           offsetRef.current += pageSize;

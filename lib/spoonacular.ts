@@ -8,6 +8,13 @@ export interface Recipe {
   readyInMinutes?: number;
   servings?: number;
   sourceUrl?: string;
+  nutrition?: {
+    nutrients?: {
+      name: string;
+      amount: number;
+      unit: string;
+    }[];
+  };
 }
 
 interface SpoonacularResponse {
@@ -18,29 +25,69 @@ interface SpoonacularResponse {
     readyInMinutes?: number;
     servings?: number;
     sourceUrl?: string;
+    nutrition?: {
+      nutrients?: {
+        name: string;
+        amount: number;
+        unit: string;
+      }[];
+    };
   }[];
   offset: number;
   number: number;
   totalResults: number;
 }
 
+export interface RandomRecipesFilters {
+  diet?: string;
+  cuisine?: string;
+  includeIngredients?: string;
+  excludeIngredients?: string;
+}
+
 /**
- * Rastgele tarifler çeker
+ * Rastgele tarifler çeker (Complex Search endpoint kullanarak)
  * @param number - Çekilecek tarif sayısı (default: 10)
+ * @param filters - Filtreleme parametreleri (diet, cuisine, includeIngredients, excludeIngredients)
  * @returns Tarif dizisi
  */
-export async function getRandomRecipes(number: number = 10): Promise<Recipe[]> {
+export async function getRandomRecipes(
+  number: number = 10,
+  filters?: RandomRecipesFilters
+): Promise<Recipe[]> {
   try {
+    const params = new URLSearchParams({
+      number: number.toString(),
+      sort: "random",
+      addRecipeInformation: "true",
+      addRecipeNutrition: "true",
+      apiKey: SPOONACULAR_API_KEY,
+    });
+
+    // Filtreleri ekle
+    if (filters?.diet) {
+      params.append("diet", filters.diet);
+    }
+    if (filters?.cuisine) {
+      params.append("cuisine", filters.cuisine);
+    }
+    if (filters?.includeIngredients) {
+      params.append("includeIngredients", filters.includeIngredients);
+    }
+    if (filters?.excludeIngredients) {
+      params.append("excludeIngredients", filters.excludeIngredients);
+    }
+
     const response = await fetch(
-      `${SPOONACULAR_BASE_URL}/random?number=${number}&apiKey=${SPOONACULAR_API_KEY}`
+      `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`
     );
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data.recipes || [];
+    const data: SpoonacularResponse = await response.json();
+    return data.results || [];
   } catch (error) {
     console.error("Error fetching random recipes:", error);
     throw error;
@@ -63,7 +110,7 @@ export async function searchRecipes(
     const response = await fetch(
       `${SPOONACULAR_BASE_URL}/complexSearch?query=${encodeURIComponent(
         query
-      )}&offset=${offset}&number=${number}&apiKey=${SPOONACULAR_API_KEY}`
+      )}&offset=${offset}&number=${number}&addRecipeInformation=true&addRecipeNutrition=true&apiKey=${SPOONACULAR_API_KEY}`
     );
 
     if (!response.ok) {
