@@ -1,9 +1,12 @@
 import { Colors } from "@/constants/theme";
-import { Image } from "expo-image";
-import { useState } from "react";
+import { RecipeCard } from "@/features/home/components/recipe-card";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { useCallback, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +19,33 @@ type TabType = "discover" | "favorites";
 export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");
+  const scrollViewRef = useRef<ScrollView>(null);
+  const { recipes, loading, hasMore, error, onEndReached, refresh } =
+    useInfiniteScroll({
+      initialPageSize: 10,
+      pageSize: 10,
+    });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setIsRefreshing(false);
+  }, [refresh]);
+
+  const handleScroll = useCallback(
+    (event: any) => {
+      const { layoutMeasurement, contentOffset, contentSize } =
+        event.nativeEvent;
+      const isCloseToBottom =
+        layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
+
+      if (isCloseToBottom && !loading && hasMore) {
+        onEndReached();
+      }
+    },
+    [loading, hasMore, onEndReached]
+  );
 
   return (
     <View style={[styles.mainContainer, { paddingTop: top }]}>
@@ -65,52 +95,63 @@ export default function HomeTab() {
 
       {/* Content - Scrollable */}
       <ScrollView
+        ref={scrollViewRef}
         style={styles.contentScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2) },
         ]}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors.lilac[900]}
+          />
+        }
       >
         {/* Content */}
         {activeTab === "discover" && (
           <View style={styles.discoverContainer}>
+            {recipes.length === 0 && !loading && (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No recipes found</Text>
+              </View>
+            )}
+
             <View style={styles.gridContainer}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
-                <View key={item} style={styles.gridItem}>
-                  <View style={styles.itemCard}>
-                    <Image
-                      source={{
-                        uri: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zm9vZHxlbnwwfDJ8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900`,
-                      }}
-                      style={styles.itemImage}
-                    />
-
-                    <View style={styles.itemContentContainer}>
-                      <Text style={styles.itemText}>Recipe {item}</Text>
-
-                      <View style={styles.metaContainer}>
-                        <View style={styles.metaItem}>
-                          <Image
-                            source={require("@/assets/icons/clock-icon.svg")}
-                            style={styles.metaIcon}
-                          />
-                          <Text style={styles.metaText}>10 mins</Text>
-                        </View>
-                        <Text style={styles.separator}>|</Text>
-                        <View style={styles.metaItem}>
-                          <Image
-                            source={require("@/assets/icons/flame-icon.svg")}
-                            style={styles.metaIcon}
-                          />
-                          <Text style={styles.metaText}>260 kcal</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
+              {recipes.map((recipe) => (
+                <View key={recipe.id} style={styles.gridItem}>
+                  <RecipeCard recipe={recipe} />
                 </View>
               ))}
             </View>
+
+            {loading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.lilac[900]} />
+                <Text style={styles.loadingText}>Loading recipes...</Text>
+              </View>
+            )}
+
+            {error && !loading && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>
+                  Error loading recipes. Please try again.
+                </Text>
+                <Pressable style={styles.retryButton} onPress={handleRefresh}>
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {!hasMore && recipes.length > 0 && (
+              <View style={styles.endContainer}>
+                <Text style={styles.endText}>No more recipes</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -175,53 +216,61 @@ const styles = StyleSheet.create({
   gridItem: {
     width: "48%",
   },
-  itemCard: {
-    backgroundColor: Colors.background.surface,
-    borderRadius: 12,
-  },
-  itemImage: {
-    width: "100%",
-    aspectRatio: 1,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  itemContentContainer: {
-    padding: 12,
-    gap: 6,
-  },
-  metaContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  itemText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.gray["800"],
-  },
-
-  metaItem: {
-    flexDirection: "row",
+  emptyContainer: {
     alignItems: "center",
-    gap: 4,
+    justifyContent: "center",
+    paddingVertical: 60,
   },
-  metaIcon: {
-    width: 12,
-    height: 12,
+  emptyText: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    fontWeight: "500",
   },
-  metaText: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 12,
-    lineHeight: 24,
-    color: Colors.gray[600],
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+    gap: 12,
   },
-  separator: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 12,
-    lineHeight: 24,
-    letterSpacing: -1,
-    color: Colors.gray[600],
+  loadingText: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    marginTop: 8,
+  },
+  errorContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+    backgroundColor: Colors.semantic.error.light,
+    borderRadius: 12,
+    marginVertical: 16,
+    paddingHorizontal: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.semantic.error.dark,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  retryButton: {
+    backgroundColor: Colors.semantic.error.main,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  endContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 24,
+  },
+  endText: {
+    fontSize: 14,
+    color: Colors.text.tertiary,
+    fontStyle: "italic",
   },
 });
