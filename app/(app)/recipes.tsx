@@ -70,21 +70,22 @@ export default function HomeTab() {
       {/* Header */}
       <HomeHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Search Bar and Filters */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onFilterPress={() => {}}
-        />
+      {activeTab === "discover" && (
+        <View style={styles.searchContainer}>
+          <SearchBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onFilterPress={() => {}}
+          />
 
-        <FilterChips
-          filters={FILTER_OPTIONS}
-          selectedFilters={selectedFilters}
-          onToggleFilter={toggleFilter}
-          onAddIngredients={() => {}}
-        />
-      </View>
+          <FilterChips
+            filters={FILTER_OPTIONS}
+            selectedFilters={selectedFilters}
+            onToggleFilter={toggleFilter}
+            onAddIngredients={() => {}}
+          />
+        </View>
+      )}
 
       {/* Content - Scrollable */}
       <ScrollView
