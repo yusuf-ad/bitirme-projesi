@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { RecipeCard } from "@/features/home/components/recipe-card";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,15 +11,20 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabType = "discover" | "favorites";
 
+const FILTER_OPTIONS = ["Healthy", "Easy", "Batch", "Veg"];
+
 export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
@@ -32,6 +38,14 @@ export default function HomeTab() {
     await refresh();
     setIsRefreshing(false);
   }, [refresh]);
+
+  const toggleFilter = (filter: string) => {
+    setSelectedFilters((prev) =>
+      prev.includes(filter)
+        ? prev.filter((f) => f !== filter)
+        : [...prev, filter]
+    );
+  };
 
   const handleScroll = useCallback(
     (event: any) => {
@@ -91,6 +105,61 @@ export default function HomeTab() {
             Favorites
           </Text>
         </Pressable>
+      </View>
+
+      {/* Search Bar and Filters */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBarRow}>
+          <View style={styles.searchBar}>
+            <Ionicons
+              name="search"
+              size={20}
+              color={Colors.lilac[500]}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search ingredients, recipes..."
+              placeholderTextColor={Colors.gray[400]}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <Pressable style={styles.filterButton}>
+            <Ionicons name="options-outline" size={20} color="white" />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filtersScroll}
+          contentContainerStyle={styles.filtersContent}
+        >
+          <Pressable style={styles.addIngredientsButton}>
+            <Text style={styles.addIngredientsText}>+ Add Ingredients</Text>
+          </Pressable>
+          {FILTER_OPTIONS.map((filter) => (
+            <Pressable
+              key={filter}
+              style={[
+                styles.filterChip,
+                selectedFilters.includes(filter) && styles.filterChipActive,
+              ]}
+              onPress={() => toggleFilter(filter)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedFilters.includes(filter) &&
+                    styles.filterChipTextActive,
+                ]}
+              >
+                {filter}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Content - Scrollable */}
@@ -174,6 +243,83 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
     paddingHorizontal: 16,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 12,
+  },
+  searchBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+  },
+  filterButton: {
+    backgroundColor: Colors.lilac[900],
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.text.primary,
+  },
+  filtersScroll: {
+    flexGrow: 0,
+  },
+  filtersContent: {
+    gap: 8,
+    paddingRight: 16,
+  },
+  addIngredientsButton: {
+    backgroundColor: "white",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+  },
+  addIngredientsText: {
+    fontSize: 14,
+    color: Colors.text.primary,
+    fontWeight: "500",
+  },
+  filterChip: {
+    backgroundColor: "white",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+  },
+  filterChipActive: {
+    backgroundColor: Colors.lilac[900],
+    borderColor: Colors.lilac[900],
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: Colors.text.primary,
+  },
+  filterChipTextActive: {
+    color: "white",
+    fontWeight: "600",
   },
   contentScroll: {
     flex: 1,

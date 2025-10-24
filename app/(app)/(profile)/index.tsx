@@ -227,7 +227,7 @@ export default function ProfileTab() {
             <MaterialCommunityIcons
               name={item.icon}
               size={24}
-              color={Colors.text.primary}
+              color={Colors.lilac[900]}
             />
           </View>
           <Text style={styles.menuItemText}>{item.title}</Text>
@@ -235,7 +235,7 @@ export default function ProfileTab() {
         <MaterialCommunityIcons
           name="chevron-right"
           size={24}
-          color={Colors.text.tertiary}
+          color={Colors.lilac[900]}
         />
       </Pressable>
       {index < array.length - 1 && <View style={styles.separator} />}

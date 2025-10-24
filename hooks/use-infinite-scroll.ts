@@ -53,7 +53,7 @@ export function useInfiniteScroll(
         // Random modunda
         newRecipes = await getRandomRecipes(10, {
           cuisine: "italian",
-          includeIngredients: "chicken",
+          includeIngredients: "chicken,garlic,egg",
           excludeIngredients: "pork",
         });
         console.log("Fetched random recipes:", newRecipes);
