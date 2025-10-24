@@ -49,9 +49,11 @@ export function useInfiniteScroll(
         const result = await searchRecipes(query, 0, initialPageSize);
         newRecipes = result.recipes;
         totalResultsRef.current = result.totalResults;
+        offsetRef.current = initialPageSize;
+        setHasMore(offsetRef.current < result.totalResults);
       } else {
         // Random modunda
-        newRecipes = await getRandomRecipes(10, {
+        newRecipes = await getRandomRecipes(initialPageSize, {
           cuisine: "italian",
           includeIngredients: "chicken,garlic,egg",
           excludeIngredients: "pork",
@@ -59,11 +61,11 @@ export function useInfiniteScroll(
         console.log("Fetched random recipes:", newRecipes);
 
         totalResultsRef.current = newRecipes.length;
+        offsetRef.current = initialPageSize;
+        setHasMore(true); // Random modunda her zaman daha fazla var
       }
 
       setRecipes(newRecipes);
-      offsetRef.current = initialPageSize;
-      setHasMore(newRecipes.length >= initialPageSize);
       initialLoadDone.current = true;
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Unknown error");
@@ -74,10 +76,18 @@ export function useInfiniteScroll(
     }
   }, [query, initialPageSize]);
 
-  // İlk yükleme tetikleyici
+  // Query değiştiğinde resetle ve yeniden yükle
   useEffect(() => {
+    // State'i resetle
+    setRecipes([]);
+    offsetRef.current = 0;
+    initialLoadDone.current = false;
+    setHasMore(true);
+    setError(null);
+
+    // Yeni arama ile yükle
     loadInitialRecipes();
-  }, [loadInitialRecipes]);
+  }, [query, loadInitialRecipes]);
 
   // Scroll sonu callback
   const onEndReached = useCallback(async () => {
@@ -101,14 +111,15 @@ export function useInfiniteScroll(
         }
       } else {
         // Random modunda daha çek
-        const newRecipes = await getRandomRecipes(10, {
+        const newRecipes = await getRandomRecipes(pageSize, {
           cuisine: "italian",
-          includeIngredients: "chicken",
+          includeIngredients: "chicken,garlic,egg",
           excludeIngredients: "pork",
         });
         if (newRecipes.length > 0) {
           setRecipes((prev) => [...prev, ...newRecipes]);
           offsetRef.current += pageSize;
+          setHasMore(true); // Random modunda her zaman daha fazla var
         } else {
           setHasMore(false);
         }

@@ -1,13 +1,13 @@
 import { Colors } from "@/constants/theme";
 import {
   EmptyState,
-  EndState,
+  EndMessage,
   ErrorState,
   FilterChips,
+  HomeHeader,
   LoadingState,
   RecipeGrid,
   SearchBar,
-  TabHeader,
 } from "@/features/home";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useCallback, useRef, useState } from "react";
@@ -68,23 +68,23 @@ export default function HomeTab() {
   return (
     <View style={[styles.mainContainer, { paddingTop: top }]}>
       {/* Header */}
-      <TabHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <HomeHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {activeTab === "discover" && (
-        <View style={styles.searchContainer}>
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onFilterPress={() => {}}
-          />
-          <FilterChips
-            filters={FILTER_OPTIONS}
-            selectedFilters={selectedFilters}
-            onToggleFilter={toggleFilter}
-            onAddIngredients={() => {}}
-          />
-        </View>
-      )}
+      {/* Search Bar and Filters */}
+      <View style={styles.searchContainer}>
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onFilterPress={() => {}}
+        />
+
+        <FilterChips
+          filters={FILTER_OPTIONS}
+          selectedFilters={selectedFilters}
+          onToggleFilter={toggleFilter}
+          onAddIngredients={() => {}}
+        />
+      </View>
 
       {/* Content - Scrollable */}
       <ScrollView
@@ -110,13 +110,13 @@ export default function HomeTab() {
           <View style={styles.discoverContainer}>
             {recipes.length === 0 && !loading && <EmptyState />}
 
-            <RecipeGrid recipes={recipes} />
+            {recipes.length > 0 && <RecipeGrid recipes={recipes} />}
 
             {loading && <LoadingState />}
 
             {error && !loading && <ErrorState onRetry={handleRefresh} />}
 
-            {!hasMore && recipes.length > 0 && <EndState />}
+            {!hasMore && recipes.length > 0 && <EndMessage />}
           </View>
         )}
 
