@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { Image } from "expo-image";
 import { useState } from "react";
 import {
   Platform,
@@ -17,14 +18,7 @@ export default function HomeTab() {
   const [activeTab, setActiveTab] = useState<TabType>("discover");
 
   return (
-    <View
-      style={[
-        styles.mainContainer,
-        {
-          paddingTop: top,
-        },
-      ]}
-    >
+    <View style={[styles.mainContainer, { paddingTop: top }]}>
       {/* Header */}
       <View style={styles.headerContainer}>
         <Pressable
@@ -73,10 +67,10 @@ export default function HomeTab() {
       <ScrollView
         style={styles.contentScroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
-        }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2) },
+        ]}
       >
         {/* Content */}
         {activeTab === "discover" && (
@@ -85,7 +79,34 @@ export default function HomeTab() {
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
                 <View key={item} style={styles.gridItem}>
                   <View style={styles.itemCard}>
-                    <Text style={styles.itemText}>Item {item}</Text>
+                    <Image
+                      source={{
+                        uri: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zm9vZHxlbnwwfDJ8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900`,
+                      }}
+                      style={styles.itemImage}
+                    />
+
+                    <View style={styles.itemContentContainer}>
+                      <Text style={styles.itemText}>Recipe {item}</Text>
+
+                      <View style={styles.metaContainer}>
+                        <View style={styles.metaItem}>
+                          <Image
+                            source={require("@/assets/icons/clock-icon.svg")}
+                            style={styles.metaIcon}
+                          />
+                          <Text style={styles.metaText}>10 mins</Text>
+                        </View>
+                        <Text style={styles.separator}>|</Text>
+                        <View style={styles.metaItem}>
+                          <Image
+                            source={require("@/assets/icons/flame-icon.svg")}
+                            style={styles.metaIcon}
+                          />
+                          <Text style={styles.metaText}>260 kcal</Text>
+                        </View>
+                      </View>
+                    </View>
                   </View>
                 </View>
               ))}
@@ -115,6 +136,9 @@ const styles = StyleSheet.create({
   },
   contentScroll: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
   },
   tabButton: {
     flex: 1,
@@ -152,16 +176,52 @@ const styles = StyleSheet.create({
     width: "48%",
   },
   itemCard: {
-    backgroundColor: Colors.lilac[400],
+    backgroundColor: Colors.background.surface,
     borderRadius: 12,
-    padding: 16,
+  },
+  itemImage: {
+    width: "100%",
     aspectRatio: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  itemContentContainer: {
+    padding: 12,
+    gap: 6,
+  },
+  metaContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
   },
   itemText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.lilac[900],
+    color: Colors.gray["800"],
+  },
+
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaIcon: {
+    width: 12,
+    height: 12,
+  },
+  metaText: {
+    fontFamily: "Inter",
+    fontWeight: "400",
+    fontSize: 12,
+    lineHeight: 24,
+    color: Colors.gray[600],
+  },
+  separator: {
+    fontFamily: "Inter",
+    fontWeight: "400",
+    fontSize: 12,
+    lineHeight: 24,
+    letterSpacing: -1,
+    color: Colors.gray[600],
   },
 });
