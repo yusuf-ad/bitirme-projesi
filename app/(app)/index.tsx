@@ -1,149 +1,186 @@
 import { Colors } from "@/constants/theme";
+import { DailyOverview } from "@/features/home";
+import CalendarSection from "@/features/home/components/calendar-section";
+import Header from "@/features/home/components/header";
+import type { MealPlanItemRecord, MealPlanRecord } from "@/features/meal-plan";
+import { DailyMealsList, MealPlanEmptyState } from "@/features/meal-plan";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { supabase } from "@/lib/supabase";
+import { router } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
-  EmptyState,
-  EndMessage,
-  ErrorState,
-  FilterChips,
-  HomeHeader,
-  LoadingState,
-  RecipeGrid,
-  SearchBar,
-} from "@/features/home";
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
-import { useCallback, useRef, useState } from "react";
-import {
+  ActivityIndicator,
   Platform,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type TabType = "discover" | "favorites";
+const formatDateForQuery = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
-const FILTER_OPTIONS = ["Healthy", "Easy", "Batch", "Veg"];
+export default function MealplanTab() {
+  const { session } = useAuthContext();
+  const { bottom, top } = useSafeAreaInsets();
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
+  const [activePlan, setActivePlan] = useState<MealPlanRecord | null>(null);
+  const [dailyItems, setDailyItems] = useState<MealPlanItemRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default function HomeTab() {
-  const { top, bottom } = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<TabType>("discover");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const { recipes, loading, hasMore, error, onEndReached, refresh } =
-    useInfiniteScroll({
-      initialPageSize: 10,
-      pageSize: 10,
-    });
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // Extract first name from user data or use default
+  const fullName = session?.user?.user_metadata?.fullName || "User";
+  const firstName = fullName.split(" ")[0];
 
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await refresh();
-    setIsRefreshing(false);
-  }, [refresh]);
+  function handleCreateMealPlan() {
+    router.push("/(plan)/create");
+  }
 
-  const toggleFilter = (filter: string) => {
-    setSelectedFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    );
-  };
+  const handleDateSelect = useCallback((date: Date) => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    setSelectedDate(normalized);
+  }, []);
 
-  const handleScroll = useCallback(
-    (event: any) => {
-      const { layoutMeasurement, contentOffset, contentSize } =
-        event.nativeEvent;
-      const isCloseToBottom =
-        layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
+  // Pull the active plan for the selected date and load that day's meals.
+  const fetchMealsForDate = useCallback(
+    async (date: Date) => {
+      const userId = session?.user?.id;
+      if (!userId) return;
 
-      if (isCloseToBottom && !loading && hasMore) {
-        onEndReached();
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const dateString = formatDateForQuery(date);
+
+        const { data: plans, error: planError } = await supabase
+          .from("meal_plans")
+          .select("id, user_id, name, start_date, end_date")
+          .eq("user_id", userId)
+          .lte("start_date", dateString)
+          .gte("end_date", dateString)
+          .order("start_date", { ascending: false })
+          .limit(1);
+
+        if (planError) {
+          throw planError;
+        }
+
+        if (!plans || plans.length === 0) {
+          setActivePlan(null);
+          setDailyItems([]);
+          return;
+        }
+
+        const plan = plans[0];
+        setActivePlan(plan);
+
+        const { data: items, error: itemsError } = await supabase
+          .from("meal_plan_items")
+          .select(
+            "id, meal_plan_id, spoonacular_recipe_id, recipe_name, recipe_image_url, calories_per_serving, ready_in_minutes, meal_date, meal_type"
+          )
+          .eq("meal_plan_id", plan.id)
+          .eq("meal_date", dateString)
+          .order("meal_type", { ascending: true });
+
+        if (itemsError) {
+          throw itemsError;
+        }
+
+        setDailyItems(items ?? []);
+      } catch (fetchError) {
+        const message =
+          fetchError instanceof Error
+            ? fetchError.message
+            : "Unable to load meal plan.";
+        setError(message);
+        setActivePlan(null);
+        setDailyItems([]);
+      } finally {
+        setIsLoading(false);
       }
     },
-    [loading, hasMore, onEndReached]
+    [session?.user?.id]
   );
 
+  useEffect(() => {
+    fetchMealsForDate(selectedDate);
+  }, [fetchMealsForDate, selectedDate]);
+
+  const hasMeals = dailyItems.length > 0;
+
   return (
-    <View style={[styles.mainContainer, { paddingTop: top }]}>
+    <ScrollView
+      style={[styles.container, { paddingTop: top }]}
+      showsVerticalScrollIndicator={false}
+      // safe area boşluğu + tabbar yüksekliği
+      contentContainerStyle={{
+        paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
+      }}
+      bounces={false}
+    >
       {/* Header */}
-      <HomeHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <Header firstName={firstName} motivationText="Let's plan your meals!" />
 
-      {/* Search Bar and Filters */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onFilterPress={() => {}}
-        />
+      {/* Calendar */}
+      <CalendarSection
+        selectedDate={selectedDate}
+        onDateSelect={handleDateSelect}
+      />
 
-        <FilterChips
-          filters={FILTER_OPTIONS}
-          selectedFilters={selectedFilters}
-          onToggleFilter={toggleFilter}
-          onAddIngredients={() => {}}
-        />
-      </View>
-
-      {/* Content - Scrollable */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.contentScroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2) },
+      {/* Meals for selected date */}
+      <View
+        style={[
+          styles.section,
+          {
+            paddingBottom: bottom,
+          },
         ]}
-        onScroll={handleScroll}
-        scrollEventThrottle={400}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={Colors.lilac[900]}
-          />
-        }
       >
-        {/* Content */}
-        {activeTab === "discover" && (
-          <View style={styles.discoverContainer}>
-            {recipes.length === 0 && !loading && <EmptyState />}
-
-            {recipes.length > 0 && <RecipeGrid recipes={recipes} />}
-
-            {loading && <LoadingState />}
-
-            {error && !loading && <ErrorState onRetry={handleRefresh} />}
-
-            {!hasMore && recipes.length > 0 && <EndMessage />}
+        {isLoading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator color={Colors.lilac[900]} />
           </View>
-        )}
+        ) : hasMeals ? (
+          <>
+            <View style={styles.section}>
+              <DailyOverview />
+            </View>
 
-        {activeTab === "favorites" && (
-          <View>{/* Favorites content buraya gelecek */}</View>
+            <DailyMealsList items={dailyItems} selectedDate={selectedDate} />
+          </>
+        ) : (
+          <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
         )}
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  mainContainer: {
+  safeArea: {
     flex: 1,
+    backgroundColor: Colors.background.secondary,
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 12,
-  },
-  contentScroll: {
+  container: {
     flex: 1,
-  },
-  scrollContent: {
     paddingHorizontal: 16,
   },
-  discoverContainer: {
-    marginTop: 16,
+  section: {
+    paddingTop: 8,
+  },
+  loaderContainer: {
+    paddingVertical: 32,
   },
 });

@@ -12,13 +12,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Recipes",
+          title: "Home",
         }}
       />
       <Tabs.Screen
-        name="meal-plan"
+        name="recipes"
         options={{
-          title: "Meal Plan",
+          title: "Recipes",
         }}
       />
       <Tabs.Screen

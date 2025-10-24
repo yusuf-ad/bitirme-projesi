@@ -65,7 +65,7 @@ export function CustomTabBar({
           // Get icon name based on route
           let iconName: string = "circle";
           if (route.name === "index") iconName = "home";
-          else if (route.name === "meal-plan") iconName = "calendar";
+          else if (route.name === "recipes") iconName = "calendar";
           else if (route.name === "groceries") iconName = "shopping-cart";
           else if (route.name === "(profile)") iconName = "user";
 
@@ -83,7 +83,7 @@ export function CustomTabBar({
                 isFocused ? styles.tabItemActive : styles.tabItemInactive,
               ]}
             >
-              {route.name === "index" ? (
+              {route.name === "recipes" ? (
                 <MaterialCommunityIcons
                   name="chef-hat"
                   size={24}

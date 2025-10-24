@@ -54,8 +54,8 @@ export function useInfiniteScroll(
       } else {
         // Random modunda
         newRecipes = await getRandomRecipes(initialPageSize, {
-          cuisine: "italian",
-          includeIngredients: "chicken,garlic,egg",
+          cuisine: "",
+          includeIngredients: "",
           excludeIngredients: "pork",
         });
         console.log("Fetched random recipes:", newRecipes);
@@ -112,8 +112,8 @@ export function useInfiniteScroll(
       } else {
         // Random modunda daha çek
         const newRecipes = await getRandomRecipes(pageSize, {
-          cuisine: "italian",
-          includeIngredients: "chicken,garlic,egg",
+          cuisine: "",
+          includeIngredients: "",
           excludeIngredients: "pork",
         });
         if (newRecipes.length > 0) {
