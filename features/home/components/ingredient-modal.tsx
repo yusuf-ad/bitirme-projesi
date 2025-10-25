@@ -12,6 +12,7 @@ import { forwardRef, useCallback } from "react";
 import {
   Dimensions,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -48,7 +49,6 @@ export const IngredientModal = forwardRef<BottomSheetModal>((props, ref) => {
       ref={ref}
       onChange={handleSheetChanges}
       backdropComponent={renderBackdrop}
-      enablePanDownToClose
     >
       <BottomSheetView
         style={[styles.contentContainer, { height: screenHeight }]}
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: Platform.OS === "ios" ? 12 : 4,
     borderWidth: 1,
     borderColor: Colors.lilac[200],
     marginVertical: 16,
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingBottom: 0,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray[100],
+    borderTopColor: Colors.lilac[100],
   },
   clearButton: {
     backgroundColor: Colors.gray[100],
