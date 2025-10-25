@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import Entypo from "@expo/vector-icons/Entypo";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 interface FilterChipsProps {
@@ -26,7 +27,8 @@ export function FilterChips({
           style={styles.addIngredientsButton}
           onPress={onAddIngredients}
         >
-          <Text style={styles.addIngredientsText}>+ Add Ingredients</Text>
+          <Text style={styles.addIngredientsText}>Ingredients</Text>
+          <Entypo name="chevron-down" size={20} color="black" />
         </Pressable>
       )}
       {filters.map((filter) => (
@@ -64,9 +66,14 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 99,
     borderWidth: 1,
     borderColor: Colors.lilac[200],
+
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
   },
   addIngredientsText: {
     fontSize: 14,
@@ -77,7 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 99,
     borderWidth: 1,
     borderColor: Colors.lilac[200],
   },

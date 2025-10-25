@@ -9,7 +9,9 @@ import {
   RecipeGrid,
   SearchBar,
 } from "@/features/home";
+import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useCallback, useRef, useState } from "react";
 import {
   Platform,
@@ -30,10 +32,11 @@ export default function HomeTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
+  const ingredientModalRef = useRef<BottomSheetModal>(null);
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
       initialPageSize: 10,
-      pageSize: 10,
+      pageSize: 1,
     });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -50,6 +53,10 @@ export default function HomeTab() {
         : [...prev, filter]
     );
   };
+
+  const handleOpenIngredientModal = useCallback(() => {
+    ingredientModalRef.current?.present();
+  }, []);
 
   const handleScroll = useCallback(
     (event: any) => {
@@ -82,7 +89,7 @@ export default function HomeTab() {
             filters={FILTER_OPTIONS}
             selectedFilters={selectedFilters}
             onToggleFilter={toggleFilter}
-            onAddIngredients={() => {}}
+            onAddIngredients={handleOpenIngredientModal}
           />
         </View>
       )}
@@ -125,6 +132,8 @@ export default function HomeTab() {
           <View>{/* Favorites content buraya gelecek */}</View>
         )}
       </ScrollView>
+
+      <IngredientModal ref={ingredientModalRef} />
     </View>
   );
 }
@@ -136,7 +145,20 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 8,
     gap: 12,
+    backgroundColor: Colors.background.secondary,
+    zIndex: 20,
+
+    shadowColor: Colors.background.secondary,
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.58,
+    shadowRadius: 16.0,
+
+    elevation: 24,
   },
   contentScroll: {
     flex: 1,

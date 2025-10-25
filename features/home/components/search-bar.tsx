@@ -24,7 +24,7 @@ export function SearchBar({
         />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search ingredients, recipes..."
+          placeholder="Search recipes..."
           placeholderTextColor={Colors.gray[400]}
           value={searchQuery}
           onChangeText={onSearchChange}
