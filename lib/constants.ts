@@ -67,3 +67,60 @@ export const MEAL_TYPES = {
 } as const;
 
 export const meal_types = Object.values(MEAL_TYPES);
+
+export const POPULAR_INGREDIENTS: {
+  spoonacularId?: number | null;
+  name: string;
+  image?: string;
+}[] = [
+  { spoonacularId: 7961, name: "Chicken", image: "deli-turkey.jpg" },
+  { spoonacularId: 1123, name: "Egg", image: "egg.png" },
+  { spoonacularId: 20420, name: "Pasta", image: "fusilli.jpg" },
+  { spoonacularId: 8066, name: "Rice", image: "rice-crispy-cereal.png" },
+  {
+    spoonacularId: 10023572,
+    name: "Beef Mince",
+    image: "fresh-ground-beef.jpg",
+  },
+  { spoonacularId: 11090, name: "Broccoli", image: "broccoli.jpg" },
+  { spoonacularId: 16213, name: "Tofu", image: "tofu.png" },
+  { spoonacularId: 15076, name: "Salmon", image: "salmon.png" },
+  { spoonacularId: 10011457, name: "Spinach", image: "spinach.jpg" },
+  { spoonacularId: 1011077, name: "Milk", image: "milk.png" },
+  { spoonacularId: 20035, name: "Quinoa", image: "uncooked-quinoa.png" },
+  {
+    spoonacularId: 10011693,
+    name: "Canned Tomato",
+    image: "tomatoes-canned.png",
+  },
+  { spoonacularId: 16009, name: "Pork", image: "baked-beans.jpg" },
+  { spoonacularId: 23372, name: "Beef", image: "beef-tenderloin.png" },
+  { spoonacularId: 10017224, name: "Lamb", image: "lamb-shanks.jpg" },
+  { spoonacularId: 11260, name: "Mushroom", image: "mushrooms-white.jpg" },
+  { spoonacularId: 11413, name: "Potato", image: "white-powder.jpg" },
+  { spoonacularId: 11529, name: "Tomato", image: "tomato.png" },
+  { spoonacularId: 20420, name: "Noodles", image: "fusilli.jpg" },
+  {
+    spoonacularId: 11052,
+    name: "Green Beans",
+    image: "green-beans-or-string-beans.jpg",
+  },
+  { spoonacularId: 98973, name: "Cheese", image: "cheddar-cheese.png" },
+  { spoonacularId: 1011256, name: "Yogurt", image: "plain-yogurt.jpg" },
+  { spoonacularId: 16057, name: "Chickpeas", image: "chickpeas.png" },
+  { spoonacularId: 10316069, name: "Lentils", image: "lentils-brown.jpg" },
+  { spoonacularId: 11282, name: "Onion", image: "brown-onion.png" },
+  { spoonacularId: 11215, name: "Garlic", image: "garlic.png" },
+  { spoonacularId: 11124, name: "Carrot", image: "sliced-carrot.png" },
+  {
+    spoonacularId: 10211821,
+    name: "Bell Pepper",
+    image: "bell-pepper-orange.png",
+  },
+];
+
+// NOTE: If you want to populate `spoonacularId` for each item, you can run
+// `searchIngredients(name)` (from `lib/spoonacular.ts`) for each name and
+// save the returned `id` into this array. I left `spoonacularId` as `null`
+// for now as requested — the app will show these items by name and image URL
+// can be derived from the name or the known CDN path.

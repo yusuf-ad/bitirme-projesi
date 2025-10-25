@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { POPULAR_INGREDIENTS } from "@/lib/constants";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -10,6 +11,7 @@ import {
 import { forwardRef, useCallback } from "react";
 import {
   Dimensions,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +25,8 @@ export const IngredientModal = forwardRef<BottomSheetModal>((props, ref) => {
   const { top } = useSafeAreaInsets();
 
   const screenHeight = Dimensions.get("screen").height - top;
+  const INGREDIENT_IMAGE_BASE_URL =
+    "https://spoonacular.com/cdn/ingredients_100x100";
 
   const handleSheetChanges = useCallback((index: number) => {
     console.log("handleSheetChanges", index);
@@ -80,15 +84,25 @@ export const IngredientModal = forwardRef<BottomSheetModal>((props, ref) => {
         <View style={{ flex: 1 }}>
           <Text style={styles.subtitle}>Popular</Text>
 
-          {/* Buraya popüler malzemeler gelecek */}
-          <ScrollView>
+          {/* Buraya popüler malzemeler gelecek (sabit listeden) */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 28 }}
+          >
             <View style={styles.ingredientsContainer}>
-              {Array.from({ length: 20 }).map((_, index) => (
-                <View style={styles.ingredientItem} key={index}>
-                  <View style={styles.ingredientCircle}></View>
-                  <Text style={styles.ingredientText}>
-                    Ingredient {index + 1}
-                  </Text>
+              {POPULAR_INGREDIENTS.map((item, index) => (
+                <View style={styles.ingredientItem} key={`popular-${index}`}>
+                  {item.image ? (
+                    <Image
+                      source={{
+                        uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
+                      }}
+                      style={styles.ingredientCircle}
+                    />
+                  ) : (
+                    <View style={styles.ingredientCircle} />
+                  )}
+                  <Text style={styles.ingredientText}>{item.name}</Text>
                 </View>
               ))}
             </View>
@@ -165,7 +179,7 @@ const styles = StyleSheet.create({
     height: 52,
     width: 52,
     borderRadius: 999,
-    backgroundColor: Colors.gray[100],
+    objectFit: "contain",
   },
   ingredientText: {
     fontSize: 16,
