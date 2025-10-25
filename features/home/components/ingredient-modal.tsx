@@ -11,6 +11,7 @@ import { forwardRef, useCallback } from "react";
 import {
   Dimensions,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -49,13 +50,7 @@ export const IngredientModal = forwardRef<BottomSheetModal>((props, ref) => {
         style={[styles.contentContainer, { height: screenHeight }]}
       >
         <View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+          <View style={styles.header}>
             <Text style={styles.title}>Search by Ingredients</Text>
 
             <Pressable
@@ -86,52 +81,26 @@ export const IngredientModal = forwardRef<BottomSheetModal>((props, ref) => {
           <Text style={styles.subtitle}>Popular</Text>
 
           {/* Buraya popüler malzemeler gelecek */}
+          <ScrollView>
+            <View style={styles.ingredientsContainer}>
+              {Array.from({ length: 20 }).map((_, index) => (
+                <View style={styles.ingredientItem} key={index}>
+                  <View style={styles.ingredientCircle}></View>
+                  <Text style={styles.ingredientText}>
+                    Ingredient {index + 1}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
         </View>
 
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            paddingVertical: 12,
-            paddingBottom: 0,
-            borderTopWidth: 1,
-            borderTopColor: Colors.gray[100],
-          }}
-        >
-          <CustomButton
-            containerStyle={{
-              backgroundColor: Colors.gray[100],
-              flex: 1,
-              width: "auto",
-              paddingVertical: 16,
-            }}
-          >
-            <Text
-              style={{
-                color: "black",
-                fontWeight: "semibold",
-              }}
-            >
-              Clear All
-            </Text>
+        <View style={styles.bottomContainer}>
+          <CustomButton containerStyle={styles.clearButton}>
+            <Text style={styles.clearButtonText}>Clear All</Text>
           </CustomButton>
-          <CustomButton
-            containerStyle={{
-              backgroundColor: Colors.lilac[900],
-              flex: 1,
-              width: "auto",
-              paddingVertical: 16,
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "bold",
-              }}
-            >
-              Apply
-            </Text>
+          <CustomButton containerStyle={styles.applyButton}>
+            <Text style={styles.applyButtonText}>Apply</Text>
           </CustomButton>
         </View>
       </BottomSheetView>
@@ -156,6 +125,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: "#000",
+    marginBottom: 16,
   },
   searchBar: {
     flexDirection: "row",
@@ -175,5 +145,60 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: Colors.text.primary,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  ingredientsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  ingredientItem: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "22%",
+  },
+  ingredientCircle: {
+    height: 52,
+    width: 52,
+    borderRadius: 999,
+    backgroundColor: Colors.gray[100],
+  },
+  ingredientText: {
+    fontSize: 16,
+    color: Colors.text.primary,
+    textAlign: "center",
+  },
+  bottomContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingBottom: 0,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[100],
+  },
+  clearButton: {
+    backgroundColor: Colors.gray[100],
+    flex: 1,
+    width: "auto",
+    paddingVertical: 16,
+  },
+  clearButtonText: {
+    color: "black",
+    fontWeight: "semibold",
+  },
+  applyButton: {
+    backgroundColor: Colors.lilac[900],
+    flex: 1,
+    width: "auto",
+    paddingVertical: 16,
+  },
+  applyButtonText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });

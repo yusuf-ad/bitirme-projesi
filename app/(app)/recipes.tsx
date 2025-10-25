@@ -35,7 +35,7 @@ export default function HomeTab() {
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
-      initialPageSize: 10,
+      initialPageSize: 1,
       pageSize: 1,
     });
   const [isRefreshing, setIsRefreshing] = useState(false);
