@@ -145,10 +145,10 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 8,
-    gap: 12,
     backgroundColor: Colors.background.secondary,
-    zIndex: 20,
+
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lilac[200],
 
     shadowColor: Colors.background.secondary,
     shadowOffset: {

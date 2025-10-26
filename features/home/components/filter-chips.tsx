@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
   filtersContent: {
     gap: 8,
     paddingRight: 16,
+    paddingVertical: 8,
   },
   addIngredientsButton: {
     backgroundColor: "white",
