@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
+import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -9,8 +10,9 @@ import {
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { forwardRef, useCallback, useState } from "react";
+import { forwardRef, useCallback, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   Platform,
@@ -24,7 +26,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface IngredientModalProps {
-  onIngredientsSelect?: (ingredients: typeof POPULAR_INGREDIENTS) => void;
+  onIngredientsSelect?: (ingredients: Ingredient[]) => void;
 }
 
 export const IngredientModal = forwardRef<
@@ -32,9 +34,13 @@ export const IngredientModal = forwardRef<
   IngredientModalProps
 >(({ onIngredientsSelect }, ref) => {
   const { top } = useSafeAreaInsets();
-  const [selectedIngredients, setSelectedIngredients] = useState<Set<number>>(
-    new Set()
-  );
+  const [selectedIngredients, setSelectedIngredients] = useState<
+    Map<number, Ingredient | (typeof POPULAR_INGREDIENTS)[0]>
+  >(new Map());
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
 
   const screenHeight = Dimensions.get("screen").height - top;
   const INGREDIENT_IMAGE_BASE_URL =
@@ -55,31 +61,210 @@ export const IngredientModal = forwardRef<
     []
   );
 
-  const toggleIngredient = useCallback((index: number) => {
-    setSelectedIngredients((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
-    });
-  }, []);
+  const toggleIngredient = useCallback(
+    (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
+      const key = hasSearched
+        ? (item as Ingredient).id
+        : (item as any).spoonacularId;
+      setSelectedIngredients((prev) => {
+        const newMap = new Map(prev);
+        if (newMap.has(key)) {
+          newMap.delete(key);
+        } else {
+          newMap.set(key, item);
+        }
+        return newMap;
+      });
+    },
+    [hasSearched]
+  );
 
   const handleClearAll = useCallback(() => {
-    setSelectedIngredients(new Set());
+    setSelectedIngredients(new Map());
   }, []);
 
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query);
+
+    if (query.trim().length === 0) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const { ingredients } = await searchIngredients(query, 0, 20);
+      setSearchResults(ingredients);
+      setHasSearched(true);
+    } catch (error) {
+      console.error("Error searching ingredients:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Selected items
+  const selectedItems = useMemo(() => {
+    return Array.from(selectedIngredients.values());
+  }, [selectedIngredients]);
+
+  // Get selected popular ingredient IDs for filtering
+  const selectedPopularIds = useMemo(() => {
+    const ids = new Set<number>();
+    selectedIngredients.forEach((item) => {
+      const popularId = (item as any).spoonacularId;
+      if (popularId) {
+        ids.add(popularId);
+      }
+    });
+    return ids;
+  }, [selectedIngredients]);
+
+  // Display items - either search results or popular
+  // Filter search results to exclude already selected popular items
+  const displayItems = useMemo(() => {
+    if (!hasSearched) {
+      return POPULAR_INGREDIENTS;
+    }
+    // Filter out search results that are already selected from popular items
+    return searchResults.filter((item) => !selectedPopularIds.has(item.id));
+  }, [hasSearched, searchResults, selectedPopularIds]);
+
+  const getItemKey = useCallback(
+    (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
+      // Simple key - no need for prefix since we filter duplicates
+      return hasSearched
+        ? (item as Ingredient).id
+        : (item as any).spoonacularId;
+    },
+    [hasSearched]
+  );
+
+  // Unselected items from display
+  const unselectedItems = useMemo(() => {
+    return displayItems.filter((item) => {
+      const key = getItemKey(item);
+      return !selectedIngredients.has(key);
+    });
+  }, [displayItems, selectedIngredients, getItemKey]);
+
   const handleApply = useCallback(() => {
-    const selectedItems = POPULAR_INGREDIENTS.filter((_, index) =>
-      selectedIngredients.has(index)
-    );
-    onIngredientsSelect?.(selectedItems);
+    const ingredientsToSend: Ingredient[] = selectedItems.map((item) => {
+      if (hasSearched) {
+        return item as Ingredient;
+      } else {
+        return {
+          id: (item as any).spoonacularId || 0,
+          name: (item as any).name,
+          image: (item as any).image,
+        };
+      }
+    });
+
+    onIngredientsSelect?.(ingredientsToSend);
     if (typeof ref !== "function" && ref?.current?.dismiss) {
       ref.current.dismiss();
     }
-  }, [selectedIngredients, onIngredientsSelect, ref]);
+  }, [selectedItems, onIngredientsSelect, ref, hasSearched]);
+
+  const getItemName = (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
+    return (item as any).name;
+  };
+
+  const getItemImage = (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
+    return (item as any).image;
+  };
+
+  const renderIngredientItem = (
+    item: Ingredient | (typeof POPULAR_INGREDIENTS)[0],
+    isSelected: boolean
+  ) => {
+    const ingredientName = getItemName(item);
+    const ingredientImage = getItemImage(item);
+    const key = getItemKey(item);
+
+    return (
+      <Pressable
+        key={`ingredient-${key}`}
+        style={({ pressed }) => [
+          styles.ingredientItem,
+          isSelected && styles.ingredientItemSelectedPopular,
+          pressed && { transform: [{ scale: 0.95 }] },
+        ]}
+        onPress={() => toggleIngredient(item)}
+      >
+        {ingredientImage ? (
+          <Image
+            source={{
+              uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}`,
+            }}
+            style={[styles.ingredientCircle, isSelected && { opacity: 0.75 }]}
+          />
+        ) : (
+          <View style={styles.ingredientCircle} />
+        )}
+        <Text style={[styles.ingredientText, isSelected && { opacity: 0.75 }]}>
+          {ingredientName}
+        </Text>
+        {isSelected && (
+          <View style={styles.checkmark}>
+            <Ionicons name="checkmark" size={16} color="white" />
+          </View>
+        )}
+      </Pressable>
+    );
+  };
+
+  const renderSelectedIngredientItem = (
+    item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]
+  ) => {
+    const ingredientName = getItemName(item);
+    const ingredientImage = getItemImage(item);
+    const key = getItemKey(item);
+
+    return (
+      <Pressable
+        key={`selected-${key}`}
+        style={({ pressed }) => [
+          styles.ingredientItem,
+          styles.ingredientItemSelected,
+          pressed && { transform: [{ scale: 0.95 }] },
+        ]}
+        onPress={() => toggleIngredient(item)}
+      >
+        {ingredientImage ? (
+          <Image
+            source={{
+              uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}`,
+            }}
+            style={styles.ingredientCircle}
+          />
+        ) : (
+          <View style={styles.ingredientCircle} />
+        )}
+        <Text style={styles.ingredientText}>{ingredientName}</Text>
+        <View style={styles.checkmark}>
+          <Ionicons name="checkmark" size={16} color="white" />
+        </View>
+      </Pressable>
+    );
+  };
+
+  const ScrollContent = ({ children }: { children: React.ReactNode }) =>
+    Platform.OS === "ios" ? (
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 28, paddingTop: 12 }}
+      >
+        {children}
+      </ScrollView>
+    ) : (
+      <BottomSheetScrollView showsVerticalScrollIndicator={false}>
+        {children}
+      </BottomSheetScrollView>
+    );
 
   return (
     <BottomSheetModal
@@ -115,197 +300,54 @@ export const IngredientModal = forwardRef<
               style={styles.searchInput}
               placeholder="What's in your pantry"
               placeholderTextColor={Colors.gray[400]}
+              value={searchQuery}
+              onChangeText={handleSearch}
             />
+            {isSearching && (
+              <ActivityIndicator
+                size="small"
+                color={Colors.lilac[500]}
+                style={styles.searchLoader}
+              />
+            )}
           </View>
         </View>
 
         <View style={{ flex: 1 }}>
-          {Platform.OS === "ios" ? (
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 28, paddingTop: 12 }}
-            >
-              {selectedIngredients.size > 0 && (
-                <>
-                  <Text style={styles.subtitle}>Selected</Text>
-                  <View style={styles.ingredientsContainer}>
-                    {POPULAR_INGREDIENTS.map((item, index) => {
-                      const isSelected = selectedIngredients.has(index);
-                      return isSelected ? (
-                        <Pressable
-                          key={`selected-${index}`}
-                          style={({ pressed }) => [
-                            styles.ingredientItem,
-                            styles.ingredientItemSelected,
-                            pressed && { transform: [{ scale: 0.95 }] },
-                          ]}
-                          onPress={() => toggleIngredient(index)}
-                        >
-                          {item.image ? (
-                            <Image
-                              source={{
-                                uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
-                              }}
-                              style={styles.ingredientCircle}
-                            />
-                          ) : (
-                            <View style={styles.ingredientCircle} />
-                          )}
-                          <Text style={styles.ingredientText}>{item.name}</Text>
-                          {isSelected && (
-                            <View style={styles.checkmark}>
-                              <Ionicons
-                                name="checkmark"
-                                size={16}
-                                color="white"
-                              />
-                            </View>
-                          )}
-                        </Pressable>
-                      ) : null;
-                    })}
-                  </View>
-                </>
-              )}
+          <ScrollContent>
+            {/* Selected Items Section */}
+            {selectedItems.length > 0 && (
+              <>
+                <Text style={styles.subtitle}>Selected</Text>
+                <View style={styles.ingredientsContainer}>
+                  {selectedItems.map((item) =>
+                    renderSelectedIngredientItem(item)
+                  )}
+                </View>
+              </>
+            )}
 
-              <Text style={styles.subtitle}>Popular</Text>
+            {/* Main Content Section */}
+            <Text style={styles.subtitle}>
+              {hasSearched ? "Search Results" : "Popular"}
+            </Text>
 
-              <View style={styles.ingredientsContainer}>
-                {POPULAR_INGREDIENTS.map((item, index) => {
-                  const isSelected = selectedIngredients.has(index);
-                  return (
-                    <Pressable
-                      key={`popular-${index}`}
-                      style={({ pressed }) => [
-                        styles.ingredientItem,
-                        isSelected && styles.ingredientItemSelectedPopular,
-                        pressed && { transform: [{ scale: 0.95 }] },
-                      ]}
-                      onPress={() => toggleIngredient(index)}
-                    >
-                      {item.image ? (
-                        <Image
-                          source={{
-                            uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
-                          }}
-                          style={[
-                            styles.ingredientCircle,
-                            isSelected && { opacity: 0.75 },
-                          ]}
-                        />
-                      ) : (
-                        <View style={styles.ingredientCircle} />
-                      )}
-                      <Text
-                        style={[
-                          styles.ingredientText,
-                          isSelected && { opacity: 0.75 },
-                        ]}
-                      >
-                        {item.name}
-                      </Text>
-                      {isSelected && (
-                        <View style={styles.checkmark}>
-                          <Ionicons name="checkmark" size={16} color="white" />
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                })}
+            {isSearching ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.lilac[500]} />
               </View>
-            </ScrollView>
-          ) : (
-            <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-              {selectedIngredients.size > 0 && (
-                <>
-                  <Text style={styles.subtitle}>Selected</Text>
-                  <View style={styles.ingredientsContainer}>
-                    {POPULAR_INGREDIENTS.map((item, index) => {
-                      const isSelected = selectedIngredients.has(index);
-                      return isSelected ? (
-                        <Pressable
-                          key={`selected-${index}`}
-                          style={({ pressed }) => [
-                            styles.ingredientItem,
-                            styles.ingredientItemSelected,
-                            pressed && { transform: [{ scale: 0.95 }] },
-                          ]}
-                          onPress={() => toggleIngredient(index)}
-                        >
-                          {item.image ? (
-                            <Image
-                              source={{
-                                uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
-                              }}
-                              style={styles.ingredientCircle}
-                            />
-                          ) : (
-                            <View style={styles.ingredientCircle} />
-                          )}
-                          <Text style={styles.ingredientText}>{item.name}</Text>
-                          {isSelected && (
-                            <View style={styles.checkmark}>
-                              <Ionicons
-                                name="checkmark"
-                                size={16}
-                                color="white"
-                              />
-                            </View>
-                          )}
-                        </Pressable>
-                      ) : null;
-                    })}
-                  </View>
-                </>
-              )}
-
-              <Text style={styles.subtitle}>Popular</Text>
-
-              <View style={styles.ingredientsContainer}>
-                {POPULAR_INGREDIENTS.map((item, index) => {
-                  const isSelected = selectedIngredients.has(index);
-                  return (
-                    <Pressable
-                      key={`popular-${index}`}
-                      style={({ pressed }) => [
-                        styles.ingredientItem,
-                        isSelected && styles.ingredientItemSelectedPopular,
-                        pressed && { transform: [{ scale: 0.95 }] },
-                      ]}
-                      onPress={() => toggleIngredient(index)}
-                    >
-                      {item.image ? (
-                        <Image
-                          source={{
-                            uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
-                          }}
-                          style={[
-                            styles.ingredientCircle,
-                            isSelected && { opacity: 0.75 },
-                          ]}
-                        />
-                      ) : (
-                        <View style={styles.ingredientCircle} />
-                      )}
-                      <Text
-                        style={[
-                          styles.ingredientText,
-                          isSelected && { opacity: 0.75 },
-                        ]}
-                      >
-                        {item.name}
-                      </Text>
-                      {isSelected && (
-                        <View style={styles.checkmark}>
-                          <Ionicons name="checkmark" size={16} color="white" />
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                })}
+            ) : hasSearched && searchResults.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No ingredients found</Text>
               </View>
-            </BottomSheetScrollView>
-          )}
+            ) : (
+              <View style={styles.ingredientsContainer}>
+                {unselectedItems.map((item) =>
+                  renderIngredientItem(item, false)
+                )}
+              </View>
+            )}
+          </ScrollContent>
         </View>
 
         <View style={styles.bottomContainer}>
@@ -365,6 +407,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text.primary,
   },
+  searchLoader: {
+    marginLeft: 8,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -386,6 +431,7 @@ const styles = StyleSheet.create({
   ingredientItemSelected: {
     backgroundColor: Colors.lilac[100],
     borderRadius: 12,
+    paddingVertical: 8,
   },
   ingredientItemSelectedPopular: {
     opacity: 0.75,
@@ -441,5 +487,21 @@ const styles = StyleSheet.create({
   applyButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: Colors.gray[400],
   },
 });

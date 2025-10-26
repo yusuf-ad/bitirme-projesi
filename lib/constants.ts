@@ -117,9 +117,3 @@ export const POPULAR_INGREDIENTS: {
     image: "bell-pepper-orange.png",
   },
 ];
-
-// NOTE: If you want to populate `spoonacularId` for each item, you can run
-// `searchIngredients(name)` (from `lib/spoonacular.ts`) for each name and
-// save the returned `id` into this array. I left `spoonacularId` as `null`
-// for now as requested — the app will show these items by name and image URL
-// can be derived from the name or the known CDN path.
