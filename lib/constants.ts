@@ -73,10 +73,10 @@ export const POPULAR_INGREDIENTS: {
   name: string;
   image?: string;
 }[] = [
-  { spoonacularId: 7961, name: "Chicken", image: "deli-turkey.jpg" },
+  { spoonacularId: 5115, name: "Chicken", image: "whole-chicken.jpg" },
   { spoonacularId: 1123, name: "Egg", image: "egg.png" },
   { spoonacularId: 20420, name: "Pasta", image: "fusilli.jpg" },
-  { spoonacularId: 8066, name: "Rice", image: "rice-crispy-cereal.png" },
+  { spoonacularId: 20444, name: "Rice", image: "uncooked-white-rice.png" },
   {
     spoonacularId: 10023572,
     name: "Beef Mince",
@@ -93,13 +93,12 @@ export const POPULAR_INGREDIENTS: {
     name: "Canned Tomato",
     image: "tomatoes-canned.png",
   },
-  { spoonacularId: 16009, name: "Pork", image: "baked-beans.jpg" },
-  { spoonacularId: 23372, name: "Beef", image: "beef-tenderloin.png" },
+  { spoonacularId: 23572, name: "Beef", image: "beef-cubes-raw.png" },
   { spoonacularId: 10017224, name: "Lamb", image: "lamb-shanks.jpg" },
   { spoonacularId: 11260, name: "Mushroom", image: "mushrooms-white.jpg" },
-  { spoonacularId: 11413, name: "Potato", image: "white-powder.jpg" },
+  { spoonacularId: 11352, name: "Potato", image: "potatoes-yukon-gold.jpg" },
   { spoonacularId: 11529, name: "Tomato", image: "tomato.png" },
-  { spoonacularId: 20420, name: "Noodles", image: "fusilli.jpg" },
+  { spoonacularId: 20429, name: "Noodles", image: "egg-noodles.jpg" },
   {
     spoonacularId: 11052,
     name: "Green Beans",

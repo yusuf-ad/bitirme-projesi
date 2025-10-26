@@ -179,7 +179,8 @@ const styles = StyleSheet.create({
     height: 52,
     width: 52,
     borderRadius: 999,
-    objectFit: "contain",
+    resizeMode: "contain",
+    padding: 2,
   },
   ingredientText: {
     fontSize: 16,
