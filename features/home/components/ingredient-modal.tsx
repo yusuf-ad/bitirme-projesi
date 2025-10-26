@@ -6,6 +6,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
+  BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { forwardRef, useCallback } from "react";
@@ -49,6 +50,7 @@ export const IngredientModal = forwardRef<BottomSheetModal>((props, ref) => {
       ref={ref}
       onChange={handleSheetChanges}
       backdropComponent={renderBackdrop}
+      enableOverDrag={false}
     >
       <BottomSheetView
         style={[styles.contentContainer, { height: screenHeight }]}
@@ -84,29 +86,50 @@ export const IngredientModal = forwardRef<BottomSheetModal>((props, ref) => {
         <View style={{ flex: 1 }}>
           <Text style={styles.subtitle}>Popular</Text>
 
-          {/* Buraya popüler malzemeler gelecek (sabit listeden) */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 28 }}
-          >
-            <View style={styles.ingredientsContainer}>
-              {POPULAR_INGREDIENTS.map((item, index) => (
-                <View style={styles.ingredientItem} key={`popular-${index}`}>
-                  {item.image ? (
-                    <Image
-                      source={{
-                        uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
-                      }}
-                      style={styles.ingredientCircle}
-                    />
-                  ) : (
-                    <View style={styles.ingredientCircle} />
-                  )}
-                  <Text style={styles.ingredientText}>{item.name}</Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
+          {Platform.OS === "ios" ? (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 28 }}
+            >
+              <View style={styles.ingredientsContainer}>
+                {POPULAR_INGREDIENTS.map((item, index) => (
+                  <View style={styles.ingredientItem} key={`popular-${index}`}>
+                    {item.image ? (
+                      <Image
+                        source={{
+                          uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
+                        }}
+                        style={styles.ingredientCircle}
+                      />
+                    ) : (
+                      <View style={styles.ingredientCircle} />
+                    )}
+                    <Text style={styles.ingredientText}>{item.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          ) : (
+            <BottomSheetScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.ingredientsContainer}>
+                {POPULAR_INGREDIENTS.map((item, index) => (
+                  <View style={styles.ingredientItem} key={`popular-${index}`}>
+                    {item.image ? (
+                      <Image
+                        source={{
+                          uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.image}`,
+                        }}
+                        style={styles.ingredientCircle}
+                      />
+                    ) : (
+                      <View style={styles.ingredientCircle} />
+                    )}
+                    <Text style={styles.ingredientText}>{item.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </BottomSheetScrollView>
+          )}
         </View>
 
         <View style={styles.bottomContainer}>
@@ -169,6 +192,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
+    paddingBottom: Platform.OS === "ios" ? 0 : 24,
   },
   ingredientItem: {
     justifyContent: "center",
