@@ -8,6 +8,14 @@ interface SearchBarProps {
   onFilterPress: () => void;
 }
 
+/**
+ * Renders a search bar with a text input and a filter button.
+ *
+ * @param searchQuery - The current value shown in the search input.
+ * @param onSearchChange - Called with the updated query when the input changes.
+ * @param onFilterPress - Called when the filter button is pressed.
+ * @returns A React element rendering the search input and the filter button.
+ */
 export function SearchBar({
   searchQuery,
   onSearchChange,

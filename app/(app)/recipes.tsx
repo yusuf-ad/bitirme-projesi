@@ -26,6 +26,13 @@ type TabType = "discover" | "favorites";
 
 const FILTER_OPTIONS = ["Healthy", "Easy", "Batch", "Veg"];
 
+/**
+ * Renders the Home tab UI with discover and favorites views, including search, filter chips, infinite scrolling, pull-to-refresh, and an ingredient modal.
+ *
+ * The component manages local UI state (active tab, search query, selected filters, refresh state), coordinates data loading via an infinite-scroll hook, and exposes controls for opening the ingredient modal.
+ *
+ * @returns The rendered JSX element representing the Home tab screen.
+ */
 export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");

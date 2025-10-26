@@ -9,6 +9,15 @@ interface FilterChipsProps {
   onAddIngredients?: () => void;
 }
 
+/**
+ * Renders a horizontally scrollable row of filter chips with an optional "Ingredients" control.
+ *
+ * @param filters - Array of filter labels to display as chips.
+ * @param selectedFilters - Array of labels that are currently active/selected.
+ * @param onToggleFilter - Callback invoked with a filter label when its chip is pressed.
+ * @param onAddIngredients - Optional callback invoked when the "Ingredients" control is pressed.
+ * @returns The component tree: a horizontal ScrollView containing the optional "Ingredients" button and the filter chips.
+ */
 export function FilterChips({
   filters,
   selectedFilters,
