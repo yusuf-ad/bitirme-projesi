@@ -7,6 +7,7 @@ export { ErrorState } from "./components/error-state";
 export { FilterChips } from "./components/filter-chips";
 export { default as Header } from "./components/header";
 export { HomeHeader } from "./components/home-header";
+export { IngredientModal } from "./components/ingredient-modal";
 export { LoadingState } from "./components/loading-state";
 export { default as MacroCardsSection } from "./components/macro-cards-section";
 export { default as MealCard } from "./components/meal-card";
