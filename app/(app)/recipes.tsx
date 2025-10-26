@@ -9,8 +9,10 @@ import {
   RecipeGrid,
   SearchBar,
 } from "@/features/home";
+import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { Ingredient } from "@/lib/spoonacular";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useCallback, useRef, useState } from "react";
 import {
@@ -31,8 +33,13 @@ export default function HomeTab() {
   const [activeTab, setActiveTab] = useState<TabType>("discover");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>(
+    []
+  );
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
+  const cuisineModalRef = useRef<BottomSheetModal>(null);
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
       initialPageSize: 1,
@@ -56,6 +63,18 @@ export default function HomeTab() {
 
   const handleOpenIngredientModal = useCallback(() => {
     ingredientModalRef.current?.present();
+  }, []);
+
+  const handleOpenCuisineModal = useCallback(() => {
+    cuisineModalRef.current?.present();
+  }, []);
+
+  const handleIngredientsSelect = useCallback((ingredients: Ingredient[]) => {
+    setSelectedIngredients(ingredients);
+  }, []);
+
+  const handleCuisinesSelect = useCallback((cuisines: string[]) => {
+    setSelectedCuisines(cuisines);
   }, []);
 
   const handleScroll = useCallback(
@@ -90,6 +109,9 @@ export default function HomeTab() {
             selectedFilters={selectedFilters}
             onToggleFilter={toggleFilter}
             onAddIngredients={handleOpenIngredientModal}
+            onCuisinePress={handleOpenCuisineModal}
+            selectedIngredients={selectedIngredients.map((ing) => ing.name)}
+            selectedCuisines={selectedCuisines}
           />
         </View>
       )}
@@ -133,7 +155,14 @@ export default function HomeTab() {
         )}
       </ScrollView>
 
-      <IngredientModal ref={ingredientModalRef} />
+      <IngredientModal
+        ref={ingredientModalRef}
+        onIngredientsSelect={handleIngredientsSelect}
+      />
+      <CuisineModal
+        ref={cuisineModalRef}
+        onCuisinesSelect={handleCuisinesSelect}
+      />
     </View>
   );
 }

@@ -117,3 +117,30 @@ export const POPULAR_INGREDIENTS: {
     image: "bell-pepper-orange.png",
   },
 ];
+
+export const POPULAR_CUISINES: {
+  id: string;
+  name: string;
+  flag?: string;
+}[] = [
+  { id: "mexican", name: "Mexican", flag: "🇲🇽" },
+  { id: "italian", name: "Italian", flag: "🇮🇹" },
+  { id: "chinese", name: "Chinese", flag: "🇨🇳" },
+  { id: "indian", name: "Indian", flag: "🇮🇳" },
+  { id: "vietnamese", name: "Vietnamese", flag: "🇻🇳" },
+  { id: "mediterranean", name: "Mediterranean", flag: "🏛️" },
+  { id: "japanese", name: "Japanese", flag: "🇯🇵" },
+  { id: "thai", name: "Thai", flag: "🇹🇭" },
+  { id: "french", name: "French", flag: "🇫🇷" },
+  { id: "middleeastern", name: "Middle Eastern", flag: "🇸🇦" },
+  { id: "american", name: "American", flag: "🇺🇸" },
+  { id: "korean", name: "Korean", flag: "🇰🇷" },
+  { id: "greek", name: "Greek", flag: "🇬🇷" },
+  { id: "spanish", name: "Spanish", flag: "🇪🇸" },
+  { id: "turkish", name: "Turkish", flag: "🇹🇷" },
+  { id: "lebanese", name: "Lebanese", flag: "🇱🇧" },
+  { id: "british", name: "British", flag: "🇬🇧" },
+  { id: "malayian", name: "Malaysian", flag: "🇲🇾" },
+  { id: "african", name: "African", flag: "🌍" },
+  { id: "european", name: "European", flag: "🇪🇺" },
+];

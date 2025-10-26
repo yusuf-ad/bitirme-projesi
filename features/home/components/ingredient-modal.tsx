@@ -42,7 +42,8 @@ export const IngredientModal = forwardRef<
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
 
-  const screenHeight = Dimensions.get("screen").height - top;
+  const screenHeight =
+    Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
   const INGREDIENT_IMAGE_BASE_URL =
     "https://spoonacular.com/cdn/ingredients_100x100";
 
@@ -110,27 +111,15 @@ export const IngredientModal = forwardRef<
     return Array.from(selectedIngredients.values());
   }, [selectedIngredients]);
 
-  // Get selected popular ingredient IDs for filtering
-  const selectedPopularIds = useMemo(() => {
-    const ids = new Set<number>();
-    selectedIngredients.forEach((item) => {
-      const popularId = (item as any).spoonacularId;
-      if (popularId) {
-        ids.add(popularId);
-      }
-    });
-    return ids;
-  }, [selectedIngredients]);
-
   // Display items - either search results or popular
-  // Filter search results to exclude already selected popular items
+  // Filter search results to exclude already selected items
   const displayItems = useMemo(() => {
     if (!hasSearched) {
       return POPULAR_INGREDIENTS;
     }
-    // Filter out search results that are already selected from popular items
-    return searchResults.filter((item) => !selectedPopularIds.has(item.id));
-  }, [hasSearched, searchResults, selectedPopularIds]);
+    // Filter out search results that are already selected
+    return searchResults.filter((item) => !selectedIngredients.has(item.id));
+  }, [hasSearched, searchResults, selectedIngredients]);
 
   const getItemKey = useCallback(
     (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
