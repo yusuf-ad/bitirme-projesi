@@ -170,6 +170,7 @@ export default function HomeTab() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    backgroundColor: Colors.background.secondary,
   },
   searchContainer: {
     paddingHorizontal: 16,

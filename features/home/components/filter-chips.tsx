@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
@@ -40,8 +41,8 @@ export function FilterChips({
       contentContainerStyle={styles.filtersContent}
     >
       {onAddIngredients && (
-        <Pressable
-          style={[
+        <CustomButton
+          containerStyle={[
             styles.addIngredientsButton,
             selectedIngredients.length > 0 && styles.addIngredientsButtonActive,
           ]}
@@ -51,11 +52,11 @@ export function FilterChips({
             {getIngredientButtonText()}
           </Text>
           <Entypo name="chevron-down" size={20} color="black" />
-        </Pressable>
+        </CustomButton>
       )}
 
-      <Pressable
-        style={[
+      <CustomButton
+        containerStyle={[
           styles.addIngredientsButton,
           selectedCuisines.length > 0 && styles.addIngredientsButtonActive,
         ]}
@@ -63,7 +64,7 @@ export function FilterChips({
       >
         <Text style={styles.addIngredientsText}>{getCuisineButtonText()}</Text>
         <Entypo name="chevron-down" size={20} color="black" />
-      </Pressable>
+      </CustomButton>
 
       <Pressable style={styles.addIngredientsButton}>
         <Text style={styles.addIngredientsText}>Total time</Text>
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   addIngredientsButton: {
+    width: "auto",
     backgroundColor: "white",
     paddingHorizontal: 16,
     paddingVertical: 10,
