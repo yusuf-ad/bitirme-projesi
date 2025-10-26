@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Platform, StyleSheet, TextInput, View } from "react-native";
 
 interface SearchBarProps {
   searchQuery: string;
@@ -24,15 +24,12 @@ export function SearchBar({
         />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search ingredients, recipes..."
+          placeholder="Search recipes..."
           placeholderTextColor={Colors.gray[400]}
           value={searchQuery}
           onChangeText={onSearchChange}
         />
       </View>
-      <Pressable style={styles.filterButton} onPress={onFilterPress}>
-        <Ionicons name="options-outline" size={20} color="white" />
-      </Pressable>
     </View>
   );
 }
@@ -50,7 +47,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: Platform.OS === "ios" ? 14 : 2,
     borderWidth: 1,
     borderColor: Colors.lilac[200],
   },

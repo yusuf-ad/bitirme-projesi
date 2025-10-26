@@ -5,13 +5,13 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -141,11 +141,7 @@ export default function AccountScreen() {
         {/* Sign Out Section */}
         <View style={styles.section}>
           <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-            <MaterialCommunityIcons
-              name="logout"
-              size={20}
-              color="#EF4444"
-            />
+            <MaterialCommunityIcons name="logout" size={20} color="#EF4444" />
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
         </View>
@@ -157,7 +153,7 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background.secondary,
   },
   header: {
     flexDirection: "row",

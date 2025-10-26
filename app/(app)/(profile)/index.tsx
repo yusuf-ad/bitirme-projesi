@@ -299,7 +299,7 @@ export default function ProfileTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background.secondary,
   },
   content: {
     paddingHorizontal: 16,

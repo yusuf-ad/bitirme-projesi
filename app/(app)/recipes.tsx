@@ -9,7 +9,11 @@ import {
   RecipeGrid,
   SearchBar,
 } from "@/features/home";
+import { CuisineModal } from "@/features/home/components/cuisine-modal";
+import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { Ingredient } from "@/lib/spoonacular";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useCallback, useRef, useState } from "react";
 import {
   Platform,
@@ -29,11 +33,17 @@ export default function HomeTab() {
   const [activeTab, setActiveTab] = useState<TabType>("discover");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>(
+    []
+  );
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
+  const ingredientModalRef = useRef<BottomSheetModal>(null);
+  const cuisineModalRef = useRef<BottomSheetModal>(null);
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
-      initialPageSize: 10,
-      pageSize: 10,
+      initialPageSize: 1,
+      pageSize: 1,
     });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -50,6 +60,22 @@ export default function HomeTab() {
         : [...prev, filter]
     );
   };
+
+  const handleOpenIngredientModal = useCallback(() => {
+    ingredientModalRef.current?.present();
+  }, []);
+
+  const handleOpenCuisineModal = useCallback(() => {
+    cuisineModalRef.current?.present();
+  }, []);
+
+  const handleIngredientsSelect = useCallback((ingredients: Ingredient[]) => {
+    setSelectedIngredients(ingredients);
+  }, []);
+
+  const handleCuisinesSelect = useCallback((cuisines: string[]) => {
+    setSelectedCuisines(cuisines);
+  }, []);
 
   const handleScroll = useCallback(
     (event: any) => {
@@ -82,7 +108,10 @@ export default function HomeTab() {
             filters={FILTER_OPTIONS}
             selectedFilters={selectedFilters}
             onToggleFilter={toggleFilter}
-            onAddIngredients={() => {}}
+            onAddIngredients={handleOpenIngredientModal}
+            onCuisinePress={handleOpenCuisineModal}
+            selectedIngredients={selectedIngredients.map((ing) => ing.name)}
+            selectedCuisines={selectedCuisines}
           />
         </View>
       )}
@@ -125,6 +154,15 @@ export default function HomeTab() {
           <View>{/* Favorites content buraya gelecek */}</View>
         )}
       </ScrollView>
+
+      <IngredientModal
+        ref={ingredientModalRef}
+        onIngredientsSelect={handleIngredientsSelect}
+      />
+      <CuisineModal
+        ref={cuisineModalRef}
+        onCuisinesSelect={handleCuisinesSelect}
+      />
     </View>
   );
 }
@@ -132,11 +170,25 @@ export default function HomeTab() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    backgroundColor: Colors.background.secondary,
   },
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    gap: 12,
+    backgroundColor: Colors.background.secondary,
+
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lilac[200],
+
+    shadowColor: Colors.background.secondary,
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.58,
+    shadowRadius: 16.0,
+
+    elevation: 24,
   },
   contentScroll: {
     flex: 1,

@@ -4,12 +4,12 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -89,8 +89,8 @@ export default function GoalsMetricsScreen() {
                   {onboarding.selectedGender === "male"
                     ? "Male"
                     : onboarding.selectedGender === "female"
-                      ? "Female"
-                      : "Prefer not to say"}
+                    ? "Female"
+                    : "Prefer not to say"}
                 </Text>
               </View>
             )}
@@ -125,13 +125,13 @@ export default function GoalsMetricsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background.secondary,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background.secondary,
   },
   header: {
     flexDirection: "row",

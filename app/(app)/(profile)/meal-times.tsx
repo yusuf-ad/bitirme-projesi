@@ -4,12 +4,12 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -27,7 +27,9 @@ export default function MealTimesScreen() {
     minute: number;
     period: "AM" | "PM";
   }) => {
-    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${time.period}`;
+    return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${
+      time.period
+    }`;
   };
 
   if (onboarding.isLoading) {
@@ -118,13 +120,13 @@ export default function MealTimesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background.secondary,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background.secondary,
   },
   header: {
     flexDirection: "row",

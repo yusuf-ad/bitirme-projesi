@@ -169,13 +169,10 @@ export default function MealplanTab() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background.secondary,
-  },
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    backgroundColor: Colors.background.secondary,
   },
   section: {
     paddingTop: 8,
