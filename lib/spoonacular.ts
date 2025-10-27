@@ -16,6 +16,12 @@ export interface Recipe {
       unit: string;
     }[];
   };
+  extendedIngredients?: {
+    original: string;
+    name: string;
+    amount: number;
+    unit: string;
+  }[];
 }
 
 export interface Ingredient {

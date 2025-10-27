@@ -15,7 +15,7 @@ import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { Ingredient } from "@/lib/spoonacular";
 import { useFilterStore } from "@/lib/stores/filter-store";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Platform,
   RefreshControl,
@@ -45,12 +45,23 @@ export default function HomeTab() {
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const cuisineModalRef = useRef<BottomSheetModal>(null);
+
+  // Ingredients ve cuisines'i stabilize et - sonsuz loop'u önlemek için
+  const memoizedIngredients = useMemo(
+    () => selectedIngredients,
+    [selectedIngredients]
+  );
+  const memoizedCuisines = useMemo(
+    () => selectedCuisines,
+    [selectedCuisines]
+  );
+
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
       initialPageSize: 1,
       pageSize: 10,
-      ingredients: selectedIngredients,
-      cuisines: selectedCuisines,
+      ingredients: memoizedIngredients,
+      cuisines: memoizedCuisines,
     });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
