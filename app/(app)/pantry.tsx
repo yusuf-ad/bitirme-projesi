@@ -1,10 +1,10 @@
 import { Colors } from "@/constants/theme";
 import { StyleSheet, Text, View } from "react-native";
 
-export default function GroceriesTab() {
+export default function PantryTab() {
   return (
     <View style={styles.container}>
-      <Text>Groceries Tab</Text>
+      <Text>Pantry Tab</Text>
     </View>
   );
 }
