@@ -51,15 +51,12 @@ export default function HomeTab() {
     () => selectedIngredients,
     [selectedIngredients]
   );
-  const memoizedCuisines = useMemo(
-    () => selectedCuisines,
-    [selectedCuisines]
-  );
+  const memoizedCuisines = useMemo(() => selectedCuisines, [selectedCuisines]);
 
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
       initialPageSize: 1,
-      pageSize: 10,
+      pageSize: 1,
       ingredients: memoizedIngredients,
       cuisines: memoizedCuisines,
     });
