@@ -1,10 +1,17 @@
-import { Recipe, getRandomRecipes, searchRecipes } from "@/lib/spoonacular";
+import {
+  Ingredient,
+  Recipe,
+  getRandomRecipes,
+  searchRecipes,
+} from "@/lib/spoonacular";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface UseInfiniteScrollOptions {
   initialPageSize?: number;
   pageSize?: number;
   query?: string; // Arama sorgusu (olmadığında random recipes kullanılır)
+  ingredients?: Ingredient[]; // Seçili malzemeler
+  cuisines?: string[]; // Seçili mutfaklar
 }
 
 export interface UseInfiniteScrollResult {
@@ -24,7 +31,13 @@ export interface UseInfiniteScrollResult {
 export function useInfiniteScroll(
   options: UseInfiniteScrollOptions = {}
 ): UseInfiniteScrollResult {
-  const { initialPageSize = 10, pageSize = 10, query = "" } = options;
+  const {
+    initialPageSize = 10,
+    pageSize = 10,
+    query = "",
+    ingredients = [],
+    cuisines = [],
+  } = options;
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,13 +65,19 @@ export function useInfiniteScroll(
         offsetRef.current = initialPageSize;
         setHasMore(offsetRef.current < result.totalResults);
       } else {
-        // Random modunda
+        // Random modunda - malzemeleri ve mutfak filtrelerini uygula
+        const ingredientNames = ingredients.map((ing) => ing.name).join(",");
+        const cuisineNames = cuisines.join(",");
+
         newRecipes = await getRandomRecipes(initialPageSize, {
-          cuisine: "",
-          includeIngredients: "",
+          cuisine: cuisineNames || "",
+          includeIngredients: ingredientNames || "",
           excludeIngredients: "pork",
         });
-        console.log("Fetched random recipes:", newRecipes);
+        console.log("Fetched random recipes:", newRecipes, {
+          ingredientNames,
+          cuisineNames,
+        });
 
         totalResultsRef.current = newRecipes.length;
         offsetRef.current = initialPageSize;
@@ -74,9 +93,9 @@ export function useInfiniteScroll(
     } finally {
       setLoading(false);
     }
-  }, [query, initialPageSize]);
+  }, [query, initialPageSize, ingredients, cuisines]);
 
-  // Query değiştiğinde resetle ve yeniden yükle
+  // Query, ingredients veya cuisines değiştiğinde resetle ve yeniden yükle
   useEffect(() => {
     // State'i resetle
     setRecipes([]);
@@ -87,7 +106,7 @@ export function useInfiniteScroll(
 
     // Yeni arama ile yükle
     loadInitialRecipes();
-  }, [query, loadInitialRecipes]);
+  }, [query, ingredients, cuisines, loadInitialRecipes]);
 
   // Scroll sonu callback
   const onEndReached = useCallback(async () => {
@@ -110,10 +129,13 @@ export function useInfiniteScroll(
           setHasMore(false);
         }
       } else {
-        // Random modunda daha çek
+        // Random modunda daha çek - malzemeleri ve mutfak filtrelerini uygula
+        const ingredientNames = ingredients.map((ing) => ing.name).join(",");
+        const cuisineNames = cuisines.join(",");
+
         const newRecipes = await getRandomRecipes(pageSize, {
-          cuisine: "",
-          includeIngredients: "",
+          cuisine: cuisineNames || "",
+          includeIngredients: ingredientNames || "",
           excludeIngredients: "pork",
         });
         if (newRecipes.length > 0) {
@@ -131,7 +153,7 @@ export function useInfiniteScroll(
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, query, pageSize]);
+  }, [loading, hasMore, query, pageSize, ingredients, cuisines]);
 
   // Yenile
   const refresh = useCallback(async () => {

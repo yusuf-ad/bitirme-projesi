@@ -13,6 +13,7 @@ import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { Ingredient } from "@/lib/spoonacular";
+import { useFilterStore } from "@/lib/stores/filter-store";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useCallback, useRef, useState } from "react";
 import {
@@ -31,19 +32,25 @@ const FILTER_OPTIONS = ["Healthy", "Easy", "Batch", "Veg"];
 export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>(
-    []
-  );
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedFilters,
+    toggleFilter,
+    selectedIngredients,
+    setSelectedIngredients,
+    selectedCuisines,
+    setSelectedCuisines,
+  } = useFilterStore();
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const cuisineModalRef = useRef<BottomSheetModal>(null);
   const { recipes, loading, hasMore, error, onEndReached, refresh } =
     useInfiniteScroll({
       initialPageSize: 1,
-      pageSize: 1,
+      pageSize: 10,
+      ingredients: selectedIngredients,
+      cuisines: selectedCuisines,
     });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -53,14 +60,6 @@ export default function HomeTab() {
     setIsRefreshing(false);
   }, [refresh]);
 
-  const toggleFilter = (filter: string) => {
-    setSelectedFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    );
-  };
-
   const handleOpenIngredientModal = useCallback(() => {
     ingredientModalRef.current?.present();
   }, []);
@@ -69,13 +68,19 @@ export default function HomeTab() {
     cuisineModalRef.current?.present();
   }, []);
 
-  const handleIngredientsSelect = useCallback((ingredients: Ingredient[]) => {
-    setSelectedIngredients(ingredients);
-  }, []);
+  const handleIngredientsSelect = useCallback(
+    (ingredients: Ingredient[]) => {
+      setSelectedIngredients(ingredients);
+    },
+    [setSelectedIngredients]
+  );
 
-  const handleCuisinesSelect = useCallback((cuisines: string[]) => {
-    setSelectedCuisines(cuisines);
-  }, []);
+  const handleCuisinesSelect = useCallback(
+    (cuisines: string[]) => {
+      setSelectedCuisines(cuisines);
+    },
+    [setSelectedCuisines]
+  );
 
   const handleScroll = useCallback(
     (event: any) => {
