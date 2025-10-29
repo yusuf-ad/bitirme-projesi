@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { Recipe } from "@/lib/spoonacular";
+import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -16,12 +17,18 @@ export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
 
   return (
     <Pressable style={styles.itemCard} onPress={onPress}>
-      <Image
-        source={{ uri: recipe.image }}
-        style={styles.itemImage}
-        placeholder="L4|400"
-        contentFit="cover"
-      />
+      <View>
+        <Image
+          source={{ uri: recipe.image }}
+          style={styles.itemImage}
+          placeholder="L4|400"
+          contentFit="cover"
+        />
+
+        <Pressable hitSlop={24} style={styles.favoriteButton}>
+          <Feather name="heart" size={20} color="white" />
+        </Pressable>
+      </View>
 
       <View style={styles.itemContentContainer}>
         <Text style={styles.itemText} numberOfLines={2}>
@@ -112,5 +119,26 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: Colors.text.secondary,
+  },
+  favoriteButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 99,
+    height: 32,
+    width: 32,
+    justifyContent: "center",
+    alignItems: "center",
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+
+    elevation: 3,
   },
 });
