@@ -24,6 +24,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDebounce } from "use-debounce";
 
 type TabType = "discover" | "favorites";
 
@@ -45,6 +46,7 @@ export default function HomeTab() {
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const cuisineModalRef = useRef<BottomSheetModal>(null);
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 400);
 
   // Ingredients ve cuisines'i stabilize et - sonsuz loop'u önlemek için
   const memoizedIngredients = useMemo(
@@ -57,6 +59,7 @@ export default function HomeTab() {
     useInfiniteScroll({
       initialPageSize: 1,
       pageSize: 1,
+      query: debouncedSearchQuery,
       ingredients: memoizedIngredients,
       cuisines: memoizedCuisines,
     });
