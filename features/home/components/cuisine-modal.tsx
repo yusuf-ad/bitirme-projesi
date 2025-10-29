@@ -163,7 +163,13 @@ export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
         </ScrollView>
       ) : (
         <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-          {children}
+          <View
+            style={{
+              height: screenHeight,
+            }}
+          >
+            {children}
+          </View>
         </BottomSheetScrollView>
       );
 
