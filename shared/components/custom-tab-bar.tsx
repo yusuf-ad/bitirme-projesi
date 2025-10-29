@@ -1,3 +1,4 @@
+import { Octicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/build/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -83,6 +84,13 @@ export function CustomTabBar({
                 isFocused ? styles.tabItemActive : styles.tabItemInactive,
               ]}
             >
+              {route.name === "index" && (
+                <Octicons
+                  name="home-fill"
+                  size={18}
+                  color={isFocused ? "#FFFFFF" : "#737780"}
+                />
+              )}
               {route.name === "recipes" && (
                 <MaterialCommunityIcons
                   name="chef-hat"
@@ -97,8 +105,7 @@ export function CustomTabBar({
                   color={isFocused ? "#FFFFFF" : "#737780"}
                 />
               )}
-
-              {route.name !== "recipes" && route.name !== "pantry" && (
+              {route.name === "(profile)" && (
                 <FontAwesome
                   name={iconName as any}
                   size={20}
