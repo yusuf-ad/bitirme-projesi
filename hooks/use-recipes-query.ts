@@ -117,7 +117,7 @@ export function useRecipesQuery({
     return dedupeRecipes(allRecipes);
   }, [data]);
 
-  const isLoading = status === "pending" && !isFetching;
+  const isLoading = status === "pending";
   const hasMore = hasNextPage ?? true;
 
   return {

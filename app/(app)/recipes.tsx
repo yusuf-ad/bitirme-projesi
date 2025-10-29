@@ -68,7 +68,7 @@ export default function HomeTab() {
     query: debouncedSearchQuery,
     ingredients: memoizedIngredients,
     cuisines: memoizedCuisines,
-    pageSize: 10,
+    pageSize: 3,
   });
 
   const handleRefresh = useCallback(async () => {
