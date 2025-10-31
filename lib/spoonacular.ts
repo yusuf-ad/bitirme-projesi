@@ -2,6 +2,9 @@ const SPOONACULAR_API_KEY = process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY || "";
 const SPOONACULAR_BASE_URL = "https://api.spoonacular.com/recipes";
 const SPOONACULAR_FOOD_BASE_URL = "https://api.spoonacular.com/food";
 
+// Test constant - API pahalı olduğu için test için 1 olarak ayarlandı
+const TEST_NUMBER_OF_RESULTS = 1;
+
 export interface Recipe {
   id: number;
   title: string;
@@ -16,6 +19,12 @@ export interface Recipe {
       unit: string;
     }[];
   };
+  extendedIngredients?: {
+    original: string;
+    name: string;
+    amount: number;
+    unit: string;
+  }[];
 }
 
 export interface Ingredient {
@@ -81,7 +90,7 @@ export interface IngredientSearchFilters {
  * @returns Tarif dizisi
  */
 export async function getRandomRecipes(
-  number: number = 10,
+  number: number = TEST_NUMBER_OF_RESULTS,
   filters?: RandomRecipesFilters
 ): Promise<Recipe[]> {
   try {
@@ -133,7 +142,7 @@ export async function getRandomRecipes(
 export async function searchRecipes(
   query: string,
   offset: number = 0,
-  number: number = 10
+  number: number = TEST_NUMBER_OF_RESULTS
 ): Promise<{ recipes: Recipe[]; totalResults: number }> {
   try {
     const response = await fetch(
@@ -190,7 +199,7 @@ export async function getRecipeDetails(id: number): Promise<Recipe> {
 export async function searchIngredients(
   query: string,
   offset: number = 0,
-  number: number = 10,
+  number: number = TEST_NUMBER_OF_RESULTS,
   filters?: IngredientSearchFilters
 ): Promise<{ ingredients: Ingredient[]; totalResults: number }> {
   try {

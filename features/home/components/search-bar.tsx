@@ -1,5 +1,7 @@
 import { Colors } from "@/constants/theme";
+import { useFilterStore } from "@/lib/stores/filter-store";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
 import { Platform, StyleSheet, TextInput, View } from "react-native";
 
 interface SearchBarProps {
@@ -13,6 +15,16 @@ export function SearchBar({
   onSearchChange,
   onFilterPress,
 }: SearchBarProps) {
+  const { selectedIngredients, selectedCuisines } = useFilterStore();
+
+  useEffect(() => {
+    console.log(
+      "📍 Selected Ingredients:",
+      selectedIngredients.map((ing) => ing.name)
+    );
+    console.log("🍲 Selected Cuisines:", selectedCuisines);
+  }, [selectedIngredients, selectedCuisines]);
+
   return (
     <View style={styles.searchBarRow}>
       <View style={styles.searchBar}>

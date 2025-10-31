@@ -11,10 +11,11 @@ import {
 } from "@/features/home";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { useRecipesQuery } from "@/hooks/use-recipes-query";
 import { Ingredient } from "@/lib/spoonacular";
+import { useFilterStore } from "@/lib/stores/filter-store";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Platform,
   RefreshControl,
@@ -23,6 +24,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDebounce } from "use-debounce";
 
 type TabType = "discover" | "favorites";
 
@@ -31,35 +33,49 @@ const FILTER_OPTIONS = ["Healthy", "Easy", "Batch", "Veg"];
 export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>(
-    []
-  );
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedFilters,
+    toggleFilter,
+    selectedIngredients,
+    setSelectedIngredients,
+    selectedCuisines,
+    setSelectedCuisines,
+  } = useFilterStore();
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const cuisineModalRef = useRef<BottomSheetModal>(null);
-  const { recipes, loading, hasMore, error, onEndReached, refresh } =
-    useInfiniteScroll({
-      initialPageSize: 1,
-      pageSize: 1,
-    });
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 400);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Ingredients ve cuisines'i stabilize et - sonsuz loop'u önlemek için
+  const memoizedIngredients = useMemo(
+    () => selectedIngredients,
+    [selectedIngredients]
+  );
+  const memoizedCuisines = useMemo(() => selectedCuisines, [selectedCuisines]);
+
+  // Use TanStack Query for caching
+  const {
+    recipes,
+    isLoading: loading,
+    hasMore,
+    error,
+    fetchNextPage,
+    refetch,
+  } = useRecipesQuery({
+    query: debouncedSearchQuery,
+    ingredients: memoizedIngredients,
+    cuisines: memoizedCuisines,
+    pageSize: 3,
+  });
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await refresh();
+    await refetch();
     setIsRefreshing(false);
-  }, [refresh]);
-
-  const toggleFilter = (filter: string) => {
-    setSelectedFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    );
-  };
+  }, [refetch]);
 
   const handleOpenIngredientModal = useCallback(() => {
     ingredientModalRef.current?.present();
@@ -69,13 +85,19 @@ export default function HomeTab() {
     cuisineModalRef.current?.present();
   }, []);
 
-  const handleIngredientsSelect = useCallback((ingredients: Ingredient[]) => {
-    setSelectedIngredients(ingredients);
-  }, []);
+  const handleIngredientsSelect = useCallback(
+    (ingredients: Ingredient[]) => {
+      setSelectedIngredients(ingredients);
+    },
+    [setSelectedIngredients]
+  );
 
-  const handleCuisinesSelect = useCallback((cuisines: string[]) => {
-    setSelectedCuisines(cuisines);
-  }, []);
+  const handleCuisinesSelect = useCallback(
+    (cuisines: string[]) => {
+      setSelectedCuisines(cuisines);
+    },
+    [setSelectedCuisines]
+  );
 
   const handleScroll = useCallback(
     (event: any) => {
@@ -85,10 +107,10 @@ export default function HomeTab() {
         layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
 
       if (isCloseToBottom && !loading && hasMore) {
-        onEndReached();
+        fetchNextPage();
       }
     },
-    [loading, hasMore, onEndReached]
+    [loading, hasMore, fetchNextPage]
   );
 
   return (

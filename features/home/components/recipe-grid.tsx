@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { RecipeCard } from "./recipe-card";
 
@@ -18,7 +19,10 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
     <View style={styles.gridContainer}>
       {recipes.map((recipe, index) => (
         <View key={recipe.id + index} style={styles.gridItem}>
-          <RecipeCard recipe={recipe} />
+          <RecipeCard
+            recipe={recipe}
+            onPress={() => router.push(`/(meal)/${recipe.id}`)}
+          />
         </View>
       ))}
     </View>
