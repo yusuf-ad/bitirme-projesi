@@ -3,6 +3,7 @@ import { Colors } from "@/constants/theme";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { CUISINES } from "@/lib/constants";
 import { supabase } from "@/lib/supabase";
 import {
   createMealItem,
@@ -17,6 +18,113 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const SPOONACULAR_ENDPOINT =
+  "https://api.spoonacular.com/recipes/complexSearch";
+const DEFAULT_CUISINES = [CUISINES.MEDITERRANEAN];
+const EXCLUDED_INGREDIENTS = ["pork", "shellfish"];
+const MEAL_TYPE_INGREDIENTS: Record<MealType, string[]> = {
+  breakfast: ["eggs"],
+  lunch: ["chicken"],
+  dinner: ["fish"],
+};
+
+interface MealFetchResult {
+  results: Meal[];
+  totalResults: number;
+}
+
+const fetchMealsForType = async (
+  mealType: MealType
+): Promise<MealFetchResult> => {
+  const apiKey = process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Spoonacular API key is not configured");
+  }
+
+  const params = new URLSearchParams({
+    apiKey,
+    addRecipeInformation: "true",
+    number: "12",
+    fillNutrients: "true",
+    sort: "random",
+    type: mealType,
+  });
+
+  if (DEFAULT_CUISINES.length > 0) {
+    params.append("cuisine", DEFAULT_CUISINES.join(","));
+  }
+
+  const includedIngredients = MEAL_TYPE_INGREDIENTS[mealType] ?? [];
+  if (includedIngredients.length > 0) {
+    params.append("includeIngredients", includedIngredients.join(","));
+  }
+
+  if (EXCLUDED_INGREDIENTS.length > 0) {
+    params.append("excludeIngredients", EXCLUDED_INGREDIENTS.join(","));
+  }
+
+  const response = await fetch(`${SPOONACULAR_ENDPOINT}?${params.toString()}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Spoonacular request failed with status ${response.status}`
+    );
+  }
+
+  const data = await response.json();
+
+  const processedResults: Meal[] = (
+    Array.isArray(data.results) ? data.results : []
+  ).map((recipe: any) => {
+    const nutrientCalories = Array.isArray(recipe?.nutrition?.nutrients)
+      ? recipe.nutrition.nutrients.find(
+          (nutrient: any) =>
+            typeof nutrient?.name === "string" &&
+            nutrient.name.toLowerCase() === "calories"
+        )
+      : undefined;
+
+    let calories: number | undefined = nutrientCalories?.amount;
+
+    if (!calories && typeof recipe?.nutrition?.calories === "number") {
+      calories = recipe.nutrition.calories;
+    }
+
+    if (!calories && typeof recipe?.summary === "string") {
+      const calorieMatch = recipe.summary.match(/(\d+)\s+calories/i);
+      if (calorieMatch) {
+        calories = parseInt(calorieMatch[1], 10);
+      }
+    }
+
+    const baseNutrition: Record<string, unknown> =
+      recipe && typeof recipe.nutrition === "object" && recipe.nutrition
+        ? recipe.nutrition
+        : {};
+
+    return {
+      ...recipe,
+      nutrition: {
+        ...baseNutrition,
+        calories,
+      },
+    } as Meal;
+  });
+
+  return {
+    results: processedResults,
+    totalResults:
+      typeof data.totalResults === "number"
+        ? data.totalResults
+        : processedResults.length,
+  };
+};
 
 export default function MealPlanPreview() {
   const router = useRouter();
@@ -35,6 +143,7 @@ export default function MealPlanPreview() {
     dinner: 0,
   });
   const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
+  const [loadingMealType, setLoadingMealType] = useState<MealType | null>(null);
 
   const modalMeals = activeMealType
     ? mealPlan?.[activeMealType]?.results ?? []
@@ -57,6 +166,7 @@ export default function MealPlanPreview() {
         ...prev,
         [activeMealType]: index,
       }));
+      setLoadingMealType(null);
       mealSelectionRef.current?.dismiss();
     },
     [activeMealType]
@@ -64,7 +174,57 @@ export default function MealPlanPreview() {
 
   const handleModalDismiss = useCallback(() => {
     setActiveMealType(null);
+    setLoadingMealType(null);
   }, []);
+
+  const handleGenerateMoreMeals = useCallback(async () => {
+    if (!activeMealType || !mealPlan) {
+      return;
+    }
+
+    if (loadingMealType === activeMealType) {
+      return;
+    }
+
+    try {
+      setLoadingMealType(activeMealType);
+      const mealLabel =
+        activeMealType.charAt(0).toUpperCase() + activeMealType.slice(1);
+      const { results, totalResults } = await fetchMealsForType(activeMealType);
+
+      if (results.length === 0) {
+        Alert.alert(
+          "No recipes found",
+          `We couldn't find new ${mealLabel} recipes right now.`
+        );
+        return;
+      }
+
+      setMealPlan((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [activeMealType]: {
+            results,
+            totalResults,
+          },
+        };
+      });
+
+      setSelectedMealIndices((prev) => ({
+        ...prev,
+        [activeMealType]: 0,
+      }));
+    } catch (error) {
+      console.error("Failed to generate recipes:", error);
+      Alert.alert(
+        "Unable to generate recipes",
+        "Please try again in a moment."
+      );
+    } finally {
+      setLoadingMealType(null);
+    }
+  }, [activeMealType, mealPlan, loadingMealType]);
 
   useEffect(() => {
     if (params.mealPlanData) {
@@ -175,6 +335,7 @@ export default function MealPlanPreview() {
         return;
       }
 
+      setLoadingMealType(null);
       setActiveMealType(mealType);
       mealSelectionRef.current?.present();
     };
@@ -298,6 +459,8 @@ export default function MealPlanPreview() {
         title={modalTitle}
         onSelect={handleMealSelect}
         onDismiss={handleModalDismiss}
+        onGenerateMore={activeMealType ? handleGenerateMoreMeals : undefined}
+        isGeneratingMore={loadingMealType === activeMealType}
       />
     </View>
   );
