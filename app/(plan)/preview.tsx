@@ -1,5 +1,7 @@
 import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
+import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
+import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import {
@@ -12,7 +14,7 @@ import {
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,6 +23,7 @@ export default function MealPlanPreview() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
+  const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [selectedMealIndices, setSelectedMealIndices] = useState<{
     breakfast: number;
@@ -31,6 +34,37 @@ export default function MealPlanPreview() {
     lunch: 0,
     dinner: 0,
   });
+  const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
+
+  const modalMeals = activeMealType
+    ? mealPlan?.[activeMealType]?.results ?? []
+    : [];
+  const modalSelectedIndex = activeMealType
+    ? selectedMealIndices[activeMealType] ?? 0
+    : 0;
+
+  const modalTitle = activeMealType
+    ? `Replace ${activeMealType.charAt(0).toUpperCase()}${activeMealType.slice(
+        1
+      )}`
+    : "Select a meal";
+
+  const handleMealSelect = useCallback(
+    (index: number) => {
+      if (!activeMealType) return;
+
+      setSelectedMealIndices((prev) => ({
+        ...prev,
+        [activeMealType]: index,
+      }));
+      mealSelectionRef.current?.dismiss();
+    },
+    [activeMealType]
+  );
+
+  const handleModalDismiss = useCallback(() => {
+    setActiveMealType(null);
+  }, []);
 
   useEffect(() => {
     if (params.mealPlanData) {
@@ -131,27 +165,18 @@ export default function MealPlanPreview() {
     const imageUrl = getMealImageUrl(meal);
 
     const handleReplace = () => {
-      const currentIndex = selectedMealIndices[mealType];
       const mealTypeData = mealPlan?.[mealType];
 
-      if (!mealTypeData) return;
-
-      const nextIndex = currentIndex + 1;
-
-      // Check if next index exists
-      if (nextIndex >= mealTypeData.results.length) {
+      if (!mealTypeData || mealTypeData.results.length === 0) {
         Alert.alert(
-          "No more recipes",
-          `No more ${mealType} recipes available. You've reached the end of the list.`
+          "No recipes found",
+          `There are no ${mealType} recipes to choose from right now.`
         );
         return;
       }
 
-      // Update to next recipe
-      setSelectedMealIndices((prev) => ({
-        ...prev,
-        [mealType]: nextIndex,
-      }));
+      setActiveMealType(mealType);
+      mealSelectionRef.current?.present();
     };
 
     return (
@@ -265,6 +290,15 @@ export default function MealPlanPreview() {
           <Text style={styles.saveButtonText}>Save Meal Plan</Text>
         </CustomButton>
       </View>
+
+      <MealSelectionModal
+        ref={mealSelectionRef}
+        meals={modalMeals}
+        selectedIndex={modalSelectedIndex}
+        title={modalTitle}
+        onSelect={handleMealSelect}
+        onDismiss={handleModalDismiss}
+      />
     </View>
   );
 }
