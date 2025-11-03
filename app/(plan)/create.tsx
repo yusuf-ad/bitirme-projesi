@@ -132,15 +132,15 @@ export default function CreateMealPlan() {
       const mealTypes = [
         {
           type: "breakfast",
-          includedIngredients: ["eggs", "spinach"],
+          includedIngredients: ["eggs"],
         },
         {
           type: "lunch",
-          includedIngredients: ["chicken", "vegetables"],
+          includedIngredients: ["chicken"],
         },
         {
           type: "dinner",
-          includedIngredients: ["fish", "rice"],
+          includedIngredients: ["fish"],
         },
       ];
 
@@ -220,6 +220,8 @@ export default function CreateMealPlan() {
           pathname: "/preview",
           params: {
             mealPlanData: JSON.stringify(mealPlan),
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
           },
         });
       }, 500);

@@ -29,6 +29,31 @@ const MEAL_TYPE_INGREDIENTS: Record<MealType, string[]> = {
   dinner: ["fish"],
 };
 
+const normalizeDateParam = (value: unknown): Date => {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+
+  if (typeof rawValue === "string") {
+    const parsed = new Date(rawValue);
+    if (!Number.isNaN(parsed.getTime())) {
+      parsed.setHours(0, 0, 0, 0);
+      return parsed;
+    }
+  }
+
+  const fallback = new Date();
+  fallback.setHours(0, 0, 0, 0);
+  return fallback;
+};
+
+const formatDate = (date: Date): string => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${normalized.getFullYear()}-${pad(normalized.getMonth() + 1)}-${pad(
+    normalized.getDate()
+  )}`;
+};
+
 interface MealFetchResult {
   results: Meal[];
   totalResults: number;
@@ -133,6 +158,7 @@ export default function MealPlanPreview() {
   const { session } = useAuthContext();
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedMealIndices, setSelectedMealIndices] = useState<{
     breakfast: number;
     lunch: number;
@@ -144,6 +170,9 @@ export default function MealPlanPreview() {
   });
   const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
   const [loadingMealType, setLoadingMealType] = useState<MealType | null>(null);
+
+  const planStartDate = normalizeDateParam(params.startDate);
+  const planEndDate = normalizeDateParam(params.endDate ?? params.startDate);
 
   const modalMeals = activeMealType
     ? mealPlan?.[activeMealType]?.results ?? []
@@ -257,67 +286,123 @@ export default function MealPlanPreview() {
   }, [params.mealPlanData]);
 
   const handleSaveMealPlan = async () => {
+    if (!session?.user?.id) {
+      Alert.alert("You need to sign in", "Please sign in to save a meal plan.");
+      return;
+    }
+
+    if (!mealPlan) {
+      Alert.alert(
+        "Nothing to save",
+        "Generate a meal plan before trying to save it."
+      );
+      return;
+    }
+
     const breakfastMealItem = createMealItem(
       mealPlan,
       "breakfast",
-      selectedMealIndices.breakfast
+      selectedMealIndices.breakfast,
+      planStartDate
     );
     const lunchMealItem = createMealItem(
       mealPlan,
       "lunch",
-      selectedMealIndices.lunch
+      selectedMealIndices.lunch,
+      planStartDate
     );
     const dinnerMealItem = createMealItem(
       mealPlan,
       "dinner",
-      selectedMealIndices.dinner
+      selectedMealIndices.dinner,
+      planStartDate
     );
 
-    const mealPlanData = {
-      breakfast: breakfastMealItem,
-      lunch: lunchMealItem,
-      dinner: dinnerMealItem,
-    };
-
-    // TODO: Save meal plan logic
-    console.log("Saving meal plan...", mealPlanData);
-
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const formatDate = (d: Date) =>
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    const { data: planData, error: planError } = await supabase
-      .from("meal_plans")
-      .insert([
-        {
-          user_id: session?.user.id,
-          name: `my meal plan ${formatDate(today)}`,
-          start_date: formatDate(today),
-          end_date: formatDate(tomorrow),
-        },
-      ])
-      .select();
-
-    console.log("Insert meal plan response:", planData);
-
-    if (planError) {
-      Alert.alert("Error saving meal plan", planError.message);
+    if (!breakfastMealItem || !lunchMealItem || !dinnerMealItem) {
+      Alert.alert(
+        "Missing recipes",
+        "Select a recipe for each meal before saving."
+      );
+      return;
     }
 
-    const { error: itemsError } = await supabase
-      .from("meal_plan_items")
-      .insert([
-        { meal_plan_id: planData?.[0].id, ...breakfastMealItem },
-        { meal_plan_id: planData?.[0].id, ...lunchMealItem },
-        { meal_plan_id: planData?.[0].id, ...dinnerMealItem },
-      ]);
+    setIsSaving(true);
 
-    if (itemsError) {
-      Alert.alert("Error saving meal items :(", itemsError.message);
+    try {
+      const startDateString = formatDate(planStartDate);
+      const endDateString = formatDate(planEndDate);
+
+      const { data: existingPlans, error: existingPlansError } = await supabase
+        .from("meal_plans")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .lte("start_date", endDateString)
+        .gte("end_date", startDateString)
+        .limit(1);
+
+      if (existingPlansError) {
+        throw existingPlansError;
+      }
+
+      if (existingPlans && existingPlans.length > 0) {
+        Alert.alert(
+          "Meal plan already exists",
+          "You already have a meal plan for this date range."
+        );
+        return;
+      }
+
+      const { data: newPlan, error: planError } = await supabase
+        .from("meal_plans")
+        .insert([
+          {
+            user_id: session.user.id,
+            name: `my meal plan ${startDateString}`,
+            start_date: startDateString,
+            end_date: endDateString,
+          },
+        ])
+        .select()
+        .single();
+
+      if (planError) {
+        throw planError;
+      }
+
+      if (!newPlan) {
+        throw new Error("Meal plan could not be created.");
+      }
+
+      const itemsPayload = [
+        breakfastMealItem,
+        lunchMealItem,
+        dinnerMealItem,
+      ].map((item) => ({
+        ...item,
+        meal_plan_id: newPlan.id,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("meal_plan_items")
+        .insert(itemsPayload);
+
+      if (itemsError) {
+        throw itemsError;
+      }
+
+      Alert.alert("Meal plan saved", "Your meal plan has been saved.", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/(app)"),
+        },
+      ]);
+    } catch (error) {
+      console.error("Error saving meal plan:", error);
+      const message =
+        error instanceof Error ? error.message : "Unable to save meal plan.";
+      Alert.alert("Error saving meal plan", message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -447,8 +532,11 @@ export default function MealPlanPreview() {
         <CustomButton
           containerStyle={styles.saveButton}
           onPress={handleSaveMealPlan}
+          disabled={isSaving}
         >
-          <Text style={styles.saveButtonText}>Save Meal Plan</Text>
+          <Text style={styles.saveButtonText}>
+            {isSaving ? "Saving..." : "Save Meal Plan"}
+          </Text>
         </CustomButton>
       </View>
 
