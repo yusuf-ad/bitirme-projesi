@@ -41,15 +41,11 @@ export default function CreateMealPlan() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const startDateModalRef = useRef<BottomSheetModal>(null);
-  const endDateModalRef = useRef<BottomSheetModal>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const [startDate, setStartDate] = useState<Date>(new Date(today));
-  const [endDate, setEndDate] = useState<Date>(
-    new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000)
-  ); // 6 days from now
   const [isGenerating, setIsGenerating] = useState(false);
   const [mealPlanData, setMealPlanData] = useState<any>(null);
 
@@ -73,30 +69,14 @@ export default function CreateMealPlan() {
   };
 
   const startDateDisplay = formatDateDisplay(startDate);
-  const endDateDisplay = formatDateDisplay(endDate);
 
   const handleStartDatePress = () => {
     startDateModalRef.current?.present();
   };
 
-  const handleEndDatePress = () => {
-    endDateModalRef.current?.present();
-  };
-
   const handleStartDateSelect = (date: Date) => {
     setStartDate(date);
     startDateModalRef.current?.close();
-    // If end date is before or equal to new start date, update it
-    if (endDate <= date) {
-      const newEndDate = new Date(date);
-      newEndDate.setDate(newEndDate.getDate() + 6);
-      setEndDate(newEndDate);
-    }
-  };
-
-  const handleEndDateSelect = (date: Date) => {
-    setEndDate(date);
-    endDateModalRef.current?.close();
   };
 
   const handleGenerateMealPlan = async () => {
@@ -221,7 +201,7 @@ export default function CreateMealPlan() {
           params: {
             mealPlanData: JSON.stringify(mealPlan),
             startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            endDate: startDate.toISOString(), // Same as start date for 1-day plan
           },
         });
       }, 500);
@@ -253,7 +233,7 @@ export default function CreateMealPlan() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Meal plan dates</Text>
+        <Text style={styles.headerTitle}>Meal plan date</Text>
         <Pressable onPress={() => router.back()}>
           <Text style={styles.closeButton}>Close</Text>
         </Pressable>
@@ -262,14 +242,14 @@ export default function CreateMealPlan() {
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
           <Text style={styles.description}>
-            We&apos;ll create a meal plan for the week. Feel free to modify the
-            start or end date as you need.
+            We&apos;ll create a meal plan for the day. Feel free to select a
+            different date if needed.
           </Text>
 
           <View style={styles.datesContainer}>
-            {/* Start Date */}
+            {/* Date Selection */}
             <View style={styles.dateSection}>
-              <Text style={styles.dateLabel}>Start</Text>
+              <Text style={styles.dateLabel}>Date</Text>
               <CustomButton
                 containerStyle={styles.dateButton}
                 onPress={handleStartDatePress}
@@ -277,25 +257,6 @@ export default function CreateMealPlan() {
                 <View style={styles.dateContent}>
                   <Text style={styles.dayText}>{startDateDisplay.day}</Text>
                   <Text style={styles.dateText}>{startDateDisplay.date}</Text>
-                </View>
-                <MaterialIcons
-                  name="expand-more"
-                  size={24}
-                  color={Colors.text.primary}
-                />
-              </CustomButton>
-            </View>
-
-            {/* End Date */}
-            <View style={styles.dateSection}>
-              <Text style={styles.dateLabel}>End</Text>
-              <CustomButton
-                containerStyle={styles.dateButton}
-                onPress={handleEndDatePress}
-              >
-                <View style={styles.dateContent}>
-                  <Text style={styles.dayText}>{endDateDisplay.day}</Text>
-                  <Text style={styles.dateText}>{endDateDisplay.date}</Text>
                 </View>
                 <MaterialIcons
                   name="expand-more"
@@ -341,13 +302,6 @@ export default function CreateMealPlan() {
         dateType="start"
         currentDate={startDate}
         onDateSelect={handleStartDateSelect}
-      />
-      <DateModal
-        ref={endDateModalRef}
-        dateType="end"
-        selectedStartDate={startDate}
-        currentDate={endDate}
-        onDateSelect={handleEndDateSelect}
       />
     </View>
   );

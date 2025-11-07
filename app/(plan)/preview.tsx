@@ -15,6 +15,7 @@ import {
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -156,6 +157,7 @@ export default function MealPlanPreview() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
+  const queryClient = useQueryClient();
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [isSaving, setIsSaving] = useState(false);
@@ -389,6 +391,11 @@ export default function MealPlanPreview() {
       if (itemsError) {
         throw itemsError;
       }
+
+      // Invalidate meal plans cache to refresh the home page
+      await queryClient.invalidateQueries({
+        queryKey: ["meal-plans"],
+      });
 
       Alert.alert("Meal plan saved", "Your meal plan has been saved.", [
         {
