@@ -7,7 +7,7 @@ import {
   TabType,
 } from "@/features/pantry";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PantryTab() {
@@ -15,6 +15,115 @@ export default function PantryTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const insets = useSafeAreaInsets();
 
+  // Pantry stock items (items at home)
+  const [pantryStockItems, setPantryStockItems] = useState<PantryItem[]>([
+    {
+      id: "p1",
+      name: "Milk",
+      amount: "1 liter",
+      recipe: "",
+      checked: false,
+      category: "dairy",
+    },
+    {
+      id: "p2",
+      name: "Butter",
+      amount: "200g",
+      recipe: "",
+      checked: false,
+      category: "dairy",
+    },
+    {
+      id: "p3",
+      name: "Cheddar cheese",
+      amount: "300g",
+      recipe: "",
+      checked: false,
+      category: "dairy",
+    },
+    {
+      id: "p4",
+      name: "Chicken breast",
+      amount: "500g",
+      recipe: "",
+      checked: false,
+      category: "meat",
+    },
+    {
+      id: "p5",
+      name: "Ground beef",
+      amount: "400g",
+      recipe: "",
+      checked: false,
+      category: "meat",
+    },
+    {
+      id: "p6",
+      name: "Onions",
+      amount: "3 pieces",
+      recipe: "",
+      checked: false,
+      category: "produce",
+    },
+    {
+      id: "p7",
+      name: "Garlic",
+      amount: "1 bulb",
+      recipe: "",
+      checked: false,
+      category: "produce",
+    },
+    {
+      id: "p8",
+      name: "Potatoes",
+      amount: "1kg",
+      recipe: "",
+      checked: false,
+      category: "produce",
+    },
+    {
+      id: "p9",
+      name: "Olive oil",
+      amount: "500ml",
+      recipe: "",
+      checked: false,
+      category: "other",
+    },
+    {
+      id: "p10",
+      name: "Salt",
+      amount: "",
+      recipe: "",
+      checked: false,
+      category: "other",
+    },
+    {
+      id: "p11",
+      name: "Black pepper",
+      amount: "",
+      recipe: "",
+      checked: false,
+      category: "other",
+    },
+    {
+      id: "p12",
+      name: "All-purpose flour",
+      amount: "1kg",
+      recipe: "",
+      checked: false,
+      category: "other",
+    },
+    {
+      id: "p13",
+      name: "Rice",
+      amount: "2kg",
+      recipe: "",
+      checked: false,
+      category: "other",
+    },
+  ]);
+
+  // Groceries shopping list (items to buy)
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([
     {
       id: "1",
@@ -123,21 +232,34 @@ export default function PantryTab() {
   ]);
 
   const toggleItem = (id: string) => {
-    setPantryItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
+    if (activeTab === "groceries") {
+      const item = pantryItems.find((i) => i.id === id);
+      if (item && !item.checked) {
+        // Item being checked - transfer to pantry
+        setPantryStockItems((prev) => [...prev, { ...item, checked: false }]);
+        setPantryItems((prev) => prev.filter((i) => i.id !== id));
+      } else {
+        // Item being unchecked in "Checked" section
+        setPantryItems((items) =>
+          items.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))
+        );
+      }
+    } else {
+      // Pantry: toggle to mark as used/available
+      setPantryStockItems((items) =>
+        items.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))
+      );
+    }
   };
 
   const getCategoryItems = (category: string) => {
-    return pantryItems.filter(
-      (item) => !item.checked && item.category === category
-    );
+    const items = activeTab === "pantry" ? pantryStockItems : pantryItems;
+    return items.filter((item) => !item.checked && item.category === category);
   };
 
   const getCheckedItems = () => {
-    return pantryItems.filter((item) => item.checked);
+    const items = activeTab === "pantry" ? pantryStockItems : pantryItems;
+    return items.filter((item) => item.checked);
   };
 
   const handleAddNew = () => {
@@ -156,58 +278,78 @@ export default function PantryTab() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingBottom: insets.bottom + 52 }]}
-      contentContainerStyle={[
-        styles.contentContainer,
-        { paddingTop: insets.top, paddingBottom: insets.bottom * 2 + 52 },
-      ]}
-    >
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header - Fixed */}
       <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <View style={styles.content}>
-        {activeTab === "groceries" ? (
-          <View>
-            <AddNewHeader
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onAdd={handleAddNew}
-              onStarPress={handleStarPress}
-            />
+      <View style={styles.searchContainer}>
+        <AddNewHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onAdd={handleAddNew}
+          onStarPress={handleStarPress}
+        />
+      </View>
 
-            <CategorySection
-              title="Dairy"
-              items={getCategoryItems("dairy")}
-              onToggleItem={toggleItem}
-              onEditItem={handleEditItem}
-            />
+      {/* Content - Scrollable */}
+      <ScrollView
+        style={styles.contentScroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom * 2 + 52 },
+        ]}
+      >
+        <View style={styles.categoriesContainer}>
+          <CategorySection
+            title="Dairy"
+            items={getCategoryItems("dairy")}
+            onToggleItem={toggleItem}
+            onEditItem={handleEditItem}
+            showCheckbox={activeTab === "groceries"}
+            showRecipe={activeTab === "groceries"}
+          />
 
-            <CategorySection
-              title="Meat"
-              items={getCategoryItems("meat")}
-              onToggleItem={toggleItem}
-              onEditItem={handleEditItem}
-            />
+          <CategorySection
+            title="Meat"
+            items={getCategoryItems("meat")}
+            onToggleItem={toggleItem}
+            onEditItem={handleEditItem}
+            showCheckbox={activeTab === "groceries"}
+            showRecipe={activeTab === "groceries"}
+          />
 
-            <CategorySection
-              title="Produce"
-              items={getCategoryItems("produce")}
-              onToggleItem={toggleItem}
-              onEditItem={handleEditItem}
-            />
+          <CategorySection
+            title="Produce"
+            items={getCategoryItems("produce")}
+            onToggleItem={toggleItem}
+            onEditItem={handleEditItem}
+            showCheckbox={activeTab === "groceries"}
+            showRecipe={activeTab === "groceries"}
+          />
 
+          <CategorySection
+            title="Other"
+            items={getCategoryItems("other")}
+            onToggleItem={toggleItem}
+            onEditItem={handleEditItem}
+            showCheckbox={activeTab === "groceries"}
+            showRecipe={activeTab === "groceries"}
+          />
+
+          {activeTab === "groceries" && (
             <CategorySection
               title="Checked"
               items={getCheckedItems()}
               onToggleItem={toggleItem}
               onEditItem={handleEditItem}
+              showCheckbox={true}
+              showRecipe={true}
             />
-          </View>
-        ) : (
-          <Text style={styles.placeholderText}>Pantry content</Text>
-        )}
-      </View>
-    </ScrollView>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -216,15 +358,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background.secondary,
   },
-  contentContainer: {
+  searchContainer: {
     paddingHorizontal: 16,
+    paddingTop: 16,
+    backgroundColor: Colors.background.secondary,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lilac[200],
+    shadowColor: Colors.background.secondary,
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.58,
+    shadowRadius: 16.0,
+    elevation: 24,
   },
-  content: {
+  contentScroll: {
     flex: 1,
   },
-  placeholderText: {
-    fontSize: 16,
-    color: Colors.text.secondary,
-    textAlign: "center",
+  scrollContent: {
+    paddingHorizontal: 16,
+  },
+  categoriesContainer: {
+    marginTop: 16,
   },
 });

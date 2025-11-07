@@ -8,6 +8,8 @@ interface CategorySectionProps {
   items: PantryItem[];
   onToggleItem: (id: string) => void;
   onEditItem?: (id: string) => void;
+  showCheckbox?: boolean;
+  showRecipe?: boolean;
 }
 
 export function CategorySection({
@@ -15,6 +17,8 @@ export function CategorySection({
   items,
   onToggleItem,
   onEditItem,
+  showCheckbox = true,
+  showRecipe = true,
 }: CategorySectionProps) {
   if (items.length === 0) return null;
 
@@ -27,6 +31,8 @@ export function CategorySection({
           item={item}
           onToggle={onToggleItem}
           onEdit={onEditItem}
+          showCheckbox={showCheckbox}
+          showRecipe={showRecipe}
         />
       ))}
     </View>

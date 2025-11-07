@@ -54,8 +54,7 @@ export function TabSwitcher({ activeTab, onTabChange }: TabSwitcherProps) {
 
 const styles = StyleSheet.create({
   tabContainer: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
   },
   tabSwitcher: {
     flexDirection: "row",
@@ -71,7 +70,7 @@ const styles = StyleSheet.create({
     borderRadius: 120,
   },
   tabButtonActive: {
-    backgroundColor: Colors.lilac[200],
+    backgroundColor: Colors.lilac[900],
   },
   tabText: {
     fontSize: 12,
@@ -79,10 +78,9 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   activeTabText: {
-    color: Colors.text.primary,
+    color: "#fff",
   },
   inactiveTabText: {
     color: Colors.gray[400],
   },
 });
-

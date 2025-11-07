@@ -12,12 +12,16 @@ interface PantryItemRowProps {
   item: PantryItem;
   onToggle: (id: string) => void;
   onEdit?: (id: string) => void;
+  showCheckbox?: boolean;
+  showRecipe?: boolean;
 }
 
 export function PantryItemRow({
   item,
   onToggle,
   onEdit,
+  showCheckbox = true,
+  showRecipe = true,
 }: PantryItemRowProps) {
   return (
     <Animated.View
@@ -26,32 +30,39 @@ export function PantryItemRow({
       exiting={FadeOut.duration(150)}
       layout={LinearTransition.duration(200)}
     >
-      <Pressable
-        onPress={() => onToggle(item.id)}
-        style={styles.checkboxContainer}
-      >
-        <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
-          {item.checked && (
-            <Feather name="check" size={18} color={Colors.lilac[900]} />
-          )}
-        </View>
-      </Pressable>
+      {showCheckbox && (
+        <Pressable
+          onPress={() => onToggle(item.id)}
+          style={styles.checkboxContainer}
+        >
+          <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
+            {item.checked && (
+              <Feather name="check" size={18} color={Colors.lilac[900]} />
+            )}
+          </View>
+        </Pressable>
+      )}
 
       <View style={styles.itemContent}>
         <Text style={[styles.itemName, item.checked && styles.itemNameChecked]}>
           {item.name}
         </Text>
-        {item.recipe ? (
+        {item.amount ? (
+          <Text style={styles.itemAmount}>{item.amount}</Text>
+        ) : null}
+        {showRecipe && item.recipe ? (
           <Text style={styles.itemRecipe}>{item.recipe}</Text>
         ) : null}
       </View>
 
-      <Pressable
-        style={styles.editButton}
-        onPress={() => onEdit?.(item.id)}
-      >
-        <Feather name="edit-2" size={18} color={Colors.gray[300]} />
-      </Pressable>
+      {onEdit && (
+        <Pressable
+          style={styles.editButton}
+          onPress={() => onEdit(item.id)}
+        >
+          <Feather name="edit-2" size={18} color={Colors.gray[300]} />
+        </Pressable>
+      )}
     </Animated.View>
   );
 }
@@ -93,6 +104,11 @@ const styles = StyleSheet.create({
   itemNameChecked: {
     color: Colors.gray[400],
     textDecorationLine: "line-through",
+  },
+  itemAmount: {
+    fontSize: 12,
+    color: Colors.lilac[600],
+    fontWeight: "500",
   },
   itemRecipe: {
     fontSize: 11,
