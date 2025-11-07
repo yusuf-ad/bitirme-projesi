@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import MealCard from "@/features/home/components/meal-card";
 import { MealPlanItemRecord, MealSlot } from "@/features/meal-plan/types";
+import { router } from "expo-router";
 import { ImageSourcePropType, StyleSheet, View } from "react-native";
 
 interface DailyMealsListProps {
@@ -83,6 +84,9 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
               recipeImage={recipeImage}
               prepTime={prepTime}
               calories={calories}
+              onPress={() =>
+                router.push(`/(meal)/${item.spoonacular_recipe_id}`)
+              }
             />
           );
         })}

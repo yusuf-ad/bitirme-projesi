@@ -35,7 +35,7 @@ export const IngredientModal = forwardRef<
 >(({ onIngredientsSelect }, ref) => {
   const { top } = useSafeAreaInsets();
   const [selectedIngredients, setSelectedIngredients] = useState<
-    Map<number, Ingredient | (typeof POPULAR_INGREDIENTS)[0]>
+    Map<string, Ingredient | (typeof POPULAR_INGREDIENTS)[0]>
   >(new Map());
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
@@ -62,11 +62,26 @@ export const IngredientModal = forwardRef<
     []
   );
 
+  const getIngredientKey = useCallback(
+    (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
+      if ("id" in item && typeof item.id === "number") {
+        return `${item.id}`;
+      }
+
+      const spoonacularId = (item as (typeof POPULAR_INGREDIENTS)[number])
+        .spoonacularId;
+      if (typeof spoonacularId === "number") {
+        return `${spoonacularId}`;
+      }
+
+      return `name-${(item as any).name?.toLowerCase?.() ?? "unknown"}`;
+    },
+    []
+  );
+
   const toggleIngredient = useCallback(
     (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
-      const key = hasSearched
-        ? (item as Ingredient).id
-        : (item as any).spoonacularId;
+      const key = getIngredientKey(item);
       setSelectedIngredients((prev) => {
         const newMap = new Map(prev);
         if (newMap.has(key)) {
@@ -77,7 +92,7 @@ export const IngredientModal = forwardRef<
         return newMap;
       });
     },
-    [hasSearched]
+    [getIngredientKey]
   );
 
   const handleClearAll = useCallback(() => {
@@ -118,45 +133,38 @@ export const IngredientModal = forwardRef<
       return POPULAR_INGREDIENTS;
     }
     // Filter out search results that are already selected
-    return searchResults.filter((item) => !selectedIngredients.has(item.id));
-  }, [hasSearched, searchResults, selectedIngredients]);
-
-  const getItemKey = useCallback(
-    (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
-      // Simple key - no need for prefix since we filter duplicates
-      return hasSearched
-        ? (item as Ingredient).id
-        : (item as any).spoonacularId;
-    },
-    [hasSearched]
-  );
+    return searchResults.filter(
+      (item) => !selectedIngredients.has(getIngredientKey(item))
+    );
+  }, [hasSearched, searchResults, selectedIngredients, getIngredientKey]);
 
   // Unselected items from display
   const unselectedItems = useMemo(() => {
     return displayItems.filter((item) => {
-      const key = getItemKey(item);
+      const key = getIngredientKey(item);
       return !selectedIngredients.has(key);
     });
-  }, [displayItems, selectedIngredients, getItemKey]);
+  }, [displayItems, selectedIngredients, getIngredientKey]);
 
   const handleApply = useCallback(() => {
     const ingredientsToSend: Ingredient[] = selectedItems.map((item) => {
-      if (hasSearched) {
+      if ("id" in item && typeof item.id === "number") {
         return item as Ingredient;
-      } else {
-        return {
-          id: (item as any).spoonacularId || 0,
-          name: (item as any).name,
-          image: (item as any).image,
-        };
       }
+
+      const popularItem = item as (typeof POPULAR_INGREDIENTS)[number];
+      return {
+        id: popularItem.spoonacularId ?? 0,
+        name: popularItem.name,
+        image: popularItem.image,
+      };
     });
 
     onIngredientsSelect?.(ingredientsToSend);
     if (typeof ref !== "function" && ref?.current?.dismiss) {
       ref.current.dismiss();
     }
-  }, [selectedItems, onIngredientsSelect, ref, hasSearched]);
+  }, [selectedItems, onIngredientsSelect, ref]);
 
   const getItemName = (item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]) => {
     return (item as any).name;
@@ -172,7 +180,7 @@ export const IngredientModal = forwardRef<
   ) => {
     const ingredientName = getItemName(item);
     const ingredientImage = getItemImage(item);
-    const key = getItemKey(item);
+    const key = getIngredientKey(item);
 
     return (
       <Pressable
@@ -211,7 +219,7 @@ export const IngredientModal = forwardRef<
   ) => {
     const ingredientName = getItemName(item);
     const ingredientImage = getItemImage(item);
-    const key = getItemKey(item);
+    const key = getIngredientKey(item);
 
     return (
       <Pressable
@@ -276,6 +284,7 @@ export const IngredientModal = forwardRef<
             <Text style={styles.title}>Search by Ingredients</Text>
 
             <Pressable
+              hitSlop={24}
               onPress={() =>
                 typeof ref !== "function" && ref?.current?.dismiss()
               }

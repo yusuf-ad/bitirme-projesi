@@ -5,6 +5,34 @@ const SPOONACULAR_FOOD_BASE_URL = "https://api.spoonacular.com/food";
 // Test constant - API pahalı olduğu için test için 1 olarak ayarlandı
 const TEST_NUMBER_OF_RESULTS = 1;
 
+/**
+ * Logs rate limit headers from Spoonacular API response
+ * @param response - The fetch response object
+ */
+function logRateLimitHeaders(response: Response): void {
+  const rateLimitHeaders = {
+    "X-Ratelimit-Classifications-Limit": response.headers.get(
+      "X-Ratelimit-Classifications-Limit"
+    ),
+    "X-Ratelimit-Classifications-Remaining": response.headers.get(
+      "X-Ratelimit-Classifications-Remaining"
+    ),
+    "X-Ratelimit-Requests-Limit": response.headers.get(
+      "X-Ratelimit-Requests-Limit"
+    ),
+    "X-Ratelimit-Requests-Remaining": response.headers.get(
+      "X-Ratelimit-Requests-Remaining"
+    ),
+    "X-Ratelimit-Tinyrequests-Limit": response.headers.get(
+      "X-Ratelimit-Tinyrequests-Limit"
+    ),
+    "X-Ratelimit-Tinyrequests-Remaining": response.headers.get(
+      "X-Ratelimit-Tinyrequests-Remaining"
+    ),
+  };
+  console.log("Spoonacular Rate Limit Headers:", rateLimitHeaders);
+}
+
 export interface Recipe {
   id: number;
   title: string;
@@ -120,6 +148,8 @@ export async function getRandomRecipes(
       `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`
     );
 
+    logRateLimitHeaders(response);
+
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
     }
@@ -151,6 +181,8 @@ export async function searchRecipes(
       )}&offset=${offset}&number=${number}&addRecipeInformation=true&addRecipeNutrition=true&apiKey=${SPOONACULAR_API_KEY}`
     );
 
+    logRateLimitHeaders(response);
+
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
     }
@@ -176,6 +208,8 @@ export async function getRecipeDetails(id: number): Promise<Recipe> {
     const response = await fetch(
       `${SPOONACULAR_BASE_URL}/${id}/information?apiKey=${SPOONACULAR_API_KEY}`
     );
+
+    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -251,6 +285,8 @@ export async function searchIngredients(
     const response = await fetch(
       `${SPOONACULAR_FOOD_BASE_URL}/ingredients/search?${params.toString()}`
     );
+
+    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);

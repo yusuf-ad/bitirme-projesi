@@ -33,7 +33,7 @@ export interface MealItem {
   recipe_image_url: string;
   calories_per_serving?: number;
   ready_in_minutes?: number;
-  meal_date: Date;
+  meal_date: string;
   meal_type: MealType;
 }
 
@@ -69,11 +69,15 @@ export const getMealImageUrl = (meal: Meal): string => {
 export const createMealItem = (
   mealPlan: MealPlan | undefined,
   mealType: MealType,
-  selectedIndex: number
+  selectedIndex: number,
+  mealDate: Date
 ): MealItem | null => {
   const selectedMeal = mealPlan?.[mealType].results[selectedIndex];
 
   if (!selectedMeal) return null;
+
+  const normalizedDate = new Date(mealDate);
+  normalizedDate.setHours(0, 0, 0, 0);
 
   return {
     spoonacular_recipe_id: selectedMeal.id,
@@ -81,7 +85,9 @@ export const createMealItem = (
     recipe_image_url: getMealImageUrl(selectedMeal),
     calories_per_serving: selectedMeal.nutrition?.calories,
     ready_in_minutes: selectedMeal.readyInMinutes,
-    meal_date: new Date(Date.now()),
+    meal_date: `${normalizedDate.getFullYear()}-${String(
+      normalizedDate.getMonth() + 1
+    ).padStart(2, "0")}-${String(normalizedDate.getDate()).padStart(2, "0")}`,
     meal_type: mealType,
   };
 };

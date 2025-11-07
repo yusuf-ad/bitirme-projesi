@@ -1,8 +1,7 @@
 import EnergyIcon from "@/assets/icons/energy-icon";
 import { Colors } from "@/constants/theme";
 import CalorieProgressBar from "@/shared/components/calorie-progress-bar";
-import Entypo from "@expo/vector-icons/Entypo";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import MacroCardsSection from "./macro-cards-section";
 
 export default function DailyOverview() {
@@ -15,23 +14,9 @@ export default function DailyOverview() {
       <View style={styles.header}>
         <View style={styles.mealInfo}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <EnergyIcon color={Colors.lilac[900]} width={20} height={20} />
+            <EnergyIcon color={Colors.lilac[900]} width={16} height={16} />
             <Text style={styles.mealType}>Daily Overview</Text>
           </View>
-        </View>
-
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Pressable
-            hitSlop={12}
-            style={{
-              width: 36,
-              height: 36,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Entypo name="chevron-right" size={20} color="black" />
-          </Pressable>
         </View>
       </View>
 
@@ -72,7 +57,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lilac[200],
   },

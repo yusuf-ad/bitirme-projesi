@@ -2,10 +2,14 @@ import { CalendarDay, Meal, TodayProgress } from "../types/home.types";
 
 export const mockCalendarDays: CalendarDay[] = (() => {
   const days: CalendarDay[] = [];
-  const startDate = new Date(2025, 8, 27); // September 27, 2024
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+
+  // Start from 15 days before today
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 15);
+
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   for (let i = 0; i < 30; i++) {
     const date = new Date(startDate);

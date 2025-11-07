@@ -99,8 +99,10 @@ export function useRecipesQuery({
         );
         return totalFetched < lastPage.totalResults ? totalFetched : undefined;
       } else {
-        // Random mode: always has more
-        return lastPage.offset + pageSize;
+        // Random mode: stop if we get fewer results than requested (API limit reached)
+        return lastPage.recipes.length === pageSize
+          ? lastPage.offset + pageSize
+          : undefined;
       }
     },
     initialPageParam: 0,
@@ -118,7 +120,7 @@ export function useRecipesQuery({
   }, [data]);
 
   const isLoading = status === "pending";
-  const hasMore = hasNextPage ?? true;
+  const hasMore = hasNextPage ?? false;
 
   return {
     recipes,

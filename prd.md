@@ -1231,12 +1231,15 @@ constants/
 
 ### Phase 2: Core Features (Weeks 3-5)
 
-- [ ] Ingredient management (CRUD operations)
-- [ ] Spoonacular API integration
-- [ ] Recipe search and display
-- [ ] Recipe detail view
-- [ ] Save favorite recipes
-- [ ] Basic meal planner UI
+- [ ] Recipe detail view - osman
+- [ ] Save favorite recipes - osman
+
+- [x] Spoonacular API integration - yusuf
+- [x] Recipe search and display - yusuf
+
+- [ ] Ingredient management (CRUD operations) - yunus
+
+- [ ] Basic meal planner UI - yusuf
 
 ### Phase 3: Meal Planning (Weeks 6-7)
 
