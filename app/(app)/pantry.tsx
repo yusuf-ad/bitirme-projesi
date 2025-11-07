@@ -9,6 +9,11 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabType = "groceries" | "pantry";
@@ -303,7 +308,12 @@ interface PantryItemRowProps {
 
 function PantryItemRow({ item, onToggle }: PantryItemRowProps) {
   return (
-    <View style={styles.itemRow}>
+    <Animated.View
+      style={styles.itemRow}
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(150)}
+      layout={LinearTransition.duration(200)}
+    >
       <Pressable
         onPress={() => onToggle(item.id)}
         style={styles.checkboxContainer}
@@ -327,7 +337,7 @@ function PantryItemRow({ item, onToggle }: PantryItemRowProps) {
       <Pressable style={styles.editButton}>
         <Feather name="edit-2" size={18} color={Colors.gray[300]} />
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -418,7 +428,7 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.lilac[800],
+    color: Colors.lilac[900],
     marginBottom: 2,
     marginTop: 4,
   },

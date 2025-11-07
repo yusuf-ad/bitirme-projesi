@@ -1279,6 +1279,8 @@ constants/
 - [ ] Final documentation
 - [ ] Project presentation preparation
 
+evdeki malzemelerde sola sağa kaydırma
+
 ---
 
 ## Success Metrics & KPIs
