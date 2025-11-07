@@ -1238,6 +1238,7 @@ constants/
 - [x] Recipe search and display - yusuf
 
 - [ ] Ingredient management (CRUD operations) - yunus
+- [ ] Fix error states - yunus
 
 - [ ] Basic meal planner UI - yusuf
 
@@ -1262,7 +1263,7 @@ constants/
 - [ ] OAuth integration (Google)
 - [ ] Notifications system
 - [ ] Advanced filtering
-- [ ] Recipe reviews and ratings
+- [ ] Recipe reviews
 - [ ] Performance optimization
 
 ### Phase 6: Testing & Refinement (Weeks 12-13)
