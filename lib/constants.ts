@@ -73,11 +73,6 @@ export const POPULAR_INGREDIENTS: {
   { spoonacularId: 10011457, name: "Spinach", image: "spinach.jpg" },
   { spoonacularId: 1011077, name: "Milk", image: "milk.png" },
   { spoonacularId: 20035, name: "Quinoa", image: "uncooked-quinoa.png" },
-  {
-    spoonacularId: 10011693,
-    name: "Canned Tomato",
-    image: "tomatoes-canned.png",
-  },
   { spoonacularId: 23572, name: "Beef", image: "beef-cubes-raw.png" },
   { spoonacularId: 10017224, name: "Lamb", image: "lamb-shanks.jpg" },
   { spoonacularId: 11260, name: "Mushroom", image: "mushrooms-white.jpg" },
