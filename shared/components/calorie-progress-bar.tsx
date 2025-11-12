@@ -102,14 +102,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontWeight: "400",
     fontSize: 14,
-    lineHeight: 21,
     color: Colors.gray[400],
   },
   remainingNumber: {
     fontFamily: "Inter",
     fontWeight: "700",
-    fontSize: 28,
-    lineHeight: 40,
+    fontSize: 24,
     color: Colors.text.primary,
   },
   progressBarContainer: {
@@ -139,7 +137,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontWeight: "400",
     fontSize: 12,
-    lineHeight: 18,
     color: Colors.gray[400],
   },
 });

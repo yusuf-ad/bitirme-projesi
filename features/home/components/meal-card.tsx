@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import CustomButton from "@/shared/components/custom-button";
 import { AntDesign } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
@@ -46,8 +47,8 @@ export default function MealCard({
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View
-            style={{
+          <CustomButton
+            containerStyle={{
               width: 36,
               height: 36,
               alignItems: "center",
@@ -55,12 +56,14 @@ export default function MealCard({
               borderRadius: 4,
               borderWidth: 1,
               borderColor: Colors.lilac[200],
+              paddingHorizontal: 0,
+              paddingVertical: 0,
             }}
           >
             <Feather name="edit-3" size={20} color={Colors.lilac[900]} />
-          </View>
-          <View
-            style={{
+          </CustomButton>
+          <CustomButton
+            containerStyle={{
               width: 36,
               height: 36,
               alignItems: "center",
@@ -68,10 +71,12 @@ export default function MealCard({
               borderRadius: 4,
               borderWidth: 1,
               borderColor: Colors.lilac[200],
+              paddingHorizontal: 0,
+              paddingVertical: 0,
             }}
           >
             <AntDesign name="plus" size={20} color={Colors.lilac[900]} />
-          </View>
+          </CustomButton>
         </View>
       </View>
 
