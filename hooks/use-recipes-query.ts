@@ -64,9 +64,17 @@ export function useRecipesQuery({
   } = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam = 0 }) => {
+      // Prepare filters that are shared between both modes
+      const ingredientNames = ingredients.map((ing) => ing.name).join(",");
+      const cuisineNames = cuisines.join(",");
+
       if (query.trim()) {
-        // Search mode
-        const result = await searchRecipes(query, pageParam, pageSize);
+        // Search mode with filters
+        const result = await searchRecipes(query, pageParam, pageSize, {
+          cuisine: cuisineNames || undefined,
+          includeIngredients: ingredientNames || undefined,
+          excludeIngredients: "pork",
+        });
         return {
           recipes: result.recipes,
           totalResults: result.totalResults,
@@ -74,9 +82,6 @@ export function useRecipesQuery({
         };
       } else {
         // Random mode with filters
-        const ingredientNames = ingredients.map((ing) => ing.name).join(",");
-        const cuisineNames = cuisines.join(",");
-
         const recipes = await getRandomRecipes(pageSize, {
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
