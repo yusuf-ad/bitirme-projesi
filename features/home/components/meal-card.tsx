@@ -1,6 +1,5 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
-import { AntDesign } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
 import {
@@ -61,21 +60,6 @@ export default function MealCard({
             }}
           >
             <Feather name="edit-3" size={20} color={Colors.lilac[900]} />
-          </CustomButton>
-          <CustomButton
-            containerStyle={{
-              width: 36,
-              height: 36,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 4,
-              borderWidth: 1,
-              borderColor: Colors.lilac[200],
-              paddingHorizontal: 0,
-              paddingVertical: 0,
-            }}
-          >
-            <AntDesign name="plus" size={20} color={Colors.lilac[900]} />
           </CustomButton>
         </View>
       </View>
@@ -195,13 +179,13 @@ const styles = StyleSheet.create({
   recipeInfo: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "center",
+    height: "100%",
     gap: 8,
   },
   recipeTextContainer: {
     flex: 1,
-    justifyContent: "center",
     gap: 8,
+    justifyContent: "center",
     padding: 4,
   },
   recipeName: {
