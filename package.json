@@ -11,6 +11,8 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.67",
+    "@ai-sdk/react": "^2.0.93",
     "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^5.2.6",
     "@hookform/resolvers": "^5.2.2",
@@ -21,6 +23,7 @@
     "@react-navigation/native": "^7.1.8",
     "@supabase/supabase-js": "^2.75.0",
     "@tanstack/react-query": "^5.90.5",
+    "ai": "^5.0.93",
     "expo": "~54.0.12",
     "expo-blur": "~15.0.7",
     "expo-constants": "~18.0.9",
