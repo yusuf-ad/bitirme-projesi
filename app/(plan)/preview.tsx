@@ -161,15 +161,9 @@ export default function MealPlanPreview() {
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedMealIndices, setSelectedMealIndices] = useState<{
-    breakfast: number;
-    lunch: number;
-    dinner: number;
-  }>({
-    breakfast: 0,
-    lunch: 0,
-    dinner: 0,
-  });
+  const [selectedMealIndices, setSelectedMealIndices] = useState<
+    Partial<Record<MealType, number>>
+  >({});
   const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
   const [loadingMealType, setLoadingMealType] = useState<MealType | null>(null);
 
@@ -262,22 +256,23 @@ export default function MealPlanPreview() {
       try {
         const data = JSON.parse(params.mealPlanData as string);
 
-        // Check if data has breakfast, lunch, dinner structure
-        if (
-          data &&
-          data.breakfast &&
-          data.lunch &&
-          data.dinner &&
-          data.breakfast.results &&
-          data.lunch.results &&
-          data.dinner.results
-        ) {
+        // Check if data is valid and has at least one meal type with results
+        if (data && typeof data === "object") {
+          const indices: Partial<Record<MealType, number>> = {};
+          
+          // Initialize indices for meal types that have results
+          if (data.breakfast?.results?.length > 0) {
+            indices.breakfast = 0;
+          }
+          if (data.lunch?.results?.length > 0) {
+            indices.lunch = 0;
+          }
+          if (data.dinner?.results?.length > 0) {
+            indices.dinner = 0;
+          }
+
           setMealPlan(data);
-          setSelectedMealIndices({
-            breakfast: 0,
-            lunch: 0,
-            dinner: 0,
-          });
+          setSelectedMealIndices(indices);
         } else {
           console.error("Invalid meal plan structure:", data);
         }
@@ -301,29 +296,49 @@ export default function MealPlanPreview() {
       return;
     }
 
-    const breakfastMealItem = createMealItem(
-      mealPlan,
-      "breakfast",
-      selectedMealIndices.breakfast,
-      planStartDate
-    );
-    const lunchMealItem = createMealItem(
-      mealPlan,
-      "lunch",
-      selectedMealIndices.lunch,
-      planStartDate
-    );
-    const dinnerMealItem = createMealItem(
-      mealPlan,
-      "dinner",
-      selectedMealIndices.dinner,
-      planStartDate
-    );
+    // Only create meal items for meal types that exist in the plan
+    const mealItems: any[] = [];
+    
+    if (mealPlan.breakfast?.results?.length > 0 && selectedMealIndices.breakfast !== undefined) {
+      const breakfastMealItem = createMealItem(
+        mealPlan,
+        "breakfast",
+        selectedMealIndices.breakfast,
+        planStartDate
+      );
+      if (breakfastMealItem) {
+        mealItems.push(breakfastMealItem);
+      }
+    }
+    
+    if (mealPlan.lunch?.results?.length > 0 && selectedMealIndices.lunch !== undefined) {
+      const lunchMealItem = createMealItem(
+        mealPlan,
+        "lunch",
+        selectedMealIndices.lunch,
+        planStartDate
+      );
+      if (lunchMealItem) {
+        mealItems.push(lunchMealItem);
+      }
+    }
+    
+    if (mealPlan.dinner?.results?.length > 0 && selectedMealIndices.dinner !== undefined) {
+      const dinnerMealItem = createMealItem(
+        mealPlan,
+        "dinner",
+        selectedMealIndices.dinner,
+        planStartDate
+      );
+      if (dinnerMealItem) {
+        mealItems.push(dinnerMealItem);
+      }
+    }
 
-    if (!breakfastMealItem || !lunchMealItem || !dinnerMealItem) {
+    if (mealItems.length === 0) {
       Alert.alert(
         "Missing recipes",
-        "Select a recipe for each meal before saving."
+        "Select a recipe for at least one meal before saving."
       );
       return;
     }
@@ -375,11 +390,7 @@ export default function MealPlanPreview() {
         throw new Error("Meal plan could not be created.");
       }
 
-      const itemsPayload = [
-        breakfastMealItem,
-        lunchMealItem,
-        dinnerMealItem,
-      ].map((item) => ({
+      const itemsPayload = mealItems.map((item) => ({
         ...item,
         meal_plan_id: newPlan.id,
       }));

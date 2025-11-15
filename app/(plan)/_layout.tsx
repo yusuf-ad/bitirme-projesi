@@ -15,6 +15,12 @@ export default function MealPlanLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="select-meals"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
