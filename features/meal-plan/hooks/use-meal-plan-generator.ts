@@ -36,7 +36,7 @@ export function useMealPlanGenerator({
         },
       };
 
-      const includedCuisines = [CUISINES.MEDITERRANEAN];
+      const includedCuisines = [CUISINES.MEDITERRANEAN, CUISINES.ITALIAN];
       const excludedIngredients = ["pork", "shellfish"];
 
       // Different ingredients for each meal type
@@ -101,14 +101,25 @@ export function useMealPlanGenerator({
         );
 
         const data = await response.json();
-        console.log(`${meal.type} API Response:`, data);
 
-        // Process results to extract calorie information from summary
+        // Process results to extract only necessary fields
         const processedResults = data.results.map((recipe: any) => {
           let calories: number | undefined;
 
-          // Try to extract calories from summary (e.g., "343 calories")
-          if (recipe.summary) {
+          // Try to extract calories from nutrition.nutrients array first
+          if (Array.isArray(recipe?.nutrition?.nutrients)) {
+            const calorieNutrient = recipe.nutrition.nutrients.find(
+              (nutrient: any) =>
+                typeof nutrient?.name === "string" &&
+                nutrient.name.toLowerCase() === "calories"
+            );
+            if (calorieNutrient?.amount) {
+              calories = calorieNutrient.amount;
+            }
+          }
+
+          // Fallback to summary if calories not found in nutrients
+          if (!calories && recipe.summary) {
             const calorieMatch = recipe.summary.match(/(\d+)\s+calories/i);
             if (calorieMatch) {
               calories = parseInt(calorieMatch[1], 10);
@@ -116,7 +127,13 @@ export function useMealPlanGenerator({
           }
 
           return {
-            ...recipe,
+            id: recipe.id,
+            title: recipe.title,
+            readyInMinutes: recipe.readyInMinutes,
+            servings: recipe.servings,
+            imageType: recipe.imageType,
+            image: recipe.image,
+            sourceUrl: recipe.sourceUrl,
             nutrition: {
               calories,
             },
@@ -128,7 +145,8 @@ export function useMealPlanGenerator({
         mealPlan[meal.type].totalResults = data.totalResults;
       }
 
-      console.log("Generated Meal Plan:", mealPlan);
+      console.log("Generated Meal Plan:", JSON.stringify(mealPlan, null, 2));
+
       return mealPlan;
     } finally {
       setIsGenerating(false);
@@ -140,4 +158,3 @@ export function useMealPlanGenerator({
     isGenerating,
   };
 }
-

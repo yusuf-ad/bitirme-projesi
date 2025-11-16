@@ -14,8 +14,8 @@ import {
 } from "@/lib/utils";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -108,20 +108,26 @@ const fetchMealsForType = async (
   const processedResults: Meal[] = (
     Array.isArray(data.results) ? data.results : []
   ).map((recipe: any) => {
-    const nutrientCalories = Array.isArray(recipe?.nutrition?.nutrients)
-      ? recipe.nutrition.nutrients.find(
-          (nutrient: any) =>
-            typeof nutrient?.name === "string" &&
-            nutrient.name.toLowerCase() === "calories"
-        )
-      : undefined;
+    let calories: number | undefined;
 
-    let calories: number | undefined = nutrientCalories?.amount;
+    // Try to extract calories from nutrition.nutrients array first
+    if (Array.isArray(recipe?.nutrition?.nutrients)) {
+      const nutrientCalories = recipe.nutrition.nutrients.find(
+        (nutrient: any) =>
+          typeof nutrient?.name === "string" &&
+          nutrient.name.toLowerCase() === "calories"
+      );
+      if (nutrientCalories?.amount) {
+        calories = nutrientCalories.amount;
+      }
+    }
 
+    // Fallback to direct nutrition.calories field
     if (!calories && typeof recipe?.nutrition?.calories === "number") {
       calories = recipe.nutrition.calories;
     }
 
+    // Final fallback to summary
     if (!calories && typeof recipe?.summary === "string") {
       const calorieMatch = recipe.summary.match(/(\d+)\s+calories/i);
       if (calorieMatch) {
@@ -129,15 +135,15 @@ const fetchMealsForType = async (
       }
     }
 
-    const baseNutrition: Record<string, unknown> =
-      recipe && typeof recipe.nutrition === "object" && recipe.nutrition
-        ? recipe.nutrition
-        : {};
-
     return {
-      ...recipe,
+      id: recipe.id,
+      title: recipe.title,
+      readyInMinutes: recipe.readyInMinutes,
+      servings: recipe.servings,
+      imageType: recipe.imageType,
+      image: recipe.image,
+      sourceUrl: recipe.sourceUrl,
       nutrition: {
-        ...baseNutrition,
         calories,
       },
     } as Meal;
@@ -259,7 +265,7 @@ export default function MealPlanPreview() {
         // Check if data is valid and has at least one meal type with results
         if (data && typeof data === "object") {
           const indices: Partial<Record<MealType, number>> = {};
-          
+
           // Initialize indices for meal types that have results
           if (data.breakfast?.results?.length > 0) {
             indices.breakfast = 0;
@@ -298,8 +304,11 @@ export default function MealPlanPreview() {
 
     // Only create meal items for meal types that exist in the plan
     const mealItems: any[] = [];
-    
-    if (mealPlan.breakfast?.results?.length > 0 && selectedMealIndices.breakfast !== undefined) {
+
+    if (
+      mealPlan.breakfast?.results?.length > 0 &&
+      selectedMealIndices.breakfast !== undefined
+    ) {
       const breakfastMealItem = createMealItem(
         mealPlan,
         "breakfast",
@@ -310,8 +319,11 @@ export default function MealPlanPreview() {
         mealItems.push(breakfastMealItem);
       }
     }
-    
-    if (mealPlan.lunch?.results?.length > 0 && selectedMealIndices.lunch !== undefined) {
+
+    if (
+      mealPlan.lunch?.results?.length > 0 &&
+      selectedMealIndices.lunch !== undefined
+    ) {
       const lunchMealItem = createMealItem(
         mealPlan,
         "lunch",
@@ -322,8 +334,11 @@ export default function MealPlanPreview() {
         mealItems.push(lunchMealItem);
       }
     }
-    
-    if (mealPlan.dinner?.results?.length > 0 && selectedMealIndices.dinner !== undefined) {
+
+    if (
+      mealPlan.dinner?.results?.length > 0 &&
+      selectedMealIndices.dinner !== undefined
+    ) {
       const dinnerMealItem = createMealItem(
         mealPlan,
         "dinner",
@@ -490,7 +505,7 @@ export default function MealPlanPreview() {
 
     if (!dayData || dayData.results.length === 0) return null;
 
-    const currentIndex = selectedMealIndices[mealType];
+    const currentIndex = selectedMealIndices[mealType] ?? 0;
     const currentMeal = dayData.results[currentIndex];
 
     if (!currentMeal) return null;

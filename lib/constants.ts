@@ -11,7 +11,6 @@ export const CUISINES = {
   MEDITERRANEAN: "mediterranean",
   MEXICAN: "mexican",
   MIDDLE_EASTERN: "middleeastern",
-  THAI: "thai",
 } as const;
 
 export const cuisines = Object.values(CUISINES);
@@ -114,5 +113,4 @@ export const POPULAR_CUISINES: {
   { id: "mediterranean", name: "Mediterranean", flag: "🏛️" },
   { id: "mexican", name: "Mexican", flag: "🇲🇽" },
   { id: "middleeastern", name: "Middle Eastern", flag: "🇸🇦" },
-  { id: "thai", name: "Thai", flag: "🇹🇭" },
 ];
