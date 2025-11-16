@@ -51,8 +51,7 @@ export default function CreateMealPlan() {
 
   const handleNext = () => {
     router.push({
-      // şimdilik ai-plane yolla bir şey test ediyorum
-      pathname: "/ai-plan",
+      pathname: "/select-meals",
       params: {
         startDate: startDate.toISOString(),
       },

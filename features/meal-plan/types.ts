@@ -1,5 +1,43 @@
 export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
 
+export type MealType = "breakfast" | "lunch" | "dinner";
+
+export interface MealTypeOption {
+  id: MealType;
+  label: string;
+}
+
+export interface Meal {
+  id: number;
+  title: string;
+  image: string;
+  imageType: string;
+  readyInMinutes?: number;
+  nutrition?: {
+    nutrients?: {
+      name: string;
+      amount: number;
+      unitShort: string;
+    }[];
+    calories?: number;
+    carbs?: number;
+    fat?: number;
+    protein?: number;
+  };
+  summary?: string;
+}
+
+export interface MealPlanData {
+  results: Meal[];
+  totalResults: number;
+}
+
+export interface GeneratedMealPlan {
+  breakfast: MealPlanData;
+  lunch: MealPlanData;
+  dinner: MealPlanData;
+}
+
 export interface MealPlanRecord {
   id: number;
   user_id: string;
