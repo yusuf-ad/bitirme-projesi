@@ -6,9 +6,17 @@ import MacroCardsSection from "./macro-cards-section";
 
 interface DailyOverviewProps {
   totalCalories?: number;
+  totalCarbs?: number;
+  totalProtein?: number;
+  totalFat?: number;
 }
 
-export default function DailyOverview({ totalCalories = 0 }: DailyOverviewProps) {
+export default function DailyOverview({
+  totalCalories = 0,
+  totalCarbs = 0,
+  totalProtein = 0,
+  totalFat = 0,
+}: DailyOverviewProps) {
   const goalCalories = 2200;
 
   return (
@@ -30,7 +38,11 @@ export default function DailyOverview({ totalCalories = 0 }: DailyOverviewProps)
       />
 
       {/* Macro Cards */}
-      <MacroCardsSection />
+      <MacroCardsSection
+        totalCarbs={totalCarbs}
+        totalProtein={totalProtein}
+        totalFat={totalFat}
+      />
     </View>
   );
 }
