@@ -36,6 +36,48 @@ export default function AiPlan() {
                   switch (part.type) {
                     case "text":
                       return <Text key={`${m.id}-${i}`}>{part.text}</Text>;
+                    case "tool-searchRecipes":
+                      return (
+                        <View
+                          key={`${m.id}-${i}`}
+                          style={{
+                            backgroundColor: "#e3f2fd",
+                            padding: 8,
+                            marginTop: 4,
+                            borderRadius: 4,
+                          }}
+                        >
+                          <Text style={{ fontWeight: "600" }}>
+                            🔧 searchRecipes
+                          </Text>
+                          <Text style={{ fontSize: 10 }}>
+                            {JSON.stringify(part, null, 2)}
+                          </Text>
+                        </View>
+                      );
+                    default:
+                      // Show any other part types for debugging
+                      if (part.type.startsWith("tool-")) {
+                        return (
+                          <View
+                            key={`${m.id}-${i}`}
+                            style={{
+                              backgroundColor: "#ffeb3b",
+                              padding: 8,
+                              marginTop: 4,
+                              borderRadius: 4,
+                            }}
+                          >
+                            <Text style={{ fontWeight: "600" }}>
+                              🔧 {part.type}
+                            </Text>
+                            <Text style={{ fontSize: 10 }}>
+                              {JSON.stringify(part, null, 2)}
+                            </Text>
+                          </View>
+                        );
+                      }
+                      return null;
                   }
                 })}
               </View>

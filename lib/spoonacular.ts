@@ -37,6 +37,8 @@ export interface Recipe {
   id: number;
   title: string;
   image: string;
+  summary?: string;
+  cuisines?: string[];
   readyInMinutes?: number;
   servings?: number;
   sourceUrl?: string;
@@ -92,6 +94,7 @@ interface SpoonacularResponse {
 export interface RandomRecipesFilters {
   diet?: string;
   cuisine?: string;
+  type?: string; // Meal type: breakfast, lunch, dinner, etc.
   includeIngredients?: string;
   excludeIngredients?: string;
 }
@@ -136,6 +139,9 @@ export async function getRandomRecipes(
     }
     if (filters?.cuisine) {
       params.append("cuisine", filters.cuisine);
+    }
+    if (filters?.type) {
+      params.append("type", filters.type);
     }
     if (filters?.includeIngredients) {
       params.append("includeIngredients", filters.includeIngredients);
@@ -192,6 +198,9 @@ export async function searchRecipes(
     }
     if (filters?.cuisine) {
       params.append("cuisine", filters.cuisine);
+    }
+    if (filters?.type) {
+      params.append("type", filters.type);
     }
     if (filters?.includeIngredients) {
       params.append("includeIngredients", filters.includeIngredients);
