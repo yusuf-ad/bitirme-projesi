@@ -53,6 +53,9 @@ export interface MealPlanItemRecord {
   recipe_name: string;
   recipe_image_url: string | null;
   calories_per_serving: number | null;
+  carbs_per_serving: number | null;
+  protein_per_serving: number | null;
+  fat_per_serving: number | null;
   ready_in_minutes: number | null;
   meal_date: string;
   meal_type: MealSlot;

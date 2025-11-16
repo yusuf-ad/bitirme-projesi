@@ -47,6 +47,14 @@ export default function MealplanTab() {
 
   const hasMeals = (data?.items?.length ?? 0) > 0;
 
+  // Calculate total calories from meal plan items
+  const totalCalories =
+    data?.items?.reduce((total, item) => {
+      return total + (item.calories_per_serving || 0);
+    }, 0) ?? 0;
+
+  console.log("data", JSON.stringify(data, null, 2));
+
   return (
     <ScrollView
       style={[styles.container, { paddingTop: top }]}
@@ -89,7 +97,7 @@ export default function MealplanTab() {
         ) : hasMeals ? (
           <>
             <View style={styles.section}>
-              <DailyOverview />
+              <DailyOverview totalCalories={totalCalories} />
             </View>
 
             <DailyMealsList items={data!.items} selectedDate={selectedDate} />

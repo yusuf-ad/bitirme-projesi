@@ -68,8 +68,8 @@ export function useMealPlanGenerator({
         const params = new URLSearchParams({
           apiKey: API_KEY,
           addRecipeInformation: "true",
+          addRecipeNutrition: "true",
           number: "12",
-          fillNutrients: "true",
         });
 
         if (includedCuisines.length > 0) {
@@ -105,8 +105,11 @@ export function useMealPlanGenerator({
         // Process results to extract only necessary fields
         const processedResults = data.results.map((recipe: any) => {
           let calories: number | undefined;
+          let carbs: number | undefined;
+          let protein: number | undefined;
+          let fat: number | undefined;
 
-          // Try to extract calories from nutrition.nutrients array first
+          // Try to extract nutrition values from nutrition.nutrients array
           if (Array.isArray(recipe?.nutrition?.nutrients)) {
             const calorieNutrient = recipe.nutrition.nutrients.find(
               (nutrient: any) =>
@@ -115,6 +118,33 @@ export function useMealPlanGenerator({
             );
             if (calorieNutrient?.amount) {
               calories = calorieNutrient.amount;
+            }
+
+            const carbsNutrient = recipe.nutrition.nutrients.find(
+              (nutrient: any) =>
+                typeof nutrient?.name === "string" &&
+                nutrient.name.toLowerCase() === "carbohydrates"
+            );
+            if (carbsNutrient?.amount) {
+              carbs = carbsNutrient.amount;
+            }
+
+            const proteinNutrient = recipe.nutrition.nutrients.find(
+              (nutrient: any) =>
+                typeof nutrient?.name === "string" &&
+                nutrient.name.toLowerCase() === "protein"
+            );
+            if (proteinNutrient?.amount) {
+              protein = proteinNutrient.amount;
+            }
+
+            const fatNutrient = recipe.nutrition.nutrients.find(
+              (nutrient: any) =>
+                typeof nutrient?.name === "string" &&
+                nutrient.name.toLowerCase() === "fat"
+            );
+            if (fatNutrient?.amount) {
+              fat = fatNutrient.amount;
             }
           }
 
@@ -136,6 +166,9 @@ export function useMealPlanGenerator({
             sourceUrl: recipe.sourceUrl,
             nutrition: {
               calories,
+              carbs,
+              protein,
+              fat,
             },
           } as Meal;
         });

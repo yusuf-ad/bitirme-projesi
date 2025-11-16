@@ -109,25 +109,63 @@ const fetchMealsForType = async (
     Array.isArray(data.results) ? data.results : []
   ).map((recipe: any) => {
     let calories: number | undefined;
+    let carbs: number | undefined;
+    let protein: number | undefined;
+    let fat: number | undefined;
 
-    // Try to extract calories from nutrition.nutrients array first
+    // Extract nutrition information from nutrients array
     if (Array.isArray(recipe?.nutrition?.nutrients)) {
-      const nutrientCalories = recipe.nutrition.nutrients.find(
-        (nutrient: any) =>
-          typeof nutrient?.name === "string" &&
-          nutrient.name.toLowerCase() === "calories"
+      const nutrients = recipe.nutrition.nutrients;
+
+      const caloriesNutrient = nutrients.find(
+        (n: any) =>
+          typeof n?.name === "string" && n.name.toLowerCase() === "calories"
       );
-      if (nutrientCalories?.amount) {
-        calories = nutrientCalories.amount;
+      if (caloriesNutrient?.amount) {
+        calories = caloriesNutrient.amount;
+      }
+
+      const carbsNutrient = nutrients.find(
+        (n: any) =>
+          typeof n?.name === "string" &&
+          n.name.toLowerCase() === "carbohydrates"
+      );
+      if (carbsNutrient?.amount) {
+        carbs = carbsNutrient.amount;
+      }
+
+      const proteinNutrient = nutrients.find(
+        (n: any) =>
+          typeof n?.name === "string" && n.name.toLowerCase() === "protein"
+      );
+      if (proteinNutrient?.amount) {
+        protein = proteinNutrient.amount;
+      }
+
+      const fatNutrient = nutrients.find(
+        (n: any) =>
+          typeof n?.name === "string" && n.name.toLowerCase() === "fat"
+      );
+      if (fatNutrient?.amount) {
+        fat = fatNutrient.amount;
       }
     }
 
-    // Fallback to direct nutrition.calories field
+    // Fallback to direct nutrition fields
     if (!calories && typeof recipe?.nutrition?.calories === "number") {
       calories = recipe.nutrition.calories;
     }
+    if (!carbs && typeof recipe?.nutrition?.carbs === "number") {
+      carbs = recipe.nutrition.carbs;
+    }
+    if (!protein && typeof recipe?.nutrition?.protein === "number") {
+      protein = recipe.nutrition.protein;
+    }
+    if (!fat && typeof recipe?.nutrition?.fat === "number") {
+      fat = recipe.nutrition.fat;
+    }
 
-    // Final fallback to summary
+    // Final fallback for calories from summary
     if (!calories && typeof recipe?.summary === "string") {
       const calorieMatch = recipe.summary.match(/(\d+)\s+calories/i);
       if (calorieMatch) {
@@ -145,6 +183,9 @@ const fetchMealsForType = async (
       sourceUrl: recipe.sourceUrl,
       nutrition: {
         calories,
+        carbs,
+        protein,
+        fat,
       },
     } as Meal;
   });
@@ -377,11 +418,38 @@ export default function MealPlanPreview() {
       }
 
       if (existingPlans && existingPlans.length > 0) {
-        Alert.alert(
-          "Meal plan already exists",
-          "You already have a meal plan for this date range."
-        );
-        return;
+        const existingPlanId = existingPlans[0].id;
+
+        // Check if this plan has items
+        const { data: existingItems, error: itemsCheckError } = await supabase
+          .from("meal_plan_items")
+          .select("id")
+          .eq("meal_plan_id", existingPlanId)
+          .limit(1);
+
+        if (itemsCheckError) {
+          throw itemsCheckError;
+        }
+
+        if (existingItems && existingItems.length > 0) {
+          // Plan has items - show error
+          Alert.alert(
+            "Meal plan already exists",
+            "You already have a meal plan with recipes for this date range."
+          );
+          return;
+        }
+
+        // Plan exists but has no items - delete it and create new one
+        console.log("Deleting orphaned meal plan:", existingPlanId);
+        const { error: deleteError } = await supabase
+          .from("meal_plans")
+          .delete()
+          .eq("id", existingPlanId);
+
+        if (deleteError) {
+          throw deleteError;
+        }
       }
 
       const { data: newPlan, error: planError } = await supabase
@@ -415,7 +483,12 @@ export default function MealPlanPreview() {
         .insert(itemsPayload);
 
       if (itemsError) {
-        throw itemsError;
+        // Rollback: Delete the meal plan if items couldn't be inserted
+        console.error("Error inserting meal items:", itemsError);
+        await supabase.from("meal_plans").delete().eq("id", newPlan.id);
+        throw new Error(
+          `Failed to save meal items: ${itemsError.message || "Unknown error"}`
+        );
       }
 
       // Invalidate meal plans cache to refresh the home page
@@ -458,6 +531,16 @@ export default function MealPlanPreview() {
       mealSelectionRef.current?.present();
     };
 
+    const carbs = meal.nutrition?.carbs
+      ? `${Math.round(meal.nutrition.carbs)}g`
+      : undefined;
+    const protein = meal.nutrition?.protein
+      ? `${Math.round(meal.nutrition.protein)}g`
+      : undefined;
+    const fat = meal.nutrition?.fat
+      ? `${Math.round(meal.nutrition.fat)}g`
+      : undefined;
+
     return (
       <View key={meal.id} style={styles.mealItem}>
         <View style={styles.mealContent}>
@@ -488,6 +571,29 @@ export default function MealPlanPreview() {
                 </Text>
               )}
             </View>
+            {/* Macronutrients */}
+            {(carbs || protein || fat) && (
+              <View style={styles.macrosContainer}>
+                {carbs && (
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Carbs</Text>
+                    <Text style={styles.macroValue}>{carbs}</Text>
+                  </View>
+                )}
+                {protein && (
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Protein</Text>
+                    <Text style={styles.macroValue}>{protein}</Text>
+                  </View>
+                )}
+                {fat && (
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Fat</Text>
+                    <Text style={styles.macroValue}>{fat}</Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </View>
         <CustomButton
@@ -694,6 +800,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.lilac[900],
     borderRadius: 8,
+  },
+  macrosContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  macroItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: Colors.background.surface,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+  },
+  macroLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    lineHeight: 16,
+    color: Colors.gray[500],
+  },
+  macroValue: {
+    fontSize: 11,
+    fontWeight: "600",
+    lineHeight: 16,
+    color: Colors.lilac[900],
   },
   footer: {
     paddingHorizontal: 16,
