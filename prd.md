@@ -1240,13 +1240,13 @@ constants/
 - [ ] Ingredient management (CRUD operations) - yunus
 - [ ] Fix error states - yunus
 
-- [ ] Basic meal planner UI - yusuf
+- [x] Basic meal planner UI - yusuf
 
 ### Phase 3: Meal Planning (Weeks 6-7)
 
 - [ ] Weekly meal planner functionality
 - [ ] Drag-and-drop recipe assignment
-- [ ] Nutrition summary calculations
+- [x] Nutrition summary calculations
 - [ ] Shopping list generation
 - [ ] Shopping list management
 

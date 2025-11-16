@@ -17,8 +17,8 @@ interface RecipeGridProps {
 export function RecipeGrid({ recipes }: RecipeGridProps) {
   return (
     <View style={styles.gridContainer}>
-      {recipes.map((recipe, index) => (
-        <View key={recipe.id + index} style={styles.gridItem}>
+      {recipes.map((recipe) => (
+        <View key={recipe.id} style={styles.gridItem}>
           <RecipeCard
             recipe={recipe}
             onPress={() => router.push(`/(meal)/${recipe.id}`)}

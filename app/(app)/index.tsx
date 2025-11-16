@@ -69,8 +69,6 @@ export default function MealplanTab() {
       return total + (item.fat_per_serving || 0);
     }, 0) ?? 0;
 
-  console.log("data", JSON.stringify(data, null, 2));
-
   return (
     <ScrollView
       style={[styles.container, { paddingTop: top }]}
