@@ -1,23 +1,24 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
   Image,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Camera,
   useCameraDevice,
   useCameraPermission,
 } from "react-native-vision-camera";
-
-const FRAME_SIZE = 260;
 
 export default function CameraPantry() {
   const router = useRouter();
@@ -26,13 +27,22 @@ export default function CameraPantry() {
   const { hasPermission, requestPermission } = useCameraPermission();
   const [flash, setFlash] = useState<"off" | "on">("off");
   const [isActive] = useState(true);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const insets = useSafeAreaInsets();
+  const shutterScale = useRef(new Animated.Value(1)).current;
+  const capturingRef = useRef(false);
+  const lastShotAtRef = useRef(0);
 
-  const frameCorners = [
-    styles.cornerTopLeft,
-    styles.cornerTopRight,
-    styles.cornerBottomLeft,
-    styles.cornerBottomRight,
-  ];
+  // Reset capture lock whenever this screen regains focus
+  useFocusEffect(() => {
+    setIsCapturing(false);
+    capturingRef.current = false;
+  });
+
+  // Calculate camera dimensions with 4:3 aspect ratio
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+  const cameraHeight = (screenWidth * 4) / 3;
 
   useEffect(() => {
     if (!hasPermission) {
@@ -42,19 +52,48 @@ export default function CameraPantry() {
 
   const takePhoto = useCallback(async () => {
     try {
+      const now = Date.now();
+      // Debounce rapid taps (within 1s) and prevent re-entrancy
+      if (capturingRef.current || now - lastShotAtRef.current < 1000) return;
+      lastShotAtRef.current = now;
+      capturingRef.current = true;
+      setIsCapturing(true);
       if (camera.current) {
         const photo = await camera.current.takePhoto({
           flash,
           enableShutterSound: true,
         });
         console.log("Photo taken:", photo.path);
-        // TODO: Handle the captured photo - you can navigate to a preview screen or process it
-        // Example: router.push({ pathname: '/(add)/photo-preview', params: { uri: photo.path } });
+        router.push({
+          pathname: "/(add)/preview",
+          params: { uri: photo.path },
+        });
       }
     } catch (error) {
       console.error("Failed to take photo:", error);
+      // Allow retry only if there was an error
+      setIsCapturing(false);
+      capturingRef.current = false;
     }
-  }, [flash]);
+  }, [flash, router]);
+
+  const onShutterPressIn = useCallback(() => {
+    Animated.timing(shutterScale, {
+      toValue: 0.9,
+      duration: 80,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [shutterScale]);
+
+  const onShutterPressOut = useCallback(() => {
+    Animated.timing(shutterScale, {
+      toValue: 1,
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [shutterScale]);
 
   const toggleFlash = useCallback(() => {
     setFlash((current) => (current === "off" ? "on" : "off"));
@@ -67,35 +106,60 @@ export default function CameraPantry() {
   // Show loading while requesting permissions or loading device
   if (!hasPermission) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.permissionText}>
             Requesting camera permission...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!device) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.permissionText}>Loading camera...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <LinearGradient
-        colors={["#050505", "#000000"]}
-        style={styles.background}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+    <View style={styles.container}>
+      <View style={styles.cameraWrapper}>
+        <View
+          style={[
+            styles.cameraContainer,
+            {
+              width: screenWidth,
+              height: cameraHeight,
+              top: (screenHeight - cameraHeight) / 2,
+            },
+          ]}
+        >
+          <Camera
+            ref={camera}
+            style={styles.camera}
+            device={device}
+            isActive={isActive}
+            photo={true}
+            enableZoomGesture
+          />
+        </View>
+      </View>
+
+      <View
+        style={[
+          styles.overlay,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+          },
+        ]}
       >
         <View style={styles.header}>
           <Pressable
@@ -107,27 +171,10 @@ export default function CameraPantry() {
           </Pressable>
         </View>
 
-        <View style={styles.previewContainer}>
-          <View style={styles.frameShadow}>
-            <View
-              style={[styles.frame, { width: FRAME_SIZE, height: FRAME_SIZE }]}
-            >
-              <Camera
-                ref={camera}
-                style={styles.camera}
-                device={device}
-                isActive={isActive}
-                photo={true}
-                enableZoomGesture
-              />
-              {frameCorners.map((cornerStyle, index) => (
-                <View key={index} style={[styles.corner, cornerStyle]} />
-              ))}
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.bottomBar}>
+        <View
+          style={styles.bottomBar}
+          pointerEvents={isCapturing ? "none" : "auto"}
+        >
           <Pressable
             style={styles.thumbnailButton}
             accessibilityLabel="Recent photo"
@@ -139,11 +186,22 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={styles.shutterButton}
+            style={[
+              styles.shutterButton,
+              isCapturing && styles.shutterDisabled,
+            ]}
             accessibilityLabel="Take photo"
             onPress={takePhoto}
+            onPressIn={onShutterPressIn}
+            onPressOut={onShutterPressOut}
+            disabled={isCapturing}
           >
-            <View style={styles.shutterInner} />
+            <Animated.View
+              style={[
+                styles.shutterInner,
+                { transform: [{ scale: shutterScale }] },
+              ]}
+            />
           </Pressable>
 
           <Pressable
@@ -158,8 +216,8 @@ export default function CameraPantry() {
             />
           </Pressable>
         </View>
-      </LinearGradient>
-    </SafeAreaView>
+      </View>
+    </View>
   );
 }
 
@@ -168,8 +226,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
-  background: {
+  cameraWrapper: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cameraContainer: {
+    position: "absolute",
+    overflow: "hidden",
+  },
+  camera: {
+    flex: 1,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "space-between",
     paddingHorizontal: 24,
   },
   centered: {
@@ -190,14 +265,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
   },
-  infoBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
   iconButton: {
     width: 42,
     height: 42,
@@ -206,70 +273,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  previewContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  frameShadow: {
-    width: FRAME_SIZE + 40,
-    height: FRAME_SIZE + 40,
-    borderRadius: 32,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  frame: {
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.02)",
-    overflow: "hidden",
-  },
-  camera: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-  },
-  cameraMock: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    backgroundColor: "rgba(0,0,0,0.85)",
-    borderRadius: 28,
-  },
-  corner: {
-    position: "absolute",
-    width: 34,
-    height: 34,
-    borderColor: "#fff",
-    borderRadius: 8,
-  },
-  cornerTopLeft: {
-    top: 0,
-    left: 0,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-  },
-  cornerTopRight: {
-    top: 0,
-    right: 0,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
-  },
-  cornerBottomLeft: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
-  },
-  cornerBottomRight: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
   },
   bottomBar: {
     flexDirection: "row",
@@ -304,5 +307,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: "#fff",
+  },
+  shutterDisabled: {
+    opacity: 0.5,
   },
 });
