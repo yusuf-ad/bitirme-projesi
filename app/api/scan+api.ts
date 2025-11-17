@@ -15,9 +15,18 @@ export async function POST(req: Request) {
 
     const schema = z.object({
       ingredients: z
-        .array(z.string().min(1))
+        .array(
+          z.object({
+            name: z.string().min(1).describe("Ingredient name in English"),
+            quantity: z
+              .string()
+              .describe(
+                "Approximate quantity in grams (g) or pieces. Examples: '200g', '3 pieces', '500g', '1 piece'"
+              ),
+          })
+        )
         .default([])
-        .describe("Unique, concise ingredient names in English"),
+        .describe("List of ingredients with their approximate quantities"),
     });
 
     const llmStart = Date.now();
@@ -31,7 +40,7 @@ export async function POST(req: Request) {
           content: [
             {
               type: "text",
-              text: "Extract only visible food ingredients from this image as a flat, deduplicated list. No brands, text, utensils, quantities, or descriptions. Use lowercase, singular English words. Return JSON only.",
+              text: "Extract visible food ingredients from this image with their approximate quantities. For each ingredient provide: 1) name in lowercase, singular English, 2) estimated quantity in grams (g) for measurable items or pieces (pieces) for countable items. Examples: {name: 'tomato', quantity: '3 pieces'}, {name: 'rice', quantity: '500g'}. Return JSON only.",
             },
             { type: "image", image },
           ],

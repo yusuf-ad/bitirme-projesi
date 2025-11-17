@@ -16,9 +16,7 @@ export default function ScanResults() {
   const items = useMemo(() => {
     try {
       const parsed = params.items ? JSON.parse(params.items) : [];
-      return Array.isArray(parsed)
-        ? parsed.map((s) => String(s)).filter(Boolean)
-        : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
@@ -60,12 +58,15 @@ export default function ScanResults() {
         ) : (
           <FlatList
             data={items}
-            keyExtractor={(it, idx) => `${it}-${idx}`}
+            keyExtractor={(it, idx) => `${it.name}-${idx}`}
             contentContainerStyle={styles.listContent}
             renderItem={({ item }) => (
               <View style={styles.row}>
                 <Ionicons name="leaf-outline" size={18} color="#16a34a" />
-                <Text style={styles.rowText}>{item}</Text>
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowText}>{item.name}</Text>
+                  <Text style={styles.quantityText}>{item.quantity}</Text>
+                </View>
               </View>
             )}
           />
@@ -137,9 +138,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#f9fafb",
   },
+  rowContent: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   rowText: {
     fontSize: 16,
     color: "#111",
     textTransform: "capitalize",
+  },
+  quantityText: {
+    fontSize: 14,
+    color: "#6b7280",
+    fontWeight: "500",
   },
 });

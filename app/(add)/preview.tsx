@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as ImageManipulator from "expo-image-manipulator";
 import * as LegacyFS from "expo-file-system/legacy";
+import * as ImageManipulator from "expo-image-manipulator";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -105,7 +105,7 @@ export default function PhotoPreview() {
       if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
 
       const json = (await res.json()) as {
-        ingredients?: string[];
+        ingredients?: { name: string; quantity: string }[];
         durationMs?: number;
       };
       const elapsedMs = Date.now() - t0;
@@ -157,7 +157,7 @@ export default function PhotoPreview() {
         { paddingTop: insets.top, paddingBottom: insets.bottom },
       ]}
     >
-      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+      <View style={[styles.safeArea]}>
         <View style={styles.header}>
           <Pressable
             style={styles.iconButton}
