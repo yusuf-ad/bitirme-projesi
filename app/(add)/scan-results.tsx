@@ -6,7 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ScanResults() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ items?: string }>();
+  const params = useLocalSearchParams<{
+    items?: string;
+    durationMs?: string;
+    llmMs?: string;
+  }>();
   const { top } = useSafeAreaInsets();
 
   const items = useMemo(() => {
@@ -19,6 +23,13 @@ export default function ScanResults() {
       return [];
     }
   }, [params.items]);
+
+  const secondsText = useMemo(() => {
+    const ms = Number(params.durationMs ?? params.llmMs ?? 0);
+    if (!ms || Number.isNaN(ms)) return null;
+    const secs = (ms / 1000).toFixed(1);
+    return `${secs}s`;
+  }, [params.durationMs, params.llmMs]);
 
   return (
     <View style={styles.container}>
@@ -34,6 +45,13 @@ export default function ScanResults() {
           <Text style={styles.title}>Detected Ingredients</Text>
           <View style={{ width: 42 }} />
         </View>
+
+        {secondsText && (
+          <View style={styles.metaBar}>
+            <Ionicons name="time-outline" size={16} color="#6b7280" />
+            <Text style={styles.metaText}>Scan time: {secondsText}</Text>
+          </View>
+        )}
 
         {items.length === 0 ? (
           <View style={styles.empty}>
@@ -98,6 +116,18 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     gap: 12,
+  },
+  metaBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  metaText: {
+    fontSize: 12,
+    color: "#6b7280",
   },
   row: {
     flexDirection: "row",

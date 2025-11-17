@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as FS from "expo-file-system";
+// import * as FS from "expo-file-system"; // no longer needed after compression change
 import * as LegacyFS from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -8,7 +8,6 @@ import {
   Image,
   NativeModules,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -57,26 +56,11 @@ export default function PhotoPreview() {
     if (!fileUri || isScanning) return;
     setIsScanning(true);
     try {
-      let base64 = "";
-      try {
-        const FileClass = (FS as any)?.File;
-        if (FileClass?.fromUriAsync) {
-          const file = await FileClass.fromUriAsync(fileUri);
-          base64 = await file.readAsStringAsync({ encoding: "base64" });
-        } else if (FileClass?.fromUri) {
-          const file = FileClass.fromUri(fileUri);
-          base64 = await file.readAsStringAsync({ encoding: "base64" });
-        } else {
-          base64 = await (LegacyFS as any).readAsStringAsync(fileUri, {
-            encoding: "base64",
-          });
-        }
-      } catch {
-        base64 = await (LegacyFS as any).readAsStringAsync(fileUri, {
-          encoding: "base64",
-        });
-      }
-      const dataUrl = `data:image/jpeg;base64,${base64}`;
+      // Read original image as base64 without manipulation
+      const b64 = await (LegacyFS as any).readAsStringAsync(fileUri, {
+        encoding: "base64",
+      });
+      const dataUrl = `data:image/jpeg;base64,${b64}`;
 
       const base =
         (typeof process !== "undefined" &&
@@ -84,6 +68,7 @@ export default function PhotoPreview() {
         getDevServerBaseUrl();
       const url = `${base}/api/scan`;
 
+      const t0 = Date.now();
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,11 +76,19 @@ export default function PhotoPreview() {
       });
       if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
 
-      const json = (await res.json()) as { ingredients?: string[] };
+      const json = (await res.json()) as {
+        ingredients?: string[];
+        durationMs?: number;
+      };
+      const elapsedMs = Date.now() - t0;
       const items = Array.isArray(json.ingredients) ? json.ingredients : [];
       router.push({
         pathname: "/(add)/scan-results",
-        params: { items: JSON.stringify(items) },
+        params: {
+          items: JSON.stringify(items),
+          durationMs: String(elapsedMs),
+          llmMs: json.durationMs ? String(json.durationMs) : undefined,
+        },
       });
     } catch (e) {
       console.error("Scan error", e);
@@ -136,7 +129,7 @@ export default function PhotoPreview() {
         { paddingTop: insets.top, paddingBottom: insets.bottom },
       ]}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Pressable
             style={styles.iconButton}
@@ -202,7 +195,7 @@ export default function PhotoPreview() {
             </Pressable>
           </View>
         )}
-      </SafeAreaView>
+      </View>
     </View>
   );
 }

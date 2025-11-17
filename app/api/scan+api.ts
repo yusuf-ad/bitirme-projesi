@@ -20,24 +20,27 @@ export async function POST(req: Request) {
         .describe("Unique, concise ingredient names in English"),
     });
 
+    const llmStart = Date.now();
     const result = await generateObject({
-      model: openai("gpt-4o"),
+      model: openai("gpt-4o-mini"),
       schema,
+      temperature: 0,
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "You are a vision assistant. From this image, extract a flat list of visible food ingredients only. No utensils, brands, packaging text, quantities, or descriptions. Use lowercase, singular words, deduplicate similar items (e.g., 'tomato' once). Return JSON only.",
+              text: "Extract only visible food ingredients from this image as a flat, deduplicated list. No brands, text, utensils, quantities, or descriptions. Use lowercase, singular English words. Return JSON only.",
             },
             { type: "image", image },
           ],
         },
       ],
     });
+    const durationMs = Date.now() - llmStart;
 
-    return new Response(JSON.stringify(result.object), {
+    return new Response(JSON.stringify({ ...result.object, durationMs }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
