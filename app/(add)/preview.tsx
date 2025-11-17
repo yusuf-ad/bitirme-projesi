@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-// import * as FS from "expo-file-system"; // no longer needed after compression change
+import * as ImageManipulator from "expo-image-manipulator";
 import * as LegacyFS from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -52,15 +52,43 @@ export default function PhotoPreview() {
     }
   };
 
+  const buildOptimizedDataUrl = useCallback(async () => {
+    if (!fileUri) return undefined;
+
+    try {
+      const optimized = await ImageManipulator.manipulateAsync(
+        fileUri,
+        [{ resize: { width: 1280 } }],
+        {
+          compress: 0.65,
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+        }
+      );
+
+      const base64Payload =
+        optimized.base64 ??
+        (await (LegacyFS as any).readAsStringAsync(optimized.uri, {
+          encoding: "base64",
+        }));
+
+      if (!base64Payload) return undefined;
+      return `data:image/jpeg;base64,${base64Payload}`;
+    } catch (error) {
+      console.warn("Failed to optimize image", error);
+      const fallback = await (LegacyFS as any).readAsStringAsync(fileUri, {
+        encoding: "base64",
+      });
+      return `data:image/jpeg;base64,${fallback}`;
+    }
+  }, [fileUri]);
+
   const onScan = useCallback(async () => {
     if (!fileUri || isScanning) return;
     setIsScanning(true);
     try {
-      // Read original image as base64 without manipulation
-      const b64 = await (LegacyFS as any).readAsStringAsync(fileUri, {
-        encoding: "base64",
-      });
-      const dataUrl = `data:image/jpeg;base64,${b64}`;
+      const dataUrl = await buildOptimizedDataUrl();
+      if (!dataUrl) throw new Error("Image payload unavailable");
 
       const base =
         (typeof process !== "undefined" &&
@@ -90,12 +118,12 @@ export default function PhotoPreview() {
           llmMs: json.durationMs ? String(json.durationMs) : undefined,
         },
       });
-    } catch (e) {
-      console.error("Scan error", e);
+    } catch (error) {
+      console.error("Scan error", error);
     } finally {
       setIsScanning(false);
     }
-  }, [fileUri, isScanning, router]);
+  }, [buildOptimizedDataUrl, fileUri, isScanning, router]);
   // Animate a green linear-gradient sweep while scanning (Reanimated)
   useEffect(() => {
     const startPos = -60;

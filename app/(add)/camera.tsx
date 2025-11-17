@@ -1,13 +1,14 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   Easing,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -25,6 +26,8 @@ export default function CameraPantry() {
   const camera = useRef<Camera>(null);
   const device = useCameraDevice("back");
   const { hasPermission, requestPermission } = useCameraPermission();
+  const [mediaPermission, requestMediaPermission] =
+    ImagePicker.useMediaLibraryPermissions();
   const [flash, setFlash] = useState<"off" | "on">("off");
   const [isActive] = useState(true);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -103,7 +106,41 @@ export default function CameraPantry() {
     router.back();
   }, [router]);
 
-  // Show loading while requesting permissions or loading device
+  const ensureMediaLibraryPermission = useCallback(async () => {
+    if (mediaPermission?.granted) return true;
+    const response = await requestMediaPermission();
+    return response?.granted ?? false;
+  }, [mediaPermission?.granted, requestMediaPermission]);
+
+  const pickImageFromLibrary = useCallback(async () => {
+    try {
+      const hasLibraryPermission = await ensureMediaLibraryPermission();
+      if (!hasLibraryPermission) {
+        Alert.alert(
+          "Permission required",
+          "Allow photo library access to attach an image."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        router.push({
+          pathname: "/(add)/preview",
+          params: { uri: result.assets[0].uri },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to pick image:", error);
+    }
+  }, [ensureMediaLibraryPermission, router]);
+
+  // Show loading while requesting permissions
   if (!hasPermission) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -112,17 +149,6 @@ export default function CameraPantry() {
           <Text style={styles.permissionText}>
             Requesting camera permission...
           </Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (!device) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.permissionText}>Loading camera...</Text>
         </View>
       </View>
     );
@@ -141,14 +167,25 @@ export default function CameraPantry() {
             },
           ]}
         >
-          <Camera
-            ref={camera}
-            style={styles.camera}
-            device={device}
-            isActive={isActive}
-            photo={true}
-            enableZoomGesture
-          />
+          {device ? (
+            <Camera
+              ref={camera}
+              style={styles.camera}
+              device={device}
+              isActive={isActive}
+              photo={true}
+              enableZoomGesture
+            />
+          ) : (
+            <View style={styles.cameraLoadingContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.permissionText}>Loading camera...</Text>
+              <Text style={styles.simulatorHint}>
+                Camera not available in simulator.{"\n"}Use the gallery button
+                below.
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -177,24 +214,22 @@ export default function CameraPantry() {
         >
           <Pressable
             style={styles.thumbnailButton}
-            accessibilityLabel="Recent photo"
+            accessibilityLabel="Pick from gallery"
+            onPress={pickImageFromLibrary}
           >
-            <Image
-              source={require("../../assets/images/grilled-chicken.png")}
-              style={styles.thumbnail}
-            />
+            <Ionicons name="images" size={28} color="#fff" />
           </Pressable>
 
           <Pressable
             style={[
               styles.shutterButton,
-              isCapturing && styles.shutterDisabled,
+              (isCapturing || !device) && styles.shutterDisabled,
             ]}
             accessibilityLabel="Take photo"
             onPress={takePhoto}
             onPressIn={onShutterPressIn}
             onPressOut={onShutterPressOut}
-            disabled={isCapturing}
+            disabled={isCapturing || !device}
           >
             <Animated.View
               style={[
@@ -205,14 +240,15 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={styles.iconButton}
+            style={[styles.iconButton, !device && styles.iconButtonDisabled]}
             accessibilityLabel="Toggle flash"
             onPress={toggleFlash}
+            disabled={!device}
           >
             <MaterialIcons
               name={flash === "on" ? "flash-on" : "flash-off"}
               size={26}
-              color="#fff"
+              color={device ? "#fff" : "rgba(255,255,255,0.3)"}
             />
           </Pressable>
         </View>
@@ -237,6 +273,19 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+  },
+  cameraLoadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+  },
+  simulatorHint: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 14,
+    marginTop: 12,
+    textAlign: "center",
+    paddingHorizontal: 32,
   },
   overlay: {
     position: "absolute",
@@ -274,6 +323,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconButtonDisabled: {
+    opacity: 0.3,
+  },
   bottomBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -285,13 +337,11 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.4)",
-  },
-  thumbnail: {
-    width: "100%",
-    height: "100%",
+    borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   shutterButton: {
     width: 80,
