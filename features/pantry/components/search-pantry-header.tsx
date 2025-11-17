@@ -50,12 +50,7 @@ export function SearchPantryHeader({
         hitSlop={14}
         onPress={() => router.push("/(add)/camera")}
       >
-        <FontAwesome
-          name="camera"
-          size={20}
-          color={Colors.lilac[700]}
-          onPress={onAdd}
-        />
+        <FontAwesome name="camera" size={20} color={Colors.lilac[700]} />
       </CustomButton>
     </View>
   );
