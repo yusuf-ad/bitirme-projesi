@@ -73,6 +73,15 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
           const recipeImage = item.recipe_image_url
             ? { uri: item.recipe_image_url }
             : PLACEHOLDER_RECIPE_IMAGE;
+          const carbs = item.carbs_per_serving
+            ? `${Math.round(item.carbs_per_serving)}g`
+            : undefined;
+          const protein = item.protein_per_serving
+            ? `${Math.round(item.protein_per_serving)}g`
+            : undefined;
+          const fat = item.fat_per_serving
+            ? `${Math.round(item.fat_per_serving)}g`
+            : undefined;
 
           return (
             <MealCard
@@ -84,6 +93,9 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
               recipeImage={recipeImage}
               prepTime={prepTime}
               calories={calories}
+              carbs={carbs}
+              protein={protein}
+              fat={fat}
               onPress={() =>
                 router.push(`/(meal)/${item.spoonacular_recipe_id}`)
               }

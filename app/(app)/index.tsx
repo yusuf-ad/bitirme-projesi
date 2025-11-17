@@ -47,6 +47,28 @@ export default function MealplanTab() {
 
   const hasMeals = (data?.items?.length ?? 0) > 0;
 
+  // Calculate total calories from meal plan items
+  const totalCalories =
+    data?.items?.reduce((total, item) => {
+      return total + (item.calories_per_serving || 0);
+    }, 0) ?? 0;
+
+  // Calculate total macros from meal plan items
+  const totalCarbs =
+    data?.items?.reduce((total, item) => {
+      return total + (item.carbs_per_serving || 0);
+    }, 0) ?? 0;
+
+  const totalProtein =
+    data?.items?.reduce((total, item) => {
+      return total + (item.protein_per_serving || 0);
+    }, 0) ?? 0;
+
+  const totalFat =
+    data?.items?.reduce((total, item) => {
+      return total + (item.fat_per_serving || 0);
+    }, 0) ?? 0;
+
   return (
     <ScrollView
       style={[styles.container, { paddingTop: top }]}
@@ -89,7 +111,12 @@ export default function MealplanTab() {
         ) : hasMeals ? (
           <>
             <View style={styles.section}>
-              <DailyOverview />
+              <DailyOverview
+                totalCalories={totalCalories}
+                totalCarbs={totalCarbs}
+                totalProtein={totalProtein}
+                totalFat={totalFat}
+              />
             </View>
 
             <DailyMealsList items={data!.items} selectedDate={selectedDate} />

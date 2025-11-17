@@ -4,9 +4,20 @@ import CalorieProgressBar from "@/shared/components/calorie-progress-bar";
 import { StyleSheet, Text, View } from "react-native";
 import MacroCardsSection from "./macro-cards-section";
 
-export default function DailyOverview() {
+interface DailyOverviewProps {
+  totalCalories?: number;
+  totalCarbs?: number;
+  totalProtein?: number;
+  totalFat?: number;
+}
+
+export default function DailyOverview({
+  totalCalories = 0,
+  totalCarbs = 0,
+  totalProtein = 0,
+  totalFat = 0,
+}: DailyOverviewProps) {
   const goalCalories = 2200;
-  const consumedCalories = 1500;
 
   return (
     <View style={styles.container}>
@@ -22,12 +33,16 @@ export default function DailyOverview() {
 
       {/* Progress bar */}
       <CalorieProgressBar
-        currentValue={consumedCalories}
+        currentValue={totalCalories}
         goalValue={goalCalories}
       />
 
       {/* Macro Cards */}
-      <MacroCardsSection />
+      <MacroCardsSection
+        totalCarbs={totalCarbs}
+        totalProtein={totalProtein}
+        totalFat={totalFat}
+      />
     </View>
   );
 }

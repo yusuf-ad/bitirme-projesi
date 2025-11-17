@@ -1,3 +1,5 @@
+import Constants from "expo-constants";
+
 export interface Meal {
   id: number;
   title: string;
@@ -32,6 +34,9 @@ export interface MealItem {
   recipe_name: string;
   recipe_image_url: string;
   calories_per_serving?: number;
+  carbs_per_serving?: number;
+  protein_per_serving?: number;
+  fat_per_serving?: number;
   ready_in_minutes?: number;
   meal_date: string;
   meal_type: MealType;
@@ -83,11 +88,40 @@ export const createMealItem = (
     spoonacular_recipe_id: selectedMeal.id,
     recipe_name: selectedMeal.title,
     recipe_image_url: getMealImageUrl(selectedMeal),
-    calories_per_serving: selectedMeal.nutrition?.calories,
+    calories_per_serving: selectedMeal.nutrition?.calories
+      ? Math.round(selectedMeal.nutrition.calories)
+      : undefined,
+    carbs_per_serving: selectedMeal.nutrition?.carbs
+      ? Math.round(selectedMeal.nutrition.carbs * 100) / 100
+      : undefined,
+    protein_per_serving: selectedMeal.nutrition?.protein
+      ? Math.round(selectedMeal.nutrition.protein * 100) / 100
+      : undefined,
+    fat_per_serving: selectedMeal.nutrition?.fat
+      ? Math.round(selectedMeal.nutrition.fat * 100) / 100
+      : undefined,
     ready_in_minutes: selectedMeal.readyInMinutes,
     meal_date: `${normalizedDate.getFullYear()}-${String(
       normalizedDate.getMonth() + 1
     ).padStart(2, "0")}-${String(normalizedDate.getDate()).padStart(2, "0")}`,
     meal_type: mealType,
   };
+};
+
+export const generateAPIUrl = (relativePath: string) => {
+  const origin = Constants.experienceUrl.replace("exp://", "http://");
+
+  const path = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
+
+  if (process.env.NODE_ENV === "development") {
+    return origin.concat(path);
+  }
+
+  if (!process.env.EXPO_PUBLIC_API_BASE_URL) {
+    throw new Error(
+      "EXPO_PUBLIC_API_BASE_URL environment variable is not defined"
+    );
+  }
+
+  return process.env.EXPO_PUBLIC_API_BASE_URL.concat(path);
 };

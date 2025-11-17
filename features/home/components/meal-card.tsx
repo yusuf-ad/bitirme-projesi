@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { AntDesign } from "@expo/vector-icons";
+import CustomButton from "@/shared/components/custom-button";
 import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
 import {
@@ -18,6 +18,9 @@ interface MealCardProps {
   recipeImage: ImageSourcePropType;
   prepTime: string;
   calories: string;
+  carbs?: string;
+  protein?: string;
+  fat?: string;
   onPress?: () => void;
 }
 
@@ -29,6 +32,9 @@ export default function MealCard({
   recipeImage,
   prepTime,
   calories,
+  carbs,
+  protein,
+  fat,
   onPress,
 }: MealCardProps) {
   return (
@@ -46,8 +52,8 @@ export default function MealCard({
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View
-            style={{
+          <CustomButton
+            containerStyle={{
               width: 36,
               height: 36,
               alignItems: "center",
@@ -55,23 +61,12 @@ export default function MealCard({
               borderRadius: 4,
               borderWidth: 1,
               borderColor: Colors.lilac[200],
+              paddingHorizontal: 0,
+              paddingVertical: 0,
             }}
           >
             <Feather name="edit-3" size={20} color={Colors.lilac[900]} />
-          </View>
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 4,
-              borderWidth: 1,
-              borderColor: Colors.lilac[200],
-            }}
-          >
-            <AntDesign name="plus" size={20} color={Colors.lilac[900]} />
-          </View>
+          </CustomButton>
         </View>
       </View>
 
@@ -99,6 +94,30 @@ export default function MealCard({
                 <Text style={styles.metaText}>{calories}</Text>
               </View>
             </View>
+
+            {/* Macronutrients */}
+            {(carbs || protein || fat) && (
+              <View style={styles.macrosContainer}>
+                {carbs && (
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Carbs</Text>
+                    <Text style={styles.macroValue}>{carbs}</Text>
+                  </View>
+                )}
+                {protein && (
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Protein</Text>
+                    <Text style={styles.macroValue}>{protein}</Text>
+                  </View>
+                )}
+                {fat && (
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Fat</Text>
+                    <Text style={styles.macroValue}>{fat}</Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </View>
       </Pressable>
@@ -108,7 +127,7 @@ export default function MealCard({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 10,
+    gap: 8,
     paddingHorizontal: 12,
     paddingBottom: 12,
     backgroundColor: Colors.background.surface,
@@ -190,13 +209,13 @@ const styles = StyleSheet.create({
   recipeInfo: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "center",
+    height: "100%",
     gap: 8,
   },
   recipeTextContainer: {
     flex: 1,
-    justifyContent: "center",
     gap: 8,
+    justifyContent: "center",
     padding: 4,
   },
   recipeName: {
@@ -242,5 +261,35 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     letterSpacing: -1,
     color: Colors.gray[600],
+  },
+  macrosContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  macroItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: Colors.background.surface,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+  },
+  macroLabel: {
+    fontFamily: "Inter",
+    fontWeight: "500",
+    fontSize: 11,
+    lineHeight: 16,
+    color: Colors.gray[500],
+  },
+  macroValue: {
+    fontFamily: "Inter",
+    fontWeight: "600",
+    fontSize: 11,
+    lineHeight: 16,
+    color: Colors.lilac[900],
   },
 });

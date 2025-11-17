@@ -37,6 +37,8 @@ export interface Recipe {
   id: number;
   title: string;
   image: string;
+  summary?: string;
+  cuisines?: string[];
   readyInMinutes?: number;
   servings?: number;
   sourceUrl?: string;
@@ -92,6 +94,7 @@ interface SpoonacularResponse {
 export interface RandomRecipesFilters {
   diet?: string;
   cuisine?: string;
+  type?: string; // Meal type: breakfast, lunch, dinner, etc.
   includeIngredients?: string;
   excludeIngredients?: string;
 }
@@ -137,6 +140,9 @@ export async function getRandomRecipes(
     if (filters?.cuisine) {
       params.append("cuisine", filters.cuisine);
     }
+    if (filters?.type) {
+      params.append("type", filters.type);
+    }
     if (filters?.includeIngredients) {
       params.append("includeIngredients", filters.includeIngredients);
     }
@@ -167,18 +173,44 @@ export async function getRandomRecipes(
  * @param query - Arama sorgusu
  * @param offset - Başlangıç pozisyonu (default: 0)
  * @param number - Çekilecek tarif sayısı (default: 10)
+ * @param filters - Filtreleme parametreleri (diet, cuisine, includeIngredients, excludeIngredients)
  * @returns Tarif dizisi ve toplam sonuç sayısı
  */
 export async function searchRecipes(
   query: string,
   offset: number = 0,
-  number: number = TEST_NUMBER_OF_RESULTS
+  number: number = TEST_NUMBER_OF_RESULTS,
+  filters?: RandomRecipesFilters
 ): Promise<{ recipes: Recipe[]; totalResults: number }> {
   try {
+    const params = new URLSearchParams({
+      query: query,
+      offset: offset.toString(),
+      number: number.toString(),
+      addRecipeInformation: "true",
+      addRecipeNutrition: "true",
+      apiKey: SPOONACULAR_API_KEY,
+    });
+
+    // Add filters
+    if (filters?.diet) {
+      params.append("diet", filters.diet);
+    }
+    if (filters?.cuisine) {
+      params.append("cuisine", filters.cuisine);
+    }
+    if (filters?.type) {
+      params.append("type", filters.type);
+    }
+    if (filters?.includeIngredients) {
+      params.append("includeIngredients", filters.includeIngredients);
+    }
+    if (filters?.excludeIngredients) {
+      params.append("excludeIngredients", filters.excludeIngredients);
+    }
+
     const response = await fetch(
-      `${SPOONACULAR_BASE_URL}/complexSearch?query=${encodeURIComponent(
-        query
-      )}&offset=${offset}&number=${number}&addRecipeInformation=true&addRecipeNutrition=true&apiKey=${SPOONACULAR_API_KEY}`
+      `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`
     );
 
     logRateLimitHeaders(response);

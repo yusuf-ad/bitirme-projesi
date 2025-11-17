@@ -50,7 +50,7 @@ export function useMealPlansQuery(
     const { data: items, error: itemsError } = await supabase
       .from("meal_plan_items")
       .select(
-        "id, meal_plan_id, spoonacular_recipe_id, recipe_name, recipe_image_url, calories_per_serving, ready_in_minutes, meal_date, meal_type"
+        "id, meal_plan_id, spoonacular_recipe_id, recipe_name, recipe_image_url, calories_per_serving, carbs_per_serving, protein_per_serving, fat_per_serving, ready_in_minutes, meal_date, meal_type"
       )
       .eq("meal_plan_id", plan.id)
       .eq("meal_date", dateString)

@@ -18,7 +18,7 @@ export default function MacroCard({
 
   return (
     <View style={styles.card}>
-      <View>
+      {/* <View>
         <View style={styles.progressBarContainer}>
           <View
             style={[
@@ -29,7 +29,7 @@ export default function MacroCard({
             ]}
           />
         </View>
-      </View>
+      </View> */}
 
       <View>
         <Text style={styles.label}>{label}</Text>

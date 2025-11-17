@@ -1,3 +1,4 @@
+import { POPULAR_CUISINES } from "@/lib/constants";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRef, useState } from "react";
 import {
@@ -16,56 +17,67 @@ interface TasteCuisinesProps {
   initialSelection?: string[];
 }
 
-const cuisineOptions = [
+const cuisineDescriptions: Record<string, { description: string; image: any }> =
   {
-    id: "african",
-    label: "African",
-    description: "Rich & diverse flavors",
-    image: require("@/assets/images/grilled-chicken.png"),
-  },
-  {
-    id: "asian",
-    label: "Asian",
-    description: "Stir-fry, noodles & spices",
-    image: require("@/assets/images/grilled-chicken.png"),
-  },
-  {
-    id: "american",
-    label: "American",
-    description: "Classic comfort food",
-    image: require("@/assets/images/italian-breakfast.png"),
-  },
-  {
-    id: "european",
-    label: "European",
-    description: "Traditional & refined",
-    image: require("@/assets/images/spaghetti-carbonara.png"),
-  },
-  {
-    id: "italian",
-    label: "Italian",
-    description: "Pasta, risotto, pizza",
-    image: require("@/assets/images/italian-breakfast.png"),
-  },
-  {
-    id: "japanese",
-    label: "Japanese",
-    description: "Delicate & precise",
-    image: require("@/assets/images/spaghetti-carbonara.png"),
-  },
-  {
-    id: "mediterranean",
-    label: "Mediterranean",
-    description: "Fresh, healthy & colorful",
-    image: require("@/assets/images/spaghetti-carbonara.png"),
-  },
-  {
-    id: "middleeastern",
-    label: "Middle Eastern",
-    description: "Aromatic & flavorful",
-    image: require("@/assets/images/grilled-chicken.png"),
-  },
-];
+    american: {
+      description: "Classic comfort food",
+      image: require("@/assets/images/italian-breakfast.png"),
+    },
+    asian: {
+      description: "Stir-fry, noodles & spices",
+      image: require("@/assets/images/grilled-chicken.png"),
+    },
+    chinese: {
+      description: "Wok-fired & flavorful",
+      image: require("@/assets/images/grilled-chicken.png"),
+    },
+    french: {
+      description: "Elegant & sophisticated",
+      image: require("@/assets/images/spaghetti-carbonara.png"),
+    },
+    greek: {
+      description: "Mediterranean classics",
+      image: require("@/assets/images/spaghetti-carbonara.png"),
+    },
+    indian: {
+      description: "Spicy & aromatic",
+      image: require("@/assets/images/grilled-chicken.png"),
+    },
+    italian: {
+      description: "Pasta, risotto, pizza",
+      image: require("@/assets/images/italian-breakfast.png"),
+    },
+    japanese: {
+      description: "Delicate & precise",
+      image: require("@/assets/images/spaghetti-carbonara.png"),
+    },
+    mediterranean: {
+      description: "Fresh, healthy & colorful",
+      image: require("@/assets/images/spaghetti-carbonara.png"),
+    },
+    mexican: {
+      description: "Bold & vibrant",
+      image: require("@/assets/images/grilled-chicken.png"),
+    },
+    middleeastern: {
+      description: "Aromatic & flavorful",
+      image: require("@/assets/images/grilled-chicken.png"),
+    },
+    thai: {
+      description: "Sweet, sour & spicy",
+      image: require("@/assets/images/grilled-chicken.png"),
+    },
+  };
+
+const cuisineOptions = POPULAR_CUISINES.map((cuisine) => ({
+  id: cuisine.id,
+  label: cuisine.name,
+  description:
+    cuisineDescriptions[cuisine.id]?.description || "Delicious cuisine",
+  image:
+    cuisineDescriptions[cuisine.id]?.image ||
+    require("@/assets/images/grilled-chicken.png"),
+}));
 
 export function TasteCuisines({
   title,

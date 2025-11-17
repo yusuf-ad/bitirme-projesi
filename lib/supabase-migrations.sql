@@ -226,8 +226,11 @@ CREATE TABLE public.meal_plan_items (
   -- Bu alanlar, planı görüntülerken API çağrısı yapmamak için kullanılır.
   recipe_name text NOT NULL,
   recipe_image_url text,
-  calories_per_serving integer, -- İstediğiniz kalori bilgisi
-  ready_in_minutes integer,     -- İstediğiniz hazırlık süresi bilgisi
+  calories_per_serving integer,       -- Kalori bilgisi
+  carbs_per_serving numeric(10, 2),   -- Karbonhidrat (gram)
+  protein_per_serving numeric(10, 2), -- Protein (gram)
+  fat_per_serving numeric(10, 2),     -- Yağ (gram)
+  ready_in_minutes integer,           -- Hazırlık süresi bilgisi
   
   -- === PLANLAMA DETAYLARI ===
   meal_date date NOT NULL,
