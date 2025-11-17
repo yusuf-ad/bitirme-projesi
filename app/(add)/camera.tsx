@@ -1,6 +1,6 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -171,7 +171,10 @@ export default function CameraPantry() {
           </Pressable>
         </View>
 
-        <View style={styles.bottomBar} pointerEvents={isCapturing ? "none" : "auto"}>
+        <View
+          style={styles.bottomBar}
+          pointerEvents={isCapturing ? "none" : "auto"}
+        >
           <Pressable
             style={styles.thumbnailButton}
             accessibilityLabel="Recent photo"

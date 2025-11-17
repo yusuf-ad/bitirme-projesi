@@ -17,6 +17,13 @@ export default function AddLayout() {
           animation: "slide_from_right",
         }}
       />
+      <Stack.Screen
+        name="scan-results"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
     </Stack>
   );
 }

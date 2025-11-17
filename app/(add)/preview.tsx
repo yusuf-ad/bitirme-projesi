@@ -1,20 +1,35 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as FS from "expo-file-system";
+import * as LegacyFS from "expo-file-system/legacy";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
+  NativeModules,
   Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 export default function PhotoPreview() {
   const router = useRouter();
   const params = useLocalSearchParams<{ uri?: string }>();
   const insets = useSafeAreaInsets();
+  const [isScanning, setIsScanning] = useState(false);
+  const [previewHeight, setPreviewHeight] = useState(0);
+  const scanY = useSharedValue(-60);
 
   const fileUri = useMemo(() => {
     const raw = Array.isArray(params.uri) ? params.uri[0] : params.uri;
@@ -26,13 +41,93 @@ export default function PhotoPreview() {
     router.replace("/(add)/camera");
   };
 
-  const onScan = () => {
-    // Placeholder for future scan workflow integration
-    // You can navigate to another route or start processing here
-    // For now, just give minimal feedback
-    console.log("Scan requested for:", fileUri);
-    router.back();
+  const getDevServerBaseUrl = () => {
+    try {
+      const scriptURL: string | undefined = (NativeModules as any)?.SourceCode
+        ?.scriptURL;
+      if (!scriptURL) return "";
+      const u = new URL(scriptURL);
+      return `${u.protocol}//${u.hostname}:${u.port}`;
+    } catch {
+      return "";
+    }
   };
+
+  const onScan = useCallback(async () => {
+    if (!fileUri || isScanning) return;
+    setIsScanning(true);
+    try {
+      let base64 = "";
+      try {
+        const FileClass = (FS as any)?.File;
+        if (FileClass?.fromUriAsync) {
+          const file = await FileClass.fromUriAsync(fileUri);
+          base64 = await file.readAsStringAsync({ encoding: "base64" });
+        } else if (FileClass?.fromUri) {
+          const file = FileClass.fromUri(fileUri);
+          base64 = await file.readAsStringAsync({ encoding: "base64" });
+        } else {
+          base64 = await (LegacyFS as any).readAsStringAsync(fileUri, {
+            encoding: "base64",
+          });
+        }
+      } catch {
+        base64 = await (LegacyFS as any).readAsStringAsync(fileUri, {
+          encoding: "base64",
+        });
+      }
+      const dataUrl = `data:image/jpeg;base64,${base64}`;
+
+      const base =
+        (typeof process !== "undefined" &&
+          (process as any).env?.EXPO_PUBLIC_API_URL) ||
+        getDevServerBaseUrl();
+      const url = `${base}/api/scan`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
+
+      const json = (await res.json()) as { ingredients?: string[] };
+      const items = Array.isArray(json.ingredients) ? json.ingredients : [];
+      router.push({
+        pathname: "/(add)/scan-results",
+        params: { items: JSON.stringify(items) },
+      });
+    } catch (e) {
+      console.error("Scan error", e);
+    } finally {
+      setIsScanning(false);
+    }
+  }, [fileUri, isScanning, router]);
+  // Animate a green linear-gradient sweep while scanning (Reanimated)
+  useEffect(() => {
+    const startPos = -60;
+    if (!isScanning || previewHeight <= 0) {
+      cancelAnimation(scanY);
+      scanY.value = startPos;
+      return;
+    }
+    scanY.value = startPos;
+    scanY.value = withRepeat(
+      withSequence(
+        withTiming(previewHeight, {
+          duration: 1800,
+          easing: Easing.inOut(Easing.quad),
+        }),
+        withTiming(startPos, { duration: 0 })
+      ),
+      -1,
+      false
+    );
+  }, [isScanning, previewHeight, scanY]);
+
+  const scanAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: scanY.value }],
+  }));
 
   return (
     <View
@@ -53,35 +148,60 @@ export default function PhotoPreview() {
           <Text style={styles.title}>Preview</Text>
           <View style={{ width: 42 }} />
         </View>
-
-        <View style={styles.imageWrapper}>
+        <View
+          style={styles.imageWrapper}
+          onLayout={(e) => setPreviewHeight(e.nativeEvent.layout.height)}
+        >
           {fileUri ? (
-            <Image
-              source={{ uri: fileUri }}
-              style={styles.image}
-              resizeMode="contain"
-            />
+            <View style={styles.imageContainer}>
+              <Image
+                source={{ uri: fileUri }}
+                style={styles.image}
+                resizeMode="contain"
+              />
+              {isScanning && previewHeight > 0 && (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[styles.scannerOverlay, scanAnimatedStyle]}
+                >
+                  <LinearGradient
+                    colors={[
+                      "rgba(0, 255, 128, 0)",
+                      "rgba(0, 255, 128, 0.35)",
+                      "rgba(0, 255, 128, 0)",
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.scannerGradient}
+                  />
+                </Animated.View>
+              )}
+            </View>
           ) : (
             <Text style={styles.missingText}>Image not available</Text>
           )}
         </View>
 
-        <View style={styles.actions}>
-          <Pressable
-            onPress={onRetry}
-            style={[styles.button, styles.secondary]}
-            accessibilityLabel="Retry"
-          >
-            <Text style={[styles.buttonText, styles.secondaryText]}>Retry</Text>
-          </Pressable>
-          <Pressable
-            onPress={onScan}
-            style={[styles.button, styles.primary]}
-            accessibilityLabel="Scan"
-          >
-            <Text style={styles.buttonText}>Scan</Text>
-          </Pressable>
-        </View>
+        {!isScanning && (
+          <View style={styles.actions}>
+            <Pressable
+              onPress={onRetry}
+              style={[styles.button, styles.secondary]}
+              accessibilityLabel="Retry"
+            >
+              <Text style={[styles.buttonText, styles.secondaryText]}>
+                Retry
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onScan}
+              style={[styles.button, styles.primary]}
+              accessibilityLabel="Scan"
+            >
+              <Text style={styles.buttonText}>Scan</Text>
+            </Pressable>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -121,10 +241,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,
+    position: "relative",
   },
   image: {
     width: "100%",
     height: "100%",
+  },
+  imageContainer: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scannerOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 120,
+    top: 0,
+    overflow: "hidden",
+  },
+  scannerGradient: {
+    flex: 1,
   },
   missingText: {
     color: "#fff",
@@ -143,6 +281,9 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: "#fff",
+  },
+  disabledButton: {
+    opacity: 0.65,
   },
   secondary: {
     borderWidth: 1,
