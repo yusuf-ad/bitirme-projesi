@@ -10,7 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yusufad.plannedeat"
+      "bundleIdentifier": "com.yusufad.plannedeat",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to your camera to scan food items for your pantry.",
+        "NSMicrophoneUsageDescription": "This app needs access to your microphone for camera functionality."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +25,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.yusufad.plannedeat"
+      "package": "com.yusufad.plannedeat",
+      "permissions": ["CAMERA"]
     },
     "web": {
       "output": "static",
@@ -41,7 +46,15 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "This app needs access to your camera to scan food items for your pantry.",
+          "enableMicrophonePermission": true,
+          "microphonePermissionText": "This app needs access to your microphone for camera functionality."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
