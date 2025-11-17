@@ -45,7 +45,6 @@ export function SearchPantryHeader({
           height: 48,
           paddingHorizontal: 0,
           paddingVertical: 0,
-          backgroundColor: "red",
         }}
         hitSlop={14}
         onPress={() => router.push("/(add)/camera")}

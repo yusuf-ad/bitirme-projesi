@@ -1,9 +1,12 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
+  Easing,
   Image,
   Pressable,
   StyleSheet,
@@ -24,7 +27,17 @@ export default function CameraPantry() {
   const { hasPermission, requestPermission } = useCameraPermission();
   const [flash, setFlash] = useState<"off" | "on">("off");
   const [isActive] = useState(true);
+  const [isCapturing, setIsCapturing] = useState(false);
   const insets = useSafeAreaInsets();
+  const shutterScale = useRef(new Animated.Value(1)).current;
+  const capturingRef = useRef(false);
+  const lastShotAtRef = useRef(0);
+
+  // Reset capture lock whenever this screen regains focus
+  useFocusEffect(() => {
+    setIsCapturing(false);
+    capturingRef.current = false;
+  });
 
   // Calculate camera dimensions with 4:3 aspect ratio
   const screenWidth = Dimensions.get("window").width;
@@ -39,19 +52,48 @@ export default function CameraPantry() {
 
   const takePhoto = useCallback(async () => {
     try {
+      const now = Date.now();
+      // Debounce rapid taps (within 1s) and prevent re-entrancy
+      if (capturingRef.current || now - lastShotAtRef.current < 1000) return;
+      lastShotAtRef.current = now;
+      capturingRef.current = true;
+      setIsCapturing(true);
       if (camera.current) {
         const photo = await camera.current.takePhoto({
           flash,
           enableShutterSound: true,
         });
         console.log("Photo taken:", photo.path);
-        // TODO: Handle the captured photo - you can navigate to a preview screen or process it
-        // Example: router.push({ pathname: '/(add)/photo-preview', params: { uri: photo.path } });
+        router.push({
+          pathname: "/(add)/preview",
+          params: { uri: photo.path },
+        });
       }
     } catch (error) {
       console.error("Failed to take photo:", error);
+      // Allow retry only if there was an error
+      setIsCapturing(false);
+      capturingRef.current = false;
     }
-  }, [flash]);
+  }, [flash, router]);
+
+  const onShutterPressIn = useCallback(() => {
+    Animated.timing(shutterScale, {
+      toValue: 0.9,
+      duration: 80,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [shutterScale]);
+
+  const onShutterPressOut = useCallback(() => {
+    Animated.timing(shutterScale, {
+      toValue: 1,
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [shutterScale]);
 
   const toggleFlash = useCallback(() => {
     setFlash((current) => (current === "off" ? "on" : "off"));
@@ -129,7 +171,7 @@ export default function CameraPantry() {
           </Pressable>
         </View>
 
-        <View style={styles.bottomBar}>
+        <View style={styles.bottomBar} pointerEvents={isCapturing ? "none" : "auto"}>
           <Pressable
             style={styles.thumbnailButton}
             accessibilityLabel="Recent photo"
@@ -141,11 +183,22 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={styles.shutterButton}
+            style={[
+              styles.shutterButton,
+              isCapturing && styles.shutterDisabled,
+            ]}
             accessibilityLabel="Take photo"
             onPress={takePhoto}
+            onPressIn={onShutterPressIn}
+            onPressOut={onShutterPressOut}
+            disabled={isCapturing}
           >
-            <View style={styles.shutterInner} />
+            <Animated.View
+              style={[
+                styles.shutterInner,
+                { transform: [{ scale: shutterScale }] },
+              ]}
+            />
           </Pressable>
 
           <Pressable
@@ -251,5 +304,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: "#fff",
+  },
+  shutterDisabled: {
+    opacity: 0.5,
   },
 });
