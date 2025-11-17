@@ -3,6 +3,7 @@ import {
   AddNewHeader,
   CategorySection,
   PantryItem,
+  SearchPantryHeader,
   TabSwitcher,
   TabType,
 } from "@/features/pantry";
@@ -283,12 +284,21 @@ export default function PantryTab() {
       <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
 
       <View style={styles.searchContainer}>
-        <AddNewHeader
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onAdd={handleAddNew}
-          onStarPress={handleStarPress}
-        />
+        {activeTab === "pantry" ? (
+          <SearchPantryHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onAdd={handleAddNew}
+            onStarPress={handleStarPress}
+          />
+        ) : (
+          <AddNewHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onAdd={handleAddNew}
+            onStarPress={handleStarPress}
+          />
+        )}
       </View>
 
       {/* Content - Scrollable */}
