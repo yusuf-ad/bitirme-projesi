@@ -42,6 +42,14 @@ export interface Recipe {
   readyInMinutes?: number;
   servings?: number;
   sourceUrl?: string;
+  instructions?: string;
+  analyzedInstructions?: {
+    name: string;
+    steps: {
+      number: number;
+      step: string;
+    }[];
+  }[];
   nutrition?: {
     nutrients?: {
       name: string;
@@ -50,6 +58,7 @@ export interface Recipe {
     }[];
   };
   extendedIngredients?: {
+    id?: number;
     original: string;
     name: string;
     amount: number;
@@ -238,7 +247,7 @@ export async function searchRecipes(
 export async function getRecipeDetails(id: number): Promise<Recipe> {
   try {
     const response = await fetch(
-      `${SPOONACULAR_BASE_URL}/${id}/information?apiKey=${SPOONACULAR_API_KEY}`
+      `${SPOONACULAR_BASE_URL}/${id}/information?includeNutrition=true&apiKey=${SPOONACULAR_API_KEY}`
     );
 
     logRateLimitHeaders(response);
