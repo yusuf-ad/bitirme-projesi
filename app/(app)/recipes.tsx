@@ -3,16 +3,19 @@ import {
   EmptyState,
   EndMessage,
   ErrorState,
+  FavoritesEmptyState,
+  FavoritesHeroCard,
   FilterChips,
   HomeHeader,
   LoadingState,
   RecipeGrid,
   SearchBar,
 } from "@/features/home";
+import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useRecipesQuery } from "@/hooks/use-recipes-query";
-import { Ingredient } from "@/lib/spoonacular";
+import { Ingredient, Recipe } from "@/lib/spoonacular";
 import { useFilterStore } from "@/lib/stores/filter-store";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -48,6 +51,16 @@ export default function HomeTab() {
   const cuisineModalRef = useRef<BottomSheetModal>(null);
   const [debouncedSearchQuery] = useDebounce(searchQuery, 400);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const {
+    favorites,
+    favoritesCount,
+    favoriteIds,
+    isLoadingFavorites,
+    favoritesError,
+    refetchFavorites,
+    toggleFavorite,
+  } = useFavoriteRecipes();
+  const hasFavoritesError = Boolean(favoritesError);
 
   // Ingredients ve cuisines'i stabilize et - sonsuz loop'u önlemek için
   const memoizedIngredients = useMemo(
@@ -73,9 +86,19 @@ export default function HomeTab() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await refetch();
-    setIsRefreshing(false);
-  }, [refetch]);
+    try {
+      await Promise.allSettled([refetch(), refetchFavorites()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch, refetchFavorites]);
+
+  const handleToggleFavorite = useCallback(
+    (recipe: Recipe) => {
+      toggleFavorite(recipe);
+    },
+    [toggleFavorite]
+  );
 
   const handleOpenIngredientModal = useCallback(() => {
     ingredientModalRef.current?.present();
@@ -116,7 +139,11 @@ export default function HomeTab() {
   return (
     <View style={[styles.mainContainer, { paddingTop: top }]}>
       {/* Header */}
-      <HomeHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <HomeHeader
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        favoriteCount={favoritesCount}
+      />
 
       {activeTab === "discover" && (
         <View style={styles.searchContainer}>
@@ -162,7 +189,13 @@ export default function HomeTab() {
           <View style={styles.discoverContainer}>
             {recipes.length === 0 && !loading && <EmptyState />}
 
-            {recipes.length > 0 && <RecipeGrid recipes={recipes} />}
+            {recipes.length > 0 && (
+              <RecipeGrid
+                recipes={recipes}
+                favoriteIds={favoriteIds}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            )}
 
             {loading && <LoadingState />}
 
@@ -173,7 +206,38 @@ export default function HomeTab() {
         )}
 
         {activeTab === "favorites" && (
-          <View>{/* Favorites content buraya gelecek */}</View>
+          <View style={styles.favoritesContainer}>
+            <FavoritesHeroCard favoriteCount={favoritesCount} />
+
+            {isLoadingFavorites && (
+              <LoadingState message="Favoriler yükleniyor..." />
+            )}
+
+            {!isLoadingFavorites && hasFavoritesError && (
+              <ErrorState
+                message="Favoriler yüklenirken bir sorun oluştu."
+                onRetry={() => refetchFavorites()}
+              />
+            )}
+
+            {!isLoadingFavorites &&
+              !hasFavoritesError &&
+              favorites.length === 0 && (
+                <FavoritesEmptyState
+                  onExplore={() => setActiveTab("discover")}
+                />
+              )}
+
+            {favorites.length > 0 && (
+              <View style={styles.favoritesGridSpacing}>
+                <RecipeGrid
+                  recipes={favorites}
+                  favoriteIds={favoriteIds}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              </View>
+            )}
+          </View>
         )}
       </ScrollView>
 
@@ -220,5 +284,12 @@ const styles = StyleSheet.create({
   },
   discoverContainer: {
     marginTop: 16,
+  },
+  favoritesContainer: {
+    marginTop: 16,
+    gap: 16,
+  },
+  favoritesGridSpacing: {
+    marginTop: 8,
   },
 });

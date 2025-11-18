@@ -1,20 +1,19 @@
+import { Recipe } from "@/lib/spoonacular";
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { RecipeCard } from "./recipe-card";
 
-interface Recipe {
-  id: number;
-  title: string;
-  image: string;
-  readyInMinutes?: number;
-  servings?: number;
-}
-
 interface RecipeGridProps {
   recipes: Recipe[];
+  favoriteIds?: Set<number>;
+  onToggleFavorite?: (recipe: Recipe) => void;
 }
 
-export function RecipeGrid({ recipes }: RecipeGridProps) {
+export function RecipeGrid({
+  recipes,
+  favoriteIds,
+  onToggleFavorite,
+}: RecipeGridProps) {
   return (
     <View style={styles.gridContainer}>
       {recipes.map((recipe) => (
@@ -22,6 +21,10 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
           <RecipeCard
             recipe={recipe}
             onPress={() => router.push(`/(meal)/${recipe.id}`)}
+            isFavorite={favoriteIds?.has(recipe.id)}
+            onToggleFavorite={
+              onToggleFavorite ? () => onToggleFavorite(recipe) : undefined
+            }
           />
         </View>
       ))}
