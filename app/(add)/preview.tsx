@@ -1,3 +1,4 @@
+import { searchIngredients } from "@/lib/spoonacular";
 import { Ionicons } from "@expo/vector-icons";
 import * as LegacyFS from "expo-file-system/legacy";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -12,6 +13,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -28,7 +30,21 @@ export default function PhotoPreview() {
   const insets = useSafeAreaInsets();
   const [isScanning, setIsScanning] = useState(false);
   const [previewHeight, setPreviewHeight] = useState(0);
+  const [isCropMode, setIsCropMode] = useState(false);
+  const [imageLayout, setImageLayout] = useState({
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+  });
+  const [croppedUri, setCroppedUri] = useState<string | null>(null);
   const scanY = useSharedValue(-60);
+
+  // Crop frame position and size
+  const cropX = useSharedValue(50);
+  const cropY = useSharedValue(50);
+  const cropWidth = useSharedValue(200);
+  const cropHeight = useSharedValue(200);
 
   const fileUri = useMemo(() => {
     const raw = Array.isArray(params.uri) ? params.uri[0] : params.uri;
@@ -36,8 +52,62 @@ export default function PhotoPreview() {
     return raw.startsWith("file://") ? raw : `file://${raw}`;
   }, [params.uri]);
 
+  const displayUri = croppedUri || fileUri;
+
   const onRetry = () => {
     router.replace("/(add)/camera");
+  };
+
+  // Initialize crop frame when entering crop mode - cover entire image
+  useEffect(() => {
+    if (isCropMode && imageLayout.width > 0 && imageLayout.height > 0) {
+      cropWidth.value = imageLayout.width;
+      cropHeight.value = imageLayout.height;
+      cropX.value = 0;
+      cropY.value = 0;
+    }
+  }, [isCropMode, imageLayout, cropWidth, cropHeight, cropX, cropY]);
+
+  const onEnterCropMode = () => {
+    setIsCropMode(true);
+  };
+
+  const onCancelCrop = () => {
+    setIsCropMode(false);
+  };
+
+  const onApplyCrop = async () => {
+    if (!fileUri) return;
+
+    try {
+      const sourceUri = croppedUri || fileUri;
+
+      // Get image dimensions
+      const img = await ImageManipulator.manipulateAsync(sourceUri, [], {});
+
+      // Calculate scale factor between displayed image and actual image
+      const scaleX = img.width / imageLayout.width;
+      const scaleY = img.height / imageLayout.height;
+
+      // Convert crop coordinates to actual image coordinates
+      const cropData = {
+        originX: Math.round(cropX.value * scaleX),
+        originY: Math.round(cropY.value * scaleY),
+        width: Math.round(cropWidth.value * scaleX),
+        height: Math.round(cropHeight.value * scaleY),
+      };
+
+      const cropped = await ImageManipulator.manipulateAsync(
+        sourceUri,
+        [{ crop: cropData }],
+        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setCroppedUri(cropped.uri);
+      setIsCropMode(false);
+    } catch (error) {
+      console.error("Crop error:", error);
+    }
   };
 
   const getDevServerBaseUrl = () => {
@@ -53,11 +123,12 @@ export default function PhotoPreview() {
   };
 
   const buildOptimizedDataUrl = useCallback(async () => {
-    if (!fileUri) return undefined;
+    const sourceUri = croppedUri || fileUri;
+    if (!sourceUri) return undefined;
 
     try {
       const optimized = await ImageManipulator.manipulateAsync(
-        fileUri,
+        sourceUri,
         [{ resize: { width: 1280 } }],
         {
           compress: 0.65,
@@ -76,12 +147,12 @@ export default function PhotoPreview() {
       return `data:image/jpeg;base64,${base64Payload}`;
     } catch (error) {
       console.warn("Failed to optimize image", error);
-      const fallback = await (LegacyFS as any).readAsStringAsync(fileUri, {
+      const fallback = await (LegacyFS as any).readAsStringAsync(sourceUri, {
         encoding: "base64",
       });
       return `data:image/jpeg;base64,${fallback}`;
     }
-  }, [fileUri]);
+  }, [fileUri, croppedUri]);
 
   const onScan = useCallback(async () => {
     if (!fileUri || isScanning) return;
@@ -110,10 +181,48 @@ export default function PhotoPreview() {
       };
       const elapsedMs = Date.now() - t0;
       const items = Array.isArray(json.ingredients) ? json.ingredients : [];
+
+      // Search for each ingredient in Spoonacular sequentially to avoid rate limits
+      const enrichedItems = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        try {
+          const { ingredients } = await searchIngredients(item.name, 0, 1);
+          if (ingredients.length > 0) {
+            const spoonacularIngredient = ingredients[0];
+            enrichedItems.push({
+              name: item.name,
+              quantity: item.quantity,
+              spoonacularId: spoonacularIngredient.id,
+              spoonacularName: spoonacularIngredient.name,
+              spoonacularImage: spoonacularIngredient.image,
+            });
+          } else {
+            // No results found
+            enrichedItems.push({
+              name: item.name,
+              quantity: item.quantity,
+            });
+          }
+
+          // Add delay between requests to avoid rate limiting (except for last item)
+          if (i < items.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        } catch (error) {
+          console.error(`Error searching ingredient ${item.name}:`, error);
+          // If search fails, add original item
+          enrichedItems.push({
+            name: item.name,
+            quantity: item.quantity,
+          });
+        }
+      }
+
       router.push({
         pathname: "/(add)/scan-results",
         params: {
-          items: JSON.stringify(items),
+          items: JSON.stringify(enrichedItems),
           durationMs: String(elapsedMs),
           llmMs: json.durationMs ? String(json.durationMs) : undefined,
         },
@@ -150,6 +259,254 @@ export default function PhotoPreview() {
     transform: [{ translateY: scanY.value }],
   }));
 
+  // Gesture handlers for crop frame
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+  const startWidth = useSharedValue(0);
+  const startHeight = useSharedValue(0);
+
+  // Main pan gesture for moving the crop frame
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startX.value = cropX.value;
+      startY.value = cropY.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const newX = startX.value + event.translationX;
+      const newY = startY.value + event.translationY;
+
+      // Constrain within image bounds
+      cropX.value = Math.max(
+        0,
+        Math.min(newX, imageLayout.width - cropWidth.value)
+      );
+      cropY.value = Math.max(
+        0,
+        Math.min(newY, imageLayout.height - cropHeight.value)
+      );
+    });
+
+  // Bottom-right corner resize gesture
+  const resizeBottomRightGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startWidth.value = cropWidth.value;
+      startHeight.value = cropHeight.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const newWidth = Math.max(
+        minSize,
+        Math.min(
+          startWidth.value + event.translationX,
+          imageLayout.width - cropX.value
+        )
+      );
+      const newHeight = Math.max(
+        minSize,
+        Math.min(
+          startHeight.value + event.translationY,
+          imageLayout.height - cropY.value
+        )
+      );
+      cropWidth.value = newWidth;
+      cropHeight.value = newHeight;
+    });
+
+  // Top-left corner resize gesture
+  const resizeTopLeftGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startX.value = cropX.value;
+      startY.value = cropY.value;
+      startWidth.value = cropWidth.value;
+      startHeight.value = cropHeight.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const deltaX = event.translationX;
+      const deltaY = event.translationY;
+
+      const newX = Math.max(
+        0,
+        Math.min(
+          startX.value + deltaX,
+          startX.value + startWidth.value - minSize
+        )
+      );
+      const newY = Math.max(
+        0,
+        Math.min(
+          startY.value + deltaY,
+          startY.value + startHeight.value - minSize
+        )
+      );
+
+      cropWidth.value = startWidth.value - (newX - startX.value);
+      cropHeight.value = startHeight.value - (newY - startY.value);
+      cropX.value = newX;
+      cropY.value = newY;
+    });
+
+  // Top-right corner resize gesture
+  const resizeTopRightGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startY.value = cropY.value;
+      startWidth.value = cropWidth.value;
+      startHeight.value = cropHeight.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const newWidth = Math.max(
+        minSize,
+        Math.min(
+          startWidth.value + event.translationX,
+          imageLayout.width - cropX.value
+        )
+      );
+      const newY = Math.max(
+        0,
+        Math.min(
+          startY.value + event.translationY,
+          startY.value + startHeight.value - minSize
+        )
+      );
+
+      cropWidth.value = newWidth;
+      cropHeight.value = startHeight.value - (newY - startY.value);
+      cropY.value = newY;
+    });
+
+  // Bottom-left corner resize gesture
+  const resizeBottomLeftGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startX.value = cropX.value;
+      startWidth.value = cropWidth.value;
+      startHeight.value = cropHeight.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const newX = Math.max(
+        0,
+        Math.min(
+          startX.value + event.translationX,
+          startX.value + startWidth.value - minSize
+        )
+      );
+      const newHeight = Math.max(
+        minSize,
+        Math.min(
+          startHeight.value + event.translationY,
+          imageLayout.height - cropY.value
+        )
+      );
+
+      cropWidth.value = startWidth.value - (newX - startX.value);
+      cropHeight.value = newHeight;
+      cropX.value = newX;
+    });
+
+  // Edge resize gestures
+  const resizeTopGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startY.value = cropY.value;
+      startHeight.value = cropHeight.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const newY = Math.max(
+        0,
+        Math.min(
+          startY.value + event.translationY,
+          startY.value + startHeight.value - minSize
+        )
+      );
+      cropHeight.value = startHeight.value - (newY - startY.value);
+      cropY.value = newY;
+    });
+
+  const resizeBottomGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startHeight.value = cropHeight.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const newHeight = Math.max(
+        minSize,
+        Math.min(
+          startHeight.value + event.translationY,
+          imageLayout.height - cropY.value
+        )
+      );
+      cropHeight.value = newHeight;
+    });
+
+  const resizeLeftGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startX.value = cropX.value;
+      startWidth.value = cropWidth.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const newX = Math.max(
+        0,
+        Math.min(
+          startX.value + event.translationX,
+          startX.value + startWidth.value - minSize
+        )
+      );
+      cropWidth.value = startWidth.value - (newX - startX.value);
+      cropX.value = newX;
+    });
+
+  const resizeRightGesture = Gesture.Pan()
+    .onStart(() => {
+      "worklet";
+      startWidth.value = cropWidth.value;
+    })
+    .onUpdate((event) => {
+      "worklet";
+      const minSize = 50;
+      const newWidth = Math.max(
+        minSize,
+        Math.min(
+          startWidth.value + event.translationX,
+          imageLayout.width - cropX.value
+        )
+      );
+      cropWidth.value = newWidth;
+    });
+
+  const cropFrameStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    left: cropX.value,
+    top: cropY.value,
+    width: cropWidth.value,
+    height: cropHeight.value,
+  }));
+
+  const cropMaskStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    left: cropX.value,
+    top: cropY.value,
+    width: cropWidth.value,
+    height: cropHeight.value,
+  }));
+
   return (
     <View
       style={[
@@ -166,8 +523,18 @@ export default function PhotoPreview() {
           >
             <Ionicons name="close" size={22} color="#fff" />
           </Pressable>
-          <Text style={styles.title}>Preview</Text>
-          <View style={{ width: 42 }} />
+          <Text style={styles.title}>{isCropMode ? "Crop" : "Preview"}</Text>
+          {!isCropMode && !isScanning && (
+            <Pressable
+              style={styles.iconButton}
+              onPress={onEnterCropMode}
+              accessibilityLabel="Crop image"
+            >
+              <Ionicons name="crop" size={22} color="#fff" />
+            </Pressable>
+          )}
+          {isCropMode && <View style={{ width: 42 }} />}
+          {isScanning && <View style={{ width: 42 }} />}
         </View>
         <View
           style={styles.imageWrapper}
@@ -176,9 +543,22 @@ export default function PhotoPreview() {
           {fileUri ? (
             <View style={styles.imageContainer}>
               <Image
-                source={{ uri: fileUri }}
+                source={{ uri: displayUri }}
                 style={styles.image}
                 resizeMode="contain"
+                onLayout={(e) => {
+                  if (
+                    e.nativeEvent.layout.width > 0 &&
+                    e.nativeEvent.layout.height > 0
+                  ) {
+                    setImageLayout({
+                      width: e.nativeEvent.layout.width,
+                      height: e.nativeEvent.layout.height,
+                      x: e.nativeEvent.layout.x,
+                      y: e.nativeEvent.layout.y,
+                    });
+                  }
+                }}
               />
               {isScanning && previewHeight > 0 && (
                 <Animated.View
@@ -197,13 +577,115 @@ export default function PhotoPreview() {
                   />
                 </Animated.View>
               )}
+              {isCropMode && imageLayout.width > 0 && (
+                <>
+                  {/* Dark overlay for non-cropped areas */}
+                  <View style={styles.cropOverlay} pointerEvents="none">
+                    <Animated.View
+                      style={[styles.cropClearArea, cropMaskStyle]}
+                    />
+                  </View>
+                  {/* Crop frame with gesture */}
+                  <GestureDetector gesture={panGesture}>
+                    <Animated.View style={[styles.cropFrame, cropFrameStyle]}>
+                      <View style={styles.cropBorder} />
+
+                      {/* Corner handles */}
+                      <GestureDetector gesture={resizeTopLeftGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.cornerHandle,
+                            styles.topLeft,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      <GestureDetector gesture={resizeTopRightGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.cornerHandle,
+                            styles.topRight,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      <GestureDetector gesture={resizeBottomLeftGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.cornerHandle,
+                            styles.bottomLeft,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      <GestureDetector gesture={resizeBottomRightGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.cornerHandle,
+                            styles.bottomRight,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      {/* Edge handles */}
+                      <GestureDetector gesture={resizeTopGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.edgeHandle,
+                            styles.topEdge,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      <GestureDetector gesture={resizeBottomGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.edgeHandle,
+                            styles.bottomEdge,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      <GestureDetector gesture={resizeLeftGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.edgeHandle,
+                            styles.leftEdge,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      <GestureDetector gesture={resizeRightGesture}>
+                        <Animated.View
+                          style={[
+                            styles.resizeHandle,
+                            styles.edgeHandle,
+                            styles.rightEdge,
+                          ]}
+                        />
+                      </GestureDetector>
+
+                      <Text style={styles.cropHint}>
+                        Drag to move • Corners/Edges to resize
+                      </Text>
+                    </Animated.View>
+                  </GestureDetector>
+                </>
+              )}
             </View>
           ) : (
             <Text style={styles.missingText}>Image not available</Text>
           )}
         </View>
 
-        {!isScanning && (
+        {!isScanning && !isCropMode && (
           <View style={styles.actions}>
             <Pressable
               onPress={onRetry}
@@ -220,6 +702,26 @@ export default function PhotoPreview() {
               accessibilityLabel="Scan"
             >
               <Text style={styles.buttonText}>Scan</Text>
+            </Pressable>
+          </View>
+        )}
+        {isCropMode && (
+          <View style={styles.actions}>
+            <Pressable
+              onPress={onCancelCrop}
+              style={[styles.button, styles.secondary]}
+              accessibilityLabel="Cancel crop"
+            >
+              <Text style={[styles.buttonText, styles.secondaryText]}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onApplyCrop}
+              style={[styles.button, styles.primary]}
+              accessibilityLabel="Apply crop"
+            >
+              <Text style={styles.buttonText}>Apply</Text>
             </Pressable>
           </View>
         )}
@@ -317,5 +819,95 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: "#fff",
+  },
+  cropOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  cropClearArea: {
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.8)",
+  },
+  cropFrame: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cropBorder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 2,
+    borderColor: "#fff",
+    borderStyle: "solid",
+  },
+  cropHint: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "500",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  resizeHandle: {
+    position: "absolute",
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#000",
+  },
+  cornerHandle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  edgeHandle: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+  },
+  topLeft: {
+    top: -10,
+    left: -10,
+  },
+  topRight: {
+    top: -10,
+    right: -10,
+  },
+  bottomLeft: {
+    bottom: -10,
+    left: -10,
+  },
+  bottomRight: {
+    bottom: -10,
+    right: -10,
+  },
+  topEdge: {
+    top: -3,
+    left: "35%",
+    width: "30%",
+    height: 6,
+    borderRadius: 3,
+  },
+  bottomEdge: {
+    bottom: -3,
+    left: "35%",
+    width: "30%",
+    height: 6,
+    borderRadius: 3,
+  },
+  leftEdge: {
+    left: -3,
+    top: "35%",
+    width: 6,
+    height: "30%",
+    borderRadius: 3,
+  },
+  rightEdge: {
+    right: -3,
+    top: "35%",
+    width: 6,
+    height: "30%",
+    borderRadius: 3,
   },
 });
