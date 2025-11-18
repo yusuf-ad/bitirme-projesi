@@ -205,9 +205,9 @@ export default function PhotoPreview() {
             });
           }
 
-          // Add delay between requests to avoid rate limiting (except for last item)
+          // Add delay between requests to avoid rate limiting (2 req/sec limit = 500ms minimum)
           if (i < items.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 300));
+            await new Promise((resolve) => setTimeout(resolve, 600));
           }
         } catch (error) {
           console.error(`Error searching ingredient ${item.name}:`, error);
