@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import {
   AccessibilityInfo,
@@ -13,12 +13,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCallback, useEffect, useMemo } from "react";
 import { MealDetailContent } from "./meal-detail-content";
 import { useMealDetail } from "../hooks/use-meal-detail";
+import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
 
 interface MealDetailScreenProps {
   mealId: number | null;
 }
 
 export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
+  const router = useRouter();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
   const {
@@ -28,6 +30,12 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
     refetch,
     error,
   } = useMealDetail(canLoadMeal ? mealId : null);
+
+  const { favoriteIds, toggleFavorite } = useFavoriteRecipes();
+  const isFavorited = useMemo(
+    () => (data?.id ? favoriteIds.has(data.id) : false),
+    [data?.id, favoriteIds]
+  );
 
   const headerTitle = useMemo(() => data?.title ?? "Meal details", [data?.title]);
 
@@ -43,6 +51,17 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
     await Haptics.selectionAsync();
     await refetch();
   }, [refetch]);
+
+  const handleBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  }, [router]);
+
+  const handleToggleFavorite = useCallback(async () => {
+    if (!data) return;
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toggleFavorite(data);
+  }, [data, toggleFavorite]);
 
   const renderState = () => {
     if (!canLoadMeal) {
@@ -86,20 +105,18 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
         meal={data}
         refreshing={isRefetching}
         onRefresh={handleRefresh}
+        isFavorited={isFavorited}
+        onToggleFavorite={handleToggleFavorite}
+        onBack={handleBack}
       />
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
+    <SafeAreaView style={styles.safeArea} edges={[]}>
       <Stack.Screen
         options={{
-          headerTitle,
-          headerTintColor: Colors.text.primary,
-          headerShadowVisible: false,
-          headerStyle: {
-            backgroundColor: Colors.background.surface,
-          },
+          headerShown: false,
         }}
       />
       {renderState()}

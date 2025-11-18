@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { Recipe } from "@/lib/spoonacular";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useCallback, useMemo, useState } from "react";
@@ -16,6 +17,9 @@ interface MealDetailContentProps {
   meal: Recipe;
   refreshing: boolean;
   onRefresh: () => void | Promise<void>;
+  isFavorited?: boolean;
+  onToggleFavorite?: () => void;
+  onBack?: () => void;
 }
 
 type Nutrient = {
@@ -49,6 +53,9 @@ export function MealDetailContent({
   meal,
   refreshing,
   onRefresh,
+  isFavorited = false,
+  onToggleFavorite,
+  onBack,
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
 
@@ -163,6 +170,41 @@ export function MealDetailContent({
           transition={200}
           accessibilityLabel={`${meal.title} hero image`}
         />
+
+        {/* Back button overlay */}
+        {onBack && (
+          <Pressable
+            onPress={onBack}
+            style={styles.backButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <View style={styles.iconButton}>
+              <Ionicons name="chevron-back" size={24} color="#312A35" />
+            </View>
+          </Pressable>
+        )}
+
+        {/* Favorite button overlay */}
+        {onToggleFavorite && (
+          <Pressable
+            onPress={onToggleFavorite}
+            style={styles.favoriteButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={
+              isFavorited ? "Remove from favorites" : "Add to favorites"
+            }
+            accessibilityRole="button"
+          >
+            <Ionicons
+              name={isFavorited ? "heart" : "heart-outline"}
+              size={24}
+              color="#F03E3E"
+              style={styles.heartIcon}
+            />
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.sheet}>
@@ -336,20 +378,42 @@ const styles = StyleSheet.create({
   },
   heroWrapper: {
     width: "100%",
-    height: 280,
+    height: 313,
     backgroundColor: Colors.gray[100],
+    position: "relative",
   },
   heroImage: {
     width: "100%",
     height: "100%",
   },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 10,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(242, 240, 244, 0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  favoriteButton: {
+    position: "absolute",
+    top: 50,
+    right: 10,
+  },
+  heartIcon: {
+    opacity: 0.85,
+  },
   sheet: {
-    marginTop: -24,
-    paddingTop: 24,
-    paddingHorizontal: 24,
+    marginTop: -21,
+    paddingTop: 16,
+    paddingHorizontal: 16,
     paddingBottom: 32,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     backgroundColor: Colors.background.surface,
     gap: 16,
   },
@@ -489,15 +553,17 @@ const styles = StyleSheet.create({
   },
   ingredientRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 10,
-    height: 24,
+    minHeight: 24,
+    paddingVertical: 2,
   },
   bulletPoint: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: Colors.lilac[700],
+    marginTop: 6,
   },
   ingredientText: {
     flex: 1,
