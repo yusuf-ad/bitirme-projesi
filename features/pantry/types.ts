@@ -9,3 +9,13 @@ export interface PantryItem {
   category: "dairy" | "meat" | "produce" | "other";
 }
 
+export interface ScannedItem {
+  isWeight: boolean;
+  name: string;
+  parsedAmount: number;
+  parsedUnit: string;
+  quantity: string;
+  spoonacularId: number;
+  spoonacularImage: string;
+  spoonacularName: string;
+}

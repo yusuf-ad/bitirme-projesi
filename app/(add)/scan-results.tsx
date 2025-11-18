@@ -36,7 +36,7 @@ export default function ScanResults() {
     durationMs?: string;
     llmMs?: string;
   }>();
-  const { top } = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
 
   const INGREDIENT_IMAGE_BASE_URL =
     "https://spoonacular.com/cdn/ingredients_100x100";
@@ -173,6 +173,12 @@ export default function ScanResults() {
         },
       ]
     );
+  };
+
+  const handleAddToPantry = () => {
+    // TODO: Implement add to pantry logic
+    console.log("Adding to pantry:", ingredients);
+    router.push("/(app)/pantry");
   };
 
   return (
@@ -326,6 +332,13 @@ export default function ScanResults() {
             </Pressable>
           }
         />
+
+        <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
+          <Pressable style={styles.primaryButton} onPress={handleAddToPantry}>
+            <Text style={styles.primaryButtonText}>Add to Pantry</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -372,7 +385,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     gap: 12,
-    paddingBottom: 100,
+    paddingBottom: 120, // Increased padding to account for footer
   },
   metaBar: {
     flexDirection: "row",
@@ -536,5 +549,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#16a34a",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  primaryButton: {
+    backgroundColor: "#16a34a",
+    borderRadius: 12,
+    height: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  primaryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
