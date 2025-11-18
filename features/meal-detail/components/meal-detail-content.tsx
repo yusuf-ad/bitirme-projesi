@@ -1,5 +1,11 @@
 import { Colors } from "@/constants/theme";
 import { Recipe } from "@/lib/spoonacular";
+import CustomButton from "@/shared/components/custom-button";
+import {
+  findMacro,
+  findNutrientValue,
+  NutrientLike,
+} from "@/shared/utils/nutrition";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -20,13 +26,8 @@ interface MealDetailContentProps {
   isFavorited?: boolean;
   onToggleFavorite?: () => void;
   onBack?: () => void;
+  onPlanMeal?: () => void;
 }
-
-type Nutrient = {
-  name?: string;
-  amount?: number;
-  unit?: string;
-};
 
 const TAB_ITEMS = [
   { key: "ingredients", label: "Ingredients" },
@@ -56,10 +57,11 @@ export function MealDetailContent({
   isFavorited = false,
   onToggleFavorite,
   onBack,
+  onPlanMeal,
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
 
-  const nutrients: Nutrient[] = meal.nutrition?.nutrients ?? [];
+  const nutrients: NutrientLike[] = meal.nutrition?.nutrients ?? [];
   const readyInMinutes = meal.readyInMinutes
     ? `${meal.readyInMinutes} min`
     : "N/A";
@@ -338,6 +340,19 @@ export function MealDetailContent({
           </View>
         )}
       </View>
+
+      {!!onPlanMeal && (
+        <View style={styles.planCtaWrapper}>
+          <CustomButton
+            onPress={onPlanMeal}
+            containerStyle={styles.planButton}
+            accessibilityRole="button"
+            accessibilityLabel="Plan this meal"
+          >
+            <Text style={styles.planButtonText}>Plan this meal</Text>
+          </CustomButton>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -347,25 +362,6 @@ function sanitizeText(value: string | undefined) {
     return "";
   }
   return value.replace(/<\/?[^>]+(>|$)/g, "").trim();
-}
-
-function findNutrientValue(name: string, nutrients: Nutrient[]) {
-  if (!Array.isArray(nutrients)) {
-    return null;
-  }
-  return (
-    nutrients.find(
-      (nutrient) => nutrient.name?.toLowerCase() === name.toLowerCase()
-    ) ?? null
-  );
-}
-
-function findMacro(name: string, nutrients: Nutrient[]) {
-  const nutrient = findNutrientValue(name, nutrients);
-  return {
-    amount: nutrient?.amount ?? 0,
-    unit: nutrient?.unit ?? "g",
-  };
 }
 
 const styles = StyleSheet.create({
@@ -610,5 +606,21 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.gray[700],
     lineHeight: 16,
+  },
+  planCtaWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  planButton: {
+    backgroundColor: Colors.lilac[900],
+    borderRadius: 16,
+    paddingVertical: 14,
+  },
+  planButtonText: {
+    fontFamily: "Inter",
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.background.surface,
   },
 });

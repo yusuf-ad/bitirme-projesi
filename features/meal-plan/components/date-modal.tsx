@@ -4,7 +4,8 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import WheelPicker from "@quidone/react-native-wheel-picker";
-import { forwardRef, useCallback, useMemo, useState } from "react";
+import * as Haptics from "expo-haptics";
+import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
 
 interface DateModalProps {
@@ -21,22 +22,11 @@ interface DateOption {
 
 const generateDateOptions = (
   startFromToday: boolean = true,
-  baseDate?: Date,
-  currentDate?: Date
+  baseDate?: Date
 ): DateOption[] => {
   const options: DateOption[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  // Add empty placeholder as first item with currentDate as value
-  if (currentDate) {
-    const curDate = new Date(currentDate);
-    curDate.setHours(0, 0, 0, 0);
-    options.push({
-      label: "",
-      value: new Date(curDate),
-    });
-  }
 
   const fromDate = startFromToday
     ? today
@@ -92,60 +82,90 @@ export const DateModal = forwardRef<BottomSheetModal, DateModalProps>(
     // Generate date options based on dateType
     const dateOptions = useMemo((): DateOption[] => {
       if (dateType === "start") {
-        return generateDateOptions(true, undefined, currentDate);
+      return generateDateOptions(true);
       } else {
         // For end date, start from the next day after selectedStartDate or today
         const baseDate = selectedStartDate
           ? new Date(selectedStartDate)
           : new Date();
         baseDate.setDate(baseDate.getDate() + 1);
-        return generateDateOptions(false, baseDate, currentDate);
+      return generateDateOptions(false, baseDate);
       }
-    }, [dateType, selectedStartDate, currentDate]);
+  }, [dateType, selectedStartDate]);
 
     // Calculate initial selected index based on currentDate
-    const initialIndex = useMemo(() => {
-      // Boş label her zaman ilk item olacak (index 0)
-      return 0;
-    }, []);
+  const initialIndex = useMemo(() => {
+    if (currentDate) {
+      const normalizedCurrent = new Date(currentDate);
+      normalizedCurrent.setHours(0, 0, 0, 0);
 
-    const [selectedIndex, setSelectedIndex] = useState(initialIndex);
+      const matchedIndex = dateOptions.findIndex((option) => {
+        const optionDate = new Date(option.value);
+        optionDate.setHours(0, 0, 0, 0);
+        return optionDate.getTime() === normalizedCurrent.getTime();
+      });
+
+      if (matchedIndex >= 0) {
+        return matchedIndex;
+      }
+    }
+
+    // Fallback: her zaman "Today" ile başla
+    return 0;
+  }, [currentDate, dateOptions]);
+
+  const [selectedIndex, setSelectedIndex] = useState(initialIndex);
+
+  // Her modal açıldığında / currentDate değiştiğinde wheel'i güncel değere hizala
+  useEffect(() => {
+    setSelectedIndex(initialIndex);
+  }, [initialIndex]);
 
     const handleSheetChanges = useCallback((index: number) => {
       console.log("handleSheetChanges", index);
     }, []);
 
     const handleDateChange = useCallback(
-      ({ item }: { item: DateOption }) => {
+      async ({ item }: { item: DateOption }) => {
         const index = dateOptions.findIndex((opt) => opt.label === item.label);
         setSelectedIndex(index);
         onDateSelect?.(item.value);
+        // Subtle haptic feedback on each step, similar to iOS picker "taps"
+        try {
+          await Haptics.selectionAsync();
+        } catch {
+          // Haptics might not be available on all platforms; fail silently
+        }
       },
       [dateOptions, onDateSelect]
     );
 
     // Callbacks
-    const renderBackdrop = useCallback(
-      (props: any) => (
-        <BottomSheetBackdrop
-          {...props}
-          disappearsOnIndex={-1}
-          appearsOnIndex={0}
-        />
-      ),
-      []
-    );
+  const renderBackdrop = useCallback(
+    (backdropProps: any) => (
+      <BottomSheetBackdrop
+        {...backdropProps}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        pressBehavior="close"
+      />
+    ),
+    []
+  );
 
     return (
       <BottomSheetModal
         ref={ref}
         onChange={handleSheetChanges}
         backdropComponent={renderBackdrop}
+        snapPoints={["40%"]}
+        enablePanDownToClose
+        enableContentPanningGesture={false}
       >
         <BottomSheetView style={styles.contentContainer}>
           <WheelPicker
             data={dateOptions}
-            value={dateOptions[selectedIndex] as any}
+            value={dateOptions[selectedIndex]?.value as any}
             onValueChanged={handleDateChange}
             enableScrollByTapOnItem={true}
           />
