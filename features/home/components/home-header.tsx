@@ -6,9 +6,17 @@ type TabType = "discover" | "favorites";
 interface HomeHeaderProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
+  favoriteCount?: number;
 }
 
-export function HomeHeader({ activeTab, onTabChange }: HomeHeaderProps) {
+export function HomeHeader({
+  activeTab,
+  onTabChange,
+  favoriteCount = 0,
+}: HomeHeaderProps) {
+  const formattedFavoriteCount =
+    favoriteCount > 99 ? "99+" : favoriteCount.toString();
+
   return (
     <View style={styles.headerContainer}>
       <Pressable
@@ -40,16 +48,26 @@ export function HomeHeader({ activeTab, onTabChange }: HomeHeaderProps) {
             : styles.tabButtonInactive,
         ]}
       >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === "favorites"
-              ? styles.activeTabText
-              : styles.inactiveTabText,
-          ]}
-        >
-          Favorites
-        </Text>
+        <View style={styles.tabLabelContainer}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "favorites"
+                ? styles.activeTabText
+                : styles.inactiveTabText,
+            ]}
+          >
+            Favorites
+          </Text>
+
+          {favoriteCount > 0 && (
+            <View style={styles.countBadge}>
+              <Text style={styles.countBadgeText}>
+                {formattedFavoriteCount}
+              </Text>
+            </View>
+          )}
+        </View>
       </Pressable>
     </View>
   );
@@ -76,11 +94,31 @@ const styles = StyleSheet.create({
   tabText: {
     textAlign: "center",
   },
+  tabLabelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
   activeTabText: {
     color: Colors.lilac[900],
     fontWeight: "bold",
   },
   inactiveTabText: {
     color: Colors.gray[500],
+  },
+  countBadge: {
+    minWidth: 24,
+    paddingHorizontal: 6,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.lilac[100],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countBadgeText: {
+    color: Colors.lilac[900],
+    fontSize: 12,
+    fontWeight: "600",
   },
 });

@@ -1,19 +1,46 @@
 import { Colors } from "@/constants/theme";
 import { Recipe } from "@/lib/spoonacular";
-import Feather from "@expo/vector-icons/Feather";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import * as Haptics from "expo-haptics";
+import {
+  GestureResponderEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface RecipeCardProps {
   recipe: Recipe;
   onPress?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (recipe: Recipe) => void;
 }
 
-export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
+export function RecipeCard({
+  recipe,
+  onPress,
+  isFavorite = false,
+  onToggleFavorite,
+}: RecipeCardProps) {
   // Calorie bilgisini nutrition.nutrients array'inden çek
   const calories = recipe.nutrition?.nutrients?.find(
     (n) => n.name === "Calories"
   )?.amount;
+
+  const handleToggleFavorite = async (
+    event: GestureResponderEvent
+  ): Promise<void> => {
+    event.stopPropagation();
+
+    if (!onToggleFavorite) {
+      return;
+    }
+
+    await Haptics.selectionAsync();
+    onToggleFavorite(recipe);
+  };
 
   return (
     <Pressable style={styles.itemCard} onPress={onPress}>
@@ -25,8 +52,23 @@ export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
           contentFit="cover"
         />
 
-        <Pressable hitSlop={24} style={styles.favoriteButton}>
-          <Feather name="heart" size={20} color="white" />
+        <Pressable
+          hitSlop={24}
+          style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
+          onPress={handleToggleFavorite}
+          android_ripple={{ color: Colors.lilac[300] }}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"
+          }
+        >
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={20}
+            color={
+              isFavorite ? Colors.semantic.error.main : Colors.background.surface
+            }
+          />
         </Pressable>
       </View>
 
@@ -140,5 +182,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2.22,
 
     elevation: 3,
+  },
+  favoriteActive: {
+    backgroundColor: Colors.background.surface,
   },
 });

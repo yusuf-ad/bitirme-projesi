@@ -46,6 +46,14 @@ export interface Recipe {
   readyInMinutes?: number;
   servings?: number;
   sourceUrl?: string;
+  instructions?: string;
+  analyzedInstructions?: {
+    name: string;
+    steps: {
+      number: number;
+      step: string;
+    }[];
+  }[];
   nutrition?: {
     nutrients?: {
       name: string;
@@ -54,6 +62,7 @@ export interface Recipe {
     }[];
   };
   extendedIngredients?: {
+    id?: number;
     original: string;
     name: string;
     amount: number;
