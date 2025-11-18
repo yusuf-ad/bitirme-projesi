@@ -1,3 +1,4 @@
+import { searchIngredients } from "@/lib/spoonacular";
 import { Ionicons } from "@expo/vector-icons";
 import * as LegacyFS from "expo-file-system/legacy";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -110,10 +111,37 @@ export default function PhotoPreview() {
       };
       const elapsedMs = Date.now() - t0;
       const items = Array.isArray(json.ingredients) ? json.ingredients : [];
+
+      // Search for each ingredient in Spoonacular and get the first result
+      const enrichedItems = await Promise.all(
+        items.map(async (item) => {
+          try {
+            const { ingredients } = await searchIngredients(item.name, 0, 1);
+            if (ingredients.length > 0) {
+              const spoonacularIngredient = ingredients[0];
+              return {
+                name: item.name,
+                quantity: item.quantity,
+                spoonacularId: spoonacularIngredient.id,
+                spoonacularName: spoonacularIngredient.name,
+                spoonacularImage: spoonacularIngredient.image,
+              };
+            }
+          } catch (error) {
+            console.error(`Error searching ingredient ${item.name}:`, error);
+          }
+          // If search fails or no results, return original item
+          return {
+            name: item.name,
+            quantity: item.quantity,
+          };
+        })
+      );
+
       router.push({
         pathname: "/(add)/scan-results",
         params: {
-          items: JSON.stringify(items),
+          items: JSON.stringify(enrichedItems),
           durationMs: String(elapsedMs),
           llmMs: json.durationMs ? String(json.durationMs) : undefined,
         },

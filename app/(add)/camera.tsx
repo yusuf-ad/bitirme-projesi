@@ -130,7 +130,7 @@ export default function CameraPantry() {
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
-        router.push({
+        router.replace({
           pathname: "/(add)/preview",
           params: { uri: result.assets[0].uri },
         });

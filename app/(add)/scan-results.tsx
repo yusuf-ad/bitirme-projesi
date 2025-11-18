@@ -1,8 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+interface ScannedIngredient {
+  name: string;
+  quantity: string;
+  spoonacularId?: number;
+  spoonacularName?: string;
+  spoonacularImage?: string;
+}
 
 export default function ScanResults() {
   const router = useRouter();
@@ -12,6 +27,9 @@ export default function ScanResults() {
     llmMs?: string;
   }>();
   const { top } = useSafeAreaInsets();
+
+  const INGREDIENT_IMAGE_BASE_URL =
+    "https://spoonacular.com/cdn/ingredients_100x100";
 
   const items = useMemo(() => {
     try {
@@ -60,11 +78,29 @@ export default function ScanResults() {
             data={items}
             keyExtractor={(it, idx) => `${it.name}-${idx}`}
             contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
+            renderItem={({ item }: { item: ScannedIngredient }) => (
               <View style={styles.row}>
-                <Ionicons name="leaf-outline" size={18} color="#16a34a" />
+                {item.spoonacularImage ? (
+                  <Image
+                    source={{
+                      uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.spoonacularImage}`,
+                    }}
+                    style={styles.ingredientImage}
+                  />
+                ) : (
+                  <View style={styles.ingredientImagePlaceholder}>
+                    <Ionicons name="leaf-outline" size={20} color="#16a34a" />
+                  </View>
+                )}
                 <View style={styles.rowContent}>
-                  <Text style={styles.rowText}>{item.name}</Text>
+                  <View style={styles.nameContainer}>
+                    <Text style={styles.rowText}>
+                      {item.spoonacularName || item.name}
+                    </Text>
+                    {item.spoonacularId && (
+                      <Text style={styles.idText}>ID: {item.spoonacularId}</Text>
+                    )}
+                  </View>
                   <Text style={styles.quantityText}>{item.quantity}</Text>
                 </View>
               </View>
@@ -133,21 +169,46 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     padding: 14,
     borderRadius: 12,
     backgroundColor: "#f9fafb",
+  },
+  ingredientImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#fff",
+  },
+  ingredientImagePlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   rowContent: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
+  },
+  nameContainer: {
+    flex: 1,
+    gap: 2,
   },
   rowText: {
     fontSize: 16,
     color: "#111",
     textTransform: "capitalize",
+    fontWeight: "600",
+  },
+  idText: {
+    fontSize: 12,
+    color: "#9ca3af",
+    fontWeight: "400",
   },
   quantityText: {
     fontSize: 14,
