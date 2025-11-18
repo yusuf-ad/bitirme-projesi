@@ -2,7 +2,9 @@ import { Colors } from "@/constants/theme";
 import {
   AddNewHeader,
   CategorySection,
+  PantryCategoryPreview,
   PantryItem,
+  ScannedItem,
   SearchPantryHeader,
   TabSwitcher,
   TabType,
@@ -15,6 +17,109 @@ export default function PantryTab() {
   const [activeTab, setActiveTab] = useState<TabType>("pantry");
   const [searchQuery, setSearchQuery] = useState("");
   const insets = useSafeAreaInsets();
+
+  const [scannedItems] = useState<ScannedItem[]>([
+    {
+      isWeight: false,
+      name: "tomato",
+      parsedAmount: 5,
+      parsedUnit: "pieces",
+      quantity: "5 pieces",
+      spoonacularId: 11529,
+      spoonacularImage: "tomato.png",
+      spoonacularName: "tomato",
+    },
+    {
+      isWeight: false,
+      name: "carrot",
+      parsedAmount: 3,
+      parsedUnit: "pieces",
+      quantity: "3 pieces",
+      spoonacularId: 11124,
+      spoonacularImage: "sliced-carrot.png",
+      spoonacularName: "carrot",
+    },
+    {
+      isWeight: true,
+      name: "broccoli",
+      parsedAmount: 200,
+      parsedUnit: "g",
+      quantity: "200g",
+      spoonacularId: 11090,
+      spoonacularImage: "broccoli.jpg",
+      spoonacularName: "broccoli",
+    },
+    {
+      isWeight: false,
+      name: "eggplant",
+      parsedAmount: 1,
+      parsedUnit: "piece",
+      quantity: "1 piece",
+      spoonacularId: 11209,
+      spoonacularImage: "eggplant.png",
+      spoonacularName: "eggplant",
+    },
+    {
+      isWeight: true,
+      name: "cabbage",
+      parsedAmount: 200,
+      parsedUnit: "g",
+      quantity: "200g",
+      spoonacularId: 11109,
+      spoonacularImage: "cabbage.jpg",
+      spoonacularName: "cabbage",
+    },
+    {
+      isWeight: true,
+      name: "lettuce",
+      parsedAmount: 150,
+      parsedUnit: "g",
+      quantity: "150g",
+      spoonacularId: 11252,
+      spoonacularImage: "iceberg-lettuce.jpg",
+      spoonacularName: "lettuce",
+    },
+    {
+      isWeight: false,
+      name: "yellow bell pepper",
+      parsedAmount: 1,
+      parsedUnit: "piece",
+      quantity: "1 piece",
+      spoonacularId: 11951,
+      spoonacularImage: "yellow-bell-pepper.jpg",
+      spoonacularName: "yellow pepper",
+    },
+    {
+      isWeight: false,
+      name: "red bell pepper",
+      parsedAmount: 1,
+      parsedUnit: "piece",
+      quantity: "1 piece",
+      spoonacularId: 11821,
+      spoonacularImage: "red-pepper.jpg",
+      spoonacularName: "red pepper",
+    },
+    {
+      isWeight: false,
+      name: "zucchini",
+      parsedAmount: 2,
+      parsedUnit: "pieces",
+      quantity: "2 pieces",
+      spoonacularId: 11477,
+      spoonacularImage: "zucchini.jpg",
+      spoonacularName: "zucchini",
+    },
+    {
+      isWeight: false,
+      name: "green onion",
+      parsedAmount: 5,
+      parsedUnit: "pieces",
+      quantity: "5 pieces",
+      spoonacularId: 11291,
+      spoonacularImage: "spring-onions.jpg",
+      spoonacularName: "spring onions",
+    },
+  ]);
 
   // Pantry stock items (items at home)
   const [pantryStockItems, setPantryStockItems] = useState<PantryItem[]>([
@@ -311,51 +416,66 @@ export default function PantryTab() {
         ]}
       >
         <View style={styles.categoriesContainer}>
-          <CategorySection
-            title="Dairy"
-            items={getCategoryItems("dairy")}
-            onToggleItem={toggleItem}
-            onEditItem={handleEditItem}
-            showCheckbox={activeTab === "groceries"}
-            showRecipe={activeTab === "groceries"}
-          />
+          {activeTab === "pantry" ? (
+            <>
+              <PantryCategoryPreview title="All" items={scannedItems} />
+              <PantryCategoryPreview
+                title="Fruits & Vegetables"
+                items={scannedItems}
+              />
+              {/* These are empty based on provided data, but structure supports them */}
+              <PantryCategoryPreview title="Meat & Seafood" items={[]} />
+              <PantryCategoryPreview title="Dairy" items={[]} />
+            </>
+          ) : (
+            <>
+              <CategorySection
+                title="Dairy"
+                items={getCategoryItems("dairy")}
+                onToggleItem={toggleItem}
+                onEditItem={handleEditItem}
+                showCheckbox={activeTab === "groceries"}
+                showRecipe={activeTab === "groceries"}
+              />
 
-          <CategorySection
-            title="Meat"
-            items={getCategoryItems("meat")}
-            onToggleItem={toggleItem}
-            onEditItem={handleEditItem}
-            showCheckbox={activeTab === "groceries"}
-            showRecipe={activeTab === "groceries"}
-          />
+              <CategorySection
+                title="Meat"
+                items={getCategoryItems("meat")}
+                onToggleItem={toggleItem}
+                onEditItem={handleEditItem}
+                showCheckbox={activeTab === "groceries"}
+                showRecipe={activeTab === "groceries"}
+              />
 
-          <CategorySection
-            title="Produce"
-            items={getCategoryItems("produce")}
-            onToggleItem={toggleItem}
-            onEditItem={handleEditItem}
-            showCheckbox={activeTab === "groceries"}
-            showRecipe={activeTab === "groceries"}
-          />
+              <CategorySection
+                title="Produce"
+                items={getCategoryItems("produce")}
+                onToggleItem={toggleItem}
+                onEditItem={handleEditItem}
+                showCheckbox={activeTab === "groceries"}
+                showRecipe={activeTab === "groceries"}
+              />
 
-          <CategorySection
-            title="Other"
-            items={getCategoryItems("other")}
-            onToggleItem={toggleItem}
-            onEditItem={handleEditItem}
-            showCheckbox={activeTab === "groceries"}
-            showRecipe={activeTab === "groceries"}
-          />
+              <CategorySection
+                title="Other"
+                items={getCategoryItems("other")}
+                onToggleItem={toggleItem}
+                onEditItem={handleEditItem}
+                showCheckbox={activeTab === "groceries"}
+                showRecipe={activeTab === "groceries"}
+              />
 
-          {activeTab === "groceries" && (
-            <CategorySection
-              title="Checked"
-              items={getCheckedItems()}
-              onToggleItem={toggleItem}
-              onEditItem={handleEditItem}
-              showCheckbox={true}
-              showRecipe={true}
-            />
+              {activeTab === "groceries" && (
+                <CategorySection
+                  title="Checked"
+                  items={getCheckedItems()}
+                  onToggleItem={toggleItem}
+                  onEditItem={handleEditItem}
+                  showCheckbox={true}
+                  showRecipe={true}
+                />
+              )}
+            </>
           )}
         </View>
       </ScrollView>
