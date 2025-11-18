@@ -17,8 +17,9 @@ import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useRecipesQuery } from "@/hooks/use-recipes-query";
 import { Ingredient, Recipe } from "@/lib/spoonacular";
 import { useFilterStore } from "@/lib/stores/filter-store";
+import { verifyFavoriteRecipesSetup } from "@/lib/supabase-favorite-recipes-verification";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
   RefreshControl,
@@ -135,6 +136,21 @@ export default function HomeTab() {
     },
     [loading, hasMore, fetchNextPage]
   );
+
+  // Supabase setup verification - sadece development'ta
+  useEffect(() => {
+    if (__DEV__) {
+      verifyFavoriteRecipesSetup().then((result) => {
+        if (!result.success) {
+          console.error("🚨 Favorites setup verification FAILED:");
+          console.error("Message:", result.message);
+          console.error("Details:", result.details);
+        } else {
+          console.log("✅ Favorites setup verification PASSED:", result.message);
+        }
+      });
+    }
+  }, []);
 
   return (
     <View style={[styles.mainContainer, { paddingTop: top }]}>
