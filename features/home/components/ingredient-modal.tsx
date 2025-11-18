@@ -10,7 +10,14 @@ import {
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { forwardRef, useCallback, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -41,6 +48,7 @@ export const IngredientModal = forwardRef<
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const screenHeight =
     Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
@@ -99,12 +107,11 @@ export const IngredientModal = forwardRef<
     setSelectedIngredients(new Map());
   }, []);
 
-  const handleSearch = useCallback(async (query: string) => {
-    setSearchQuery(query);
-
+  const performSearch = useCallback(async (query: string) => {
     if (query.trim().length === 0) {
       setSearchResults([]);
       setHasSearched(false);
+      setIsSearching(false);
       return;
     }
 
@@ -120,6 +127,37 @@ export const IngredientModal = forwardRef<
       setIsSearching(false);
     }
   }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // If query is empty, clear immediately
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      setHasSearched(false);
+      setIsSearching(false);
+      return;
+    }
+
+    // Set loading state immediately
+    setIsSearching(true);
+
+    // Debounce the search with 600ms delay to avoid rate limiting
+    searchTimeoutRef.current = setTimeout(() => {
+      performSearch(searchQuery);
+    }, 600);
+
+    // Cleanup on unmount or when query changes
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, performSearch]);
 
   // Selected items
   const selectedItems = useMemo(() => {
@@ -305,7 +343,7 @@ export const IngredientModal = forwardRef<
               placeholder="What's in your pantry"
               placeholderTextColor={Colors.gray[400]}
               value={searchQuery}
-              onChangeText={handleSearch}
+              onChangeText={setSearchQuery}
             />
             {isSearching && (
               <ActivityIndicator
