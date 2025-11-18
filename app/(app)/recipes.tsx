@@ -11,16 +11,18 @@ import {
   RecipeGrid,
   SearchBar,
 } from "@/features/home";
-import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
+import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
 import { useRecipesQuery } from "@/hooks/use-recipes-query";
 import { Ingredient, Recipe } from "@/lib/spoonacular";
 import { useFilterStore } from "@/lib/stores/filter-store";
 import { verifyFavoriteRecipesSetup } from "@/lib/supabase-favorite-recipes-verification";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Dimensions,
   Platform,
   RefreshControl,
   ScrollView,
@@ -37,6 +39,7 @@ const FILTER_OPTIONS = ["Healthy", "Easy", "Batch", "Veg"];
 export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");
+  const screenWidth = Dimensions.get("window").width;
   const {
     searchQuery,
     setSearchQuery,
@@ -47,6 +50,7 @@ export default function HomeTab() {
     selectedCuisines,
     setSelectedCuisines,
   } = useFilterStore();
+  const horizontalPagerRef = useRef<ScrollView>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const cuisineModalRef = useRef<BottomSheetModal>(null);
@@ -137,6 +141,37 @@ export default function HomeTab() {
     [loading, hasMore, fetchNextPage]
   );
 
+  const handleTabChange = useCallback(
+    async (tab: TabType) => {
+      if (tab === activeTab) {
+        return;
+      }
+      const pageIndex = tab === "discover" ? 0 : 1;
+      setActiveTab(tab);
+      horizontalPagerRef.current?.scrollTo({
+        x: pageIndex * screenWidth,
+        y: 0,
+        animated: true,
+      });
+      await Haptics.selectionAsync();
+    },
+    [activeTab, screenWidth]
+  );
+
+  const handleHorizontalMomentumEnd = useCallback(
+    async (event: any) => {
+      const { contentOffset, layoutMeasurement } = event.nativeEvent;
+      const pageIndex = Math.round(contentOffset.x / layoutMeasurement.width);
+      const newTab: TabType = pageIndex === 0 ? "discover" : "favorites";
+
+      if (newTab !== activeTab) {
+        setActiveTab(newTab);
+        await Haptics.selectionAsync();
+      }
+    },
+    [activeTab]
+  );
+
   // Supabase setup verification - sadece development'ta
   useEffect(() => {
     if (__DEV__) {
@@ -146,7 +181,10 @@ export default function HomeTab() {
           console.error("Message:", result.message);
           console.error("Details:", result.details);
         } else {
-          console.log("✅ Favorites setup verification PASSED:", result.message);
+          console.log(
+            "✅ Favorites setup verification PASSED:",
+            result.message
+          );
         }
       });
     }
@@ -157,7 +195,7 @@ export default function HomeTab() {
       {/* Header */}
       <HomeHeader
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         favoriteCount={favoritesCount}
       />
 
@@ -181,80 +219,108 @@ export default function HomeTab() {
         </View>
       )}
 
-      {/* Content - Scrollable */}
+      {/* Swipeable content */}
       <ScrollView
-        ref={scrollViewRef}
-        style={styles.contentScroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2) },
-        ]}
-        onScroll={handleScroll}
-        scrollEventThrottle={400}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={Colors.lilac[900]}
-          />
-        }
+        ref={horizontalPagerRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleHorizontalMomentumEnd}
+        scrollEventThrottle={16}
       >
-        {/* Content */}
-        {activeTab === "discover" && (
-          <View style={styles.discoverContainer}>
-            {recipes.length === 0 && !loading && <EmptyState />}
-
-            {recipes.length > 0 && (
-              <RecipeGrid
-                recipes={recipes}
-                favoriteIds={favoriteIds}
-                onToggleFavorite={handleToggleFavorite}
+        {/* Discover page */}
+        <View style={[styles.horizontalPage, { width: screenWidth }]}>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.contentScroll}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2) },
+            ]}
+            onScroll={handleScroll}
+            scrollEventThrottle={400}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={Colors.lilac[900]}
               />
-            )}
+            }
+          >
+            <View style={styles.discoverContainer}>
+              {recipes.length === 0 && !loading && <EmptyState />}
 
-            {loading && <LoadingState />}
-
-            {error && !loading && <ErrorState onRetry={handleRefresh} />}
-
-            {!hasMore && recipes.length > 0 && <EndMessage />}
-          </View>
-        )}
-
-        {activeTab === "favorites" && (
-          <View style={styles.favoritesContainer}>
-            <FavoritesHeroCard favoriteCount={favoritesCount} />
-
-            {isLoadingFavorites && (
-              <LoadingState message="Favoriler yükleniyor..." />
-            )}
-
-            {!isLoadingFavorites && hasFavoritesError && (
-              <ErrorState
-                message="Favoriler yüklenirken bir sorun oluştu."
-                onRetry={() => refetchFavorites()}
-              />
-            )}
-
-            {!isLoadingFavorites &&
-              !hasFavoritesError &&
-              favorites.length === 0 && (
-                <FavoritesEmptyState
-                  onExplore={() => setActiveTab("discover")}
-                />
-              )}
-
-            {favorites.length > 0 && (
-              <View style={styles.favoritesGridSpacing}>
+              {recipes.length > 0 && (
                 <RecipeGrid
-                  recipes={favorites}
+                  recipes={recipes}
                   favoriteIds={favoriteIds}
                   onToggleFavorite={handleToggleFavorite}
                 />
-              </View>
-            )}
-          </View>
-        )}
+              )}
+
+              {loading && <LoadingState />}
+
+              {error && !loading && <ErrorState onRetry={handleRefresh} />}
+
+              {!hasMore && recipes.length > 0 && <EndMessage />}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Favorites page */}
+        <View style={[styles.horizontalPage, { width: screenWidth }]}>
+          <ScrollView
+            style={styles.contentScroll}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2) },
+            ]}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={Colors.lilac[900]}
+              />
+            }
+          >
+            <View style={styles.favoritesContainer}>
+              <FavoritesHeroCard favoriteCount={favoritesCount} />
+
+              {isLoadingFavorites && (
+                <LoadingState message="Favoriler yükleniyor..." />
+              )}
+
+              {!isLoadingFavorites && hasFavoritesError && (
+                <ErrorState
+                  message="Favoriler yüklenirken bir sorun oluştu."
+                  onRetry={() => refetchFavorites()}
+                />
+              )}
+
+              {!isLoadingFavorites &&
+                !hasFavoritesError &&
+                favorites.length === 0 && (
+                  <FavoritesEmptyState
+                    onExplore={() => handleTabChange("discover")}
+                  />
+                )}
+
+              {favorites.length > 0 && (
+                <View style={styles.favoritesGridSpacing}>
+                  <RecipeGrid
+                    recipes={favorites}
+                    favoriteIds={favoriteIds}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </View>
       </ScrollView>
 
       <IngredientModal
@@ -273,6 +339,9 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     backgroundColor: Colors.background.secondary,
+  },
+  horizontalPage: {
+    flex: 1,
   },
   searchContainer: {
     paddingHorizontal: 16,
