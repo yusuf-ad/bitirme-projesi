@@ -22,6 +22,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Animated,
   Dimensions,
   Platform,
   RefreshControl,
@@ -40,6 +41,8 @@ export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>("discover");
   const screenWidth = Dimensions.get("window").width;
+  const headerWidth = screenWidth - 32; // 16px padding on each side
+  const tabWidth = headerWidth / 2;
   const {
     searchQuery,
     setSearchQuery,
@@ -66,6 +69,14 @@ export default function HomeTab() {
     toggleFavorite,
   } = useFavoriteRecipes();
   const hasFavoritesError = Boolean(favoritesError);
+
+  // Animated value for indicator
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const indicatorTranslateX = scrollX.interpolate({
+    inputRange: [0, screenWidth],
+    outputRange: [0, tabWidth],
+    extrapolate: "clamp",
+  });
 
   // Ingredients ve cuisines'i stabilize et - sonsuz loop'u önlemek için
   const memoizedIngredients = useMemo(
@@ -197,6 +208,8 @@ export default function HomeTab() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         favoriteCount={favoritesCount}
+        indicatorTranslateX={indicatorTranslateX}
+        tabWidth={tabWidth}
       />
 
       {activeTab === "discover" && (
@@ -220,12 +233,16 @@ export default function HomeTab() {
       )}
 
       {/* Swipeable content */}
-      <ScrollView
+      <Animated.ScrollView
         ref={horizontalPagerRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleHorizontalMomentumEnd}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
+        )}
         scrollEventThrottle={16}
       >
         {/* Discover page */}
@@ -321,7 +338,7 @@ export default function HomeTab() {
             </View>
           </ScrollView>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <IngredientModal
         ref={ingredientModalRef}
