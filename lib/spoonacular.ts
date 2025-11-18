@@ -1,6 +1,10 @@
-const SPOONACULAR_API_KEY = process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY || "";
-const SPOONACULAR_BASE_URL = "https://api.spoonacular.com/recipes";
-const SPOONACULAR_FOOD_BASE_URL = "https://api.spoonacular.com/food";
+// RapidAPI credentials
+const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || "";
+const RAPIDAPI_HOST = "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com";
+
+// RapidAPI Spoonacular endpoints
+const SPOONACULAR_BASE_URL = `https://${RAPIDAPI_HOST}/recipes`;
+const SPOONACULAR_FOOD_BASE_URL = `https://${RAPIDAPI_HOST}/food`;
 
 // Test constant - API pahalı olduğu için test için 1 olarak ayarlandı
 const TEST_NUMBER_OF_RESULTS = 1;
@@ -130,7 +134,6 @@ export async function getRandomRecipes(
       sort: "random",
       addRecipeInformation: "true",
       addRecipeNutrition: "true",
-      apiKey: SPOONACULAR_API_KEY,
     });
 
     // Filtreleri ekle
@@ -151,7 +154,13 @@ export async function getRandomRecipes(
     }
 
     const response = await fetch(
-      `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`
+      `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`,
+      {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
     );
 
     logRateLimitHeaders(response);
@@ -189,7 +198,6 @@ export async function searchRecipes(
       number: number.toString(),
       addRecipeInformation: "true",
       addRecipeNutrition: "true",
-      apiKey: SPOONACULAR_API_KEY,
     });
 
     // Add filters
@@ -210,7 +218,13 @@ export async function searchRecipes(
     }
 
     const response = await fetch(
-      `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`
+      `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`,
+      {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
     );
 
     logRateLimitHeaders(response);
@@ -237,9 +251,12 @@ export async function searchRecipes(
  */
 export async function getRecipeDetails(id: number): Promise<Recipe> {
   try {
-    const response = await fetch(
-      `${SPOONACULAR_BASE_URL}/${id}/information?apiKey=${SPOONACULAR_API_KEY}`
-    );
+    const response = await fetch(`${SPOONACULAR_BASE_URL}/${id}/information`, {
+      headers: {
+        "x-rapidapi-key": RAPIDAPI_KEY,
+        "x-rapidapi-host": RAPIDAPI_HOST,
+      },
+    });
 
     logRateLimitHeaders(response);
 
@@ -273,7 +290,6 @@ export async function searchIngredients(
       query: query,
       offset: offset.toString(),
       number: number.toString(),
-      apiKey: SPOONACULAR_API_KEY,
     });
 
     // Add optional filters
@@ -315,7 +331,13 @@ export async function searchIngredients(
     }
 
     const response = await fetch(
-      `${SPOONACULAR_FOOD_BASE_URL}/ingredients/search?${params.toString()}`
+      `${SPOONACULAR_FOOD_BASE_URL}/ingredients/search?${params.toString()}`,
+      {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
     );
 
     logRateLimitHeaders(response);
