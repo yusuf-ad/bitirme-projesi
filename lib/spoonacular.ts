@@ -366,3 +366,59 @@ export async function searchIngredients(
     throw error;
   }
 }
+
+export interface ParsedIngredient {
+  id: number;
+  original: string;
+  originalName: string;
+  name: string;
+  image: string;
+  amount: number;
+  unit: string;
+  possibleUnits: string[];
+  estimatedCost: {
+    value: number;
+    unit: string;
+  };
+  consistency: string;
+  aisle: string;
+}
+
+/**
+ * Batch parse ingredients to get IDs and images
+ * @param ingredientList - List of ingredients as strings (e.g. "1 cup sugar")
+ * @returns List of parsed ingredients
+ */
+export async function parseIngredients(
+  ingredientList: string[]
+): Promise<ParsedIngredient[]> {
+  try {
+    const formData = new URLSearchParams();
+    formData.append("ingredientList", ingredientList.join("\n"));
+    formData.append("includeNutrition", "false");
+
+    const response = await fetch(
+      `${SPOONACULAR_BASE_URL}/parseIngredients`,
+      {
+        method: "POST",
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      }
+    );
+
+    logRateLimitHeaders(response);
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error parsing ingredients:", error);
+    throw error;
+  }
+}

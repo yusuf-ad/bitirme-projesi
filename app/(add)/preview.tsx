@@ -1,4 +1,4 @@
-import { searchIngredients } from "@/lib/spoonacular";
+import { parseIngredients } from "@/lib/spoonacular";
 import { Ionicons } from "@expo/vector-icons";
 import * as LegacyFS from "expo-file-system/legacy";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -182,41 +182,54 @@ export default function PhotoPreview() {
       const elapsedMs = Date.now() - t0;
       const items = Array.isArray(json.ingredients) ? json.ingredients : [];
 
-      // Search for each ingredient in Spoonacular sequentially to avoid rate limits
-      const enrichedItems = [];
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        try {
-          const { ingredients } = await searchIngredients(item.name, 0, 1);
-          if (ingredients.length > 0) {
-            const spoonacularIngredient = ingredients[0];
+      // Search for ingredients using batch parsing to avoid rate limits
+      interface EnrichedItem {
+        name: string;
+        quantity: string;
+        spoonacularId?: number;
+        spoonacularName?: string;
+        spoonacularImage?: string;
+      }
+      const enrichedItems: EnrichedItem[] = [];
+      try {
+        // Create a list of ingredient strings for batch parsing (e.g. "1 cup sugar")
+        // We use the quantity provided by LLM + the name
+        const ingredientStrings = items.map(
+          (item) => `${item.quantity} ${item.name}`
+        );
+
+        // Use parseIngredients for batch processing (1 request instead of N)
+        const parsedResults = await parseIngredients(ingredientStrings);
+
+        // Map results back to items
+        items.forEach((item, index) => {
+          const parsed = parsedResults[index];
+          // Check if parsed result exists and has an ID (valid match)
+          if (parsed && parsed.id) {
             enrichedItems.push({
               name: item.name,
               quantity: item.quantity,
-              spoonacularId: spoonacularIngredient.id,
-              spoonacularName: spoonacularIngredient.name,
-              spoonacularImage: spoonacularIngredient.image,
+              spoonacularId: parsed.id,
+              spoonacularName: parsed.name,
+              spoonacularImage: parsed.image,
             });
           } else {
-            // No results found
+            // No match found, use original item
             enrichedItems.push({
               name: item.name,
               quantity: item.quantity,
             });
           }
-
-          // Add delay between requests to avoid rate limiting (2 req/sec limit = 500ms minimum)
-          if (i < items.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 600));
-          }
-        } catch (error) {
-          console.error(`Error searching ingredient ${item.name}:`, error);
-          // If search fails, add original item
+        });
+      } catch (error) {
+        console.error("Batch ingredient search failed:", error);
+        // Fallback: Use original items without enrichment if API fails
+        items.forEach((item) => {
           enrichedItems.push({
             name: item.name,
             quantity: item.quantity,
           });
-        }
+        });
       }
 
       router.push({
