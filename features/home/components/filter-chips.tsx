@@ -11,6 +11,8 @@ interface FilterChipsProps {
   onCuisinePress?: () => void;
   selectedIngredients?: string[];
   selectedCuisines?: string[];
+  onTimePress?: () => void;
+  selectedTimeLabel?: string;
 }
 
 export function FilterChips({
@@ -21,6 +23,8 @@ export function FilterChips({
   onCuisinePress,
   selectedIngredients = [],
   selectedCuisines = [],
+  onTimePress,
+  selectedTimeLabel,
 }: FilterChipsProps) {
   const getIngredientButtonText = () => {
     if (selectedIngredients.length === 0) return "Ingredients";
@@ -55,21 +59,35 @@ export function FilterChips({
         </CustomButton>
       )}
 
-      <CustomButton
-        containerStyle={[
-          styles.addIngredientsButton,
-          selectedCuisines.length > 0 && styles.addIngredientsButtonActive,
-        ]}
-        onPress={onCuisinePress}
-      >
-        <Text style={styles.addIngredientsText}>{getCuisineButtonText()}</Text>
-        <Entypo name="chevron-down" size={20} color="black" />
-      </CustomButton>
+      {onCuisinePress && (
+        <CustomButton
+          containerStyle={[
+            styles.addIngredientsButton,
+            selectedCuisines.length > 0 && styles.addIngredientsButtonActive,
+          ]}
+          onPress={onCuisinePress}
+        >
+          <Text style={styles.addIngredientsText}>
+            {getCuisineButtonText()}
+          </Text>
+          <Entypo name="chevron-down" size={20} color="black" />
+        </CustomButton>
+      )}
 
-      <Pressable style={styles.addIngredientsButton}>
-        <Text style={styles.addIngredientsText}>Total time</Text>
-        <Entypo name="chevron-down" size={20} color="black" />
-      </Pressable>
+      {onTimePress && (
+        <CustomButton
+          containerStyle={[
+            styles.addIngredientsButton,
+            selectedTimeLabel && styles.addIngredientsButtonActive,
+          ]}
+          onPress={onTimePress}
+        >
+          <Text style={styles.addIngredientsText}>
+            {selectedTimeLabel ?? "Total time"}
+          </Text>
+          <Entypo name="chevron-down" size={20} color="black" />
+        </CustomButton>
+      )}
 
       {filters.map((filter) => (
         <Pressable

@@ -110,6 +110,9 @@ export interface RandomRecipesFilters {
   type?: string; // Meal type: breakfast, lunch, dinner, etc.
   includeIngredients?: string;
   excludeIngredients?: string;
+  maxReadyTime?: number;
+  sort?: string;
+  sortDirection?: "asc" | "desc";
 }
 
 export interface IngredientSearchFilters {
@@ -140,7 +143,7 @@ export async function getRandomRecipes(
   try {
     const params = new URLSearchParams({
       number: number.toString(),
-      sort: "random",
+      sort: filters?.sort ?? "random",
       addRecipeInformation: "true",
       addRecipeNutrition: "true",
     });
@@ -160,6 +163,12 @@ export async function getRandomRecipes(
     }
     if (filters?.excludeIngredients) {
       params.append("excludeIngredients", filters.excludeIngredients);
+    }
+    if (filters?.maxReadyTime != null) {
+      params.append("maxReadyTime", filters.maxReadyTime.toString());
+    }
+    if (filters?.sortDirection) {
+      params.append("sortDirection", filters.sortDirection);
     }
 
     const response = await fetch(
@@ -224,6 +233,15 @@ export async function searchRecipes(
     }
     if (filters?.excludeIngredients) {
       params.append("excludeIngredients", filters.excludeIngredients);
+    }
+    if (filters?.maxReadyTime != null) {
+      params.append("maxReadyTime", filters.maxReadyTime.toString());
+    }
+    if (filters?.sort) {
+      params.append("sort", filters.sort);
+    }
+    if (filters?.sortDirection) {
+      params.append("sortDirection", filters.sortDirection);
     }
 
     const response = await fetch(

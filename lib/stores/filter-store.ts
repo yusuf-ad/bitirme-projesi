@@ -6,11 +6,14 @@ interface FilterStore {
   selectedCuisines: string[];
   selectedFilters: string[];
   searchQuery: string;
+  minReadyTime: number | null;
+  maxReadyTime: number | null;
 
   setSelectedIngredients: (ingredients: Ingredient[]) => void;
   setSelectedCuisines: (cuisines: string[]) => void;
   setSelectedFilters: (filters: string[]) => void;
   setSearchQuery: (query: string) => void;
+  setReadyTimeRange: (range: { min: number | null; max: number | null }) => void;
 
   toggleFilter: (filter: string) => void;
   clearAllFilters: () => void;
@@ -21,6 +24,8 @@ export const useFilterStore = create<FilterStore>((set) => ({
   selectedCuisines: [],
   selectedFilters: [],
   searchQuery: "",
+  minReadyTime: null,
+  maxReadyTime: null,
 
   setSelectedIngredients: (ingredients) =>
     set({ selectedIngredients: ingredients }),
@@ -30,6 +35,12 @@ export const useFilterStore = create<FilterStore>((set) => ({
   setSelectedFilters: (filters) => set({ selectedFilters: filters }),
 
   setSearchQuery: (query) => set({ searchQuery: query }),
+
+  setReadyTimeRange: ({ min, max }) =>
+    set({
+      minReadyTime: min,
+      maxReadyTime: max,
+    }),
 
   toggleFilter: (filter) =>
     set((state) => ({
@@ -44,5 +55,7 @@ export const useFilterStore = create<FilterStore>((set) => ({
       selectedCuisines: [],
       selectedFilters: [],
       searchQuery: "",
+      minReadyTime: null,
+      maxReadyTime: null,
     }),
 }));
