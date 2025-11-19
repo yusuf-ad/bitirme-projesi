@@ -1,7 +1,11 @@
+import { pantryService } from "@/features/pantry/services/pantry-service";
+import { PantryCategory } from "@/features/pantry/types";
+import { generateAPIUrl } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -43,6 +47,7 @@ export default function ScanResults() {
 
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (params.items) {
@@ -175,10 +180,102 @@ export default function ScanResults() {
     );
   };
 
-  const handleAddToPantry = () => {
-    // TODO: Implement add to pantry logic
-    console.log("Adding to pantry:", ingredients);
-    router.push("/(app)/pantry");
+  const handleAddToPantry = async () => {
+    if (ingredients.length === 0) {
+      Alert.alert("No items", "Please add at least one item to save.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // 1. Categorize items
+      const ingredientNames = ingredients.map(
+        (i) => i.spoonacularName || i.name
+      );
+      const categorizeRes = await fetch(generateAPIUrl("/api/categorize"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ingredients: ingredientNames }),
+      });
+
+      if (!categorizeRes.ok) throw new Error("Failed to categorize items");
+
+      const { items: categorizedItems } = await categorizeRes.json();
+      const categoryMap = new Map(
+        categorizedItems.map((i: any) => [i.name, i.category])
+      );
+
+      // 2. Fetch existing pantry items to check for duplicates
+      const existingItems = await pantryService.getItems("pantry");
+
+      const itemsToInsert: Omit<
+        import("@/features/pantry/types").PantryItem,
+        "id" | "user_id" | "created_at" | "updated_at"
+      >[] = [];
+
+      const itemsToUpdate: {
+        id: string;
+        amount: number;
+      }[] = [];
+
+      // 3. Prepare items for DB
+      ingredients.forEach((item) => {
+        const name = item.spoonacularName || item.name;
+        const category = (categoryMap.get(name) as PantryCategory) || "Other";
+
+        // Check if item already exists in pantry (same name and similar unit)
+        // We do a simple case-insensitive check on name and unit
+        const existingItem = existingItems.find(
+          (existing) =>
+            existing.name.toLowerCase() === name.toLowerCase() &&
+            existing.unit.toLowerCase() === item.parsedUnit.toLowerCase()
+        );
+
+        if (existingItem) {
+          // If exists, add to update list
+          itemsToUpdate.push({
+            id: existingItem.id,
+            amount: existingItem.amount + item.parsedAmount,
+          });
+        } else {
+          // If new, add to insert list
+          itemsToInsert.push({
+            name,
+            amount: item.parsedAmount,
+            unit: item.parsedUnit,
+            is_weight: item.isWeight,
+            spoonacular_id: item.spoonacularId,
+            spoonacular_name: item.spoonacularName,
+            spoonacular_image: item.spoonacularImage,
+            category,
+            status: "pantry" as const,
+            checked: false,
+          });
+        }
+      });
+
+      // 4. Save to Supabase
+      // Perform updates
+      if (itemsToUpdate.length > 0) {
+        await Promise.all(
+          itemsToUpdate.map((update) =>
+            pantryService.updateItem(update.id, { amount: update.amount })
+          )
+        );
+      }
+
+      // Perform inserts
+      if (itemsToInsert.length > 0) {
+        await pantryService.addItems(itemsToInsert);
+      }
+
+      router.push("/(app)/pantry");
+    } catch (error) {
+      console.error("Error saving items:", error);
+      Alert.alert("Error", "Failed to save items to pantry. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -335,9 +432,19 @@ export default function ScanResults() {
         />
 
         <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
-          <Pressable style={styles.primaryButton} onPress={handleAddToPantry}>
-            <Text style={styles.primaryButtonText}>Add to Pantry</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          <Pressable
+            style={[styles.primaryButton, isSaving && { opacity: 0.7 }]}
+            onPress={handleAddToPantry}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.primaryButtonText}>Add to Pantry</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </>
+            )}
           </Pressable>
         </View>
       </View>

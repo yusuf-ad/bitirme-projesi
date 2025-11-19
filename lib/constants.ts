@@ -52,6 +52,21 @@ export const MEAL_TYPES = {
 
 export const meal_types = Object.values(MEAL_TYPES);
 
+// Pantry Categories
+export const PANTRY_CATEGORIES = [
+  "Produce",
+  "Meat",
+  "Dairy",
+  "Grains",
+  "Bakery",
+  "Frozen",
+  "Canned",
+  "Spices",
+  "Condiments",
+  "Snacks",
+  "Other",
+] as const;
+
 export const POPULAR_INGREDIENTS: {
   spoonacularId?: number | null;
   name: string;

@@ -336,3 +336,5 @@ CREATE POLICY "Users can delete their own meal plan items" ON public.meal_plan_i
 -- Apply trigger to meal_plans table for updated_at
 CREATE TRIGGER update_meal_plans_updated_at BEFORE UPDATE ON public.meal_plans
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+  
