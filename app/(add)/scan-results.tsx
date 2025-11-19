@@ -1,5 +1,6 @@
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PantryCategory } from "@/features/pantry/types";
+import { generateAPIUrl } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -191,7 +192,7 @@ export default function ScanResults() {
       const ingredientNames = ingredients.map(
         (i) => i.spoonacularName || i.name
       );
-      const categorizeRes = await fetch("/api/categorize", {
+      const categorizeRes = await fetch(generateAPIUrl("/api/categorize"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ingredients: ingredientNames }),
@@ -204,27 +205,69 @@ export default function ScanResults() {
         categorizedItems.map((i: any) => [i.name, i.category])
       );
 
-      // 2. Prepare items for DB
-      const itemsToSave = ingredients.map((item) => {
+      // 2. Fetch existing pantry items to check for duplicates
+      const existingItems = await pantryService.getItems("pantry");
+
+      const itemsToInsert: Omit<
+        import("@/features/pantry/types").PantryItem,
+        "id" | "user_id" | "created_at" | "updated_at"
+      >[] = [];
+
+      const itemsToUpdate: {
+        id: string;
+        amount: number;
+      }[] = [];
+
+      // 3. Prepare items for DB
+      ingredients.forEach((item) => {
         const name = item.spoonacularName || item.name;
         const category = (categoryMap.get(name) as PantryCategory) || "Other";
 
-        return {
-          name,
-          amount: item.parsedAmount,
-          unit: item.parsedUnit,
-          is_weight: item.isWeight,
-          spoonacular_id: item.spoonacularId,
-          spoonacular_name: item.spoonacularName,
-          spoonacular_image: item.spoonacularImage,
-          category,
-          status: "pantry" as const,
-          checked: false,
-        };
+        // Check if item already exists in pantry (same name and similar unit)
+        // We do a simple case-insensitive check on name and unit
+        const existingItem = existingItems.find(
+          (existing) =>
+            existing.name.toLowerCase() === name.toLowerCase() &&
+            existing.unit.toLowerCase() === item.parsedUnit.toLowerCase()
+        );
+
+        if (existingItem) {
+          // If exists, add to update list
+          itemsToUpdate.push({
+            id: existingItem.id,
+            amount: existingItem.amount + item.parsedAmount,
+          });
+        } else {
+          // If new, add to insert list
+          itemsToInsert.push({
+            name,
+            amount: item.parsedAmount,
+            unit: item.parsedUnit,
+            is_weight: item.isWeight,
+            spoonacular_id: item.spoonacularId,
+            spoonacular_name: item.spoonacularName,
+            spoonacular_image: item.spoonacularImage,
+            category,
+            status: "pantry" as const,
+            checked: false,
+          });
+        }
       });
 
-      // 3. Save to Supabase
-      await pantryService.addItems(itemsToSave);
+      // 4. Save to Supabase
+      // Perform updates
+      if (itemsToUpdate.length > 0) {
+        await Promise.all(
+          itemsToUpdate.map((update) =>
+            pantryService.updateItem(update.id, { amount: update.amount })
+          )
+        );
+      }
+
+      // Perform inserts
+      if (itemsToInsert.length > 0) {
+        await pantryService.addItems(itemsToInsert);
+      }
 
       router.push("/(app)/pantry");
     } catch (error) {

@@ -117,7 +117,7 @@ export function useMealPlanGenerator({
         }
 
         // Process results to extract only necessary fields
-        const processedResults = recipes.map((recipe: any) => {
+        const processedResults = data.results.map((recipe: any) => {
           let calories: number | undefined;
           let carbs: number | undefined;
           let protein: number | undefined;
@@ -189,7 +189,7 @@ export function useMealPlanGenerator({
 
         // Assign results to the appropriate meal type
         mealPlan[meal.type].results = processedResults;
-        mealPlan[meal.type].totalResults = totalResults;
+        mealPlan[meal.type].totalResults = data.totalResults;
       }
 
       console.log("Generated Meal Plan:", JSON.stringify(mealPlan, null, 2));
