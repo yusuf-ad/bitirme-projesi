@@ -43,6 +43,7 @@ export interface Recipe {
   image: string;
   summary?: string;
   cuisines?: string[];
+  diets?: string[];
   readyInMinutes?: number;
   servings?: number;
   sourceUrl?: string;
@@ -397,18 +398,15 @@ export async function parseIngredients(
     formData.append("ingredientList", ingredientList.join("\n"));
     formData.append("includeNutrition", "false");
 
-    const response = await fetch(
-      `${SPOONACULAR_BASE_URL}/parseIngredients`,
-      {
-        method: "POST",
-        headers: {
-          "x-rapidapi-key": RAPIDAPI_KEY,
-          "x-rapidapi-host": RAPIDAPI_HOST,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: formData.toString(),
-      }
-    );
+    const response = await fetch(`${SPOONACULAR_BASE_URL}/parseIngredients`, {
+      method: "POST",
+      headers: {
+        "x-rapidapi-key": RAPIDAPI_KEY,
+        "x-rapidapi-host": RAPIDAPI_HOST,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData.toString(),
+    });
 
     logRateLimitHeaders(response);
 

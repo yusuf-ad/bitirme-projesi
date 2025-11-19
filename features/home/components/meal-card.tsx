@@ -1,15 +1,20 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import Feather from "@expo/vector-icons/Feather";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import {
+  Animated,
   ImageSourcePropType,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Swipeable from "react-native-gesture-handler/Swipeable";
 
 interface MealCardProps {
   mealType: string;
@@ -23,6 +28,7 @@ interface MealCardProps {
   protein?: string;
   fat?: string;
   onPress?: () => void;
+  onDelete?: () => void;
 }
 
 export default function MealCard({
@@ -37,125 +43,170 @@ export default function MealCard({
   protein,
   fat,
   onPress,
+  onDelete,
 }: MealCardProps) {
+  const handleEditPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push("/(app)/recipes");
+  };
+
+  const handleDelete = async () => {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onDelete?.();
+  };
+
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, 0],
+      outputRange: [1, 0.8],
+      extrapolate: "clamp",
+    });
+
+    return (
+      <Animated.View
+        style={[
+          styles.deleteAction,
+          {
+            transform: [{ scale }],
+          },
+        ]}
+      >
+        <Pressable style={styles.deleteButton} onPress={handleDelete}>
+          <MaterialIcons name="delete-outline" size={24} color="#fff" />
+          <Text style={styles.deleteText}>Sil</Text>
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Meal Header */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <View style={styles.mealIconContainer}>
-            <Image source={mealIcon} style={styles.mealIcon} />
-          </View>
-          <View style={styles.mealInfo}>
-            <Text style={styles.mealType}>{mealType}</Text>
-            <Text style={styles.mealTime}>{mealTime}</Text>
-          </View>
-        </View>
-
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <CustomButton
-            containerStyle={{
-              width: 36,
-              height: 36,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 4,
-              borderWidth: 1,
-              borderColor: Colors.lilac[200],
-              paddingHorizontal: 0,
-              paddingVertical: 0,
-            }}
-          >
-            <Feather name="edit-3" size={20} color={Colors.lilac[900]} />
-          </CustomButton>
-        </View>
-      </View>
-
-      {/* Recipe Card */}
-      <Pressable onPress={onPress} style={styles.recipeCard}>
-        <Image source={recipeImage} style={styles.recipeImage} />
-        <View style={styles.recipeInfo}>
-          <View style={styles.recipeTextContainer}>
-            <Text style={styles.recipeName}>{recipeName}</Text>
-
-            <View style={styles.recipeMetaContainer}>
-              <View style={styles.metaItem}>
-                <Image
-                  source={require("@/assets/icons/clock-icon.svg")}
-                  style={styles.metaIcon}
-                />
-                <Text style={styles.metaText}>{prepTime}</Text>
-              </View>
-              <Text style={styles.separator}>|</Text>
-              <View style={styles.metaItem}>
-                <Image
-                  source={require("@/assets/icons/flame-icon.svg")}
-                  style={styles.metaIcon}
-                />
-                <Text style={styles.metaText}>{calories}</Text>
-              </View>
+    <Swipeable
+      renderRightActions={renderRightActions}
+      overshootRight={false}
+      friction={2}
+    >
+      <View style={styles.container}>
+        {/* Meal Header */}
+        <View style={styles.header}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={styles.mealIconContainer}>
+              <Image source={mealIcon} style={styles.mealIcon} />
             </View>
+            <View style={styles.mealInfo}>
+              <Text style={styles.mealType}>{mealType}</Text>
+              <Text style={styles.mealTime}>{mealTime}</Text>
+            </View>
+          </View>
 
-            {/* Macronutrients */}
-            {(carbs || protein || fat) && (
-              <View style={styles.macrosContainer}>
-                {carbs && (
-                  <LinearGradient
-                    colors={[
-                      "rgba(120, 73, 182, 0.25)",
-                      "rgba(120, 73, 182, 0.15)",
-                      "rgba(120, 73, 182, 0.08)",
-                    ]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.macroGradientWrapper}
-                  >
-                    <View style={styles.macroItem}>
-                      <Text style={styles.macroLabel}>Carbs</Text>
-                      <Text style={styles.macroValue}>{carbs}</Text>
-                    </View>
-                  </LinearGradient>
-                )}
-                {protein && (
-                  <LinearGradient
-                    colors={[
-                      "rgba(120, 73, 182, 0.25)",
-                      "rgba(120, 73, 182, 0.15)",
-                      "rgba(120, 73, 182, 0.08)",
-                    ]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.macroGradientWrapper}
-                  >
-                    <View style={styles.macroItem}>
-                      <Text style={styles.macroLabel}>Protein</Text>
-                      <Text style={styles.macroValue}>{protein}</Text>
-                    </View>
-                  </LinearGradient>
-                )}
-                {fat && (
-                  <LinearGradient
-                    colors={[
-                      "rgba(120, 73, 182, 0.25)",
-                      "rgba(120, 73, 182, 0.15)",
-                      "rgba(120, 73, 182, 0.08)",
-                    ]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.macroGradientWrapper}
-                  >
-                    <View style={styles.macroItem}>
-                      <Text style={styles.macroLabel}>Fat</Text>
-                      <Text style={styles.macroValue}>{fat}</Text>
-                    </View>
-                  </LinearGradient>
-                )}
-              </View>
-            )}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <CustomButton
+              containerStyle={{
+                width: 36,
+                height: 36,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 4,
+                borderWidth: 1,
+                borderColor: Colors.lilac[200],
+                paddingHorizontal: 0,
+                paddingVertical: 0,
+              }}
+              onPress={handleEditPress}
+            >
+              <Feather name="edit-3" size={20} color={Colors.lilac[900]} />
+            </CustomButton>
           </View>
         </View>
-      </Pressable>
-    </View>
+
+        {/* Recipe Card */}
+        <Pressable onPress={onPress} style={styles.recipeCard}>
+          <Image source={recipeImage} style={styles.recipeImage} />
+          <View style={styles.recipeInfo}>
+            <View style={styles.recipeTextContainer}>
+              <Text style={styles.recipeName}>{recipeName}</Text>
+
+              <View style={styles.recipeMetaContainer}>
+                <View style={styles.metaItem}>
+                  <Image
+                    source={require("@/assets/icons/clock-icon.svg")}
+                    style={styles.metaIcon}
+                  />
+                  <Text style={styles.metaText}>{prepTime}</Text>
+                </View>
+                <Text style={styles.separator}>|</Text>
+                <View style={styles.metaItem}>
+                  <Image
+                    source={require("@/assets/icons/flame-icon.svg")}
+                    style={styles.metaIcon}
+                  />
+                  <Text style={styles.metaText}>{calories}</Text>
+                </View>
+              </View>
+
+              {/* Macronutrients */}
+              {(carbs || protein || fat) && (
+                <View style={styles.macrosContainer}>
+                  {carbs && (
+                    <LinearGradient
+                      colors={[
+                        "rgba(120, 73, 182, 0.25)",
+                        "rgba(120, 73, 182, 0.15)",
+                        "rgba(120, 73, 182, 0.08)",
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={styles.macroGradientWrapper}
+                    >
+                      <View style={styles.macroItem}>
+                        <Text style={styles.macroLabel}>Carbs</Text>
+                        <Text style={styles.macroValue}>{carbs}</Text>
+                      </View>
+                    </LinearGradient>
+                  )}
+                  {protein && (
+                    <LinearGradient
+                      colors={[
+                        "rgba(120, 73, 182, 0.25)",
+                        "rgba(120, 73, 182, 0.15)",
+                        "rgba(120, 73, 182, 0.08)",
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={styles.macroGradientWrapper}
+                    >
+                      <View style={styles.macroItem}>
+                        <Text style={styles.macroLabel}>Protein</Text>
+                        <Text style={styles.macroValue}>{protein}</Text>
+                      </View>
+                    </LinearGradient>
+                  )}
+                  {fat && (
+                    <LinearGradient
+                      colors={[
+                        "rgba(120, 73, 182, 0.25)",
+                        "rgba(120, 73, 182, 0.15)",
+                        "rgba(120, 73, 182, 0.08)",
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={styles.macroGradientWrapper}
+                    >
+                      <View style={styles.macroItem}>
+                        <Text style={styles.macroLabel}>Fat</Text>
+                        <Text style={styles.macroValue}>{fat}</Text>
+                      </View>
+                    </LinearGradient>
+                  )}
+                </View>
+              )}
+            </View>
+          </View>
+        </Pressable>
+      </View>
+    </Swipeable>
   );
 }
 
@@ -335,5 +386,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     color: Colors.lilac[900],
+  },
+  deleteAction: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    marginLeft: 8,
+  },
+  deleteButton: {
+    backgroundColor: Colors.semantic.error.main,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: "100%",
+    borderRadius: 12,
+    gap: 4,
+  },
+  deleteText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 12,
   },
 });

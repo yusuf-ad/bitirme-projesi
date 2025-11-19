@@ -23,6 +23,11 @@ export default function CalendarSection({
   onDateSelect,
 }: CalendarSectionProps) {
   const ref = useRef<FlatList>(null);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const calendarDays = useMemo(() => mockCalendarDays, []);
 
@@ -77,6 +82,7 @@ export default function CalendarSection({
           day={item.day}
           dayOfWeek={item.dayOfWeek}
           isSelected={selectedIndex === itemIndex}
+          isToday={isSameDay(item.date, today)}
           onPress={() => {
             const normalizedDate = new Date(item.date);
             normalizedDate.setHours(0, 0, 0, 0);
