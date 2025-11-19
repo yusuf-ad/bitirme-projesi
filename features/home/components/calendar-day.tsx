@@ -9,6 +9,7 @@ interface CalendarDayProps extends PressableProps {
   day: string;
   dayOfWeek: string;
   isSelected?: boolean;
+  isToday?: boolean;
   onPress?: () => void;
 }
 
@@ -18,16 +19,26 @@ export default function CalendarDay({
   day,
   dayOfWeek,
   isSelected = false,
+  isToday = false,
   onPress,
   ...props
 }: CalendarDayProps) {
   const animatedStyle = useAnimatedStyle(() => {
+    const isTodayButNotSelected = isToday && !isSelected;
     return {
       backgroundColor: withTiming(
-        isSelected ? Colors.lilac[900] : Colors.background.surface,
+        isSelected
+          ? Colors.lilac[900]
+          : isTodayButNotSelected
+          ? Colors.lilac[100]
+          : Colors.background.surface,
         { duration: 100 }
       ),
-      opacity: withTiming(isSelected ? 1 : 0.5, { duration: 300 }),
+      opacity: withTiming(isSelected || isTodayButNotSelected ? 1 : 0.5, {
+        duration: 300,
+      }),
+      borderWidth: isTodayButNotSelected ? 1 : 0,
+      borderColor: isToday ? Colors.lilac[500] : "transparent",
     };
   });
 
