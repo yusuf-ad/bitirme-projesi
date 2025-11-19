@@ -1,5 +1,4 @@
 import { CUISINES } from "@/lib/constants";
-import { searchRecipes } from "@/lib/spoonacular";
 import { useState } from "react";
 import type { GeneratedMealPlan, Meal, MealType } from "../types";
 
@@ -16,6 +15,12 @@ export function useMealPlanGenerator({
     setIsGenerating(true);
 
     try {
+      const API_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY;
+
+      if (!API_KEY) {
+        throw new Error("Spoonacular API key is not configured");
+      }
+
       const mealPlan: GeneratedMealPlan = {
         breakfast: {
           results: [],
@@ -59,16 +64,57 @@ export function useMealPlanGenerator({
       );
 
       for (const meal of selectedMealTypesConfig) {
-        const includedCuisinesString = includedCuisines.join(",");
-        const excludedIngredientsString = excludedIngredients.join(",");
-        const includedIngredientsString = meal.includedIngredients.join(",");
-
-        const { recipes, totalResults } = await searchRecipes("", 0, 12, {
-          cuisine: includedCuisinesString,
-          excludeIngredients: excludedIngredientsString,
-          type: meal.type,
-          includeIngredients: includedIngredientsString,
+        // Build query parameters
+        const params = new URLSearchParams({
+          apiKey: API_KEY,
+          addRecipeInformation: "true",
+          addRecipeNutrition: "true",
+          number: "12",
         });
+
+        if (includedCuisines.length > 0) {
+          params.append("cuisine", includedCuisines.join(","));
+        }
+
+        if (excludedIngredients.length > 0) {
+          params.append("excludeIngredients", excludedIngredients.join(","));
+        }
+
+        if (meal.type) {
+          params.append("type", meal.type);
+        }
+
+        if (meal.includedIngredients.length > 0) {
+          params.append(
+            "includeIngredients",
+            meal.includedIngredients.join(",")
+          );
+        }
+
+        const response = await fetch(
+          `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Spoonacular API error: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+
+        // Check if results exist and is an array
+        if (!Array.isArray(data.results)) {
+          console.error("Invalid API response:", data);
+          throw new Error(
+            data.message || "Invalid response from Spoonacular API"
+          );
+        }
 
         // Process results to extract only necessary fields
         const processedResults = recipes.map((recipe: any) => {

@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   addIngredientsButtonActive: {
-    backgroundColor: Colors.lilac[100],
-    borderColor: Colors.lilac[500],
+    backgroundColor: "rgba(180, 156, 218, 0.15)", // Çok hafif mor arka plan
+    borderColor: Colors.lilac[700], // Daha belirgin mor border
   },
   addIngredientsText: {
     fontSize: 14,

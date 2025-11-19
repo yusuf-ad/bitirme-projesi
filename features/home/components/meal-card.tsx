@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ImageSourcePropType,
   Pressable,
@@ -99,22 +100,55 @@ export default function MealCard({
             {(carbs || protein || fat) && (
               <View style={styles.macrosContainer}>
                 {carbs && (
-                  <View style={styles.macroItem}>
-                    <Text style={styles.macroLabel}>Carbs</Text>
-                    <Text style={styles.macroValue}>{carbs}</Text>
-                  </View>
+                  <LinearGradient
+                    colors={[
+                      "rgba(120, 73, 182, 0.25)",
+                      "rgba(120, 73, 182, 0.15)",
+                      "rgba(120, 73, 182, 0.08)",
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.macroGradientWrapper}
+                  >
+                    <View style={styles.macroItem}>
+                      <Text style={styles.macroLabel}>Carbs</Text>
+                      <Text style={styles.macroValue}>{carbs}</Text>
+                    </View>
+                  </LinearGradient>
                 )}
                 {protein && (
-                  <View style={styles.macroItem}>
-                    <Text style={styles.macroLabel}>Protein</Text>
-                    <Text style={styles.macroValue}>{protein}</Text>
-                  </View>
+                  <LinearGradient
+                    colors={[
+                      "rgba(120, 73, 182, 0.25)",
+                      "rgba(120, 73, 182, 0.15)",
+                      "rgba(120, 73, 182, 0.08)",
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.macroGradientWrapper}
+                  >
+                    <View style={styles.macroItem}>
+                      <Text style={styles.macroLabel}>Protein</Text>
+                      <Text style={styles.macroValue}>{protein}</Text>
+                    </View>
+                  </LinearGradient>
                 )}
                 {fat && (
-                  <View style={styles.macroItem}>
-                    <Text style={styles.macroLabel}>Fat</Text>
-                    <Text style={styles.macroValue}>{fat}</Text>
-                  </View>
+                  <LinearGradient
+                    colors={[
+                      "rgba(120, 73, 182, 0.25)",
+                      "rgba(120, 73, 182, 0.15)",
+                      "rgba(120, 73, 182, 0.08)",
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.macroGradientWrapper}
+                  >
+                    <View style={styles.macroItem}>
+                      <Text style={styles.macroLabel}>Fat</Text>
+                      <Text style={styles.macroValue}>{fat}</Text>
+                    </View>
+                  </LinearGradient>
                 )}
               </View>
             )}
@@ -267,6 +301,18 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
+  macroGradientWrapper: {
+    borderRadius: 8,
+    padding: 1,
+    shadowColor: Colors.lilac[900],
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
   macroItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -274,9 +320,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     backgroundColor: Colors.background.surface,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: Colors.lilac[200],
+    borderRadius: 7,
   },
   macroLabel: {
     fontFamily: "Inter",

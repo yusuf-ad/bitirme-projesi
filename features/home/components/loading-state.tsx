@@ -1,31 +1,29 @@
-import { Colors } from "@/constants/theme";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { RecipeCardSkeleton } from "./recipe-card-skeleton";
 
 interface LoadingStateProps {
   message?: string;
+  count?: number;
 }
 
 export function LoadingState({
   message = "Loading recipes...",
+  count = 6,
 }: LoadingStateProps) {
   return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color={Colors.lilac[900]} />
-      <Text style={styles.loadingText}>{message}</Text>
+    <View style={styles.gridContainer}>
+      {Array.from({ length: count }).map((_, index) => (
+        <RecipeCardSkeleton key={`skeleton-${index}`} />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginTop: 8,
+    justifyContent: "space-between",
   },
 });
