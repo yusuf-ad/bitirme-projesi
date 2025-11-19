@@ -1,4 +1,5 @@
 import { CUISINES } from "@/lib/constants";
+import { searchRecipes } from "@/lib/spoonacular";
 import { useState } from "react";
 import type { GeneratedMealPlan, Meal, MealType } from "../types";
 
@@ -15,12 +16,6 @@ export function useMealPlanGenerator({
     setIsGenerating(true);
 
     try {
-      const API_KEY = process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY;
-
-      if (!API_KEY) {
-        throw new Error("Spoonacular API key is not configured");
-      }
-
       const mealPlan: GeneratedMealPlan = {
         breakfast: {
           results: [],
@@ -64,46 +59,19 @@ export function useMealPlanGenerator({
       );
 
       for (const meal of selectedMealTypesConfig) {
-        // Build query parameters
-        const params = new URLSearchParams({
-          apiKey: API_KEY,
-          addRecipeInformation: "true",
-          addRecipeNutrition: "true",
-          number: "12",
+        const includedCuisinesString = includedCuisines.join(",");
+        const excludedIngredientsString = excludedIngredients.join(",");
+        const includedIngredientsString = meal.includedIngredients.join(",");
+
+        const { recipes, totalResults } = await searchRecipes("", 0, 12, {
+          cuisine: includedCuisinesString,
+          excludeIngredients: excludedIngredientsString,
+          type: meal.type,
+          includeIngredients: includedIngredientsString,
         });
 
-        if (includedCuisines.length > 0) {
-          params.append("cuisine", includedCuisines.join(","));
-        }
-
-        if (excludedIngredients.length > 0) {
-          params.append("excludeIngredients", excludedIngredients.join(","));
-        }
-
-        if (meal.type) {
-          params.append("type", meal.type);
-        }
-
-        if (meal.includedIngredients.length > 0) {
-          params.append(
-            "includeIngredients",
-            meal.includedIngredients.join(",")
-          );
-        }
-
-        const response = await fetch(
-          `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const data = await response.json();
-
         // Process results to extract only necessary fields
-        const processedResults = data.results.map((recipe: any) => {
+        const processedResults = recipes.map((recipe: any) => {
           let calories: number | undefined;
           let carbs: number | undefined;
           let protein: number | undefined;
@@ -175,7 +143,7 @@ export function useMealPlanGenerator({
 
         // Assign results to the appropriate meal type
         mealPlan[meal.type].results = processedResults;
-        mealPlan[meal.type].totalResults = data.totalResults;
+        mealPlan[meal.type].totalResults = totalResults;
       }
 
       console.log("Generated Meal Plan:", JSON.stringify(mealPlan, null, 2));
