@@ -15,7 +15,7 @@ export function useMealPlanGenerator({
     setIsGenerating(true);
 
     try {
-      const API_KEY = process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY;
+      const API_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY;
 
       if (!API_KEY) {
         throw new Error("Spoonacular API key is not configured");
@@ -100,7 +100,21 @@ export function useMealPlanGenerator({
           }
         );
 
+        if (!response.ok) {
+          throw new Error(
+            `Spoonacular API error: ${response.status} ${response.statusText}`
+          );
+        }
+
         const data = await response.json();
+
+        // Check if results exist and is an array
+        if (!Array.isArray(data.results)) {
+          console.error("Invalid API response:", data);
+          throw new Error(
+            data.message || "Invalid response from Spoonacular API"
+          );
+        }
 
         // Process results to extract only necessary fields
         const processedResults = data.results.map((recipe: any) => {
