@@ -236,6 +236,27 @@ export function MealDetailContent({
           </View>
         </View>
 
+        {/* Cuisine and Diet Tags */}
+        {(meal.cuisines?.length || meal.diets?.length) && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tagsScrollView}
+            contentContainerStyle={styles.tagsContainer}
+          >
+            {meal.cuisines?.map((cuisine) => (
+              <View key={cuisine} style={styles.cuisineTag}>
+                <Text style={styles.cuisineTagText}>{cuisine}</Text>
+              </View>
+            ))}
+            {meal.diets?.map((diet) => (
+              <View key={diet} style={styles.dietTag}>
+                <Text style={styles.dietTagText}>{diet}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Nutritions</Text>
         </View>
@@ -444,6 +465,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: Colors.gray[400],
+  },
+  tagsScrollView: {
+    marginTop: 16,
+    flexGrow: 0,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    paddingRight: 16,
+  },
+  cuisineTag: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.lilac[100],
+    borderWidth: 1,
+    borderColor: Colors.lilac[300],
+  },
+  cuisineTagText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.lilac[900],
+  },
+  dietTag: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.green[100],
+    borderWidth: 1,
+    borderColor: Colors.green[300],
+  },
+  dietTagText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.green[900],
   },
   sectionHeader: {
     marginTop: 8,

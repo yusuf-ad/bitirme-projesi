@@ -1,15 +1,17 @@
 import { Colors } from "@/constants/theme";
 import MealCard from "@/features/home/components/meal-card";
 import { MealPlanItemRecord, MealSlot } from "@/features/meal-plan/types";
+import { useDeleteMealItem } from "@/hooks/use-delete-meal-item";
 import { router } from "expo-router";
 import { ImageSourcePropType, StyleSheet, View } from "react-native";
+import { EmptyMealSlot } from "./empty-meal-slot";
 
 interface DailyMealsListProps {
   items: MealPlanItemRecord[];
   selectedDate: Date;
 }
 
-const MEAL_ORDER: MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
+const MEAL_ORDER: MealSlot[] = ["breakfast", "lunch", "dinner"];
 
 const PLACEHOLDER_RECIPE_IMAGE = require("@/assets/images/image.png");
 const FALLBACK_MEAL_ICON = require("@/assets/icons/chef-icon.svg");
@@ -44,6 +46,8 @@ const capitalize = (value: string) =>
   value.charAt(0).toUpperCase() + value.slice(1);
 
 export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
+  const deleteMutation = useDeleteMealItem();
+
   const sortedItems = [...items].sort((a, b) => {
     const aIndex = MEAL_ORDER.indexOf(a.meal_type);
     const bIndex = MEAL_ORDER.indexOf(b.meal_type);
@@ -52,17 +56,42 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
     return safeAIndex - safeBIndex;
   });
 
+  // Group meals by type
+  const mealsByType = new Map<MealSlot, MealPlanItemRecord>();
+  items.forEach((item) => {
+    if (MEAL_ORDER.includes(item.meal_type)) {
+      mealsByType.set(item.meal_type, item);
+    }
+  });
+
+  const handleDelete = (mealId: number) => {
+    deleteMutation.mutate(mealId);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.list}>
-        {sortedItems.map((item) => {
-          const details = DEFAULT_MEAL_DETAILS[item.meal_type] ?? {
-            label: capitalize(item.meal_type),
-            time: "",
-            icon: FALLBACK_MEAL_ICON,
-          };
+        {MEAL_ORDER.map((mealType) => {
+          const item = mealsByType.get(mealType);
+          const details = DEFAULT_MEAL_DETAILS[mealType];
+
+          if (!item) {
+            // Show empty slot for missing meals
+            return (
+              <EmptyMealSlot
+                key={mealType}
+                mealType={details.label}
+                mealTime={details.time}
+                mealIcon={details.icon}
+                mealSlot={mealType}
+                selectedDate={selectedDate}
+              />
+            );
+          }
+
+          // Render filled meal card
           const mealTime = details.time;
-          const mealType = details.label;
+          const mealLabel = details.label;
           const mealIcon = details.icon;
           const calories = item.calories_per_serving
             ? `${item.calories_per_serving} kcal`
@@ -86,7 +115,7 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
           return (
             <MealCard
               key={item.id}
-              mealType={mealType}
+              mealType={mealLabel}
               mealTime={mealTime}
               mealIcon={mealIcon}
               recipeName={item.recipe_name}
@@ -99,6 +128,7 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
               onPress={() =>
                 router.push(`/(meal)/${item.spoonacular_recipe_id}`)
               }
+              onDelete={() => handleDelete(item.id)}
             />
           );
         })}
