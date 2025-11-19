@@ -13,6 +13,8 @@ export interface UseRecipesQueryOptions {
   ingredients?: Ingredient[];
   cuisines?: string[];
   pageSize?: number;
+  minReadyTime?: number | null;
+  maxReadyTime?: number | null;
 }
 
 // Deduplicate recipes by ID
@@ -37,6 +39,8 @@ export function useRecipesQuery({
   ingredients = [],
   cuisines = [],
   pageSize = 10,
+  minReadyTime = null,
+  maxReadyTime = null,
 }: UseRecipesQueryOptions = {}) {
   // Create stable query key based on filters
   const queryKey = useMemo(
@@ -48,8 +52,10 @@ export function useRecipesQuery({
         .sort()
         .join(","),
       cuisines.sort().join(","),
+      minReadyTime ?? "",
+      maxReadyTime ?? "",
     ],
-    [query, ingredients, cuisines]
+    [query, ingredients, cuisines, minReadyTime, maxReadyTime]
   );
 
   const {
@@ -67,6 +73,9 @@ export function useRecipesQuery({
       // Prepare filters that are shared between both modes
       const ingredientNames = ingredients.map((ing) => ing.name).join(",");
       const cuisineNames = cuisines.join(",");
+      const shouldSortByTime = Boolean(minReadyTime);
+      const sort = shouldSortByTime ? "time" : undefined;
+      const sortDirection = shouldSortByTime ? "desc" : undefined;
 
       if (query.trim()) {
         // Search mode with filters
@@ -74,9 +83,18 @@ export function useRecipesQuery({
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
+          maxReadyTime: maxReadyTime ?? undefined,
+          sort,
+          sortDirection,
         });
+        const filtered = minReadyTime
+          ? result.recipes.filter((recipe) => {
+              if (recipe.readyInMinutes == null) return false;
+              return recipe.readyInMinutes >= minReadyTime;
+            })
+          : result.recipes;
         return {
-          recipes: result.recipes,
+          recipes: filtered,
           totalResults: result.totalResults,
           offset: pageParam,
         };
@@ -86,11 +104,21 @@ export function useRecipesQuery({
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
+          maxReadyTime: maxReadyTime ?? undefined,
+          sort,
+          sortDirection,
         });
 
+        const filtered = minReadyTime
+          ? recipes.filter((recipe) => {
+              if (recipe.readyInMinutes == null) return false;
+              return recipe.readyInMinutes >= minReadyTime;
+            })
+          : recipes;
+
         return {
-          recipes,
-          totalResults: recipes.length, // Random mode doesn't return total
+          recipes: filtered,
+          totalResults: filtered.length, // Random mode doesn't return total
           offset: pageParam,
         };
       }

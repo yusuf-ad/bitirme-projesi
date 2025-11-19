@@ -8,8 +8,11 @@ import {
   FilterChips,
   HomeHeader,
   LoadingState,
+  READY_TIME_OPTIONS,
   RecipeGrid,
   SearchBar,
+  TimeFilterModal,
+  type ReadyTimeOption,
 } from "@/features/home";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
@@ -52,11 +55,15 @@ export default function HomeTab() {
     setSelectedIngredients,
     selectedCuisines,
     setSelectedCuisines,
+    minReadyTime,
+    maxReadyTime,
+    setReadyTimeRange,
   } = useFilterStore();
   const horizontalPagerRef = useRef<ScrollView>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const cuisineModalRef = useRef<BottomSheetModal>(null);
+  const timeModalRef = useRef<BottomSheetModal>(null);
   const [debouncedSearchQuery] = useDebounce(searchQuery, 400);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const {
@@ -98,6 +105,8 @@ export default function HomeTab() {
     ingredients: memoizedIngredients,
     cuisines: memoizedCuisines,
     pageSize: 10,
+    minReadyTime,
+    maxReadyTime,
   });
 
   const handleRefresh = useCallback(async () => {
@@ -137,6 +146,38 @@ export default function HomeTab() {
     },
     [setSelectedCuisines]
   );
+
+  const handleOpenTimeModal = useCallback(() => {
+    timeModalRef.current?.present();
+  }, []);
+
+  const selectedTimeOptionId = useMemo(() => {
+    const match = READY_TIME_OPTIONS.find(
+      (option) =>
+        (option.minMinutes ?? null) === (minReadyTime ?? null) &&
+        (option.maxMinutes ?? null) === (maxReadyTime ?? null)
+    );
+    return match?.id ?? null;
+  }, [minReadyTime, maxReadyTime]);
+
+  const handleTimeSelect = useCallback(
+    (option: ReadyTimeOption | null) => {
+      setReadyTimeRange({
+        min: option?.minMinutes ?? null,
+        max: option?.maxMinutes ?? null,
+      });
+    },
+    [setReadyTimeRange]
+  );
+
+  const selectedTimeLabel = useMemo(() => {
+    if (!selectedTimeOptionId) {
+      return undefined;
+    }
+    return READY_TIME_OPTIONS.find(
+      (option) => option.id === selectedTimeOptionId
+    )?.label;
+  }, [selectedTimeOptionId]);
 
   const handleScroll = useCallback(
     (event: any) => {
@@ -228,6 +269,8 @@ export default function HomeTab() {
             onCuisinePress={handleOpenCuisineModal}
             selectedIngredients={selectedIngredients.map((ing) => ing.name)}
             selectedCuisines={selectedCuisines}
+            onTimePress={handleOpenTimeModal}
+            selectedTimeLabel={selectedTimeLabel}
           />
         </View>
       )}
@@ -347,6 +390,11 @@ export default function HomeTab() {
       <CuisineModal
         ref={cuisineModalRef}
         onCuisinesSelect={handleCuisinesSelect}
+      />
+      <TimeFilterModal
+        ref={timeModalRef}
+        selectedOptionId={selectedTimeOptionId}
+        onSelect={handleTimeSelect}
       />
     </View>
   );
