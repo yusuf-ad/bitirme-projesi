@@ -26,6 +26,8 @@ function extractCalories(recipe: Recipe): number | null {
 }
 
 export async function fetchFavoriteRecipes(userId: string): Promise<Recipe[]> {
+  console.log("🔍 Fetching favorites for user:", userId);
+
   const { data, error } = await supabase
     .from("favorite_recipes")
     .select("*")
@@ -33,9 +35,11 @@ export async function fetchFavoriteRecipes(userId: string): Promise<Recipe[]> {
     .order("created_at", { ascending: false });
 
   if (error) {
+    console.error("❌ Error fetching favorites:", error);
     throw error;
   }
 
+  console.log("✅ Favorites fetched successfully:", data?.length ?? 0, "items");
   const rows = (data ?? []) as FavoriteRecipeRow[];
   return rows.map((row) => row.recipe_payload);
 }
@@ -44,6 +48,12 @@ export async function addFavoriteRecipe(
   userId: string,
   recipe: Recipe
 ): Promise<void> {
+  console.log("➕ Adding favorite:", {
+    userId,
+    recipeId: recipe.id,
+    recipeTitle: recipe.title,
+  });
+
   const { error } = await supabase.from("favorite_recipes").insert({
     user_id: userId,
     recipe_id: recipe.id,
@@ -55,14 +65,19 @@ export async function addFavoriteRecipe(
   });
 
   if (error) {
+    console.error("❌ Error adding favorite:", error);
     throw error;
   }
+
+  console.log("✅ Favorite added successfully");
 }
 
 export async function removeFavoriteRecipe(
   userId: string,
   recipeId: number
 ): Promise<void> {
+  console.log("➖ Removing favorite:", { userId, recipeId });
+
   const { error } = await supabase
     .from("favorite_recipes")
     .delete()
@@ -70,7 +85,10 @@ export async function removeFavoriteRecipe(
     .eq("recipe_id", recipeId);
 
   if (error) {
+    console.error("❌ Error removing favorite:", error);
     throw error;
   }
+
+  console.log("✅ Favorite removed successfully");
 }
 

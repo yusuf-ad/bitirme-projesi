@@ -1231,8 +1231,8 @@ constants/
 
 ### Phase 2: Core Features (Weeks 3-5)
 
-- [ ] Recipe detail view - osman
-- [ ] Save favorite recipes - osman
+- [x] Recipe detail view - osman
+- [x] Save favorite recipes - osman
 
 - [x] Spoonacular API integration - yusuf
 - [x] Recipe search and display - yusuf
@@ -1254,7 +1254,6 @@ constants/
 
 - [ ] Meal logging system
 - [ ] Nutrition tracking
-- [ ] Progress charts and visualizations
 - [ ] Goal progress indicators
 - [ ] History view
 

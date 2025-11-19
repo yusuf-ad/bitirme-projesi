@@ -260,7 +260,8 @@ export async function searchRecipes(
  */
 export async function getRecipeDetails(id: number): Promise<Recipe> {
   try {
-    const response = await fetch(`${SPOONACULAR_BASE_URL}/${id}/information`, {
+    const url = `${SPOONACULAR_BASE_URL}/${id}/information?includeNutrition=true`;
+    const response = await fetch(url, {
       headers: {
         "x-rapidapi-key": RAPIDAPI_KEY,
         "x-rapidapi-host": RAPIDAPI_HOST,

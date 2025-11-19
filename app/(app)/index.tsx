@@ -5,8 +5,8 @@ import Header from "@/features/home/components/header";
 import { DailyMealsList, MealPlanEmptyState } from "@/features/meal-plan";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
-import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -20,11 +20,30 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function MealplanTab() {
   const { session } = useAuthContext();
   const { bottom, top } = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ date?: string }>();
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
   });
+  const [hasHydratedInitialDate, setHasHydratedInitialDate] = useState(false);
+
+  useEffect(() => {
+    if (hasHydratedInitialDate) {
+      return;
+    }
+    const rawParam = Array.isArray(params.date) ? params.date[0] : params.date;
+    if (!rawParam) {
+      setHasHydratedInitialDate(true);
+      return;
+    }
+    const parsed = new Date(rawParam);
+    if (!Number.isNaN(parsed.getTime())) {
+      parsed.setHours(0, 0, 0, 0);
+      setSelectedDate(parsed);
+    }
+    setHasHydratedInitialDate(true);
+  }, [params.date, hasHydratedInitialDate]);
 
   const { data, isLoading, refetch } = useMealPlansQuery(
     session?.user?.id,

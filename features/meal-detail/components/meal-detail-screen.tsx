@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/theme";
-import { Stack } from "expo-router";
+import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
+import { Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -10,15 +12,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCallback, useEffect, useMemo } from "react";
 import { MealDetailContent } from "./meal-detail-content";
 import { useMealDetail } from "../hooks/use-meal-detail";
+import { getMacroSummary } from "@/shared/utils/nutrition";
 
 interface MealDetailScreenProps {
   mealId: number | null;
 }
 
 export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
+  const router = useRouter();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
   const {
@@ -29,7 +32,18 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
     error,
   } = useMealDetail(canLoadMeal ? mealId : null);
 
+  const { favoriteIds, toggleFavorite } = useFavoriteRecipes();
+  const isFavorited = useMemo(
+    () => (data?.id ? favoriteIds.has(data.id) : false),
+    [data?.id, favoriteIds]
+  );
+
   const headerTitle = useMemo(() => data?.title ?? "Meal details", [data?.title]);
+
+  const macroSnapshot = useMemo(
+    () => getMacroSummary(data?.nutrition?.nutrients) ?? {},
+    [data?.nutrition?.nutrients]
+  );
 
   useEffect(() => {
     if (data?.title) {
@@ -43,6 +57,38 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
     await Haptics.selectionAsync();
     await refetch();
   }, [refetch]);
+
+  const handleBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  }, [router]);
+
+  const handleToggleFavorite = useCallback(async () => {
+    if (!data) return;
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toggleFavorite(data);
+  }, [data, toggleFavorite]);
+
+  const handlePlanMeal = useCallback(async () => {
+    if (!data) {
+      return;
+    }
+    await Haptics.selectionAsync();
+    const payload = {
+      id: data.id,
+      title: data.title,
+      image: data.image ?? "",
+      readyInMinutes: data.readyInMinutes ?? null,
+      macros: macroSnapshot,
+    };
+
+    router.push({
+      pathname: "/(plan)/assign-meal",
+      params: {
+        recipe: JSON.stringify(payload),
+      },
+    });
+  }, [data, router, macroSnapshot]);
 
   const renderState = () => {
     if (!canLoadMeal) {
@@ -86,20 +132,19 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
         meal={data}
         refreshing={isRefetching}
         onRefresh={handleRefresh}
+        isFavorited={isFavorited}
+        onToggleFavorite={handleToggleFavorite}
+        onBack={handleBack}
+        onPlanMeal={handlePlanMeal}
       />
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
+    <SafeAreaView style={styles.safeArea} edges={[]}>
       <Stack.Screen
         options={{
-          headerTitle,
-          headerTintColor: Colors.text.primary,
-          headerShadowVisible: false,
-          headerStyle: {
-            backgroundColor: Colors.background.surface,
-          },
+          headerShown: false,
         }}
       />
       {renderState()}

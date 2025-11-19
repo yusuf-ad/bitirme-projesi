@@ -1,6 +1,13 @@
 import { Colors } from "@/constants/theme";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface HeaderProps {
   firstName: string;
@@ -8,6 +15,35 @@ interface HeaderProps {
 }
 
 export default function Header({ firstName, motivationText }: HeaderProps) {
+  const router = useRouter();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  function handleProfilePress() {
+    // Haptic feedback for touch interaction
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Navigate to profile tab
+    router.push("/(profile)");
+  }
+
+  function handlePressIn() {
+    scale.value = withSpring(0.9, {
+      damping: 15,
+      stiffness: 300,
+    });
+  }
+
+  function handlePressOut() {
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 300,
+    });
+  }
+
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -17,12 +53,20 @@ export default function Header({ firstName, motivationText }: HeaderProps) {
         </View>
       </View>
       <View style={styles.headerRight}>
-        <View style={styles.profilePictureContainer}>
-          <Image
-            source={require("@/assets/images/profile-picture.png")}
-            style={styles.profilePicture}
-          />
-        </View>
+        <Pressable
+          onPress={handleProfilePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={styles.profilePictureContainer}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Animated.View style={animatedStyle}>
+            <Image
+              source={require("@/assets/images/profile-picture.png")}
+              style={styles.profilePicture}
+            />
+          </Animated.View>
+        </Pressable>
       </View>
     </View>
   );

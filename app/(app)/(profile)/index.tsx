@@ -1,13 +1,17 @@
 import { Colors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { supabase } from "@/lib/supabase";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -33,8 +37,28 @@ interface ProfileData {
 interface MenuItem {
   id: string;
   title: string;
+  description?: string;
+  meta?: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   onPress: () => void;
+}
+
+interface SettingsSection {
+  id: string;
+  title: string;
+  items: MenuItem[];
+}
+
+interface HighlightCard {
+  id: string;
+  title: string;
+  value: string;
+  detail?: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  onPress: () => void;
+  accentColor: string;
+  backgroundColor: string;
+  iconBackgroundColor: string;
 }
 
 export default function ProfileTab() {
@@ -92,6 +116,27 @@ export default function ProfileTab() {
     }
   };
 
+  function handleSignOut() {
+    Alert.alert(
+      "Sign out",
+      "Are you sure you want to sign out? Your saved preferences will stay on this device.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign out",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await supabase.auth.signOut();
+            } catch (error) {
+              Alert.alert("Error", "We couldn't sign you out. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  }
+
   const getUserInitials = () => {
     if (profile?.full_name) {
       return profile.full_name
@@ -125,53 +170,210 @@ export default function ProfileTab() {
     return "Recently";
   };
 
-  const generalMenuItems: MenuItem[] = [
-    {
-      id: "account",
-      title: "Account",
-      icon: "account-circle-outline",
-      onPress: () => router.push("/(app)/(profile)/account"),
-    },
-    {
-      id: "preferences",
-      title: "Preferences",
-      icon: "tune",
-      onPress: () => router.push("/(app)/(profile)/preferences"),
-    },
-    {
-      id: "goals",
-      title: "Goals & Metrics",
-      icon: "target",
-      onPress: () => router.push("/(app)/(profile)/goals-metrics"),
-    },
-    {
-      id: "meal-times",
-      title: "Meal Times",
-      icon: "clock-outline",
-      onPress: () => router.push("/(app)/(profile)/meal-times"),
-    },
-  ];
+  const formattedUnitsSummary = useMemo(() => {
+    if (!profileData) return "Metric defaults";
+    const summary = [
+      profileData.weight ? `${profileData.weight} kg` : undefined,
+      profileData.height ? `${profileData.height} cm` : undefined,
+    ].filter(Boolean);
+    return summary.length ? summary.join(" • ") : "Metric defaults";
+  }, [profileData]);
 
-  const featureMenuItems: MenuItem[] = [
-    {
-      id: "taste",
-      title: "Taste Preferences",
-      icon: "food",
-      onPress: () => router.push("/(app)/(profile)/taste-preferences"),
-    },
-    {
-      id: "allergies",
-      title: "Allergies & Diet",
-      icon: "alert-circle-outline",
-      onPress: () => router.push("/(app)/(profile)/allergies-diet"),
-    },
-    {
-      id: "cooking",
-      title: "Cooking Skill",
-      icon: "chef-hat",
-      onPress: () => router.push("/(app)/(profile)/cooking-skill"),
-    },
-  ];
+  const highlightCards: HighlightCard[] = useMemo(() => {
+    const cuisineLabel =
+      profileData?.cuisines && profileData.cuisines.length > 0
+        ? profileData.cuisines.slice(0, 1).join(", ")
+        : undefined;
+    const dietLabel =
+      profileData?.dietPreferences && profileData.dietPreferences.length > 0
+        ? profileData.dietPreferences.slice(0, 1).join(", ")
+        : undefined;
+
+    return [
+      {
+        id: "goals",
+        title: "Goals",
+        value: profileData?.goals?.length
+          ? `${profileData.goals.length} active`
+          : "Set your goals",
+        detail:
+          profileData?.goals?.length && profileData.goals.length > 0
+            ? profileData.goals.slice(0, 2).join(", ")
+            : "Tap to personalize your plan",
+        icon: "target",
+        onPress: () => router.push("/(app)/(profile)/goals-metrics"),
+        accentColor: Colors.green[800],
+        backgroundColor: Colors.green[100],
+        iconBackgroundColor: Colors.green[200],
+      },
+      {
+        id: "schedule",
+        title: "Meal schedule",
+        value:
+          profileData?.breakfastTime && profileData?.dinnerTime
+            ? `${profileData.breakfastTime} • ${profileData.dinnerTime}`
+            : "Pick meal times",
+        detail: "Keep reminders aligned with your day",
+        icon: "clock-time-three-outline",
+        onPress: () => router.push("/(app)/(profile)/meal-times"),
+        accentColor: Colors.lilac[800],
+        backgroundColor: Colors.lilac[100],
+        iconBackgroundColor: Colors.lilac[200],
+      },
+      {
+        id: "taste",
+        title: "Taste profile",
+        value:
+          cuisineLabel || dietLabel
+            ? [cuisineLabel, dietLabel].filter(Boolean).join(" • ")
+            : "Add cuisines & diets",
+        detail: `${profileData?.allergies?.length || 0} allergies tracked`,
+        icon: "food-apple-outline",
+        onPress: () => router.push("/(app)/(profile)/taste-preferences"),
+        accentColor: Colors.purple[700],
+        backgroundColor: Colors.beige[100],
+        iconBackgroundColor: Colors.beige[300],
+      },
+    ];
+  }, [profileData]);
+
+  const settingsSections: SettingsSection[] = useMemo(
+    () => [
+      {
+        id: "personal",
+        title: "Personal Settings",
+        items: [
+          {
+            id: "edit-profile",
+            title: "Edit Profile",
+            description: "Avatar, name, contact details",
+            icon: "account-edit-outline",
+            onPress: () => router.push("/(app)/(profile)/account"),
+          },
+          {
+            id: "preferences",
+            title: "Units & Nutrition Defaults",
+            description: "Macro targets, measurement system",
+            meta: formattedUnitsSummary,
+            icon: "tune",
+            onPress: () => router.push("/(app)/(profile)/preferences"),
+          },
+          {
+            id: "goals-metrics",
+            title: "Goals & Metrics",
+            description: "Weight, activity & progress",
+            icon: "chart-line",
+            onPress: () => router.push("/(app)/(profile)/goals-metrics"),
+          },
+          {
+            id: "privacy",
+            title: "Privacy & Data",
+            description: "Manage insights & sharing",
+            icon: "shield-check-outline",
+            onPress: () => router.push("/(app)/(profile)/privacy"),
+          },
+          {
+            id: "notifications",
+            title: "Notifications",
+            description: "Meal reminders & summaries",
+            icon: "bell-outline",
+            onPress: () => router.push("/(app)/(profile)/notifications"),
+          },
+        ],
+      },
+      {
+        id: "app",
+        title: "App Settings",
+        items: [
+          {
+            id: "meal-times",
+            title: "Meal Times",
+            description: "Breakfast, lunch and dinner windows",
+            icon: "calendar-clock",
+            onPress: () => router.push("/(app)/(profile)/meal-times"),
+          },
+          {
+            id: "apple-watch",
+            title: "Apple Watch",
+            description: "Sync rings & activity calories",
+            icon: "watch-variant",
+            onPress: () =>
+              router.push({
+                pathname: "/(app)/(profile)/integrations",
+                params: { focus: "apple" },
+              }),
+          },
+          {
+            id: "partner-accounts",
+            title: "Partner Accounts",
+            description: "Strava, Fitbit & more",
+            icon: "handshake-outline",
+            onPress: () =>
+              router.push({
+                pathname: "/(app)/(profile)/integrations",
+                params: { focus: "partners" },
+              }),
+          },
+          {
+            id: "social-sharing",
+            title: "Social Sharing",
+            description: "Invite friends & share wins",
+            icon: "share-variant-outline",
+            onPress: () => handleShareApp(),
+          },
+        ],
+      },
+      {
+        id: "more",
+        title: "More",
+        items: [
+          {
+            id: "taste",
+            title: "Taste Preferences",
+            description: "Meals, cuisines & dislikes",
+            icon: "silverware-fork-knife",
+            onPress: () => router.push("/(app)/(profile)/taste-preferences"),
+          },
+          {
+            id: "allergies",
+            title: "Allergies & Diet",
+            description: "Medical restrictions & macros",
+            icon: "alert-circle-outline",
+            onPress: () => router.push("/(app)/(profile)/allergies-diet"),
+          },
+          {
+            id: "cooking",
+            title: "Cooking Skill",
+            description: `Currently ${getCookingSkillLabel(
+              profileData?.cookingSkill
+            )}`,
+            icon: "chef-hat",
+            onPress: () => router.push("/(app)/(profile)/cooking-skill"),
+          },
+          {
+            id: "support",
+            title: "Support & Feedback",
+            description: "Chat with us or send an email",
+            icon: "message-question-outline",
+            onPress: () => router.push("/(app)/(profile)/support-feedback"),
+          },
+        ],
+      },
+    ],
+    [formattedUnitsSummary, profileData?.cookingSkill]
+  );
+
+  async function handleShareApp() {
+    try {
+      await Share.share({
+        title: "Plan meals with PlannedEat",
+        message:
+          "Plan meals effortlessly with PlannedEat. Track goals, sync reminders and get tailored recipes. Download the app to start planning with me!",
+      });
+    } catch (error) {
+      Alert.alert("Share failed", "Unable to open the share sheet right now.");
+    }
+  }
 
   const formatTime = (time: {
     hour: number;
@@ -183,7 +385,7 @@ export default function ProfileTab() {
     }`;
   };
 
-  const getCookingSkillEmoji = (skill?: string) => {
+  function getCookingSkillEmoji(skill?: string) {
     switch (skill) {
       case "novice":
         return "🍳";
@@ -196,9 +398,9 @@ export default function ProfileTab() {
       default:
         return "🍳";
     }
-  };
+  }
 
-  const getCookingSkillLabel = (skill?: string) => {
+  function getCookingSkillLabel(skill?: string) {
     switch (skill) {
       case "novice":
         return "Novice";
@@ -211,32 +413,50 @@ export default function ProfileTab() {
       default:
         return "Not set";
     }
-  };
+  }
 
-  const renderMenuItem = (item: MenuItem, index: number, array: MenuItem[]) => (
+  const renderMenuItem = (
+    item: MenuItem,
+    index: number,
+    array: MenuItem[]
+  ) => (
     <View key={item.id}>
       <Pressable
         style={({ pressed }) => [
           styles.menuItem,
           pressed && styles.menuItemPressed,
         ]}
-        onPress={item.onPress}
+        onPress={() => {
+          Haptics.selectionAsync();
+          item.onPress();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={item.title}
+        accessibilityHint={item.description}
       >
         <View style={styles.menuItemLeft}>
           <View style={styles.menuIconContainer}>
             <MaterialCommunityIcons
               name={item.icon}
-              size={24}
-              color={Colors.lilac[900]}
+              size={22}
+              color={Colors.text.primary}
             />
           </View>
-          <Text style={styles.menuItemText}>{item.title}</Text>
+          <View style={styles.menuItemCopy}>
+            <Text style={styles.menuItemText}>{item.title}</Text>
+            {item.description && (
+              <Text style={styles.menuItemDescription}>{item.description}</Text>
+            )}
+          </View>
         </View>
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={24}
-          color={Colors.lilac[900]}
-        />
+        <View style={styles.metaWrapper}>
+          {item.meta && <Text style={styles.menuItemMeta}>{item.meta}</Text>}
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={22}
+            color={Colors.gray[400]}
+          />
+        </View>
       </Pressable>
       {index < array.length - 1 && <View style={styles.separator} />}
     </View>
@@ -254,11 +474,25 @@ export default function ProfileTab() {
   return (
     <ScrollView
       style={[styles.container, { paddingTop: top }]}
-      contentContainerStyle={[styles.content, { paddingBottom: bottom + 100 }]}
+      contentContainerStyle={[styles.content, { paddingBottom: bottom + 64 }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Page Title */}
-      <Text style={styles.pageTitle}>More</Text>
+      <View style={styles.headerBar}>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <Pressable
+          onPress={handleSignOut}
+          hitSlop={12}
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+        >
+          <MaterialCommunityIcons
+            name="logout"
+            size={22}
+            color="#EF4444"
+          />
+        </Pressable>
+      </View>
 
       {/* User Profile Header */}
       <View style={styles.profileHeader}>
@@ -268,30 +502,74 @@ export default function ProfileTab() {
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{getUserDisplayName()}</Text>
           <Text style={styles.profileMemberSince}>
-            Member Since {getMemberSinceDate()}
+            Member since {getMemberSinceDate()}
           </Text>
         </View>
       </View>
 
-      {/* General Section */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>General</Text>
-        <View style={styles.menuContainer}>
-          {generalMenuItems.map((item, index, array) =>
-            renderMenuItem(item, index, array)
-          )}
-        </View>
-      </View>
+      {/* Highlights - horizontally scrollable */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.highlightsContainer}
+      >
+        {highlightCards.map((card) => (
+          <Pressable
+            key={card.id}
+            onPress={() => {
+              Haptics.selectionAsync();
+              card.onPress();
+            }}
+            style={({ pressed }) => [
+              styles.highlightCard,
+              {
+                backgroundColor: card.backgroundColor,
+                borderColor: card.iconBackgroundColor,
+              },
+              pressed && styles.highlightCardPressed,
+            ]}
+            accessibilityRole="button"
+          >
+            <View
+              style={[
+                styles.highlightIcon,
+                { backgroundColor: card.iconBackgroundColor },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={card.icon}
+                size={18}
+                color={card.accentColor}
+              />
+            </View>
+            <Text
+              style={[styles.highlightLabel, { color: card.accentColor }]}
+            >
+              {card.title}
+            </Text>
+            <Text style={styles.highlightValue} numberOfLines={1}>
+              {card.value}
+            </Text>
+            {card.detail && (
+              <Text style={styles.highlightDetail} numberOfLines={2}>
+                {card.detail}
+              </Text>
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
 
-      {/* Feature Settings Section */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Feature Settings</Text>
-        <View style={styles.menuContainer}>
-          {featureMenuItems.map((item, index, array) =>
-            renderMenuItem(item, index, array)
-          )}
+      {/* Sections */}
+      {settingsSections.map((section) => (
+        <View key={section.id} style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+          <View style={styles.menuContainer}>
+            {section.items.map((item, index, array) =>
+              renderMenuItem(item, index, array)
+            )}
+          </View>
         </View>
-      </View>
+      ))}
     </ScrollView>
   );
 }
@@ -315,12 +593,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.secondary,
   },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: Colors.text.primary,
+  headerBar: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 24,
-    marginTop: 8,
+  },
+  headerTitle: {
+    fontSize: 16,
+    letterSpacing: 1.1,
+    fontWeight: "600",
+    color: Colors.text.primary,
+    textTransform: "uppercase",
+    textShadowColor: "rgba(0,0,0,0.10)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  iconButton: {
+    position: "absolute",
+    right: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
   },
   profileHeader: {
     flexDirection: "row",
@@ -356,6 +649,52 @@ const styles = StyleSheet.create({
   profileMemberSince: {
     fontSize: 14,
     color: Colors.text.secondary,
+    opacity: 0.8,
+  },
+  highlightsContainer: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    paddingHorizontal: 4,
+    gap: 12,
+    marginBottom: 28,
+  },
+  highlightCard: {
+    width: 210,
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(230,235,255,0.9)",
+  },
+  highlightCardPressed: {
+    backgroundColor: "#F8F8FF",
+  },
+  highlightIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.lilac[100],
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  highlightLabel: {
+    fontSize: 11,
+    color: Colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  highlightValue: {
+    fontSize: 15,
+    color: Colors.text.primary,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  highlightDetail: {
+    fontSize: 12,
+    color: Colors.text.secondary,
   },
   sectionContainer: {
     marginBottom: 32,
@@ -376,8 +715,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
   },
   menuItemPressed: {
     backgroundColor: "#F8F8F8",
@@ -386,21 +725,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    flex: 1,
   },
   menuIconContainer: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 12,
+    backgroundColor: "#F4F4F7",
   },
   menuItemText: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: "600",
     color: Colors.text.primary,
-    fontWeight: "400",
+  },
+  menuItemCopy: {
+    flex: 1,
+  },
+  menuItemDescription: {
+    fontSize: 13,
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  menuItemMeta: {
+    fontSize: 13,
+    color: Colors.text.primary,
+    fontWeight: "500",
+  },
+  metaWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   separator: {
     height: 1,
     backgroundColor: "#F0F0F0",
-    marginLeft: 60,
+    marginLeft: 64,
   },
 });
