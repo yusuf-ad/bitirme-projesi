@@ -1,7 +1,10 @@
+import { pantryService } from "@/features/pantry/services/pantry-service";
+import { PantryCategory } from "@/features/pantry/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -43,6 +46,7 @@ export default function ScanResults() {
 
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (params.items) {
@@ -175,10 +179,60 @@ export default function ScanResults() {
     );
   };
 
-  const handleAddToPantry = () => {
-    // TODO: Implement add to pantry logic
-    console.log("Adding to pantry:", ingredients);
-    router.push("/(app)/pantry");
+  const handleAddToPantry = async () => {
+    if (ingredients.length === 0) {
+      Alert.alert("No items", "Please add at least one item to save.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // 1. Categorize items
+      const ingredientNames = ingredients.map(
+        (i) => i.spoonacularName || i.name
+      );
+      const categorizeRes = await fetch("/api/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ingredients: ingredientNames }),
+      });
+
+      if (!categorizeRes.ok) throw new Error("Failed to categorize items");
+
+      const { items: categorizedItems } = await categorizeRes.json();
+      const categoryMap = new Map(
+        categorizedItems.map((i: any) => [i.name, i.category])
+      );
+
+      // 2. Prepare items for DB
+      const itemsToSave = ingredients.map((item) => {
+        const name = item.spoonacularName || item.name;
+        const category = (categoryMap.get(name) as PantryCategory) || "Other";
+
+        return {
+          name,
+          amount: item.parsedAmount,
+          unit: item.parsedUnit,
+          is_weight: item.isWeight,
+          spoonacular_id: item.spoonacularId,
+          spoonacular_name: item.spoonacularName,
+          spoonacular_image: item.spoonacularImage,
+          category,
+          status: "pantry" as const,
+          checked: false,
+        };
+      });
+
+      // 3. Save to Supabase
+      await pantryService.addItems(itemsToSave);
+
+      router.push("/(app)/pantry");
+    } catch (error) {
+      console.error("Error saving items:", error);
+      Alert.alert("Error", "Failed to save items to pantry. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -335,9 +389,19 @@ export default function ScanResults() {
         />
 
         <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
-          <Pressable style={styles.primaryButton} onPress={handleAddToPantry}>
-            <Text style={styles.primaryButtonText}>Add to Pantry</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          <Pressable
+            style={[styles.primaryButton, isSaving && { opacity: 0.7 }]}
+            onPress={handleAddToPantry}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.primaryButtonText}>Add to Pantry</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </>
+            )}
           </Pressable>
         </View>
       </View>
