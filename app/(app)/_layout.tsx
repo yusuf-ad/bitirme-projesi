@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { Platform } from "react-native";
 import { CustomTabBar } from "../../shared/components/custom-tab-bar";
 
 export default function TabLayout() {
@@ -7,6 +8,15 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        animation: "shift",
+        // Smooth page transitions
+        animationDuration: 300,
+        ...(Platform.OS === "ios" && {
+          animation: "shift",
+        }),
+        ...(Platform.OS === "android" && {
+          animation: "shift",
+        }),
       }}
     >
       <Tabs.Screen
