@@ -208,6 +208,7 @@ export default function ScanResults() {
 
         <FlatList
           data={ingredients}
+          showsVerticalScrollIndicator={false}
           keyExtractor={(it, idx) => `${it.name}-${idx}`}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
