@@ -1,8 +1,9 @@
 import { Colors } from "@/constants/theme";
 import { Recipe } from "@/lib/spoonacular";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   GestureResponderEvent,
   Pressable,
@@ -43,89 +44,117 @@ export function RecipeCard({
   };
 
   return (
-    <Pressable style={styles.itemCard} onPress={onPress}>
-      <View>
-        <Image
-          source={{ uri: recipe.image }}
-          style={styles.itemImage}
-          placeholder="L4|400"
-          contentFit="cover"
-        />
+    <Pressable style={styles.cardPressable} onPress={onPress}>
+      <LinearGradient
+        colors={[
+          "rgba(120, 73, 182, 0.65)",
+          "rgba(120, 73, 182, 0.45)",
+          "rgba(120, 73, 182, 0.25)",
+          "rgba(120, 73, 182, 0.08)",
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.gradientBorder}
+      >
+        <View style={styles.itemCard}>
+          <View>
+            <Image
+              source={{ uri: recipe.image }}
+              style={styles.itemImage}
+              placeholder="L4|400"
+              contentFit="cover"
+            />
 
-        <Pressable
-          hitSlop={24}
-          style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
-          onPress={handleToggleFavorite}
-          android_ripple={{ color: Colors.lilac[300] }}
-          accessibilityRole="button"
-          accessibilityLabel={
-            isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"
-          }
-        >
-          <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
-            size={20}
-            color={
-              isFavorite ? Colors.semantic.error.main : Colors.background.surface
-            }
-          />
-        </Pressable>
-      </View>
-
-      <View style={styles.itemContentContainer}>
-        <Text style={styles.itemText} numberOfLines={2}>
-          {recipe.title}
-        </Text>
-
-        <View style={styles.metaContainer}>
-          {recipe.readyInMinutes && (
-            <>
-              <View style={styles.metaItem}>
-                <Image
-                  source={require("@/assets/icons/clock-icon.svg")}
-                  style={styles.metaIcon}
-                />
-                <Text style={styles.metaText}>
-                  {recipe.readyInMinutes} mins
-                </Text>
-              </View>
-            </>
-          )}
-          <Text style={styles.separator}>|</Text>
-
-          {calories && (
-            <View style={styles.metaItem}>
-              <Image
-                source={require("@/assets/icons/flame-icon.svg")}
-                style={styles.metaIcon}
+            <Pressable
+              hitSlop={24}
+              style={[
+                styles.favoriteButton,
+                isFavorite && styles.favoriteActive,
+              ]}
+              onPress={handleToggleFavorite}
+              android_ripple={{ color: Colors.lilac[300] }}
+              accessibilityRole="button"
+              accessibilityLabel={
+                isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"
+              }
+            >
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={20}
+                color={
+                  isFavorite ? Colors.lilac[600] : Colors.background.surface
+                }
               />
-              <Text style={styles.metaText}>{Math.round(calories)} cal</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.itemContentContainer}>
+            <Text style={styles.itemText} numberOfLines={2}>
+              {recipe.title}
+            </Text>
+
+            <View style={styles.metaContainer}>
+              {recipe.readyInMinutes && (
+                <>
+                  <View style={styles.metaItem}>
+                    <Image
+                      source={require("@/assets/icons/clock-icon.svg")}
+                      style={styles.metaIcon}
+                    />
+                    <Text style={styles.metaText}>
+                      {recipe.readyInMinutes} mins
+                    </Text>
+                  </View>
+                </>
+              )}
+              <Text style={styles.separator}>|</Text>
+
+              {calories && (
+                <View style={styles.metaItem}>
+                  <Image
+                    source={require("@/assets/icons/flame-icon.svg")}
+                    style={styles.metaIcon}
+                  />
+                  <Text style={styles.metaText}>
+                    {Math.round(calories)} cal
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
+          </View>
         </View>
-      </View>
+      </LinearGradient>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  itemCard: {
-    backgroundColor: Colors.background.surface,
-    borderRadius: 12,
-    shadowColor: "#000",
+  cardPressable: {
+    width: "100%",
+  },
+  gradientBorder: {
+    borderRadius: 18,
+    padding: 2.5,
+    height: 272,
+    shadowColor: Colors.lilac[900],
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 6,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    height: 268,
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  itemCard: {
+    flex: 1,
+    backgroundColor: Colors.background.surface,
+    borderRadius: 15.5,
+    overflow: "hidden",
   },
   itemImage: {
     width: "100%",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 15.5,
+    borderTopRightRadius: 15.5,
     aspectRatio: 10 / 9,
     backgroundColor: Colors.gray[300],
   },
