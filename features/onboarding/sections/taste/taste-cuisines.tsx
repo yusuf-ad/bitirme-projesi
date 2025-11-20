@@ -1,6 +1,6 @@
 import { POPULAR_CUISINES } from "@/lib/constants";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Image,
@@ -14,7 +14,9 @@ interface TasteCuisinesProps {
   title: string;
   description?: string;
   onSelectionChange?: (selectedCuisines: string[]) => void;
+  onDislikeChange?: (dislikedCuisines: string[]) => void;
   initialSelection?: string[];
+  initialDisliked?: string[];
 }
 
 const cuisineDescriptions: Record<string, { description: string; image: any }> =
@@ -84,12 +86,39 @@ export function TasteCuisines({
   description,
   onSelectionChange,
   initialSelection = [],
+  onDislikeChange,
+  initialDisliked = [],
 }: TasteCuisinesProps) {
   const [likedCuisines, setLikedCuisines] =
     useState<string[]>(initialSelection);
-  const [dislikedCuisines, setDislikedCuisines] = useState<string[]>([]);
+  const [dislikedCuisines, setDislikedCuisines] =
+    useState<string[]>(initialDisliked);
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    setLikedCuisines(initialSelection);
+  }, [initialSelection]);
+
+  useEffect(() => {
+    setDislikedCuisines(initialDisliked);
+  }, [initialDisliked]);
+
+  const updateLikedCuisines = (updater: (current: string[]) => string[]) => {
+    setLikedCuisines((current) => {
+      const next = updater(current);
+      onSelectionChange?.(next);
+      return next;
+    });
+  };
+
+  const updateDislikedCuisines = (updater: (current: string[]) => string[]) => {
+    setDislikedCuisines((current) => {
+      const next = updater(current);
+      onDislikeChange?.(next);
+      return next;
+    });
+  };
 
   const toggleCuisine = (cuisineId: string, like: boolean) => {
     if (like) {
@@ -98,15 +127,15 @@ export function TasteCuisines({
 
       if (isCurrentlyLiked) {
         // Remove from liked
-        const updatedSelection = likedCuisines.filter((c) => c !== cuisineId);
-        setLikedCuisines(updatedSelection);
-        onSelectionChange?.(updatedSelection);
+        updateLikedCuisines((current) =>
+          current.filter((c) => c !== cuisineId)
+        );
       } else {
         // Add to liked and remove from disliked if exists
-        const updatedSelection = [...likedCuisines, cuisineId];
-        setLikedCuisines(updatedSelection);
-        setDislikedCuisines(dislikedCuisines.filter((c) => c !== cuisineId));
-        onSelectionChange?.(updatedSelection);
+        updateLikedCuisines((current) => [...current, cuisineId]);
+        updateDislikedCuisines((current) =>
+          current.filter((c) => c !== cuisineId)
+        );
 
         // Auto scroll to next card
         setTimeout(() => {
@@ -124,13 +153,15 @@ export function TasteCuisines({
 
       if (isCurrentlyDisliked) {
         // Remove from disliked
-        setDislikedCuisines(dislikedCuisines.filter((c) => c !== cuisineId));
+        updateDislikedCuisines((current) =>
+          current.filter((c) => c !== cuisineId)
+        );
       } else {
         // Add to disliked and remove from liked if exists
-        setDislikedCuisines([...dislikedCuisines, cuisineId]);
-        const updatedSelection = likedCuisines.filter((c) => c !== cuisineId);
-        setLikedCuisines(updatedSelection);
-        onSelectionChange?.(updatedSelection);
+        updateDislikedCuisines((current) => [...current, cuisineId]);
+        updateLikedCuisines((current) =>
+          current.filter((c) => c !== cuisineId)
+        );
 
         // Auto scroll to next card
         setTimeout(() => {

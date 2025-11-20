@@ -4,3 +4,4 @@ export { TasteCover } from "./taste-cover";
 export { TasteCuisines } from "./taste-cuisines";
 export { TasteDietPreferences } from "./taste-diet-preferences";
 export { TasteMeals } from "./taste-meals";
+export { DietAdjustTargetsScreen } from "./diet-adjust-targets";
