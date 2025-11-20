@@ -1,7 +1,8 @@
 import { Colors } from "@/constants/theme";
 import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
-import { Stack, useRouter } from "expo-router";
+import { getMacroSummary } from "@/shared/utils/nutrition";
 import * as Haptics from "expo-haptics";
+import { Stack, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
 import {
   AccessibilityInfo,
@@ -12,9 +13,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MealDetailContent } from "./meal-detail-content";
 import { useMealDetail } from "../hooks/use-meal-detail";
-import { getMacroSummary } from "@/shared/utils/nutrition";
+import { MealDetailContent } from "./meal-detail-content";
 
 interface MealDetailScreenProps {
   mealId: number | null;
@@ -24,21 +24,15 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
   const router = useRouter();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
-  const {
-    data,
-    isPending,
-    isRefetching,
-    refetch,
-    error,
-  } = useMealDetail(canLoadMeal ? mealId : null);
+  const { data, isPending, isRefetching, refetch, error } = useMealDetail(
+    canLoadMeal ? mealId : null
+  );
 
   const { favoriteIds, toggleFavorite } = useFavoriteRecipes();
   const isFavorited = useMemo(
     () => (data?.id ? favoriteIds.has(data.id) : false),
     [data?.id, favoriteIds]
   );
-
-  const headerTitle = useMemo(() => data?.title ?? "Meal details", [data?.title]);
 
   const macroSnapshot = useMemo(
     () => getMacroSummary(data?.nutrition?.nutrients) ?? {},
@@ -184,4 +178,3 @@ const styles = StyleSheet.create({
     color: Colors.background.surface,
   },
 });
-
