@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Image } from "expo-image";
 import {
@@ -60,9 +61,9 @@ export function PantryCategoryPreview({
         contentContainerStyle={styles.listContent}
       >
         {items.map((item, index) => (
-          <View
+          <CustomButton
             key={`${item.spoonacular_id || item.id}-${index}`}
-            style={styles.itemContainer}
+            containerStyle={styles.itemContainer}
           >
             <View style={styles.imageWrapper}>
               <Image
@@ -77,7 +78,7 @@ export function PantryCategoryPreview({
                 <Text style={styles.badgeText}>{getBadgeContent(item)}</Text>
               </View>
             </View>
-          </View>
+          </CustomButton>
         ))}
       </ScrollView>
     </View>
@@ -90,6 +91,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
+    paddingHorizontal: 12,
   },
   title: {
     fontSize: 16,
@@ -116,7 +118,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   itemContainer: {
-    marginRight: 4,
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    // backgroundColor: "#F8F9FA", // Light gray background
+    backgroundColor: Colors.background.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.lilac[100],
   },
   imageWrapper: {
     width: 80,

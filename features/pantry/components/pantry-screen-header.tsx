@@ -30,10 +30,6 @@ export function PantryScreenHeader({
         <Text style={styles.title}>My Pantry</Text>
 
         <View style={styles.actionsContainer}>
-          <Pressable style={[styles.pillButton, styles.bookmarkButton]}>
-            <Feather name="bookmark" size={16} color={Colors.text.primary} />
-            <Text style={styles.bookmarkText}>8</Text>
-          </Pressable>
           <Pressable style={[styles.pillButton, styles.cartButton]}>
             <Feather name="shopping-cart" size={16} color="#FFFFFF" />
             <Text style={styles.cartText}>43</Text>
@@ -167,18 +163,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     gap: 8,
   },
-  bookmarkButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: Colors.text.primary,
-  },
   cartButton: {
     backgroundColor: "#0F172A", // Dark blue/black color
-  },
-  bookmarkText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: Colors.text.primary,
   },
   cartText: {
     fontSize: 14,

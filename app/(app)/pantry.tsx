@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   categoriesContainer: {
-    marginTop: 16,
+    marginTop: 8,
     gap: 16,
   },
 });
