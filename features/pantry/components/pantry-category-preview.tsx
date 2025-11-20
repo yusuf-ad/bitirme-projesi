@@ -2,7 +2,6 @@ import { Colors } from "@/constants/theme";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Image } from "expo-image";
 import {
-  Image as RNImage,
   ScrollView,
   StyleSheet,
   Text,
@@ -52,10 +51,6 @@ export function PantryCategoryPreview({
 
             <Entypo name="chevron-right" size={16} color="black" />
           </View>
-          <RNImage
-            source={require("@/assets/icons/arrow-right.svg")}
-            style={styles.arrow}
-          />
         </View>
       </TouchableOpacity>
 
@@ -98,7 +93,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
     color: Colors.lilac[900],
   },
   headerRight: {
@@ -142,7 +137,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 6,
     right: 6,
-    backgroundColor: "#4ADE80", // Green color
+    backgroundColor: Colors.lilac[700], // Green color
     minWidth: 24,
     height: 24,
     paddingHorizontal: 4,

@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import {
   CategorySection,
   EmptyPantryState,
+  PantryCategory,
   PantryCategoryPreview,
   PantryItem,
   PantryScreenHeader,
@@ -9,9 +10,16 @@ import {
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
+import { getCommonPantryIngredients } from "@/lib/spoonacular";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PantryTab() {
@@ -88,9 +96,85 @@ export default function PantryTab() {
     console.log("Edit item:", id);
   };
 
-  const handlePrefill = () => {
-    // TODO: Implement pre-fill logic
-    console.log("Pre-fill pantry");
+  const mapAisleToCategory = (aisle: string): PantryCategory => {
+    const lowerAisle = (aisle || "").toLowerCase();
+    if (
+      lowerAisle.includes("produce") ||
+      lowerAisle.includes("fruit") ||
+      lowerAisle.includes("vegetable")
+    )
+      return "Fruits & Vegetables";
+    if (
+      lowerAisle.includes("meat") ||
+      lowerAisle.includes("seafood") ||
+      lowerAisle.includes("fish")
+    )
+      return "Meat & Seafood";
+    if (
+      lowerAisle.includes("milk") ||
+      lowerAisle.includes("cheese") ||
+      lowerAisle.includes("dairy") ||
+      lowerAisle.includes("egg")
+    )
+      return "Dairy";
+    if (
+      lowerAisle.includes("pasta") ||
+      lowerAisle.includes("grain") ||
+      lowerAisle.includes("rice") ||
+      lowerAisle.includes("cereal") ||
+      lowerAisle.includes("baking")
+    )
+      return "Pasta, Sauces & Grain";
+    if (lowerAisle.includes("bakery") || lowerAisle.includes("bread"))
+      return "Bakery";
+    if (lowerAisle.includes("frozen")) return "Frozen";
+    if (lowerAisle.includes("canned")) return "Canned";
+    if (
+      lowerAisle.includes("spice") ||
+      lowerAisle.includes("seasoning") ||
+      lowerAisle.includes("oil")
+    )
+      return "Spices";
+    if (
+      lowerAisle.includes("condiment") ||
+      lowerAisle.includes("dressing") ||
+      lowerAisle.includes("nut")
+    )
+      return "Condiments";
+    if (lowerAisle.includes("snack") || lowerAisle.includes("chip"))
+      return "Snacks";
+    return "Other";
+  };
+
+  const handlePrefill = async () => {
+    try {
+      setIsLoading(true);
+      const commonIngredients = await getCommonPantryIngredients();
+
+      const newItems = commonIngredients.map((ing) => {
+        const category = mapAisleToCategory(ing.aisle);
+        return {
+          name: ing.name,
+          amount: 1,
+          unit: "pkg",
+          is_weight: false,
+          category: category,
+          status: "pantry" as const,
+          checked: false,
+          spoonacular_id: ing.id,
+          spoonacular_image: ing.image,
+          spoonacular_name: ing.name,
+        };
+      });
+
+      await pantryService.addItems(newItems);
+      await fetchItems();
+    } catch (error) {
+      console.error("Failed to pre-fill pantry:", error);
+      Alert.alert("Error", "Failed to pre-fill pantry. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading && items.length === 0) {

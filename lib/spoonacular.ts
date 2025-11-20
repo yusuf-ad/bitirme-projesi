@@ -9,6 +9,40 @@ const SPOONACULAR_FOOD_BASE_URL = `https://${RAPIDAPI_HOST}/food`;
 // Test constant - API pahalı olduğu için test için 1 olarak ayarlandı
 const TEST_NUMBER_OF_RESULTS = 1;
 
+// Common pantry staples for pre-filling
+const COMMON_PANTRY_STAPLES = [
+  "Apple",
+  "Banana",
+  "Carrot",
+  "Onion",
+  "Garlic",
+  "Potato",
+  "Tomato",
+  "Chicken Breast",
+  "Ground Beef",
+  "Salmon",
+  "Milk",
+  "Eggs",
+  "Butter",
+  "Cheddar Cheese",
+  "Yogurt",
+  "Rice",
+  "Pasta",
+  "Bread",
+  "Flour",
+  "Oats",
+  "Salt",
+  "Black Pepper",
+  "Olive Oil",
+  "Vegetable Oil",
+  "Canned Black Beans",
+  "Canned Tuna",
+  "Ketchup",
+  "Mayonnaise",
+  "Soy Sauce",
+  "Sugar",
+];
+
 /**
  * Logs rate limit headers from Spoonacular API response
  * @param response - The fetch response object
@@ -437,4 +471,14 @@ export async function parseIngredients(
     console.error("Error parsing ingredients:", error);
     throw error;
   }
+}
+
+/**
+ * Gets common pantry staples using parseIngredients
+ * Returns a list of parsed ingredients for the predefined common staples
+ */
+export async function getCommonPantryIngredients(): Promise<
+  ParsedIngredient[]
+> {
+  return parseIngredients(COMMON_PANTRY_STAPLES);
 }
