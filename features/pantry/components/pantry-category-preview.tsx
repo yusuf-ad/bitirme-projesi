@@ -25,11 +25,7 @@ export function PantryCategoryPreview({
   if (items.length === 0) return null;
 
   const getBadgeContent = (item: PantryItem) => {
-    if (
-      item.unit === "g" ||
-      item.unit === "gram" ||
-      item.unit === "grams"
-    ) {
+    if (item.unit === "g" || item.unit === "gram" || item.unit === "grams") {
       const inKg = item.amount / 1000;
       return `${parseFloat(inKg.toFixed(2))}kg`;
     }
@@ -37,7 +33,7 @@ export function PantryCategoryPreview({
   };
 
   return (
-    <View style={styles.container}>
+    <View>
       <TouchableOpacity
         style={styles.header}
         onPress={onPress}
@@ -94,9 +90,6 @@ export function PantryCategoryPreview({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 24,
-  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

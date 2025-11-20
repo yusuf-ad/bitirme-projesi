@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import {
   AddNewHeader,
   CategorySection,
+  EmptyPantryState,
   PantryCategoryPreview,
   PantryItem,
   SearchPantryHeader,
@@ -99,6 +100,11 @@ export default function PantryTab() {
     console.log("Edit item:", id);
   };
 
+  const handlePrefill = () => {
+    // TODO: Implement pre-fill logic
+    console.log("Pre-fill pantry");
+  };
+
   if (isLoading && items.length === 0) {
     return (
       <View style={[styles.container, styles.center]}>
@@ -141,29 +147,13 @@ export default function PantryTab() {
       >
         <View style={styles.categoriesContainer}>
           {activeTab === "pantry" ? (
-            <>
-              {searchQuery ? (
-                // If searching, just show flat list or categorized? Categorized is better
-                PANTRY_CATEGORIES.map((category) => {
-                  const categoryItems = filteredPantryItems.filter(
-                    (i) => i.category === category
-                  );
-                  if (categoryItems.length === 0) return null;
-                  return (
-                    <PantryCategoryPreview
-                      key={category}
-                      title={category}
-                      items={categoryItems}
-                    />
-                  );
-                })
-              ) : (
-                <>
-                  <PantryCategoryPreview
-                    title="All"
-                    items={filteredPantryItems}
-                  />
-                  {PANTRY_CATEGORIES.map((category) => {
+            pantryStockItems.length === 0 && !searchQuery ? (
+              <EmptyPantryState onPrefill={handlePrefill} />
+            ) : (
+              <>
+                {searchQuery ? (
+                  // If searching, just show flat list or categorized? Categorized is better
+                  PANTRY_CATEGORIES.map((category) => {
                     const categoryItems = filteredPantryItems.filter(
                       (i) => i.category === category
                     );
@@ -175,10 +165,30 @@ export default function PantryTab() {
                         items={categoryItems}
                       />
                     );
-                  })}
-                </>
-              )}
-            </>
+                  })
+                ) : (
+                  <>
+                    <PantryCategoryPreview
+                      title="All"
+                      items={filteredPantryItems}
+                    />
+                    {PANTRY_CATEGORIES.map((category) => {
+                      const categoryItems = filteredPantryItems.filter(
+                        (i) => i.category === category
+                      );
+                      if (categoryItems.length === 0) return null;
+                      return (
+                        <PantryCategoryPreview
+                          key={category}
+                          title={category}
+                          items={categoryItems}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+              </>
+            )
           ) : (
             <>
               {PANTRY_CATEGORIES.map((category) => {
