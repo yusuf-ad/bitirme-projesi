@@ -11,13 +11,16 @@ interface DailyMealsListProps {
   selectedDate: Date;
 }
 
-const MEAL_ORDER: MealSlot[] = ["breakfast", "lunch", "dinner"];
+const MEAL_ORDER: ("breakfast" | "lunch" | "dinner")[] = [
+  "breakfast",
+  "lunch",
+  "dinner",
+];
 
 const PLACEHOLDER_RECIPE_IMAGE = require("@/assets/images/image.png");
-const FALLBACK_MEAL_ICON = require("@/assets/icons/chef-icon.svg");
 
 const DEFAULT_MEAL_DETAILS: Record<
-  MealSlot,
+  "breakfast" | "lunch" | "dinner" | "snack",
   { label: string; time: string; icon: ImageSourcePropType }
 > = {
   breakfast: {
@@ -42,24 +45,13 @@ const DEFAULT_MEAL_DETAILS: Record<
   },
 };
 
-const capitalize = (value: string) =>
-  value.charAt(0).toUpperCase() + value.slice(1);
-
 export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
   const deleteMutation = useDeleteMealItem();
-
-  const sortedItems = [...items].sort((a, b) => {
-    const aIndex = MEAL_ORDER.indexOf(a.meal_type);
-    const bIndex = MEAL_ORDER.indexOf(b.meal_type);
-    const safeAIndex = aIndex === -1 ? MEAL_ORDER.length : aIndex;
-    const safeBIndex = bIndex === -1 ? MEAL_ORDER.length : bIndex;
-    return safeAIndex - safeBIndex;
-  });
 
   // Group meals by type
   const mealsByType = new Map<MealSlot, MealPlanItemRecord>();
   items.forEach((item) => {
-    if (MEAL_ORDER.includes(item.meal_type)) {
+    if ((MEAL_ORDER as readonly string[]).includes(item.meal_type)) {
       mealsByType.set(item.meal_type, item);
     }
   });
