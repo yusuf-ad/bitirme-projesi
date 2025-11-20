@@ -75,14 +75,14 @@ export function PantryScreenHeader({
           onPress={() => onTabChange("my-ingredients")}
         >
           <View style={styles.tabContent}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "my-ingredients" && styles.activeTabText,
-            ]}
-          >
-            My Ingredients
-          </Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "my-ingredients" && styles.activeTabText,
+              ]}
+            >
+              My Ingredients
+            </Text>
             {ingredientsCount > 0 && (
               <View
                 style={[
@@ -107,14 +107,14 @@ export function PantryScreenHeader({
           onPress={() => onTabChange("recipe-ideas")}
         >
           <View style={styles.tabContent}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "recipe-ideas" && styles.activeTabText,
-            ]}
-          >
-            Recipe Ideas
-          </Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "recipe-ideas" && styles.activeTabText,
+              ]}
+            >
+              Recipe Ideas
+            </Text>
             {recipeIdeasCount > 0 && (
               <View
                 style={[
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   actionsContainer: {
     flexDirection: "row",
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,

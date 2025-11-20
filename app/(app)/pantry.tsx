@@ -204,18 +204,17 @@ export default function PantryTab() {
         recipeIdeasCount={totalCount || 0}
       />
 
-      {/* Content - Scrollable */}
-      <ScrollView
-        style={styles.contentScroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom * 2 + 52 },
-        ]}
-      >
-        <View style={styles.categoriesContainer}>
-          {activeTab === "my-ingredients" ? (
-            pantryStockItems.length === 0 && !searchQuery ? (
+      {activeTab === "my-ingredients" ? (
+        <ScrollView
+          style={styles.contentScroll}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom * 2 + 52 },
+          ]}
+        >
+          <View style={styles.categoriesContainer}>
+            {pantryStockItems.length === 0 && !searchQuery ? (
               <EmptyPantryState onPrefill={handlePrefill} />
             ) : (
               <>
@@ -255,65 +254,77 @@ export default function PantryTab() {
                   </>
                 )}
               </>
-            )
-          ) : (
-            <View style={styles.recipeIdeasContainer}>
-              {pantryStockItems.length === 0 ? (
-                <View style={styles.placeholderContainer}>
-                  <Text style={styles.placeholderText}>
-                    Add items to your pantry to see recipe ideas.
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  <View style={styles.filtersWrapper}>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.filtersContainer}
-                    >
-                      {MEAL_TYPES.map((type) => (
-                        <TouchableOpacity
-                          key={type}
-                          style={[
-                            styles.filterChip,
-                            selectedMealType === type &&
-                              styles.filterChipActive,
-                          ]}
-                          onPress={() => setSelectedMealType(type)}
-                        >
-                          <Text
-                            style={[
-                              styles.filterChipText,
-                              selectedMealType === type &&
-                                styles.filterChipTextActive,
-                            ]}
-                          >
-                            {type}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                    {!isLoadingRecipes && !recipeError && (
-                      <Text style={styles.resultsText}>
-                        You can make {totalCount} recipes
-                      </Text>
-                    )}
-                  </View>
-
-                  {isLoadingRecipes ? (
-                    <LoadingState />
-                  ) : recipeError ? (
-                    <ErrorState onRetry={refetchRecipes} />
-                  ) : (
-                    <RecipeGrid recipes={recipeIdeas || []} />
-                  )}
-                </>
-              )}
+            )}
+          </View>
+        </ScrollView>
+      ) : (
+        <View style={{ flex: 1 }}>
+          {pantryStockItems.length === 0 ? (
+            <View
+              style={[styles.categoriesContainer, { paddingHorizontal: 16 }]}
+            >
+              <View style={styles.placeholderContainer}>
+                <Text style={styles.placeholderText}>
+                  Add items to your pantry to see recipe ideas.
+                </Text>
+              </View>
             </View>
+          ) : (
+            <>
+              <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
+                <View style={styles.filtersWrapper}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filtersContainer}
+                  >
+                    {MEAL_TYPES.map((type) => (
+                      <TouchableOpacity
+                        key={type}
+                        style={[
+                          styles.filterChip,
+                          selectedMealType === type && styles.filterChipActive,
+                        ]}
+                        onPress={() => setSelectedMealType(type)}
+                      >
+                        <Text
+                          style={[
+                            styles.filterChipText,
+                            selectedMealType === type &&
+                              styles.filterChipTextActive,
+                          ]}
+                        >
+                          {type}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+
+              <ScrollView
+                style={styles.contentScroll}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.scrollContent,
+                  {
+                    paddingBottom: insets.bottom * 2 + 52,
+                    paddingTop: 0,
+                  },
+                ]}
+              >
+                {isLoadingRecipes ? (
+                  <LoadingState />
+                ) : recipeError ? (
+                  <ErrorState onRetry={refetchRecipes} />
+                ) : (
+                  <RecipeGrid recipes={recipeIdeas || []} />
+                )}
+              </ScrollView>
+            </>
           )}
         </View>
-      </ScrollView>
+      )}
     </View>
   );
 }
