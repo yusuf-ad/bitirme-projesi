@@ -1,18 +1,11 @@
 import { Octicons } from "@expo/vector-icons";
-import AntDesign from "@expo/vector-icons/build/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Pressable, StyleSheet, View } from "react-native";
-import Animated, {
-  FadeIn,
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SecondaryActionButton } from "./secondary-action-button";
+import { FabButton } from "./fab-button";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -22,19 +15,6 @@ export function CustomTabBar({
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const isExpanded = useSharedValue(false);
-
-  const handleMainButtonPress = () => {
-    isExpanded.value = !isExpanded.value;
-  };
-
-  const plusIconStyle = useAnimatedStyle(() => {
-    const rotateValue = isExpanded.value ? "45deg" : "0deg";
-
-    return {
-      transform: [{ rotate: withTiming(rotateValue) }],
-    };
-  });
 
   return (
     <View style={[styles.tabBar, { bottom: insets.bottom }]}>
@@ -125,36 +105,7 @@ export function CustomTabBar({
           );
         })}
       </View>
-      <View style={styles.fabContainer}>
-        {/* Secondary Action Buttons */}
-        <SecondaryActionButton
-          isExpanded={isExpanded}
-          index={3}
-          iconName="camera"
-          onPress={() => console.log("Camera pressed")}
-        />
-        <SecondaryActionButton
-          isExpanded={isExpanded}
-          index={2}
-          iconName="cutlery"
-          onPress={() => console.log("Recipe pressed")}
-        />
-        <SecondaryActionButton
-          isExpanded={isExpanded}
-          index={1}
-          iconName="book"
-          onPress={() => console.log("Plan pressed")}
-        />
-        {/* Main FAB Button */}
-        <AnimatedPressable
-          onPress={handleMainButtonPress}
-          style={styles.mainButton}
-        >
-          <Animated.View style={plusIconStyle}>
-            <AntDesign name="plus" size={24} color="#FFFFFF" />
-          </Animated.View>
-        </AnimatedPressable>
-      </View>
+      <FabButton currentRouteName={state.routes[state.index].name} />
     </View>
   );
 }
@@ -168,6 +119,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "50%",
     transform: [{ translateX: "-50%" }],
+    zIndex: 100,
   },
   tabBarInner: {
     borderWidth: 1,
@@ -201,26 +153,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     lineHeight: 16,
-  },
-  fabContainer: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mainButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#7849B6",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
   },
 });

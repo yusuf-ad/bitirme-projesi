@@ -11,8 +11,8 @@ import {
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -29,10 +29,13 @@ export default function PantryTab() {
 
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { refresh } = useLocalSearchParams();
 
   const fetchItems = async () => {
     try {
+      console.log("Fetching pantry items...");
       const data = await pantryService.getAllItems();
+      console.log("Fetched items count:", data.length);
       setItems(data);
     } catch (error) {
       console.error("Failed to fetch items:", error);
@@ -43,9 +46,17 @@ export default function PantryTab() {
 
   useFocusEffect(
     useCallback(() => {
+      console.log("Pantry screen focused");
       fetchItems();
     }, [])
   );
+
+  useEffect(() => {
+    if (refresh) {
+      console.log("Refetching due to refresh param:", refresh);
+      fetchItems();
+    }
+  }, [refresh]);
 
   // Filter items based on status
   const pantryStockItems = items.filter((i) => i.status === "pantry");
