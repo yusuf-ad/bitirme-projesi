@@ -52,6 +52,7 @@ export const MEAL_TYPES = {
 
 export const meal_types = Object.values(MEAL_TYPES);
 
+<<<<<<< HEAD
 // Pantry Categories
 export const PANTRY_CATEGORIES = [
   "Fruits & Vegetables",
@@ -67,6 +68,8 @@ export const PANTRY_CATEGORIES = [
   "Other",
 ] as const;
 
+=======
+>>>>>>> parent of 3884a76 (Merge pull request #37 from yusuf-ad/yusuf)
 export const POPULAR_INGREDIENTS: {
   spoonacularId?: number | null;
   name: string;

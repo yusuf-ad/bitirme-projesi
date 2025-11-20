@@ -48,12 +48,10 @@ export function PantryItemRow({
           {item.name}
         </Text>
         {item.amount ? (
-          <Text style={styles.itemAmount}>
-            {item.amount} {item.unit}
-          </Text>
+          <Text style={styles.itemAmount}>{item.amount}</Text>
         ) : null}
-        {showRecipe && item.recipe_name ? (
-          <Text style={styles.itemRecipe}>{item.recipe_name}</Text>
+        {showRecipe && item.recipe ? (
+          <Text style={styles.itemRecipe}>{item.recipe}</Text>
         ) : null}
       </View>
 
@@ -123,3 +121,4 @@ const styles = StyleSheet.create({
     padding: 6,
   },
 });
+

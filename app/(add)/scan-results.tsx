@@ -1,11 +1,7 @@
-import { pantryService } from "@/features/pantry/services/pantry-service";
-import { PantryCategory } from "@/features/pantry/types";
-import { generateAPIUrl } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -47,7 +43,6 @@ export default function ScanResults() {
 
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (params.items) {
@@ -180,6 +175,7 @@ export default function ScanResults() {
     );
   };
 
+<<<<<<< HEAD
   const handleAddToPantry = async () => {
     if (ingredients.length === 0) {
       Alert.alert("No items", "Please add at least one item to save.");
@@ -285,6 +281,12 @@ export default function ScanResults() {
     } finally {
       setIsSaving(false);
     }
+=======
+  const handleAddToPantry = () => {
+    // TODO: Implement add to pantry logic
+    console.log("Adding to pantry:", ingredients);
+    router.push("/(app)/pantry");
+>>>>>>> parent of 3884a76 (Merge pull request #37 from yusuf-ad/yusuf)
   };
 
   return (
@@ -441,19 +443,9 @@ export default function ScanResults() {
         />
 
         <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
-          <Pressable
-            style={[styles.primaryButton, isSaving && { opacity: 0.7 }]}
-            onPress={handleAddToPantry}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Text style={styles.primaryButtonText}>Add to Pantry</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </>
-            )}
+          <Pressable style={styles.primaryButton} onPress={handleAddToPantry}>
+            <Text style={styles.primaryButtonText}>Add to Pantry</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
           </Pressable>
         </View>
       </View>

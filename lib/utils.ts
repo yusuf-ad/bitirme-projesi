@@ -109,13 +109,11 @@ export const createMealItem = (
 };
 
 export const generateAPIUrl = (relativePath: string) => {
+  const origin = Constants.experienceUrl.replace("exp://", "http://");
+
   const path = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
 
   if (process.env.NODE_ENV === "development") {
-    const origin = Constants.experienceUrl
-      ? Constants.experienceUrl.replace("exp://", "http://")
-      : `http://${Constants.expoConfig?.hostUri || "localhost:8081"}`;
-
     return origin.concat(path);
   }
 

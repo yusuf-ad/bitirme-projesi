@@ -335,6 +335,7 @@ CREATE POLICY "Users can delete their own meal plan items" ON public.meal_plan_i
 
 -- Apply trigger to meal_plans table for updated_at
 CREATE TRIGGER update_meal_plans_updated_at BEFORE UPDATE ON public.meal_plans
+<<<<<<< HEAD
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ==========================================
@@ -344,3 +345,6 @@ ALTER TABLE public.user_taste_preferences
 ADD COLUMN IF NOT EXISTS diet_nutrition_targets jsonb DEFAULT '{}'::jsonb;
 
   
+=======
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+>>>>>>> parent of 3884a76 (Merge pull request #37 from yusuf-ad/yusuf)

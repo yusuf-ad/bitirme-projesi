@@ -9,11 +9,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { PantryItem } from "../types";
+import { ScannedItem } from "../types";
 
 interface PantryCategoryPreviewProps {
   title: string;
-  items: PantryItem[];
+  items: ScannedItem[];
   onPress?: () => void;
 }
 
@@ -24,12 +24,22 @@ export function PantryCategoryPreview({
 }: PantryCategoryPreviewProps) {
   if (items.length === 0) return null;
 
+<<<<<<< HEAD
   const getBadgeContent = (item: PantryItem) => {
     if (item.unit === "g" || item.unit === "gram" || item.unit === "grams") {
       const inKg = item.amount / 1000;
+=======
+  const getBadgeContent = (item: ScannedItem) => {
+    if (
+      item.parsedUnit === "g" ||
+      item.parsedUnit === "gram" ||
+      item.parsedUnit === "grams"
+    ) {
+      const inKg = item.parsedAmount / 1000;
+>>>>>>> parent of 3884a76 (Merge pull request #37 from yusuf-ad/yusuf)
       return `${parseFloat(inKg.toFixed(2))}kg`;
     }
-    return Math.round(item.amount).toString();
+    return Math.round(item.parsedAmount).toString();
   };
 
   return (
@@ -61,14 +71,20 @@ export function PantryCategoryPreview({
         contentContainerStyle={styles.listContent}
       >
         {items.map((item, index) => (
+<<<<<<< HEAD
           <CustomButton
             key={`${item.spoonacular_id || item.id}-${index}`}
             containerStyle={styles.itemContainer}
+=======
+          <View
+            key={`${item.spoonacularId}-${index}`}
+            style={styles.itemContainer}
+>>>>>>> parent of 3884a76 (Merge pull request #37 from yusuf-ad/yusuf)
           >
             <View style={styles.imageWrapper}>
               <Image
                 source={{
-                  uri: `https://spoonacular.com/cdn/ingredients_100x100/${item.spoonacular_image}`,
+                  uri: `https://spoonacular.com/cdn/ingredients_100x100/${item.spoonacularImage}`,
                 }}
                 style={styles.image}
                 contentFit="contain"
