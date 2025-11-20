@@ -557,6 +557,64 @@ export interface ParsedIngredient {
   aisle: string;
 }
 
+export interface MealPlanNutrients {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbohydrates: number;
+}
+
+export interface MealPlanOptions {
+  diet?: string;
+  targetCalories?: number;
+  timeFrame?: "day" | "week";
+}
+
+interface MealPlanResponse {
+  meals: Recipe[];
+  nutrients: MealPlanNutrients;
+}
+
+export async function generateMealPlan(
+  options: MealPlanOptions = {}
+): Promise<MealPlanResponse> {
+  try {
+    const params = new URLSearchParams({
+      timeFrame: options.timeFrame ?? "day",
+    });
+
+    if (options.diet) {
+      params.append("diet", options.diet);
+    }
+    if (options.targetCalories) {
+      params.append("targetCalories", options.targetCalories.toString());
+    }
+
+    const response = await fetch(
+      `${SPOONACULAR_BASE_URL}/mealplans/generate?${params.toString()}`,
+      {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
+    );
+
+    logRateLimitHeaders(response);
+
+    if (!response.ok) {
+      throw new Error(
+        `Meal plan API Error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return (await response.json()) as MealPlanResponse;
+  } catch (error) {
+    console.error("Error generating meal plan:", error);
+    throw error;
+  }
+}
+
 /**
  * Batch parse ingredients to get IDs and images
  * @param ingredientList - List of ingredients as strings (e.g. "1 cup sugar")

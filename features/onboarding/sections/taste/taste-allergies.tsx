@@ -1,7 +1,7 @@
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
 import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -21,8 +21,26 @@ interface TasteAllergiesProps {
   initialSelection?: string[];
 }
 
+type AllergyItem =
+  | Ingredient
+  | (typeof POPULAR_INGREDIENTS)[number]
+  | { name: string; image?: string };
+
 const INGREDIENT_IMAGE_BASE_URL =
   "https://spoonacular.com/cdn/ingredients_100x100";
+
+const createFallbackAllergyItem = (key: string): AllergyItem => {
+  if (key.startsWith("name-")) {
+    const formatted = key
+      .replace("name-", "")
+      .split("-")
+      .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+      .join(" ");
+    return { name: formatted };
+  }
+
+  return { name: key };
+};
 
 export function TasteAllergies({
   title,
@@ -33,7 +51,7 @@ export function TasteAllergies({
   const [selectedAllergies, setSelectedAllergies] =
     useState<string[]>(initialSelection);
   const [selectedAllergiesMap, setSelectedAllergiesMap] = useState<
-    Map<string, Ingredient | (typeof POPULAR_INGREDIENTS)[0]>
+    Map<string, AllergyItem>
   >(new Map());
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
@@ -62,9 +80,7 @@ export function TasteAllergies({
     }
   }, []);
 
-  const getIngredientKey = (
-    item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]
-  ) => {
+  const getIngredientKey = (item: AllergyItem) => {
     if ("id" in item && typeof item.id === "number") {
       return `${item.id}`;
     }
@@ -78,9 +94,38 @@ export function TasteAllergies({
     return `name-${(item as any).name?.toLowerCase?.() ?? "unknown"}`;
   };
 
-  const toggleAllergy = (
-    item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]
-  ) => {
+  useEffect(() => {
+    setSelectedAllergies(initialSelection);
+    setSelectedAllergiesMap((previousMap) => {
+      if (initialSelection.length === 0) {
+        return new Map();
+      }
+
+      const restoredMap = new Map<string, AllergyItem>();
+
+      initialSelection.forEach((key) => {
+        if (previousMap.has(key)) {
+          restoredMap.set(key, previousMap.get(key)!);
+          return;
+        }
+
+        const fromPopular = POPULAR_INGREDIENTS.find(
+          (ingredient) => getIngredientKey(ingredient) === key
+        );
+
+        if (fromPopular) {
+          restoredMap.set(key, fromPopular);
+          return;
+        }
+
+        restoredMap.set(key, createFallbackAllergyItem(key));
+      });
+
+      return restoredMap;
+    });
+  }, [initialSelection]);
+
+  const toggleAllergy = (item: AllergyItem) => {
     const key = getIngredientKey(item);
     const isCurrentlySelected = selectedAllergiesMap.has(key);
 
@@ -110,11 +155,7 @@ export function TasteAllergies({
     (item) => !selectedAllergiesMap.has(getIngredientKey(item))
   );
 
-  const renderAllergyItem = ({
-    item,
-  }: {
-    item: Ingredient | (typeof POPULAR_INGREDIENTS)[0];
-  }) => {
+  const renderAllergyItem = ({ item }: { item: AllergyItem }) => {
     const ingredientName = (item as any).name;
     const ingredientImage = (item as any).image;
 
@@ -138,7 +179,7 @@ export function TasteAllergies({
   };
 
   const renderSelectedItem = (
-    item: Ingredient | (typeof POPULAR_INGREDIENTS)[0]
+    item: AllergyItem
   ) => {
     const ingredientName = (item as any).name;
     const ingredientImage = (item as any).image;

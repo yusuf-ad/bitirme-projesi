@@ -1,14 +1,15 @@
 import { supabase } from "@/lib/supabase";
 import {
-    convertMealTimesFromDB,
-    getUserOnboardingProfile,
-    updateUserBodyMetrics,
-    updateUserGoals,
-    updateUserMealTimes,
-    updateUserTastePreferences,
+  convertMealTimesFromDB,
+  getUserOnboardingProfile,
+  updateUserBodyMetrics,
+  updateUserGoals,
+  updateUserMealTimes,
+  updateUserTastePreferences,
 } from "@/lib/supabase-onboarding";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useState } from "react";
+import { DietNutritionTarget } from "@/features/onboarding/types/onboarding.types";
 
 interface OnboardingContextType {
   // Goals
@@ -53,10 +54,17 @@ interface OnboardingContextType {
   setSelectedMeals: (meals: string[]) => void;
   selectedCuisines: string[];
   setSelectedCuisines: (cuisines: string[]) => void;
+  dislikedCuisines: string[];
+  setDislikedCuisines: (cuisines: string[]) => void;
   selectedAllergies: string[];
   setSelectedAllergies: (allergies: string[]) => void;
   selectedDietPreferences: string[];
   setSelectedDietPreferences: (prefs: string[]) => void;
+  dietNutritionTargets: Record<string, DietNutritionTarget>;
+  saveDietNutritionTarget: (
+    dietId: string,
+    target: DietNutritionTarget
+  ) => Promise<void>;
   selectedCookingSkill: string;
   setSelectedCookingSkill: (skill: string) => void;
   saveTastePreferences: () => Promise<void>;
@@ -104,10 +112,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   // Taste
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [dislikedCuisines, setDislikedCuisines] = useState<string[]>([]);
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const [selectedDietPreferences, setSelectedDietPreferences] = useState<
     string[]
   >([]);
+  const [dietNutritionTargets, setDietNutritionTargets] = useState<
+    Record<string, DietNutritionTarget>
+  >({});
   const [selectedCookingSkill, setSelectedCookingSkill] = useState<string>("");
 
   // Loading state
@@ -124,9 +136,28 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setDinnerTime({ hour: 6, minute: 0, period: "PM" });
     setSelectedMeals([]);
     setSelectedCuisines([]);
+    setDislikedCuisines([]);
     setSelectedAllergies([]);
     setSelectedDietPreferences([]);
+    setDietNutritionTargets({});
     setSelectedCookingSkill("");
+  };
+
+  interface TasteStoragePayload {
+    meal_types?: string[];
+    cuisines?: string[];
+    allergies_dislikes?: string[];
+    diet_preferences?: string[];
+    cooking_skill_level?: string | null;
+    cuisine_dislikes?: string[];
+    diet_nutrition_targets?: Record<string, DietNutritionTarget>;
+  }
+
+  const updateTasteStorage = async (payload: TasteStoragePayload) => {
+    const existing = await AsyncStorage.getItem("onboarding_taste");
+    const parsed = existing ? JSON.parse(existing) : {};
+    const updated = { ...parsed, ...payload };
+    await AsyncStorage.setItem("onboarding_taste", JSON.stringify(updated));
   };
 
   // Save functions - Save to AsyncStorage first (for onboarding without user)
@@ -206,8 +237,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         allergies_dislikes: selectedAllergies,
         diet_preferences: selectedDietPreferences,
         cooking_skill_level: selectedCookingSkill || null,
+        diet_nutrition_targets: dietNutritionTargets,
       };
-      await AsyncStorage.setItem("onboarding_taste", JSON.stringify(tasteData));
+      const tasteDataWithDislikes = {
+        ...tasteData,
+        cuisine_dislikes: dislikedCuisines,
+      };
+      await AsyncStorage.setItem(
+        "onboarding_taste",
+        JSON.stringify(tasteDataWithDislikes)
+      );
 
       // If user exists, also save to Supabase
       const {
@@ -218,6 +257,46 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error saving taste preferences:", error);
+      throw error;
+    }
+  };
+
+  const saveDietNutritionTarget = async (
+    dietId: string,
+    target: DietNutritionTarget
+  ) => {
+    try {
+      const updatedTargets = {
+        ...dietNutritionTargets,
+        [dietId]: target,
+      };
+      setDietNutritionTargets(updatedTargets);
+      await updateTasteStorage({
+        meal_types: selectedMeals,
+        cuisines: selectedCuisines,
+        allergies_dislikes: selectedAllergies,
+        diet_preferences: selectedDietPreferences,
+        cooking_skill_level: selectedCookingSkill || null,
+        cuisine_dislikes: dislikedCuisines,
+        diet_nutrition_targets: updatedTargets,
+      });
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        await updateUserTastePreferences(user.id, {
+          meal_types: selectedMeals,
+          cuisines: selectedCuisines,
+          allergies_dislikes: selectedAllergies,
+          diet_preferences: selectedDietPreferences,
+          cooking_skill_level: selectedCookingSkill || null,
+          cuisine_dislikes: dislikedCuisines,
+          diet_nutrition_targets: updatedTargets,
+        });
+      }
+    } catch (error) {
+      console.error("Error saving diet nutrition target:", error);
       throw error;
     }
   };
@@ -296,11 +375,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
               profile.tastePreferences.diet_preferences
             );
           }
+        if (profile.tastePreferences.diet_nutrition_targets) {
+          setDietNutritionTargets(
+            profile.tastePreferences.diet_nutrition_targets
+          );
+        }
           if (profile.tastePreferences.cooking_skill_level) {
             setSelectedCookingSkill(
               profile.tastePreferences.cooking_skill_level
             );
           }
+          setDislikedCuisines(profile.tastePreferences.cuisine_dislikes || []);
         }
 
         console.log("Successfully loaded data from Supabase");
@@ -335,6 +420,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           setSelectedAllergies(taste.allergies_dislikes || []);
           setSelectedDietPreferences(taste.diet_preferences || []);
           setSelectedCookingSkill(taste.cooking_skill_level || "");
+          setDislikedCuisines(taste.cuisine_dislikes || []);
+          setDietNutritionTargets(taste.diet_nutrition_targets || {});
         }
       }
     } catch (error) {
@@ -408,10 +495,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
               : taste.cooking_skill_level,
         };
 
-        const result = await updateUserTastePreferences(userId, mappedTaste);
+        const { cuisine_dislikes, ...tasteWithoutDislikes } = mappedTaste;
+        const result = await updateUserTastePreferences(
+          userId,
+          tasteWithoutDislikes
+        );
         if (!result) {
           throw new Error("Failed to save taste preferences");
         }
+        setDislikedCuisines(cuisine_dislikes || []);
+        setDietNutritionTargets(mappedTaste.diet_nutrition_targets || {});
       }
 
       console.log("Successfully saved all onboarding data");
@@ -460,10 +553,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setSelectedMeals,
     selectedCuisines,
     setSelectedCuisines,
+    dislikedCuisines,
+    setDislikedCuisines,
     selectedAllergies,
     setSelectedAllergies,
     selectedDietPreferences,
     setSelectedDietPreferences,
+    dietNutritionTargets,
+    saveDietNutritionTarget,
     selectedCookingSkill,
     setSelectedCookingSkill,
     saveTastePreferences,

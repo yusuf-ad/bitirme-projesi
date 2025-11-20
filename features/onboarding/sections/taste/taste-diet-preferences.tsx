@@ -1,5 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useState } from "react";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Image,
   Pressable,
@@ -8,6 +10,10 @@ import {
   Text,
   View,
 } from "react-native";
+import {
+  DIET_OPTIONS,
+  DietOption,
+} from "./diet-options";
 
 interface TasteDietPreferencesProps {
   title: string;
@@ -15,51 +21,6 @@ interface TasteDietPreferencesProps {
   onSelectionChange?: (selectedDiets: string[]) => void;
   initialSelection?: string[];
 }
-
-const dietOptions = [
-  {
-    id: "balanced",
-    label: "Balanced",
-    subtitle: "Thoughtful, flexible portions",
-    description: "Balanced nutrition with flexibility",
-    image: require("@/assets/images/grilled-chicken.png"),
-  },
-  {
-    id: "lowcarb",
-    label: "Low carb",
-    subtitle: "Improve blood, boost vitality",
-    description: "Reduced carbohydrate intake",
-    image: require("@/assets/images/italian-breakfast.png"),
-  },
-  {
-    id: "keto",
-    label: "Keto",
-    subtitle: "High-fat, minimal carb",
-    description: "Ketogenic diet approach",
-    image: require("@/assets/images/spaghetti-carbonara.png"),
-  },
-  {
-    id: "vegetarian",
-    label: "Vegetarian",
-    subtitle: "Plant-based, complex carb",
-    description: "No meat, focus on plants",
-    image: require("@/assets/images/grilled-chicken.png"),
-  },
-  {
-    id: "vegan",
-    label: "Vegan",
-    subtitle: "Plant-based only, no animal",
-    description: "100% plant-based nutrition",
-    image: require("@/assets/images/italian-breakfast.png"),
-  },
-  {
-    id: "paleo",
-    label: "Paleo",
-    subtitle: "Whole foods, ancestral eating",
-    description: "Natural whole foods focus",
-    image: require("@/assets/images/spaghetti-carbonara.png"),
-  },
-];
 
 export function TasteDietPreferences({
   title,
@@ -70,6 +31,10 @@ export function TasteDietPreferences({
   const [selectedDiets, setSelectedDiets] =
     useState<string[]>(initialSelection);
 
+  useEffect(() => {
+    setSelectedDiets(initialSelection);
+  }, [initialSelection]);
+
   const toggleDiet = (dietId: string) => {
     const updatedSelection = selectedDiets.includes(dietId)
       ? selectedDiets.filter((d) => d !== dietId)
@@ -79,7 +44,15 @@ export function TasteDietPreferences({
     onSelectionChange?.(updatedSelection);
   };
 
-  const renderDietCard = (diet: (typeof dietOptions)[0]) => {
+  const handleViewDiet = async (diet: DietOption) => {
+    await Haptics.selectionAsync();
+    router.push({
+      pathname: "/(onboarding)/diet/[dietId]",
+      params: { dietId: diet.id },
+    });
+  };
+
+  const renderDietCard = (diet: DietOption) => {
     const isSelected = selectedDiets.includes(diet.id);
 
     return (
@@ -95,7 +68,7 @@ export function TasteDietPreferences({
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
-              // Handle view diet action
+              handleViewDiet(diet);
             }}
             style={styles.viewDietButton}
           >
@@ -142,7 +115,7 @@ export function TasteDietPreferences({
 
       {/* Diet Cards */}
       <View style={styles.cardsContainer}>
-        {dietOptions.map((diet) => renderDietCard(diet))}
+        {DIET_OPTIONS.map((diet) => renderDietCard(diet))}
       </View>
 
       {/* Selection Summary */}
@@ -163,7 +136,7 @@ export function TasteDietPreferences({
           {/* Selected Diet Tags */}
           <View style={styles.selectedTagsContainer}>
             {selectedDiets.map((dietId) => {
-              const diet = dietOptions.find((d) => d.id === dietId);
+              const diet = DIET_OPTIONS.find((d) => d.id === dietId);
               return (
                 <View key={dietId} style={styles.selectedTag}>
                   <Text style={styles.selectedTagLabel}>{diet?.label}</Text>
