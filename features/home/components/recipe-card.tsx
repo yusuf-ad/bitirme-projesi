@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   gradientBorder: {
     borderRadius: 18,
     padding: 2.5,
-    height: 272,
+    height: 252,
     shadowColor: Colors.lilac[900],
     shadowOffset: {
       width: 0,

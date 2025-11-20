@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { ErrorState, LoadingState, RecipeGrid } from "@/features/home";
 import {
   EmptyPantryState,
   PantryCategory,
@@ -9,16 +10,27 @@ import {
   TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
+import { usePantryRecipesQuery } from "@/hooks/use-pantry-recipes-query";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const MEAL_TYPES = ["All", "Breakfast", "Lunch", "Dinner", "Snack"];
 
 export default function PantryTab() {
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMealType, setSelectedMealType] = useState("All");
   const insets = useSafeAreaInsets();
 
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -53,10 +65,31 @@ export default function PantryTab() {
   }, [refresh]);
 
   // Filter items based on status
-  const pantryStockItems = items.filter((i) => i.status === "pantry");
+  const pantryStockItems = useMemo(
+    () => items.filter((i) => i.status === "pantry"),
+    [items]
+  );
   const shoppingListCount = items.filter(
     (i) => i.status === "shopping_list"
   ).length;
+
+  const ingredientNames = useMemo(
+    () => pantryStockItems.map((i) => i.spoonacular_name || i.name),
+    [pantryStockItems]
+  );
+
+  const {
+    recipes: recipeIdeas,
+    isLoading: isLoadingRecipes,
+    error: recipeError,
+    refetch: refetchRecipes,
+    totalCount,
+  } = usePantryRecipesQuery({
+    ingredients: ingredientNames,
+    enabled: activeTab === "recipe-ideas",
+    type:
+      selectedMealType === "All" ? undefined : selectedMealType.toLowerCase(),
+  });
 
   // Filter based on search query
   const filteredPantryItems = pantryStockItems.filter((i) =>
@@ -167,6 +200,8 @@ export default function PantryTab() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         shoppingListCount={shoppingListCount}
+        ingredientsCount={pantryStockItems.length}
+        recipeIdeasCount={totalCount || 0}
       />
 
       {/* Content - Scrollable */}
@@ -222,10 +257,59 @@ export default function PantryTab() {
               </>
             )
           ) : (
-            <View style={styles.placeholderContainer}>
-              <Text style={styles.placeholderText}>
-                Recipe ideas based on your pantry ingredients will appear here.
-              </Text>
+            <View style={styles.recipeIdeasContainer}>
+              {pantryStockItems.length === 0 ? (
+                <View style={styles.placeholderContainer}>
+                  <Text style={styles.placeholderText}>
+                    Add items to your pantry to see recipe ideas.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.filtersWrapper}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.filtersContainer}
+                    >
+                      {MEAL_TYPES.map((type) => (
+                        <TouchableOpacity
+                          key={type}
+                          style={[
+                            styles.filterChip,
+                            selectedMealType === type &&
+                              styles.filterChipActive,
+                          ]}
+                          onPress={() => setSelectedMealType(type)}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              selectedMealType === type &&
+                                styles.filterChipTextActive,
+                            ]}
+                          >
+                            {type}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                    {!isLoadingRecipes && !recipeError && (
+                      <Text style={styles.resultsText}>
+                        You can make {totalCount} recipes
+                      </Text>
+                    )}
+                  </View>
+
+                  {isLoadingRecipes ? (
+                    <LoadingState />
+                  ) : recipeError ? (
+                    <ErrorState onRetry={refetchRecipes} />
+                  ) : (
+                    <RecipeGrid recipes={recipeIdeas || []} />
+                  )}
+                </>
+              )}
             </View>
           )}
         </View>
@@ -262,5 +346,42 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     color: Colors.gray[500],
+  },
+  recipeIdeasContainer: {
+    flex: 1,
+    minHeight: 200,
+  },
+  filtersWrapper: {
+    marginBottom: 16,
+    gap: 12,
+  },
+  filtersContainer: {
+    gap: 8,
+    paddingRight: 16,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.background.tertiary,
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+  },
+  filterChipActive: {
+    backgroundColor: Colors.lilac[600],
+    borderColor: Colors.lilac[600],
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    fontWeight: "500",
+  },
+  filterChipTextActive: {
+    color: Colors.text.inverse,
+  },
+  resultsText: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    marginLeft: 4,
   },
 });

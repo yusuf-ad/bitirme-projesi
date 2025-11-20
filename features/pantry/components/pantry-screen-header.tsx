@@ -11,6 +11,8 @@ interface PantryScreenHeaderProps {
   searchQuery: string;
   onSearchChange: (text: string) => void;
   shoppingListCount?: number;
+  ingredientsCount?: number;
+  recipeIdeasCount?: number;
 }
 
 export function PantryScreenHeader({
@@ -19,6 +21,8 @@ export function PantryScreenHeader({
   searchQuery,
   onSearchChange,
   shoppingListCount = 0,
+  ingredientsCount = 0,
+  recipeIdeasCount = 0,
 }: PantryScreenHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -70,6 +74,7 @@ export function PantryScreenHeader({
           ]}
           onPress={() => onTabChange("my-ingredients")}
         >
+          <View style={styles.tabContent}>
           <Text
             style={[
               styles.tabText,
@@ -78,11 +83,30 @@ export function PantryScreenHeader({
           >
             My Ingredients
           </Text>
+            {ingredientsCount > 0 && (
+              <View
+                style={[
+                  styles.badge,
+                  activeTab === "my-ingredients" && styles.activeBadge,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    activeTab === "my-ingredients" && styles.activeBadgeText,
+                  ]}
+                >
+                  {ingredientsCount}
+                </Text>
+              </View>
+            )}
+          </View>
         </Pressable>
         <Pressable
           style={[styles.tab, activeTab === "recipe-ideas" && styles.activeTab]}
           onPress={() => onTabChange("recipe-ideas")}
         >
+          <View style={styles.tabContent}>
           <Text
             style={[
               styles.tabText,
@@ -91,6 +115,24 @@ export function PantryScreenHeader({
           >
             Recipe Ideas
           </Text>
+            {recipeIdeasCount > 0 && (
+              <View
+                style={[
+                  styles.badge,
+                  activeTab === "recipe-ideas" && styles.activeBadge,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    activeTab === "recipe-ideas" && styles.activeBadgeText,
+                  ]}
+                >
+                  {recipeIdeasCount > 99 ? "99+" : recipeIdeasCount}
+                </Text>
+              </View>
+            )}
+          </View>
         </Pressable>
       </View>
     </View>
@@ -179,5 +221,27 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.lilac[900],
+  },
+  tabContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  badge: {
+    backgroundColor: Colors.gray[200],
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  activeBadge: {
+    backgroundColor: Colors.lilac[900],
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: Colors.gray[600],
+  },
+  activeBadgeText: {
+    color: "#FFFFFF",
   },
 });
