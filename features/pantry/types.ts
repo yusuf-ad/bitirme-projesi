@@ -1,6 +1,6 @@
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 
-export type TabType = "groceries" | "pantry";
+export type TabType = "my-ingredients" | "recipe-ideas";
 
 export type PantryCategory = (typeof PANTRY_CATEGORIES)[number];
 

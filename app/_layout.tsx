@@ -30,6 +30,7 @@ function RootNavigator() {
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
         <Stack.Screen name="(plan)" options={{ headerShown: false }} />
         <Stack.Screen name="(add)" options={{ headerShown: false }} />
+        <Stack.Screen name="shopping-list" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
