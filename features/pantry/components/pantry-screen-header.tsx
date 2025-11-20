@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cartButton: {
-    backgroundColor: "#0F172A", // Dark blue/black color
+    backgroundColor: Colors.lilac[900],
   },
   cartText: {
     fontSize: 14,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#0F172A", // Dark blue/black color
+    color: Colors.text.primary,
     // marginBottom removed since it's now in the top row
   },
   searchContainer: {
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     color: Colors.gray[400],
   },
   activeTabText: {
-    color: "#0F172A", // Active color
+    color: Colors.lilac[900],
   },
   activeIndicator: {
     position: "absolute",
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: "#0F172A",
+    backgroundColor: Colors.lilac[900],
   },
   tabContent: {
     flexDirection: "row",
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   activeBadge: {
-    backgroundColor: "#0F172A",
+    backgroundColor: Colors.lilac[900],
   },
   inactiveBadge: {
     backgroundColor: Colors.gray[200],

@@ -6,6 +6,7 @@ import {
   PantryCategoryPreview,
   PantryItem,
   PantryScreenHeader,
+  PantrySkeleton,
   TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
@@ -13,13 +14,7 @@ import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PantryTab() {
@@ -190,8 +185,16 @@ export default function PantryTab() {
 
   if (isLoading && items.length === 0) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={Colors.lilac[600]} />
+      <View style={styles.container}>
+        <PantryScreenHeader
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          pantryCount={0}
+          shoppingListCount={0}
+        />
+        <PantrySkeleton />
       </View>
     );
   }
