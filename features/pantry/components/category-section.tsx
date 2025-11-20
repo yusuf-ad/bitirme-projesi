@@ -40,15 +40,11 @@ export function CategorySection({
 }
 
 const styles = StyleSheet.create({
-  categorySection: {
-    marginBottom: 8,
-  },
+  categorySection: {},
   categoryTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: Colors.lilac[900],
-    marginBottom: 2,
     marginTop: 4,
   },
 });
-

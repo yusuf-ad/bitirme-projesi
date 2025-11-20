@@ -1,11 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { Recipe } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
-import {
-  findMacro,
-  findNutrientValue,
-  NutrientLike,
-} from "@/shared/utils/nutrition";
+import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -61,7 +57,10 @@ export function MealDetailContent({
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
 
-  const nutrients: NutrientLike[] = meal.nutrition?.nutrients ?? [];
+  const nutrients = useMemo(
+    () => meal.nutrition?.nutrients ?? [],
+    [meal.nutrition?.nutrients]
+  );
   const readyInMinutes = meal.readyInMinutes
     ? `${meal.readyInMinutes} min`
     : "N/A";
