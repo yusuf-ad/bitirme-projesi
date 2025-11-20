@@ -42,12 +42,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
-    paddingTop: 40,
   },
   image: {
     width: "100%",
     height: 200,
-    marginBottom: 12,
+    marginBottom: 8,
     borderRadius: 24,
   },
   title: {
@@ -61,7 +60,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.secondary,
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 28,
     lineHeight: 24,
   },
   button: {

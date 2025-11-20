@@ -1,12 +1,10 @@
 import { Colors } from "@/constants/theme";
 import {
-  AddNewHeader,
   CategorySection,
   EmptyPantryState,
   PantryCategoryPreview,
   PantryItem,
-  SearchPantryHeader,
-  TabSwitcher,
+  PantryScreenHeader,
   TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
@@ -85,16 +83,6 @@ export default function PantryTab() {
     return itemsList.filter((item) => item.checked);
   };
 
-  const handleAddNew = () => {
-    // TODO: Implement add new item functionality
-    console.log("Add new item:", searchQuery);
-  };
-
-  const handleStarPress = () => {
-    // TODO: Implement starred items functionality
-    console.log("Star pressed");
-  };
-
   const handleEditItem = (id: string) => {
     // TODO: Implement edit item functionality
     console.log("Edit item:", id);
@@ -114,27 +102,15 @@ export default function PantryTab() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header - Fixed */}
-      <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
-
-      <View style={styles.searchContainer}>
-        {activeTab === "pantry" ? (
-          <SearchPantryHeader
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onAdd={handleAddNew}
-            onStarPress={handleStarPress}
-          />
-        ) : (
-          <AddNewHeader
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onAdd={handleAddNew}
-            onStarPress={handleStarPress}
-          />
-        )}
-      </View>
+    <View style={styles.container}>
+      <PantryScreenHeader
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        pantryCount={pantryStockItems.length}
+        shoppingListCount={shoppingListItems.length}
+      />
 
       {/* Content - Scrollable */}
       <ScrollView
@@ -236,21 +212,6 @@ const styles = StyleSheet.create({
   center: {
     justifyContent: "center",
     alignItems: "center",
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    backgroundColor: Colors.background.secondary,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lilac[200],
-    shadowColor: Colors.background.secondary,
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.58,
-    shadowRadius: 16.0,
-    elevation: 24,
   },
   contentScroll: {
     flex: 1,
