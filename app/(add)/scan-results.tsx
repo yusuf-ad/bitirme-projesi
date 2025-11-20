@@ -256,6 +256,11 @@ export default function ScanResults() {
 
       // 4. Save to Supabase
       // Perform updates
+      console.log("Saving items...", {
+        toUpdate: itemsToUpdate.length,
+        toInsert: itemsToInsert.length,
+      });
+
       if (itemsToUpdate.length > 0) {
         await Promise.all(
           itemsToUpdate.map((update) =>
@@ -266,10 +271,14 @@ export default function ScanResults() {
 
       // Perform inserts
       if (itemsToInsert.length > 0) {
-        await pantryService.addItems(itemsToInsert);
+        const inserted = await pantryService.addItems(itemsToInsert);
+        console.log("Inserted items:", inserted);
       }
 
-      router.push("/(app)/pantry");
+      router.push({
+        pathname: "/(app)/pantry",
+        params: { refresh: Date.now().toString() },
+      });
     } catch (error) {
       console.error("Error saving items:", error);
       Alert.alert("Error", "Failed to save items to pantry. Please try again.");

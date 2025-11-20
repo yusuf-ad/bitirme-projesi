@@ -1,8 +1,8 @@
 import { Colors } from "@/constants/theme";
+import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Image } from "expo-image";
 import {
-  Image as RNImage,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,11 +25,7 @@ export function PantryCategoryPreview({
   if (items.length === 0) return null;
 
   const getBadgeContent = (item: PantryItem) => {
-    if (
-      item.unit === "g" ||
-      item.unit === "gram" ||
-      item.unit === "grams"
-    ) {
+    if (item.unit === "g" || item.unit === "gram" || item.unit === "grams") {
       const inKg = item.amount / 1000;
       return `${parseFloat(inKg.toFixed(2))}kg`;
     }
@@ -37,7 +33,7 @@ export function PantryCategoryPreview({
   };
 
   return (
-    <View style={styles.container}>
+    <View>
       <TouchableOpacity
         style={styles.header}
         onPress={onPress}
@@ -56,10 +52,6 @@ export function PantryCategoryPreview({
 
             <Entypo name="chevron-right" size={16} color="black" />
           </View>
-          <RNImage
-            source={require("@/assets/icons/arrow-right.svg")}
-            style={styles.arrow}
-          />
         </View>
       </TouchableOpacity>
 
@@ -69,9 +61,9 @@ export function PantryCategoryPreview({
         contentContainerStyle={styles.listContent}
       >
         {items.map((item, index) => (
-          <View
+          <CustomButton
             key={`${item.spoonacular_id || item.id}-${index}`}
-            style={styles.itemContainer}
+            containerStyle={styles.itemContainer}
           >
             <View style={styles.imageWrapper}>
               <Image
@@ -86,7 +78,7 @@ export function PantryCategoryPreview({
                 <Text style={styles.badgeText}>{getBadgeContent(item)}</Text>
               </View>
             </View>
-          </View>
+          </CustomButton>
         ))}
       </ScrollView>
     </View>
@@ -94,18 +86,16 @@ export function PantryCategoryPreview({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 24,
-  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
+    paddingHorizontal: 12,
   },
   title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
     color: Colors.lilac[900],
   },
   headerRight: {
@@ -128,7 +118,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   itemContainer: {
-    marginRight: 4,
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    // backgroundColor: "#F8F9FA", // Light gray background
+    backgroundColor: Colors.background.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.lilac[100],
   },
   imageWrapper: {
     width: 80,
@@ -149,7 +147,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 6,
     right: 6,
-    backgroundColor: "#4ADE80", // Green color
+    backgroundColor: Colors.lilac[700], // Green color
     minWidth: 24,
     height: 24,
     paddingHorizontal: 4,

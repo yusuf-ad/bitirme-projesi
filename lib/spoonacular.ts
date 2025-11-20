@@ -9,6 +9,40 @@ const SPOONACULAR_FOOD_BASE_URL = `https://${RAPIDAPI_HOST}/food`;
 // Test constant - API pahalı olduğu için test için 1 olarak ayarlandı
 const TEST_NUMBER_OF_RESULTS = 1;
 
+// Common pantry staples for pre-filling
+const COMMON_PANTRY_STAPLES = [
+  "Apple",
+  "Banana",
+  "Carrot",
+  "Onion",
+  "Garlic",
+  "Potato",
+  "Tomato",
+  "Chicken Breast",
+  "Ground Beef",
+  "Salmon",
+  "Milk",
+  "Eggs",
+  "Butter",
+  "Cheddar Cheese",
+  "Yogurt",
+  "Rice",
+  "Pasta",
+  "Bread",
+  "Flour",
+  "Oats",
+  "Salt",
+  "Black Pepper",
+  "Olive Oil",
+  "Vegetable Oil",
+  "Canned Black Beans",
+  "Canned Tuna",
+  "Ketchup",
+  "Mayonnaise",
+  "Soy Sauce",
+  "Sugar",
+];
+
 /**
  * Logs rate limit headers from Spoonacular API response
  * @param response - The fetch response object
@@ -69,6 +103,33 @@ export interface Recipe {
     amount: number;
     unit: string;
   }[];
+}
+
+export interface ExtendedIngredient {
+  id: number;
+  amount: number;
+  unit: string;
+  unitLong: string;
+  unitShort: string;
+  aisle: string;
+  name: string;
+  original: string;
+  originalName: string;
+  meta: string[];
+  image: string;
+}
+
+export interface RecipeByIngredient {
+  id: number;
+  title: string;
+  image: string;
+  imageType: string;
+  usedIngredientCount: number;
+  missedIngredientCount: number;
+  missedIngredients: ExtendedIngredient[];
+  usedIngredients: ExtendedIngredient[];
+  unusedIngredients: ExtendedIngredient[];
+  likes: number;
 }
 
 export interface Ingredient {
@@ -273,6 +334,61 @@ export async function searchRecipes(
 }
 
 /**
+ * Search recipes by ingredients using complexSearch with min-missing-ingredients sort
+ * @param ingredients - Comma separated list of ingredients
+ * @param number - Number of recipes to return
+ * @param ignorePantry - Whether to ignore typical pantry items
+ * @param type - Meal type (breakfast, lunch, dinner, etc.)
+ */
+export async function searchRecipesByIngredients(
+  ingredients: string,
+  number: number = TEST_NUMBER_OF_RESULTS,
+  ignorePantry: boolean = true,
+  type?: string
+): Promise<{ results: Recipe[]; totalResults: number }> {
+  try {
+    const params = new URLSearchParams({
+      includeIngredients: ingredients,
+      sort: "min-missing-ingredients",
+      number: number.toString(),
+      addRecipeInformation: "true",
+      addRecipeNutrition: "true",
+      fillIngredients: "true",
+      ignorePantry: ignorePantry.toString(),
+    });
+
+    if (type) {
+      params.append("type", type);
+    }
+
+    const response = await fetch(
+      `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`,
+      {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
+    );
+
+    logRateLimitHeaders(response);
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data: SpoonacularResponse = await response.json();
+    return {
+      results: data.results || [],
+      totalResults: data.totalResults || 0,
+    };
+  } catch (error) {
+    console.error("Error searching recipes by ingredients:", error);
+    throw error;
+  }
+}
+
+/**
  * Tarif detaylarını çeker
  * @param id - Tarif ID'si
  * @returns Tarif detayları
@@ -296,6 +412,44 @@ export async function getRecipeDetails(id: number): Promise<Recipe> {
     return await response.json();
   } catch (error) {
     console.error("Error fetching recipe details:", error);
+    throw error;
+  }
+}
+
+/**
+ * Bulk fetch recipe information
+ * @param ids - Array of recipe IDs
+ */
+export async function getRecipesInformationBulk(
+  ids: number[]
+): Promise<Recipe[]> {
+  if (ids.length === 0) return [];
+
+  try {
+    const params = new URLSearchParams({
+      ids: ids.join(","),
+      includeNutrition: "true",
+    });
+
+    const response = await fetch(
+      `${SPOONACULAR_BASE_URL}/informationBulk?${params.toString()}`,
+      {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
+    );
+
+    logRateLimitHeaders(response);
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching bulk recipe details:", error);
     throw error;
   }
 }
@@ -437,4 +591,14 @@ export async function parseIngredients(
     console.error("Error parsing ingredients:", error);
     throw error;
   }
+}
+
+/**
+ * Gets common pantry staples using parseIngredients
+ * Returns a list of parsed ingredients for the predefined common staples
+ */
+export async function getCommonPantryIngredients(): Promise<
+  ParsedIngredient[]
+> {
+  return parseIngredients(COMMON_PANTRY_STAPLES);
 }

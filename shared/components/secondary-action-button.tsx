@@ -44,13 +44,16 @@ export function SecondaryActionButton({
           scale: withDelay(delay, withTiming(scaleValue)),
         },
       ],
+      // Ensure it doesn't capture touches when collapsed
+      zIndex: isExpanded.value ? 10 : -1,
     };
   });
 
   return (
     <AnimatedPressable
       onPress={onPress}
-      style={[animatedStyles, styles.secondaryButton]}
+      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+      style={[styles.secondaryButton, animatedStyles]}
     >
       <FontAwesome name={iconName as any} size={20} color="#FFFFFF" />
     </AnimatedPressable>

@@ -54,10 +54,10 @@ export const meal_types = Object.values(MEAL_TYPES);
 
 // Pantry Categories
 export const PANTRY_CATEGORIES = [
-  "Produce",
-  "Meat",
+  "Fruits & Vegetables",
+  "Meat & Seafood",
   "Dairy",
-  "Grains",
+  "Pasta, Sauces & Grain",
   "Bakery",
   "Frozen",
   "Canned",
