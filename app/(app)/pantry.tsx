@@ -1,36 +1,25 @@
 import { Colors } from "@/constants/theme";
-import { ErrorState, LoadingState, RecipeGrid } from "@/features/home";
 import {
   EmptyPantryState,
   PantryCategory,
   PantryCategoryPreview,
+  PantryChatView,
   PantryItem,
   PantryScreenHeader,
   PantrySkeleton,
   TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
-import { usePantryRecipesQuery } from "@/hooks/use-pantry-recipes-query";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const MEAL_TYPES = ["All", "Breakfast", "Lunch", "Dinner", "Snack"];
 
 export default function PantryTab() {
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMealType, setSelectedMealType] = useState("All");
   const insets = useSafeAreaInsets();
 
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -72,24 +61,6 @@ export default function PantryTab() {
   const shoppingListCount = items.filter(
     (i) => i.status === "shopping_list"
   ).length;
-
-  const ingredientNames = useMemo(
-    () => pantryStockItems.map((i) => i.spoonacular_name || i.name),
-    [pantryStockItems]
-  );
-
-  const {
-    recipes: recipeIdeas,
-    isLoading: isLoadingRecipes,
-    error: recipeError,
-    refetch: refetchRecipes,
-    totalCount,
-  } = usePantryRecipesQuery({
-    ingredients: ingredientNames,
-    enabled: activeTab === "recipe-ideas",
-    type:
-      selectedMealType === "All" ? undefined : selectedMealType.toLowerCase(),
-  });
 
   // Filter based on search query
   const filteredPantryItems = pantryStockItems.filter((i) =>
@@ -201,7 +172,6 @@ export default function PantryTab() {
         onSearchChange={setSearchQuery}
         shoppingListCount={shoppingListCount}
         ingredientsCount={pantryStockItems.length}
-        recipeIdeasCount={totalCount || 0}
       />
 
       {activeTab === "my-ingredients" ? (
@@ -258,72 +228,7 @@ export default function PantryTab() {
           </View>
         </ScrollView>
       ) : (
-        <View style={{ flex: 1 }}>
-          {pantryStockItems.length === 0 ? (
-            <View
-              style={[styles.categoriesContainer, { paddingHorizontal: 16 }]}
-            >
-              <View style={styles.placeholderContainer}>
-                <Text style={styles.placeholderText}>
-                  Add items to your pantry to see recipe ideas.
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <>
-              <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
-                <View style={styles.filtersWrapper}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filtersContainer}
-                  >
-                    {MEAL_TYPES.map((type) => (
-                      <TouchableOpacity
-                        key={type}
-                        style={[
-                          styles.filterChip,
-                          selectedMealType === type && styles.filterChipActive,
-                        ]}
-                        onPress={() => setSelectedMealType(type)}
-                      >
-                        <Text
-                          style={[
-                            styles.filterChipText,
-                            selectedMealType === type &&
-                              styles.filterChipTextActive,
-                          ]}
-                        >
-                          {type}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              </View>
-
-              <ScrollView
-                style={styles.contentScroll}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={[
-                  styles.scrollContent,
-                  {
-                    paddingBottom: insets.bottom * 2 + 52,
-                    paddingTop: 0,
-                  },
-                ]}
-              >
-                {isLoadingRecipes ? (
-                  <LoadingState />
-                ) : recipeError ? (
-                  <ErrorState onRetry={refetchRecipes} />
-                ) : (
-                  <RecipeGrid recipes={recipeIdeas || []} />
-                )}
-              </ScrollView>
-            </>
-          )}
-        </View>
+        <PantryChatView />
       )}
     </View>
   );
@@ -357,42 +262,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     color: Colors.gray[500],
-  },
-  recipeIdeasContainer: {
-    flex: 1,
-    minHeight: 200,
-  },
-  filtersWrapper: {
-    marginBottom: 16,
-    gap: 12,
-  },
-  filtersContainer: {
-    gap: 8,
-    paddingRight: 16,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.background.tertiary,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-  },
-  filterChipActive: {
-    backgroundColor: Colors.lilac[600],
-    borderColor: Colors.lilac[600],
-  },
-  filterChipText: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    fontWeight: "500",
-  },
-  filterChipTextActive: {
-    color: Colors.text.inverse,
-  },
-  resultsText: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginLeft: 4,
   },
 });

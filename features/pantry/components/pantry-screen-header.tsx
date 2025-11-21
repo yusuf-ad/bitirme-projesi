@@ -57,7 +57,7 @@ export function PantryScreenHeader({
           placeholder={
             activeTab === "my-ingredients"
               ? "Search ingredients..."
-              : "Search recipes..."
+              : "Ask AI..."
           }
           placeholderTextColor={Colors.gray[400]}
           value={searchQuery}
@@ -103,35 +103,18 @@ export function PantryScreenHeader({
           </View>
         </Pressable>
         <Pressable
-          style={[styles.tab, activeTab === "recipe-ideas" && styles.activeTab]}
-          onPress={() => onTabChange("recipe-ideas")}
+          style={[styles.tab, activeTab === "ai-chat" && styles.activeTab]}
+          onPress={() => onTabChange("ai-chat")}
         >
           <View style={styles.tabContent}>
             <Text
               style={[
                 styles.tabText,
-                activeTab === "recipe-ideas" && styles.activeTabText,
+                activeTab === "ai-chat" && styles.activeTabText,
               ]}
             >
-              Recipe Ideas
+              AI Chat
             </Text>
-            {recipeIdeasCount > 0 && (
-              <View
-                style={[
-                  styles.badge,
-                  activeTab === "recipe-ideas" && styles.activeBadge,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.badgeText,
-                    activeTab === "recipe-ideas" && styles.activeBadgeText,
-                  ]}
-                >
-                  {recipeIdeasCount > 99 ? "99+" : recipeIdeasCount}
-                </Text>
-              </View>
-            )}
           </View>
         </Pressable>
       </View>

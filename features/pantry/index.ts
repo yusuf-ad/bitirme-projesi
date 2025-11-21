@@ -7,4 +7,5 @@ export { PantryScreenHeader } from "./components/pantry-screen-header";
 export { PantrySkeleton } from "./components/pantry-skeleton";
 export { SearchPantryHeader } from "./components/search-pantry-header";
 export { TabSwitcher } from "./components/tab-switcher";
+export { PantryChatView } from "./components/pantry-chat-view";
 export * from "./types";
