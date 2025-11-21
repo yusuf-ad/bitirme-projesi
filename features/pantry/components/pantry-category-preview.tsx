@@ -15,12 +15,14 @@ interface PantryCategoryPreviewProps {
   title: string;
   items: PantryItem[];
   onPress?: () => void;
+  onItemPress?: (item: PantryItem) => void;
 }
 
 export function PantryCategoryPreview({
   title,
   items,
   onPress,
+  onItemPress,
 }: PantryCategoryPreviewProps) {
   if (items.length === 0) return null;
 
@@ -64,6 +66,7 @@ export function PantryCategoryPreview({
           <CustomButton
             key={`${item.spoonacular_id || item.id}-${index}`}
             containerStyle={styles.itemContainer}
+            onPress={() => onItemPress?.(item)}
           >
             <View style={styles.imageWrapper}>
               <Image

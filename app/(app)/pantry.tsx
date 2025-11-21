@@ -5,6 +5,7 @@ import {
   PantryCategoryPreview,
   PantryChatView,
   PantryItem,
+  PantryItemDetailSheet,
   PantryScreenHeader,
   PantrySkeleton,
   TabType,
@@ -12,8 +13,9 @@ import {
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,6 +27,10 @@ export default function PantryTab() {
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { refresh } = useLocalSearchParams();
+
+  // Bottom sheet for item details
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [selectedItem, setSelectedItem] = useState<PantryItem | null>(null);
 
   const fetchItems = async () => {
     try {
@@ -148,6 +154,39 @@ export default function PantryTab() {
     }
   };
 
+  const handleItemPress = (item: PantryItem) => {
+    setSelectedItem(item);
+    bottomSheetRef.current?.present();
+  };
+
+  const handleUpdateItem = async (id: string, updates: Partial<PantryItem>) => {
+    try {
+      // Optimistically update local state
+      setItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, ...updates } : i))
+      );
+      if (selectedItem && selectedItem.id === id) {
+        setSelectedItem((prev) => (prev ? { ...prev, ...updates } : null));
+      }
+      // Call API
+      await pantryService.updateItem(id, updates);
+    } catch (error) {
+      console.error("Failed to update item:", error);
+      // Revert/Fetch if needed, simplified for now
+    }
+  };
+
+  const handleRemoveItem = async (id: string) => {
+    try {
+      // Optimistically update
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      bottomSheetRef.current?.dismiss();
+      await pantryService.deleteItem(id);
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+    }
+  };
+
   if (isLoading && items.length === 0) {
     return (
       <View style={styles.container}>
@@ -199,6 +238,7 @@ export default function PantryTab() {
                         key={category}
                         title={category}
                         items={categoryItems}
+                        onItemPress={handleItemPress}
                       />
                     );
                   })
@@ -207,6 +247,7 @@ export default function PantryTab() {
                     <PantryCategoryPreview
                       title="All"
                       items={filteredPantryItems}
+                      onItemPress={handleItemPress}
                     />
                     {PANTRY_CATEGORIES.map((category) => {
                       const categoryItems = filteredPantryItems.filter(
@@ -218,6 +259,7 @@ export default function PantryTab() {
                           key={category}
                           title={category}
                           items={categoryItems}
+                          onItemPress={handleItemPress}
                         />
                       );
                     })}
@@ -230,6 +272,14 @@ export default function PantryTab() {
       ) : (
         <PantryChatView />
       )}
+
+      <PantryItemDetailSheet
+        ref={bottomSheetRef}
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onUpdateItem={handleUpdateItem}
+        onRemoveItem={handleRemoveItem}
+      />
     </View>
   );
 }

@@ -2,6 +2,7 @@ export { AddNewHeader } from "./components/add-new-header";
 export { CategorySection } from "./components/category-section";
 export { EmptyPantryState } from "./components/empty-pantry-state";
 export { PantryCategoryPreview } from "./components/pantry-category-preview";
+export { PantryItemDetailSheet } from "./components/pantry-item-detail-sheet";
 export { PantryItemRow } from "./components/pantry-item-row";
 export { PantryScreenHeader } from "./components/pantry-screen-header";
 export { PantrySkeleton } from "./components/pantry-skeleton";
