@@ -20,8 +20,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const SPOONACULAR_ENDPOINT =
-  "https://api.spoonacular.com/recipes/complexSearch";
+const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || "";
+const RAPIDAPI_HOST = "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com";
+const SPOONACULAR_ENDPOINT = `https://${RAPIDAPI_HOST}/recipes/complexSearch`;
 const DEFAULT_CUISINES = [CUISINES.MEDITERRANEAN];
 const EXCLUDED_INGREDIENTS = ["pork", "shellfish"];
 const MEAL_TYPE_INGREDIENTS: Record<MealType, string[]> = {
@@ -63,14 +64,11 @@ interface MealFetchResult {
 const fetchMealsForType = async (
   mealType: MealType
 ): Promise<MealFetchResult> => {
-  const apiKey = process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Spoonacular API key is not configured");
+  if (!RAPIDAPI_KEY) {
+    throw new Error("RapidAPI key is not configured");
   }
 
   const params = new URLSearchParams({
-    apiKey,
     addRecipeInformation: "true",
     number: "12",
     fillNutrients: "true",
@@ -94,6 +92,8 @@ const fetchMealsForType = async (
   const response = await fetch(`${SPOONACULAR_ENDPOINT}?${params.toString()}`, {
     headers: {
       "Content-Type": "application/json",
+      "x-rapidapi-key": RAPIDAPI_KEY,
+      "x-rapidapi-host": RAPIDAPI_HOST,
     },
   });
 
