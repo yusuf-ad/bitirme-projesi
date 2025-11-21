@@ -105,7 +105,10 @@ export function EmptyMealSlot({
 
   const handleGenerateAiSuggestion = async () => {
     if (!session?.user?.id) {
-      Alert.alert("Giriş Gerekli", "Tarif oluşturmak için giriş yapmalısınız.");
+      Alert.alert(
+        "Login Required",
+        "You must be logged in to generate a recipe."
+      );
       return;
     }
 
@@ -127,7 +130,7 @@ export function EmptyMealSlot({
 
       if (!randomRecipes || randomRecipes.length === 0) {
         setAiError(
-          "Filtrelerinize uygun tarif bulunamadı. Lütfen filtreleri değiştirin."
+          "No recipes found matching your filters. Please adjust your filters."
         );
         return;
       }
@@ -165,7 +168,7 @@ export function EmptyMealSlot({
 
       if (!finalRecipes || finalRecipes.length === 0) {
         setAiError(
-          "Filtrelerinize uygun tarif bulunamadı. Lütfen filtreleri değiştirin."
+          "No recipes found matching your filters. Please adjust your filters."
         );
         return;
       }
@@ -251,11 +254,11 @@ export function EmptyMealSlot({
       await queryClient.invalidateQueries({ queryKey: ["meal-plans"] });
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Başarılı!", "Tarif eklendi.");
+      Alert.alert("Success!", "Recipe added.");
       aiSheetRef.current?.dismiss();
     } catch (error) {
       console.error("AI suggestion error", error);
-      setAiError("Tarif oluşturulamadı. Lütfen tekrar deneyin.");
+      setAiError("Could not generate recipe. Please try again.");
     } finally {
       setIsGeneratingAi(false);
     }
@@ -297,9 +300,9 @@ export function EmptyMealSlot({
           <View style={styles.emptyIconContainer}>
             <Text style={styles.emptyIcon}>🍽️</Text>
           </View>
-          <Text style={styles.emptyTitle}>{mealType} henüz girilmedi</Text>
+          <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
           <Text style={styles.emptyDescription}>
-            Tarifler sayfasından bir yemek eklemek için tıklayın
+            Tap to add a meal from the recipes page
           </Text>
         </View>
       </Pressable>
@@ -316,7 +319,7 @@ export function EmptyMealSlot({
             <View>
               <Text style={styles.aiTitle}>AI Recipes Generator</Text>
               <Text style={styles.aiSubtitle}>
-                {mealType} için filtreler ile tarif oluştur
+                Generate recipe for {mealType} with filters
               </Text>
             </View>
             <Pressable onPress={() => aiSheetRef.current?.dismiss()}>
@@ -547,7 +550,7 @@ export function EmptyMealSlot({
                 style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
               >
                 <ActivityIndicator color="#fff" />
-                <Text style={styles.generateButtonText}>Oluşturuluyor...</Text>
+                <Text style={styles.generateButtonText}>Generating...</Text>
               </View>
             ) : (
               <Text style={styles.generateButtonText}>✨ GENERATE RECIPE</Text>

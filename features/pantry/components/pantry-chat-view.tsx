@@ -27,21 +27,30 @@ export function PantryChatView() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { messages, error, sendMessage, isLoading } = useChat({
+  const { messages, error, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: generateAPIUrl("/api/chat"),
     }),
     onError: (error) => console.error(error, "ERROR"),
-    initialMessages: [
+  });
+
+  const isLoading = status === "streaming" || status === "submitted";
+
+  // Initial welcome message
+  const welcomeMessage = {
+    id: "welcome",
+    role: "assistant" as const,
+    content: "",
+    parts: [
       {
-        id: "welcome",
-        role: "assistant",
-        content:
-          "Hi! I'm your AI kitchen assistant. I can help you find recipes based on your ingredients, suggest meal plans, or answer cooking questions. What's on your mind?",
+        type: "text" as const,
+        text: "Hi! I'm your AI kitchen assistant. I can help you find recipes based on your ingredients, suggest meal plans, or answer cooking questions. What's on your mind?",
       },
     ],
-  });
+  };
+
+  const displayMessages = messages.length === 0 ? [welcomeMessage] : messages;
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -82,7 +91,7 @@ export function PantryChatView() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {messages.map((m) => (
+        {displayMessages.map((m) => (
           <View
             key={m.id}
             style={[
@@ -97,7 +106,7 @@ export function PantryChatView() {
                 m.role === "user" ? styles.userBubble : styles.assistantBubble,
               ]}
             >
-              {m.parts ? (
+              {m.parts &&
                 m.parts.map((part, i) => {
                   switch (part.type) {
                     case "text":
@@ -115,10 +124,59 @@ export function PantryChatView() {
                         </Text>
                       );
                     case "tool-invocation":
-                      const toolInvocation = part.toolInvocation;
-                      if (toolInvocation.toolName === "searchRecipes") {
-                        if (toolInvocation.state === "result") {
-                          const recipes = toolInvocation.result as any[];
+                    case "tool-searchRecipes":
+                      const toolInvocation =
+                        part.type === "tool-invocation"
+                          ? (part as any).toolInvocation
+                          : part;
+                      const toolName =
+                        toolInvocation.toolName ||
+                        (part.type === "tool-searchRecipes"
+                          ? "searchRecipes"
+                          : "");
+
+                      if (toolName === "searchRecipes") {
+                        // Handle different states of the tool execution
+                        const state = toolInvocation.state;
+                        const args = toolInvocation.args || {};
+                        const query = args.query || "recipes";
+
+                        // Loading state
+                        if (state === "input-available" || state === "call") {
+                          return (
+                            <View
+                              key={`${m.id}-${i}`}
+                              style={styles.toolContainer}
+                            >
+                              <Text style={styles.toolTitle}>
+                                <Feather name="search" size={14} /> Searching
+                                for &quot;{query}&quot;...
+                              </Text>
+                            </View>
+                          );
+                        }
+
+                        // Result state
+                        if (
+                          state === "result" ||
+                          state === "output-available"
+                        ) {
+                          const recipes = (toolInvocation.result ||
+                            toolInvocation.output) as any[];
+
+                          if (!recipes || recipes.length === 0) {
+                            return (
+                              <View
+                                key={`${m.id}-${i}`}
+                                style={styles.toolContainer}
+                              >
+                                <Text style={styles.toolTitle}>
+                                  No recipes found for &quot;{query}&quot;.
+                                </Text>
+                              </View>
+                            );
+                          }
+
                           return (
                             <View
                               key={`${m.id}-${i}`}
@@ -126,7 +184,8 @@ export function PantryChatView() {
                             >
                               <Text style={styles.toolTitle}>
                                 <Feather name="check" size={14} /> Found{" "}
-                                {recipes.length} recipes:
+                                {recipes.length} recipes for &quot;{query}&quot;
+                                :
                               </Text>
                               <ScrollView
                                 horizontal
@@ -150,35 +209,31 @@ export function PantryChatView() {
                             </View>
                           );
                         }
-                        return (
-                          <View
-                            key={`${m.id}-${i}`}
-                            style={styles.toolContainer}
-                          >
-                            <Text style={styles.toolTitle}>
-                              <Feather name="search" size={14} /> Searching for
-                              recipes...
-                            </Text>
-                          </View>
-                        );
+
+                        // Error state
+                        if (state === "output-error") {
+                          return (
+                            <View
+                              key={`${m.id}-${i}`}
+                              style={styles.toolContainer}
+                            >
+                              <Text
+                                style={[
+                                  styles.toolTitle,
+                                  { color: Colors.semantic.error.main },
+                                ]}
+                              >
+                                Error searching for &quot;{query}&quot;.
+                              </Text>
+                            </View>
+                          );
+                        }
                       }
                       return null;
                     default:
                       return null;
                   }
-                })
-              ) : (
-                <Text
-                  style={[
-                    styles.messageText,
-                    m.role === "user"
-                      ? styles.userMessageText
-                      : styles.assistantMessageText,
-                  ]}
-                >
-                  {m.content}
-                </Text>
-              )}
+                })}
             </View>
           </View>
         ))}

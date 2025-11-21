@@ -19,10 +19,10 @@ export function FavoritesEmptyState({ onExplore }: FavoritesEmptyStateProps) {
         <Ionicons name="heart-outline" size={32} color={Colors.lilac[900]} />
       </View>
 
-      <Text style={styles.title}>Henüz favori tarif yok</Text>
+      <Text style={styles.title}>No favorite recipes yet</Text>
       <Text style={styles.subtitle}>
-        Discover bölümünde kalp ikonuna dokunduğun tüm tarifler burada
-        toplanacak. Günün ilhamını seçmek için aramaya başla.
+        All recipes you like in the Discover section will be collected here. Start
+        searching to choose your daily inspiration.
       </Text>
 
       <Pressable
@@ -30,9 +30,9 @@ export function FavoritesEmptyState({ onExplore }: FavoritesEmptyStateProps) {
         style={styles.ctaButton}
         android_ripple={{ color: Colors.lilac[700] }}
         accessibilityRole="button"
-        accessibilityLabel="Discover sekmesine dön"
+        accessibilityLabel="Return to Discover tab"
       >
-        <Text style={styles.ctaText}>Discover’a dön</Text>
+        <Text style={styles.ctaText}>Return to Discover</Text>
       </Pressable>
     </View>
   );
