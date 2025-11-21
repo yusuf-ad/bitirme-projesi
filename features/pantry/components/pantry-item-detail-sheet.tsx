@@ -266,7 +266,7 @@ export const PantryItemDetailSheet = forwardRef<
             <View style={styles.row}>
               <Text style={styles.rowLabel}>Categories</Text>
               <Text style={styles.categoryValue}>
-                RECENTLY ADDED, {item.category.toUpperCase()}
+                {item.category.toUpperCase()}
               </Text>
             </View>
 
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -8,
     right: -8,
-    backgroundColor: Colors.gray[600],
+    backgroundColor: Colors.lilac[900],
     borderRadius: 12,
     paddingHorizontal: 6,
     paddingVertical: 4,
