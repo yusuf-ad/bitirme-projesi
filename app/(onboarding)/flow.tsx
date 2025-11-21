@@ -74,10 +74,13 @@ export default function OnboardingFlowScreen() {
   const setSelectedMeals = onboarding.setSelectedMeals;
   const selectedCuisines = onboarding.selectedCuisines;
   const setSelectedCuisines = onboarding.setSelectedCuisines;
+  const dislikedCuisines = onboarding.dislikedCuisines;
+  const setDislikedCuisines = onboarding.setDislikedCuisines;
   const selectedAllergies = onboarding.selectedAllergies;
   const setSelectedAllergies = onboarding.setSelectedAllergies;
   const selectedDietPreferences = onboarding.selectedDietPreferences;
   const setSelectedDietPreferences = onboarding.setSelectedDietPreferences;
+  const dietNutritionTargets = onboarding.dietNutritionTargets;
   const selectedCookingSkill = onboarding.selectedCookingSkill;
   const setSelectedCookingSkill = onboarding.setSelectedCookingSkill;
 
@@ -105,6 +108,26 @@ export default function OnboardingFlowScreen() {
 
   async function handleNext() {
     const nextPage = getNextPage(currentPage.section, currentPage.step);
+
+    if (currentPage.component === "taste-diet-preferences") {
+      const missingDietId = selectedDietPreferences.find(
+        (dietId) => !dietNutritionTargets[dietId]
+      );
+
+      if (missingDietId) {
+        const params: Record<string, string> = { dietId: missingDietId };
+        if (nextPage) {
+          params.nextSection = nextPage.section;
+          params.nextStep = nextPage.step.toString();
+        }
+
+        router.push({
+          pathname: "/(onboarding)/diet/adjust",
+          params,
+        });
+        return;
+      }
+    }
 
     try {
       setIsSaving(true);
@@ -278,6 +301,8 @@ export default function OnboardingFlowScreen() {
             description={description}
             onSelectionChange={setSelectedCuisines}
             initialSelection={selectedCuisines}
+            onDislikeChange={setDislikedCuisines}
+            initialDisliked={dislikedCuisines}
           />
         );
 

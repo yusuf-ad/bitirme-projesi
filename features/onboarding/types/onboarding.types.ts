@@ -49,6 +49,13 @@ export interface UserMealTimes {
   updated_at: string;
 }
 
+export interface DietNutritionTarget {
+  calories: number;
+  proteinPercent: number;
+  fatPercent: number;
+  carbPercent: number;
+}
+
 export interface UserTastePreferences {
   id: string;
   user_id: string;
@@ -57,6 +64,8 @@ export interface UserTastePreferences {
   allergies_dislikes: string[];
   diet_preferences: string[];
   cooking_skill_level: string | null;
+  cuisine_dislikes?: string[];
+  diet_nutrition_targets?: Record<string, DietNutritionTarget>;
   created_at: string;
   updated_at: string;
 }

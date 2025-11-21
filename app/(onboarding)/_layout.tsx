@@ -5,6 +5,14 @@ export default function OnboardingLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="flow" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="diet/[dietId]"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
+        name="diet/adjust"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
       <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
       <Stack.Screen name="reset-password" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
