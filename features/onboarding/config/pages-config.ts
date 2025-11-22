@@ -64,7 +64,7 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
     title: "Weight",
     description: "What is your current weight?",
   },
-  // Meal-time Section (4 pages)
+  // Meal-time Section (5 pages)
   {
     section: "meal-time",
     step: 0,
@@ -76,25 +76,32 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
   {
     section: "meal-time",
     step: 1,
+    component: "taste-meals",
+    title: "Meals",
+    description: "Select the meals you would like to plan",
+  },
+  {
+    section: "meal-time",
+    step: 2,
     component: "meal-time-breakfast",
     title: "Breakfast time",
     description: "When do you usually start your breakfast?",
   },
   {
     section: "meal-time",
-    step: 2,
+    step: 3,
     component: "meal-time-lunch",
     title: "Lunch time",
     description: "What time do you typically have lunch?",
   },
   {
     section: "meal-time",
-    step: 3,
+    step: 4,
     component: "meal-time-dinner",
     title: "Dinner time",
     description: "What's your usual time for dinner?",
   },
-  // Taste Section (1 page)
+  // Taste Section (4 pages)
   {
     section: "taste",
     step: 0,
@@ -103,18 +110,10 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
     description:
       "Share your preferences and eating habits to get meal recommendations you'll love",
   },
-  // Taste Section (meals selection)
-  {
-    section: "taste",
-    step: 1,
-    component: "taste-meals",
-    title: "Meals",
-    description: "Select the meals you would like to plan",
-  },
   // Taste Section (cuisines selection)
   {
     section: "taste",
-    step: 2,
+    step: 1,
     component: "taste-cuisines",
     title: "Cuisines",
     description:
@@ -123,7 +122,7 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
   // Taste Section (allergies/dislikes)
   {
     section: "taste",
-    step: 3,
+    step: 2,
     component: "taste-allergies",
     title: "Allergies/(Dislikes)",
     description: "What products do you dislike or don't eat?",
@@ -131,7 +130,7 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
   // Taste Section (diet preferences)
   {
     section: "taste",
-    step: 4,
+    step: 3,
     component: "taste-diet-preferences",
     title: "Diet Preferences",
     description: "Choose your dietary lifestyle",
@@ -139,7 +138,7 @@ export const ONBOARDING_PAGES: OnboardingPageConfig[] = [
   // Taste Section (cooking skills)
   {
     section: "taste",
-    step: 5,
+    step: 4,
     component: "taste-cooking-skills",
     title: "Cooking Skills",
     description: "How would you describe your cooking skills?",
