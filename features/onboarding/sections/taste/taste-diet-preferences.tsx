@@ -3,16 +3,16 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import {
-  DIET_OPTIONS,
-  DietOption,
+    DIET_OPTIONS,
+    DietOption,
 } from "./diet-options";
 
 interface TasteDietPreferencesProps {
@@ -36,9 +36,9 @@ export function TasteDietPreferences({
   }, [initialSelection]);
 
   const toggleDiet = (dietId: string) => {
-    const updatedSelection = selectedDiets.includes(dietId)
-      ? selectedDiets.filter((d) => d !== dietId)
-      : [...selectedDiets, dietId];
+    // Single selection mode:
+    // If already selected, deselect it. If not, select ONLY this one.
+    const updatedSelection = selectedDiets.includes(dietId) ? [] : [dietId];
 
     setSelectedDiets(updatedSelection);
     onSelectionChange?.(updatedSelection);
@@ -127,10 +127,7 @@ export function TasteDietPreferences({
               size={20}
               color="#548A6A"
             />
-            <Text style={styles.summaryTitle}>
-              {selectedDiets.length} diet preference
-              {selectedDiets.length !== 1 ? "s" : ""} selected
-            </Text>
+            <Text style={styles.summaryTitle}>Diet preference selected</Text>
           </View>
 
           {/* Selected Diet Tags */}
