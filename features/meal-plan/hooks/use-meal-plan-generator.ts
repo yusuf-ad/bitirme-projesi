@@ -16,9 +16,10 @@ export function useMealPlanGenerator({
 
     try {
       const API_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY;
+      const RAPIDAPI_HOST = "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com";
 
       if (!API_KEY) {
-        throw new Error("Spoonacular API key is not configured");
+        throw new Error("RapidAPI key is not configured");
       }
 
       const mealPlan: GeneratedMealPlan = {
@@ -63,10 +64,17 @@ export function useMealPlanGenerator({
         (meal) => selectedMealTypes[meal.type]
       );
 
-      for (const meal of selectedMealTypesConfig) {
+      for (let i = 0; i < selectedMealTypesConfig.length; i++) {
+        const meal = selectedMealTypesConfig[i];
+
+        // Add delay if not the first request to avoid rate limits (2 req/s)
+        // We wait 600ms to be safe (limit is 500ms per request)
+        if (i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+        }
+
         // Build query parameters
         const params = new URLSearchParams({
-          apiKey: API_KEY,
           addRecipeInformation: "true",
           addRecipeNutrition: "true",
           number: "12",
@@ -92,10 +100,12 @@ export function useMealPlanGenerator({
         }
 
         const response = await fetch(
-          `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`,
+          `https://${RAPIDAPI_HOST}/recipes/complexSearch?${params.toString()}`,
           {
             headers: {
               "Content-Type": "application/json",
+              "x-rapidapi-key": API_KEY,
+              "x-rapidapi-host": RAPIDAPI_HOST,
             },
           }
         );

@@ -13,6 +13,7 @@ interface PantryScreenHeaderProps {
   shoppingListCount?: number;
   ingredientsCount?: number;
   recipeIdeasCount?: number;
+  onClear?: () => void;
 }
 
 export function PantryScreenHeader({
@@ -23,6 +24,7 @@ export function PantryScreenHeader({
   shoppingListCount = 0,
   ingredientsCount = 0,
   recipeIdeasCount = 0,
+  onClear,
 }: PantryScreenHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -34,6 +36,20 @@ export function PantryScreenHeader({
         <Text style={styles.title}>My Pantry</Text>
 
         <View style={styles.actionsContainer}>
+          {activeTab === "my-ingredients" &&
+            ingredientsCount > 0 &&
+            onClear && (
+              <Pressable
+                style={[styles.pillButton, styles.clearButton]}
+                onPress={onClear}
+              >
+                <Feather
+                  name="trash-2"
+                  size={16}
+                  color={Colors.semantic.error.main}
+                />
+              </Pressable>
+            )}
           <Pressable
             style={[styles.pillButton, styles.cartButton]}
             onPress={() => router.push("/shopping-list")}
@@ -45,25 +61,23 @@ export function PantryScreenHeader({
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Feather
-          name="search"
-          size={20}
-          color={Colors.gray[400]}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={
-            activeTab === "my-ingredients"
-              ? "Search ingredients..."
-              : "Search recipes..."
-          }
-          placeholderTextColor={Colors.gray[400]}
-          value={searchQuery}
-          onChangeText={onSearchChange}
-        />
-      </View>
+      {activeTab === "my-ingredients" && (
+        <View style={styles.searchContainer}>
+          <Feather
+            name="search"
+            size={20}
+            color={Colors.gray[400]}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search ingredients..."
+            placeholderTextColor={Colors.gray[400]}
+            value={searchQuery}
+            onChangeText={onSearchChange}
+          />
+        </View>
+      )}
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
@@ -103,35 +117,18 @@ export function PantryScreenHeader({
           </View>
         </Pressable>
         <Pressable
-          style={[styles.tab, activeTab === "recipe-ideas" && styles.activeTab]}
-          onPress={() => onTabChange("recipe-ideas")}
+          style={[styles.tab, activeTab === "ai-chat" && styles.activeTab]}
+          onPress={() => onTabChange("ai-chat")}
         >
           <View style={styles.tabContent}>
             <Text
               style={[
                 styles.tabText,
-                activeTab === "recipe-ideas" && styles.activeTabText,
+                activeTab === "ai-chat" && styles.activeTabText,
               ]}
             >
-              Recipe Ideas
+              AI Chat
             </Text>
-            {recipeIdeasCount > 0 && (
-              <View
-                style={[
-                  styles.badge,
-                  activeTab === "recipe-ideas" && styles.activeBadge,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.badgeText,
-                    activeTab === "recipe-ideas" && styles.activeBadgeText,
-                  ]}
-                >
-                  {recipeIdeasCount > 99 ? "99+" : recipeIdeasCount}
-                </Text>
-              </View>
-            )}
           </View>
         </Pressable>
       </View>
@@ -162,6 +159,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 24,
     gap: 8,
+  },
+  clearButton: {
+    backgroundColor: Colors.gray[200],
   },
   cartButton: {
     backgroundColor: Colors.lilac[900],

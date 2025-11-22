@@ -76,7 +76,7 @@ export default function MealCard({
       >
         <Pressable style={styles.deleteButton} onPress={handleDelete}>
           <MaterialIcons name="delete-outline" size={24} color="#fff" />
-          <Text style={styles.deleteText}>Sil</Text>
+          <Text style={styles.deleteText}>Delete</Text>
         </Pressable>
       </Animated.View>
     );
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   recipeCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     backgroundColor: Colors.gray[100],
     borderRadius: 12,
   },
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   },
   macrosContainer: {
     flexDirection: "row",
-    gap: 8,
+    gap: 4,
     marginTop: 4,
   },
   macroGradientWrapper: {
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     paddingVertical: 4,
     backgroundColor: Colors.background.surface,
     borderRadius: 7,

@@ -1,44 +1,37 @@
-import { getThemeColors } from "@/constants/theme";
-import { ErrorState, LoadingState, RecipeGrid } from "@/features/home";
 import {
   EmptyPantryState,
   PantryCategory,
   PantryCategoryPreview,
+  PantryChatView,
   PantryItem,
+  PantryItemDetailSheet,
   PantryScreenHeader,
   PantrySkeleton,
   TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
-import { usePantryRecipesQuery } from "@/hooks/use-pantry-recipes-query";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
-import { useTheme } from "@/providers/theme-provider";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const MEAL_TYPES = ["All", "Breakfast", "Lunch", "Dinner", "Snack"];
 
 export default function PantryTab() {
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMealType, setSelectedMealType] = useState("All");
   const insets = useSafeAreaInsets();
 
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { refresh } = useLocalSearchParams();
+
+  // Bottom sheet for item details
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [selectedItem, setSelectedItem] = useState<PantryItem | null>(null);
 
   const fetchItems = async () => {
     try {
@@ -75,24 +68,6 @@ export default function PantryTab() {
   const shoppingListCount = items.filter(
     (i) => i.status === "shopping_list"
   ).length;
-
-  const ingredientNames = useMemo(
-    () => pantryStockItems.map((i) => i.spoonacular_name || i.name),
-    [pantryStockItems]
-  );
-
-  const {
-    recipes: recipeIdeas,
-    isLoading: isLoadingRecipes,
-    error: recipeError,
-    refetch: refetchRecipes,
-    totalCount,
-  } = usePantryRecipesQuery({
-    ingredients: ingredientNames,
-    enabled: activeTab === "recipe-ideas",
-    type:
-      selectedMealType === "All" ? undefined : selectedMealType.toLowerCase(),
-  });
 
   // Filter based on search query
   const filteredPantryItems = pantryStockItems.filter((i) =>
@@ -180,6 +155,67 @@ export default function PantryTab() {
     }
   };
 
+  const handleItemPress = (item: PantryItem) => {
+    setSelectedItem(item);
+    bottomSheetRef.current?.present();
+  };
+
+  const handleUpdateItem = async (id: string, updates: Partial<PantryItem>) => {
+    try {
+      // Optimistically update local state
+      setItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, ...updates } : i))
+      );
+      if (selectedItem && selectedItem.id === id) {
+        setSelectedItem((prev) => (prev ? { ...prev, ...updates } : null));
+      }
+      // Call API
+      await pantryService.updateItem(id, updates);
+    } catch (error) {
+      console.error("Failed to update item:", error);
+      // Revert/Fetch if needed, simplified for now
+    }
+  };
+
+  const handleRemoveItem = async (id: string) => {
+    try {
+      // Optimistically update
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      bottomSheetRef.current?.dismiss();
+      await pantryService.deleteItem(id);
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+    }
+  };
+
+  const handleClearAll = () => {
+    Alert.alert(
+      "Clear Pantry",
+      "Are you sure you want to remove all items from your pantry? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Optimistically clear local state
+              setItems((prev) => prev.filter((i) => i.status !== "pantry"));
+              await pantryService.clearPantryItems();
+            } catch (error) {
+              console.error("Failed to clear pantry:", error);
+              Alert.alert("Error", "Failed to clear pantry items");
+              fetchItems(); // Revert on error
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (isLoading && items.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
@@ -204,7 +240,7 @@ export default function PantryTab() {
         onSearchChange={setSearchQuery}
         shoppingListCount={shoppingListCount}
         ingredientsCount={pantryStockItems.length}
-        recipeIdeasCount={totalCount || 0}
+        onClear={handleClearAll}
       />
 
       {activeTab === "my-ingredients" ? (
@@ -232,6 +268,7 @@ export default function PantryTab() {
                         key={category}
                         title={category}
                         items={categoryItems}
+                        onItemPress={handleItemPress}
                       />
                     );
                   })
@@ -240,6 +277,7 @@ export default function PantryTab() {
                     <PantryCategoryPreview
                       title="All"
                       items={filteredPantryItems}
+                      onItemPress={handleItemPress}
                     />
                     {PANTRY_CATEGORIES.map((category) => {
                       const categoryItems = filteredPantryItems.filter(
@@ -251,6 +289,7 @@ export default function PantryTab() {
                           key={category}
                           title={category}
                           items={categoryItems}
+                          onItemPress={handleItemPress}
                         />
                       );
                     })}
@@ -261,80 +300,16 @@ export default function PantryTab() {
           </View>
         </ScrollView>
       ) : (
-        <View style={{ flex: 1 }}>
-          {pantryStockItems.length === 0 ? (
-            <View
-              style={[styles.categoriesContainer, { paddingHorizontal: 16 }]}
-            >
-              <View style={styles.placeholderContainer}>
-                <Text style={[styles.placeholderText, { color: Colors.text.secondary }]}>
-                  Add items to your pantry to see recipe ideas.
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <>
-              <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
-                <View style={styles.filtersWrapper}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filtersContainer}
-                  >
-                    {MEAL_TYPES.map((type) => (
-                      <TouchableOpacity
-                        key={type}
-                        style={[
-                          styles.filterChip,
-                          {
-                            backgroundColor: isDark ? Colors.background.tertiary : Colors.background.tertiary,
-                            borderColor: isDark ? Colors.border.light : Colors.gray[200]
-                          },
-                          selectedMealType === type && {
-                            backgroundColor: Colors.lilac[600],
-                            borderColor: Colors.lilac[600]
-                          },
-                        ]}
-                        onPress={() => setSelectedMealType(type)}
-                      >
-                        <Text
-                          style={[
-                            styles.filterChipText,
-                            { color: Colors.text.secondary },
-                            selectedMealType === type && { color: Colors.text.inverse },
-                          ]}
-                        >
-                          {type}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              </View>
-
-              <ScrollView
-                style={styles.contentScroll}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={[
-                  styles.scrollContent,
-                  {
-                    paddingBottom: insets.bottom * 2 + 52,
-                    paddingTop: 0,
-                  },
-                ]}
-              >
-                {isLoadingRecipes ? (
-                  <LoadingState />
-                ) : recipeError ? (
-                  <ErrorState onRetry={refetchRecipes} />
-                ) : (
-                  <RecipeGrid recipes={recipeIdeas || []} />
-                )}
-              </ScrollView>
-            </>
-          )}
-        </View>
+        <PantryChatView />
       )}
+
+      <PantryItemDetailSheet
+        ref={bottomSheetRef}
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onUpdateItem={handleUpdateItem}
+        onRemoveItem={handleRemoveItem}
+      />
     </View>
   );
 }
@@ -365,31 +340,5 @@ const styles = StyleSheet.create({
   placeholderText: {
     textAlign: "center",
     fontSize: 16,
-  },
-  recipeIdeasContainer: {
-    flex: 1,
-    minHeight: 200,
-  },
-  filtersWrapper: {
-    marginBottom: 16,
-    gap: 12,
-  },
-  filtersContainer: {
-    gap: 8,
-    paddingRight: 16,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  filterChipText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  resultsText: {
-    fontSize: 14,
-    marginLeft: 4,
   },
 });
