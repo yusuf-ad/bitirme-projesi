@@ -4,8 +4,11 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
+import { useOnboarding } from "@/providers/onboarding-provider";
+
 export default function WelcomeScreen() {
   const params = useLocalSearchParams();
+  const { resetOnboardingData } = useOnboarding();
 
   const openAuth = useMemo(() => {
     const value = (params as any)?.openAuth;
@@ -18,6 +21,14 @@ export default function WelcomeScreen() {
       router.push("/(onboarding)/login");
     }
   }, [openAuth]);
+
+  const handleGetStarted = async () => {
+    await resetOnboardingData();
+    router.push({
+      pathname: "/(onboarding)/flow",
+      params: { section: "goals", step: "0" },
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -33,12 +44,7 @@ export default function WelcomeScreen() {
         </Text>
 
         <CustomButton
-          onPress={() =>
-            router.push({
-              pathname: "/(onboarding)/flow",
-              params: { section: "goals", step: "0" },
-            })
-          }
+          onPress={handleGetStarted}
           containerStyle={styles.getStartedButton}
         >
           <Text style={styles.getStartedText}>Get Started</Text>
