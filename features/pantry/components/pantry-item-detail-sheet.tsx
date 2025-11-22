@@ -360,6 +360,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.gray[800],
     flex: 1,
+    textTransform: "capitalize",
   },
   closeButton: {
     padding: 4,

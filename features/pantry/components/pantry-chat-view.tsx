@@ -61,6 +61,23 @@ export function PantryChatView() {
     }
   }, [messages]);
 
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setKeyboardVisible(true)
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardVisible(false)
+    );
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   const handleSend = () => {
     if (!input.trim()) return;
     sendMessage({ text: input });
@@ -80,7 +97,7 @@ export function PantryChatView() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
       <ScrollView
         ref={scrollViewRef}
@@ -254,7 +271,10 @@ export function PantryChatView() {
       </ScrollView>
 
       <View
-        style={[styles.inputContainer, { paddingBottom: insets.bottom * 3 }]}
+        style={[
+          styles.inputContainer,
+          { paddingBottom: isKeyboardVisible ? 16 : Math.max(insets.bottom * 3, 80) },
+        ]}
       >
         <TextInput
           style={styles.input}
