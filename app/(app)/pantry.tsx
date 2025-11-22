@@ -187,6 +187,34 @@ export default function PantryTab() {
     }
   };
 
+  const handleClearAll = () => {
+    Alert.alert(
+      "Clear Pantry",
+      "Are you sure you want to remove all items from your pantry? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Optimistically clear local state
+              setItems((prev) => prev.filter((i) => i.status !== "pantry"));
+              await pantryService.clearPantryItems();
+            } catch (error) {
+              console.error("Failed to clear pantry:", error);
+              Alert.alert("Error", "Failed to clear pantry items");
+              fetchItems(); // Revert on error
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (isLoading && items.length === 0) {
     return (
       <View style={styles.container}>
@@ -211,6 +239,7 @@ export default function PantryTab() {
         onSearchChange={setSearchQuery}
         shoppingListCount={shoppingListCount}
         ingredientsCount={pantryStockItems.length}
+        onClear={handleClearAll}
       />
 
       {activeTab === "my-ingredients" ? (

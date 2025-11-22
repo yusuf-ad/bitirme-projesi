@@ -42,9 +42,12 @@ export async function POST(req: Request) {
             image: recipe.image,
             summary: recipe.summary,
             cuisines: recipe.cuisines || [],
+            readyInMinutes: recipe.readyInMinutes,
+            nutrition: recipe.nutrition,
           }));
 
-          console.log(simplifiedRecipes);
+          console.log("=== SEARCH RECIPES TOOL RESULT ===");
+          console.log(JSON.stringify(simplifiedRecipes, null, 2));
           return simplifiedRecipes;
         },
       },

@@ -3,7 +3,9 @@ import { PantryItem } from "../types";
 
 export const pantryService = {
   async getItems(status: "pantry" | "shopping_list" = "pantry") {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated");
 
     const { data, error } = await supabase
@@ -18,7 +20,9 @@ export const pantryService = {
   },
 
   async getAllItems() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated");
 
     const { data, error } = await supabase
@@ -31,8 +35,12 @@ export const pantryService = {
     return data as PantryItem[];
   },
 
-  async addItems(items: Omit<PantryItem, "id" | "user_id" | "created_at" | "updated_at">[]) {
-    const { data: { user } } = await supabase.auth.getUser();
+  async addItems(
+    items: Omit<PantryItem, "id" | "user_id" | "created_at" | "updated_at">[]
+  ) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated");
 
     const itemsWithUser = items.map((item) => ({
@@ -62,12 +70,23 @@ export const pantryService = {
   },
 
   async deleteItem(id: string) {
+    const { error } = await supabase.from("pantry_items").delete().eq("id", id);
+
+    if (error) throw error;
+  },
+
+  async clearPantryItems() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
     const { error } = await supabase
       .from("pantry_items")
       .delete()
-      .eq("id", id);
+      .eq("user_id", user.id)
+      .eq("status", "pantry");
 
     if (error) throw error;
   },
 };
-

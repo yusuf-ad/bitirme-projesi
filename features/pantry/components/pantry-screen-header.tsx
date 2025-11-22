@@ -13,6 +13,7 @@ interface PantryScreenHeaderProps {
   shoppingListCount?: number;
   ingredientsCount?: number;
   recipeIdeasCount?: number;
+  onClear?: () => void;
 }
 
 export function PantryScreenHeader({
@@ -23,6 +24,7 @@ export function PantryScreenHeader({
   shoppingListCount = 0,
   ingredientsCount = 0,
   recipeIdeasCount = 0,
+  onClear,
 }: PantryScreenHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -34,6 +36,20 @@ export function PantryScreenHeader({
         <Text style={styles.title}>My Pantry</Text>
 
         <View style={styles.actionsContainer}>
+          {activeTab === "my-ingredients" &&
+            ingredientsCount > 0 &&
+            onClear && (
+              <Pressable
+                style={[styles.pillButton, styles.clearButton]}
+                onPress={onClear}
+              >
+                <Feather
+                  name="trash-2"
+                  size={16}
+                  color={Colors.semantic.error.main}
+                />
+              </Pressable>
+            )}
           <Pressable
             style={[styles.pillButton, styles.cartButton]}
             onPress={() => router.push("/shopping-list")}
@@ -145,6 +161,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 24,
     gap: 8,
+  },
+  clearButton: {
+    backgroundColor: Colors.gray[200],
   },
   cartButton: {
     backgroundColor: Colors.lilac[900],

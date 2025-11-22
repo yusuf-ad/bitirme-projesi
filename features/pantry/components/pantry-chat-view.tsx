@@ -213,8 +213,9 @@ export function PantryChatView() {
                                 }}
                               >
                                 {recipes.map((r) => (
-                                  <View key={r.id} style={{ width: 220 }}>
+                                  <View key={r.id} style={{ width: 152 }}>
                                     <RecipeCard
+                                      variant="chat"
                                       recipe={{ ...r, imageType: "jpg" }} // Patch imageType
                                       onPress={() =>
                                         router.push(`/(meal)/${r.id}`)
@@ -273,7 +274,11 @@ export function PantryChatView() {
       <View
         style={[
           styles.inputContainer,
-          { paddingBottom: isKeyboardVisible ? 16 : Math.max(insets.bottom * 3, 80) },
+          {
+            paddingBottom: isKeyboardVisible
+              ? 16
+              : Math.max(insets.bottom * 3, 80),
+          },
         ]}
       >
         <TextInput
