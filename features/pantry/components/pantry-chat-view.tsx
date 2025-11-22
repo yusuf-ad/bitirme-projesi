@@ -350,14 +350,12 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
   },
   userBubble: {
-    backgroundColor: Colors.lilac[600],
-    borderBottomRightRadius: 4,
+    backgroundColor: Colors.lilac[900],
+    borderTopRightRadius: 12,
+    paddingHorizontal: 16,
+    borderRadius: 24,
   },
   assistantBubble: {
-    backgroundColor: Colors.background.primary,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
     width: "100%", // Ensure it takes available space for cards
   },
   messageText: {
@@ -393,7 +391,11 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: Colors.background.primary,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray[200],
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: Colors.lilac[400],
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     gap: 12,
   },
   input: {
