@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import {
   EmptyPantryState,
   PantryCategory,
@@ -13,6 +13,7 @@ import {
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
+import { useTheme } from "@/providers/theme-provider";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,6 +21,8 @@ import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PantryTab() {
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
   const insets = useSafeAreaInsets();
@@ -217,7 +220,7 @@ export default function PantryTab() {
 
   if (isLoading && items.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
         <PantryScreenHeader
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -231,7 +234,7 @@ export default function PantryTab() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
       <PantryScreenHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -316,7 +319,6 @@ export default function PantryTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   center: {
     justifyContent: "center",
@@ -340,6 +342,5 @@ const styles = StyleSheet.create({
   placeholderText: {
     textAlign: "center",
     fontSize: 16,
-    color: Colors.gray[500],
   },
 });

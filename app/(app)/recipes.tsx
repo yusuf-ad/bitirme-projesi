@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import {
   EmptyState,
   EndMessage,
@@ -21,6 +21,7 @@ import { useRecipesQuery } from "@/hooks/use-recipes-query";
 import { Ingredient, Recipe } from "@/lib/spoonacular";
 import { useFilterStore } from "@/lib/stores/filter-store";
 import { verifyFavoriteRecipesSetup } from "@/lib/supabase-favorite-recipes-verification";
+import { useTheme } from "@/providers/theme-provider";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -42,6 +43,8 @@ const FILTER_OPTIONS = ["Healthy", "Easy", "Batch", "Veg"];
 
 export default function HomeTab() {
   const { top, bottom } = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const [activeTab, setActiveTab] = useState<TabType>("discover");
   const screenWidth = Dimensions.get("window").width;
   const headerWidth = screenWidth - 32; // 16px padding on each side
@@ -243,7 +246,7 @@ export default function HomeTab() {
   }, []);
 
   return (
-    <View style={[styles.mainContainer, { paddingTop: top }]}>
+    <View style={[styles.mainContainer, { paddingTop: top, backgroundColor: Colors.background.secondary }]}>
       {/* Header */}
       <HomeHeader
         activeTab={activeTab}
@@ -254,11 +257,17 @@ export default function HomeTab() {
       />
 
       {activeTab === "discover" && (
-        <View style={styles.searchContainer}>
+        <View style={[
+          styles.searchContainer,
+          {
+            backgroundColor: Colors.background.secondary,
+            borderBottomColor: Colors.border.light,
+          }
+        ]}>
           <SearchBar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onFilterPress={() => {}}
+            onFilterPress={() => { }}
           />
 
           <FilterChips
@@ -305,7 +314,7 @@ export default function HomeTab() {
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                tintColor={Colors.lilac[900]}
+                tintColor={isDark ? Colors.lilac[400] : Colors.lilac[900]}
               />
             }
           >
@@ -343,7 +352,7 @@ export default function HomeTab() {
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                tintColor={Colors.lilac[900]}
+                tintColor={isDark ? Colors.lilac[400] : Colors.lilac[900]}
               />
             }
           >
@@ -403,7 +412,6 @@ export default function HomeTab() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   horizontalPage: {
     flex: 1,
@@ -411,20 +419,19 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    backgroundColor: Colors.background.secondary,
+    paddingBottom: 12,
 
     borderBottomWidth: 1,
-    borderBottomColor: Colors.lilac[200],
 
-    shadowColor: Colors.background.secondary,
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 12,
+      height: 2,
     },
-    shadowOpacity: 0.58,
-    shadowRadius: 16.0,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
 
-    elevation: 24,
+    elevation: 3,
   },
   contentScroll: {
     flex: 1,

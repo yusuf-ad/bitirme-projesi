@@ -1,7 +1,8 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
-import { useOnboarding } from "@/providers/onboarding-provider";
 import { supabase } from "@/lib/supabase";
+import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -16,6 +17,11 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ProfileData {
@@ -65,7 +71,30 @@ export default function ProfileTab() {
   const { profile, session, isLoading: authLoading } = useAuthContext();
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const Colors = getThemeColors(isDark);
+
+  // Animation for theme toggle icon
+  const iconRotation = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          rotate: withSpring(isDark ? "360deg" : "0deg", {
+            damping: 15,
+            stiffness: 100,
+          }),
+        },
+      ],
+    };
+  });
+
+  // Container animation for smooth theme transition
+  const containerAnimation = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(1, { duration: 300 }),
+    };
+  });
 
   useEffect(() => {
     loadProfileData();
@@ -129,7 +158,10 @@ export default function ProfileTab() {
             try {
               await supabase.auth.signOut();
             } catch (error) {
-              Alert.alert("Error", "We couldn't sign you out. Please try again.");
+              Alert.alert(
+                "Error",
+                "We couldn't sign you out. Please try again."
+              );
             }
           },
         },
@@ -415,16 +447,12 @@ export default function ProfileTab() {
     }
   }
 
-  const renderMenuItem = (
-    item: MenuItem,
-    index: number,
-    array: MenuItem[]
-  ) => (
+  const renderMenuItem = (item: MenuItem, index: number, array: MenuItem[]) => (
     <View key={item.id}>
       <Pressable
         style={({ pressed }) => [
           styles.menuItem,
-          pressed && styles.menuItemPressed,
+          pressed && { backgroundColor: isDark ? "#25222E" : "#F8F8F8" },
         ]}
         onPress={() => {
           Haptics.selectionAsync();
@@ -435,7 +463,12 @@ export default function ProfileTab() {
         accessibilityHint={item.description}
       >
         <View style={styles.menuItemLeft}>
-          <View style={styles.menuIconContainer}>
+          <View
+            style={[
+              styles.menuIconContainer,
+              { backgroundColor: isDark ? "#25222E" : "#F4F4F7" },
+            ]}
+          >
             <MaterialCommunityIcons
               name={item.icon}
               size={22}
@@ -443,42 +476,95 @@ export default function ProfileTab() {
             />
           </View>
           <View style={styles.menuItemCopy}>
-            <Text style={styles.menuItemText}>{item.title}</Text>
+            <Text style={[styles.menuItemText, { color: Colors.text.primary }]}>
+              {item.title}
+            </Text>
             {item.description && (
-              <Text style={styles.menuItemDescription}>{item.description}</Text>
+              <Text
+                style={[
+                  styles.menuItemDescription,
+                  { color: Colors.text.secondary },
+                ]}
+              >
+                {item.description}
+              </Text>
             )}
           </View>
         </View>
         <View style={styles.metaWrapper}>
-          {item.meta && <Text style={styles.menuItemMeta}>{item.meta}</Text>}
+          {item.meta && (
+            <Text style={[styles.menuItemMeta, { color: Colors.text.primary }]}>
+              {item.meta}
+            </Text>
+          )}
           <MaterialCommunityIcons
             name="chevron-right"
             size={22}
-            color={Colors.gray[400]}
+            color={isDark ? Colors.gray[400] : Colors.gray[400]}
           />
         </View>
       </Pressable>
-      {index < array.length - 1 && <View style={styles.separator} />}
+      {index < array.length - 1 && (
+        <View
+          style={[
+            styles.separator,
+            { backgroundColor: isDark ? "#2A2730" : "#F0F0F0" },
+          ]}
+        />
+      )}
     </View>
   );
 
   if (onboarding.isLoading || authLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: Colors.background.secondary },
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.lilac[900]} />
-        <Text style={styles.loadingText}>Loading profile...</Text>
+        <Text style={[styles.loadingText, { color: Colors.text.secondary }]}>
+          Loading profile...
+        </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: top }]}
+    <Animated.ScrollView
+      style={[
+        styles.container,
+        containerAnimation,
+        { paddingTop: top, backgroundColor: Colors.background.secondary },
+      ]}
       contentContainerStyle={[styles.content, { paddingBottom: bottom + 64 }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            toggleTheme();
+          }}
+          hitSlop={12}
+          style={[styles.iconButton, styles.iconButtonLeft]}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isDark ? "Switch to light mode" : "Switch to dark mode"
+          }
+        >
+          <Animated.View style={iconRotation}>
+            <MaterialCommunityIcons
+              name={isDark ? "white-balance-sunny" : "moon-waning-crescent"}
+              size={22}
+              color={isDark ? "#FDB022" : Colors.lilac[800]}
+            />
+          </Animated.View>
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
+          Settings
+        </Text>
         <Pressable
           onPress={handleSignOut}
           hitSlop={12}
@@ -486,22 +572,37 @@ export default function ProfileTab() {
           accessibilityRole="button"
           accessibilityLabel="Sign out"
         >
-          <MaterialCommunityIcons
-            name="logout"
-            size={22}
-            color="#EF4444"
-          />
+          <MaterialCommunityIcons name="logout" size={22} color="#EF4444" />
         </Pressable>
       </View>
 
       {/* User Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>{getUserInitials()}</Text>
+      <View
+        style={[
+          styles.profileHeader,
+          { backgroundColor: Colors.background.surface },
+        ]}
+      >
+        <View
+          style={[
+            styles.avatarContainer,
+            { backgroundColor: Colors.text.primary },
+          ]}
+        >
+          <Text style={[styles.avatarText, { color: Colors.text.inverse }]}>
+            {getUserInitials()}
+          </Text>
         </View>
         <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{getUserDisplayName()}</Text>
-          <Text style={styles.profileMemberSince}>
+          <Text style={[styles.profileName, { color: Colors.text.primary }]}>
+            {getUserDisplayName()}
+          </Text>
+          <Text
+            style={[
+              styles.profileMemberSince,
+              { color: Colors.text.secondary },
+            ]}
+          >
             Member since {getMemberSinceDate()}
           </Text>
         </View>
@@ -523,8 +624,12 @@ export default function ProfileTab() {
             style={({ pressed }) => [
               styles.highlightCard,
               {
-                backgroundColor: card.backgroundColor,
-                borderColor: card.iconBackgroundColor,
+                backgroundColor: isDark
+                  ? Colors.background.surface
+                  : card.backgroundColor,
+                borderColor: isDark
+                  ? Colors.border.light
+                  : card.iconBackgroundColor,
               },
               pressed && styles.highlightCardPressed,
             ]}
@@ -533,7 +638,11 @@ export default function ProfileTab() {
             <View
               style={[
                 styles.highlightIcon,
-                { backgroundColor: card.iconBackgroundColor },
+                {
+                  backgroundColor: isDark
+                    ? Colors.background.tertiary
+                    : card.iconBackgroundColor,
+                },
               ]}
             >
               <MaterialCommunityIcons
@@ -542,16 +651,23 @@ export default function ProfileTab() {
                 color={card.accentColor}
               />
             </View>
-            <Text
-              style={[styles.highlightLabel, { color: card.accentColor }]}
-            >
+            <Text style={[styles.highlightLabel, { color: card.accentColor }]}>
               {card.title}
             </Text>
-            <Text style={styles.highlightValue} numberOfLines={1}>
+            <Text
+              style={[styles.highlightValue, { color: Colors.text.primary }]}
+              numberOfLines={1}
+            >
               {card.value}
             </Text>
             {card.detail && (
-              <Text style={styles.highlightDetail} numberOfLines={2}>
+              <Text
+                style={[
+                  styles.highlightDetail,
+                  { color: Colors.text.secondary },
+                ]}
+                numberOfLines={2}
+              >
                 {card.detail}
               </Text>
             )}
@@ -562,22 +678,28 @@ export default function ProfileTab() {
       {/* Sections */}
       {settingsSections.map((section) => (
         <View key={section.id} style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-          <View style={styles.menuContainer}>
+          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
+            {section.title}
+          </Text>
+          <View
+            style={[
+              styles.menuContainer,
+              { backgroundColor: Colors.background.surface },
+            ]}
+          >
             {section.items.map((item, index, array) =>
               renderMenuItem(item, index, array)
             )}
           </View>
         </View>
       ))}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   content: {
     paddingHorizontal: 16,
@@ -586,12 +708,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.background.secondary,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: Colors.text.secondary,
   },
   headerBar: {
     flexDirection: "row",
@@ -603,7 +723,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 1.1,
     fontWeight: "600",
-    color: Colors.text.primary,
     textTransform: "uppercase",
     textShadowColor: "rgba(0,0,0,0.10)",
     textShadowOffset: { width: 0, height: 1 },
@@ -615,10 +734,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 6,
   },
+  iconButtonLeft: {
+    position: "absolute",
+    left: 0,
+    right: "auto",
+  },
   profileHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -628,14 +751,12 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.text.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   avatarText: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#FFFFFF",
   },
   profileInfo: {
     flex: 1,
@@ -643,12 +764,10 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
     marginBottom: 4,
   },
   profileMemberSince: {
     fontSize: 14,
-    color: Colors.text.secondary,
     opacity: 0.8,
   },
   highlightsContainer: {
@@ -663,38 +782,32 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(230,235,255,0.9)",
   },
   highlightCardPressed: {
-    backgroundColor: "#F8F8FF",
+    opacity: 0.8,
   },
   highlightIcon: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.lilac[100],
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
   },
   highlightLabel: {
     fontSize: 11,
-    color: Colors.text.secondary,
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 2,
   },
   highlightValue: {
     fontSize: 15,
-    color: Colors.text.primary,
     fontWeight: "600",
     marginBottom: 2,
   },
   highlightDetail: {
     fontSize: 12,
-    color: Colors.text.secondary,
   },
   sectionContainer: {
     marginBottom: 32,
@@ -702,12 +815,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text.secondary,
     marginBottom: 12,
     paddingHorizontal: 4,
   },
   menuContainer: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     overflow: "hidden",
   },
@@ -717,9 +828,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 18,
     paddingHorizontal: 18,
-  },
-  menuItemPressed: {
-    backgroundColor: "#F8F8F8",
   },
   menuItemLeft: {
     flexDirection: "row",
@@ -733,24 +841,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
-    backgroundColor: "#F4F4F7",
   },
   menuItemText: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
   },
   menuItemCopy: {
     flex: 1,
   },
   menuItemDescription: {
     fontSize: 13,
-    color: Colors.text.secondary,
     marginTop: 2,
   },
   menuItemMeta: {
     fontSize: 13,
-    color: Colors.text.primary,
     fontWeight: "500",
   },
   metaWrapper: {
@@ -760,7 +864,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: "#F0F0F0",
     marginLeft: 64,
   },
 });
