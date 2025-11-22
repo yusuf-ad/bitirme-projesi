@@ -135,3 +135,42 @@ export const Colors = {
     focus: "#875EC5", // Focus border (lilac)
   },
 };
+
+// Dark Mode Theme Colors
+export const DarkColors = {
+  // Keep the same color scales
+  ...Colors,
+
+  // Override background colors for dark mode
+  background: {
+    primary: "#0F0E13", // Main dark background
+    secondary: "#1A1820", // Secondary dark background
+    tertiary: "#25222E", // Tertiary dark background
+    dark: "#000000", // Darkest background
+    surface: "#1E1C24", // Surface/card background
+    overlay: "rgba(0, 0, 0, 0.7)", // Modal overlay
+  },
+
+  // Override text colors for dark mode
+  text: {
+    primary: "#F5F5F7", // Primary text on dark
+    secondary: "#C4C4C8", // Secondary text on dark
+    tertiary: "#8E8E93", // Tertiary text on dark
+    disabled: "#636366", // Disabled text on dark
+    inverse: "#1E1C24", // Text on light backgrounds in dark mode
+    accent: "#A587D3", // Accent text (lighter lilac)
+  },
+
+  // Override border colors for dark mode
+  border: {
+    light: "#38343E", // Light borders on dark
+    medium: "#48444E", // Medium borders on dark
+    dark: "#58545E", // Dark borders on dark
+    focus: "#9673CC", // Focus border (lighter lilac)
+  },
+};
+
+// Helper function to get theme colors
+export function getThemeColors(isDark: boolean) {
+  return isDark ? DarkColors : Colors;
+}
