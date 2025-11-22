@@ -1,21 +1,30 @@
 import { createClient } from "@supabase/supabase-js";
-import { deleteItemAsync, getItemAsync, setItemAsync } from "expo-secure-store";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => {
-    console.debug("getItem", { key, getItemAsync });
-    return getItemAsync(key);
+    if (Platform.OS === "web" && typeof window === "undefined") {
+      return null;
+    }
+    return SecureStore.getItemAsync(key);
   },
   setItem: (key: string, value: string) => {
+    if (Platform.OS === "web" && typeof window === "undefined") {
+      return;
+    }
     if (value.length > 2048) {
       console.warn(
         "Value being stored in SecureStore is larger than 2048 bytes and it may not be stored successfully. In a future SDK version, this call may throw an error."
       );
     }
-    return setItemAsync(key, value);
+    return SecureStore.setItemAsync(key, value);
   },
   removeItem: (key: string) => {
-    return deleteItemAsync(key);
+    if (Platform.OS === "web" && typeof window === "undefined") {
+      return;
+    }
+    return SecureStore.deleteItemAsync(key);
   },
 };
 

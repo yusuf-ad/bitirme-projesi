@@ -6,12 +6,35 @@ export const pantryService = {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) throw new Error("User not authenticated");
+    // If user not found (e.g. server-side), handle gracefully
+    if (!user) {
+      console.warn("User not authenticated in pantryService.getItems");
+      // Return empty array or throw based on context.
+      // For API route usage without auth context, this might be an issue.
+      // Ideally, pass userId or handle server-side auth separately.
+      throw new Error("User not authenticated");
+    }
 
     const { data, error } = await supabase
       .from("pantry_items")
       .select("*")
       .eq("user_id", user.id)
+      .eq("status", status)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data as PantryItem[];
+  },
+
+  // Special method for server-side API usage
+  async getItemsForUser(
+    userId: string,
+    status: "pantry" | "shopping_list" = "pantry"
+  ) {
+    const { data, error } = await supabase
+      .from("pantry_items")
+      .select("*")
+      .eq("user_id", userId)
       .eq("status", status)
       .order("created_at", { ascending: false });
 

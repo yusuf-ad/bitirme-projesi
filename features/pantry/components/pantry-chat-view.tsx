@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { RecipeCard } from "@/features/home";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { generateAPIUrl } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { Feather } from "@expo/vector-icons";
@@ -19,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Markdown } from "react-native-remark";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function PantryChatView() {
@@ -26,11 +28,13 @@ export function PantryChatView() {
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { session } = useAuthContext();
 
-  const { messages, error, sendMessage, status } = useChat({
+  const { messages, error, sendMessage, status, addToolOutput } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: generateAPIUrl("/api/chat"),
+      body: session?.user ? { userId: session.user.id } : {},
     }),
     onError: (error) => console.error(error, "ERROR"),
   });
@@ -127,21 +131,129 @@ export function PantryChatView() {
                 m.parts.map((part, i) => {
                   switch (part.type) {
                     case "text":
+                      const isUser = m.role === "user";
+                      const textColor = isUser
+                        ? "#FFFFFF"
+                        : Colors.text.primary;
+
                       return (
-                        <Text
-                          key={`${m.id}-${i}`}
-                          style={[
-                            styles.messageText,
-                            m.role === "user"
-                              ? styles.userMessageText
-                              : styles.assistantMessageText,
-                          ]}
-                        >
-                          {part.text}
-                        </Text>
+                        <View key={`${m.id}-${i}`}>
+                          <Markdown
+                            markdown={part.text}
+                            customStyles={{
+                              text: {
+                                fontSize: 16,
+                                lineHeight: 24,
+                                color: textColor,
+                              },
+                              strong: {
+                                fontWeight: "bold",
+                                color: textColor,
+                              },
+                              emphasis: {
+                                fontStyle: "italic",
+                                color: textColor,
+                              },
+                              paragraph: {
+                                marginTop: 0,
+                                marginBottom: 8,
+                              },
+                              link: {
+                                color: isUser ? "#FFFFFF" : Colors.lilac[600],
+                              },
+                              list: {
+                                marginBottom: 8,
+                              },
+                            }}
+                          />
+                        </View>
                       );
+                    case "tool-askForMealPlanConfirmation": {
+                      const toolCallId = part.toolCallId;
+
+                      switch (part.state) {
+                        case "input-streaming":
+                          return (
+                            <View
+                              key={`${m.id}-${i}`}
+                              style={styles.confirmationContainer}
+                            >
+                              <ActivityIndicator
+                                size="small"
+                                color={Colors.lilac[600]}
+                              />
+                            </View>
+                          );
+                        case "input-available":
+                          return (
+                            <View
+                              key={`${m.id}-${i}`}
+                              style={styles.confirmationContainer}
+                            >
+                              <Text style={styles.confirmationMessage}>
+                                {(part.input as { message: string }).message}
+                              </Text>
+                              <View style={styles.confirmationButtons}>
+                                <TouchableOpacity
+                                  style={[
+                                    styles.confirmationButton,
+                                    styles.confirmationButtonYes,
+                                  ]}
+                                  onPress={() =>
+                                    addToolOutput({
+                                      tool: "askForMealPlanConfirmation",
+                                      toolCallId,
+                                      output: "yes",
+                                    })
+                                  }
+                                >
+                                  <Text
+                                    style={styles.confirmationButtonTextYes}
+                                  >
+                                    Yes, create meal plan
+                                  </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={[
+                                    styles.confirmationButton,
+                                    styles.confirmationButtonNo,
+                                  ]}
+                                  onPress={() =>
+                                    addToolOutput({
+                                      tool: "askForMealPlanConfirmation",
+                                      toolCallId,
+                                      output: "no",
+                                    })
+                                  }
+                                >
+                                  <Text style={styles.confirmationButtonTextNo}>
+                                    No, thanks
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          );
+                        case "output-available":
+                          return (
+                            <View
+                              key={`${m.id}-${i}`}
+                              style={styles.confirmationContainer}
+                            >
+                              <Text style={styles.confirmationResult}>
+                                <Feather name="check-circle" size={14} />{" "}
+                                {part.output === "yes"
+                                  ? "Creating meal plan..."
+                                  : "Okay, let me know if you need anything else!"}
+                              </Text>
+                            </View>
+                          );
+                      }
+                      return null;
+                    }
                     case "tool-invocation":
                     case "tool-searchRecipes":
+                    case "tool-searchRecipesWithPantryItems":
+                    case "tool-getPantryItems":
                       const toolInvocation =
                         part.type === "tool-invocation"
                           ? (part as any).toolInvocation
@@ -150,13 +262,25 @@ export function PantryChatView() {
                         toolInvocation.toolName ||
                         (part.type === "tool-searchRecipes"
                           ? "searchRecipes"
+                          : part.type === "tool-searchRecipesWithPantryItems"
+                          ? "searchRecipesWithPantryItems"
+                          : part.type === "tool-getPantryItems"
+                          ? "getPantryItems"
                           : "");
 
-                      if (toolName === "searchRecipes") {
-                        // Handle different states of the tool execution
+                      // Handle searchRecipes and searchRecipesWithPantryItems (they share similar UI)
+                      if (
+                        toolName === "searchRecipes" ||
+                        toolName === "searchRecipesWithPantryItems"
+                      ) {
                         const state = toolInvocation.state;
                         const args = toolInvocation.args || {};
-                        const query = args.query || "recipes";
+                        // For pantry search, query might not exist, use default
+                        const query =
+                          args.query ||
+                          (toolName === "searchRecipesWithPantryItems"
+                            ? "pantry recipes"
+                            : "recipes");
 
                         // Loading state
                         if (state === "input-available" || state === "call") {
@@ -166,8 +290,10 @@ export function PantryChatView() {
                               style={styles.toolContainer}
                             >
                               <Text style={styles.toolTitle}>
-                                <Feather name="search" size={14} /> Searching
-                                for &quot;{query}&quot;...
+                                <Feather name="search" size={14} />{" "}
+                                {toolName === "searchRecipesWithPantryItems"
+                                  ? "Finding recipes with your ingredients..."
+                                  : `Searching for "${query}"...`}
                               </Text>
                             </View>
                           );
@@ -178,17 +304,39 @@ export function PantryChatView() {
                           state === "result" ||
                           state === "output-available"
                         ) {
-                          const recipes = (toolInvocation.result ||
-                            toolInvocation.output) as any[];
+                          const result =
+                            toolInvocation.result || toolInvocation.output;
 
-                          if (!recipes || recipes.length === 0) {
+                          // Check if result is an array (recipes) or something else (error object)
+                          const recipes = Array.isArray(result) ? result : [];
+                          const error = !Array.isArray(result) && result?.error;
+
+                          if (error) {
+                            return (
+                              <View
+                                key={`${m.id}-${i}`}
+                                style={styles.toolContainer}
+                              >
+                                <Text
+                                  style={[
+                                    styles.toolTitle,
+                                    { color: Colors.semantic.error.main },
+                                  ]}
+                                >
+                                  {error || "Error searching for recipes."}
+                                </Text>
+                              </View>
+                            );
+                          }
+
+                          if (recipes.length === 0) {
                             return (
                               <View
                                 key={`${m.id}-${i}`}
                                 style={styles.toolContainer}
                               >
                                 <Text style={styles.toolTitle}>
-                                  No recipes found for &quot;{query}&quot;.
+                                  No recipes found.
                                 </Text>
                               </View>
                             );
@@ -201,8 +349,7 @@ export function PantryChatView() {
                             >
                               <Text style={styles.toolTitle}>
                                 <Feather name="check" size={14} /> Found{" "}
-                                {recipes.length} recipes for &quot;{query}&quot;
-                                :
+                                {recipes.length} recipes:
                               </Text>
                               <ScrollView
                                 horizontal
@@ -216,7 +363,7 @@ export function PantryChatView() {
                                   <View key={r.id} style={{ width: 152 }}>
                                     <RecipeCard
                                       variant="chat"
-                                      recipe={{ ...r, imageType: "jpg" }} // Patch imageType
+                                      recipe={{ ...r, imageType: "jpg" }}
                                       onPress={() =>
                                         router.push(`/(meal)/${r.id}`)
                                       }
@@ -241,12 +388,51 @@ export function PantryChatView() {
                                   { color: Colors.semantic.error.main },
                                 ]}
                               >
-                                Error searching for &quot;{query}&quot;.
+                                Error searching for recipes.
                               </Text>
                             </View>
                           );
                         }
                       }
+
+                      // Handle getPantryItems UI
+                      if (toolName === "getPantryItems") {
+                        const state = toolInvocation.state;
+
+                        if (state === "input-available" || state === "call") {
+                          return (
+                            <View
+                              key={`${m.id}-${i}`}
+                              style={styles.toolContainer}
+                            >
+                              <Text style={styles.toolTitle}>
+                                <Feather name="package" size={14} /> Checking
+                                pantry...
+                              </Text>
+                            </View>
+                          );
+                        }
+
+                        if (
+                          state === "result" ||
+                          state === "output-available"
+                        ) {
+                          const result = toolInvocation.result ||
+                            toolInvocation.output || { count: 0 };
+                          return (
+                            <View
+                              key={`${m.id}-${i}`}
+                              style={styles.toolContainer}
+                            >
+                              <Text style={styles.toolTitle}>
+                                <Feather name="check" size={14} /> Checked
+                                pantry: Found {result.count} items.
+                              </Text>
+                            </View>
+                          );
+                        }
+                      }
+
                       return null;
                     default:
                       return null;
@@ -429,5 +615,54 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Colors.gray[200],
+  },
+  confirmationContainer: {
+    backgroundColor: Colors.lilac[100],
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+  },
+  confirmationMessage: {
+    fontSize: 16,
+    color: Colors.text.primary,
+    marginBottom: 12,
+    fontWeight: "500",
+  },
+  confirmationButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  confirmationButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmationButtonYes: {
+    backgroundColor: Colors.lilac[900],
+  },
+  confirmationButtonNo: {
+    backgroundColor: Colors.background.secondary,
+    borderWidth: 1,
+    borderColor: Colors.gray[300],
+  },
+  confirmationButtonTextYes: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  confirmationButtonTextNo: {
+    color: Colors.text.primary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  confirmationResult: {
+    fontSize: 14,
+    color: Colors.lilac[900],
+    fontWeight: "500",
   },
 });

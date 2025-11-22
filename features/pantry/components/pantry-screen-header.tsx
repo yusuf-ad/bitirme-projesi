@@ -61,25 +61,23 @@ export function PantryScreenHeader({
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Feather
-          name="search"
-          size={20}
-          color={Colors.gray[400]}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={
-            activeTab === "my-ingredients"
-              ? "Search ingredients..."
-              : "Ask AI..."
-          }
-          placeholderTextColor={Colors.gray[400]}
-          value={searchQuery}
-          onChangeText={onSearchChange}
-        />
-      </View>
+      {activeTab === "my-ingredients" && (
+        <View style={styles.searchContainer}>
+          <Feather
+            name="search"
+            size={20}
+            color={Colors.gray[400]}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search ingredients..."
+            placeholderTextColor={Colors.gray[400]}
+            value={searchQuery}
+            onChangeText={onSearchChange}
+          />
+        </View>
+      )}
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
