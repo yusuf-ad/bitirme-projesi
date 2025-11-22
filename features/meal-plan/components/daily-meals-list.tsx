@@ -6,9 +6,12 @@ import { router } from "expo-router";
 import { ImageSourcePropType, StyleSheet, View } from "react-native";
 import { EmptyMealSlot } from "./empty-meal-slot";
 
+import { SharedValue } from "react-native-reanimated";
+
 interface DailyMealsListProps {
   items: MealPlanItemRecord[];
   selectedDate: Date;
+  scrollY: SharedValue<number>;
 }
 
 const MEAL_ORDER: ("breakfast" | "lunch" | "dinner")[] = [
@@ -45,7 +48,7 @@ const DEFAULT_MEAL_DETAILS: Record<
   },
 };
 
-export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
+export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListProps) {
   const deleteMutation = useDeleteMealItem();
 
   // Group meals by type
@@ -77,6 +80,7 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
                 mealIcon={details.icon}
                 mealSlot={mealType}
                 selectedDate={selectedDate}
+                scrollY={scrollY}
               />
             );
           }
