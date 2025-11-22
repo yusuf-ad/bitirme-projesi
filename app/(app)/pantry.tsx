@@ -1,3 +1,4 @@
+import { getThemeColors } from "@/constants/theme";
 import {
   EmptyPantryState,
   PantryCategory,
@@ -12,6 +13,7 @@ import {
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
+import { useTheme } from "@/providers/theme-provider";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
