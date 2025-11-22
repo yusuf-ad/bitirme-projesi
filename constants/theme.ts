@@ -135,3 +135,109 @@ export const Colors = {
     focus: "#875EC5", // Focus border (lilac)
   },
 };
+
+// Dark Mode Theme Colors (for Profile tab - text-heavy content)
+export const DarkColors = {
+  // Keep the same color scales
+  ...Colors,
+
+  // Override background colors for dark mode
+  background: {
+    primary: "#0F0E13", // Main dark background
+    secondary: "#1A1820", // Secondary dark background
+    tertiary: "#25222E", // Tertiary dark background
+    dark: "#000000", // Darkest background
+    surface: "#1E1C24", // Surface/card background
+    overlay: "rgba(0, 0, 0, 0.7)", // Modal overlay
+  },
+
+  // Override text colors for dark mode
+  text: {
+    primary: "#F5F5F7", // Primary text on dark
+    secondary: "#C4C4C8", // Secondary text on dark
+    tertiary: "#8E8E93", // Tertiary text on dark
+    disabled: "#636366", // Disabled text on dark
+    inverse: "#1E1C24", // Text on light backgrounds in dark mode
+    accent: "#A587D3", // Accent text (lighter lilac)
+  },
+
+  // Override border colors for dark mode
+  border: {
+    light: "#38343E", // Light borders on dark
+    medium: "#48444E", // Medium borders on dark
+    dark: "#58545E", // Dark borders on dark
+    focus: "#9673CC", // Focus border (lighter lilac)
+  },
+
+  // Card-specific colors for dark mode
+  card: {
+    background: "#1E1C24",
+    backgroundElevated: "#25222E",
+    border: "#38343E",
+    shadow: "rgba(0, 0, 0, 0.4)",
+  },
+
+  // Gradients for premium dark mode aesthetics
+  gradients: {
+    primary: ["#A587D3", "#7849B6"],
+    success: ["#87B99D", "#548A6A"],
+    dark: ["#1E1C24", "#0F0E13"],
+    card: ["#25222E", "#1E1C24"],
+  },
+};
+
+// Lighter Dark Mode for Content Tabs (Home, Recipes, Pantry - image/visual-heavy content)
+export const ContentDarkColors = {
+  // Keep the same color scales
+  ...Colors,
+
+  // Lighter backgrounds for better visual content display
+  background: {
+    primary: "#1C1A22", // Lighter main background
+    secondary: "#353147ff", // Lighter secondary background
+    tertiary: "#2E2B3A", // Lighter tertiary background
+    dark: "#0F0E13", // Darkest background
+    surface: "#282634", // Lighter surface/card background
+    overlay: "rgba(0, 0, 0, 0.65)", // Slightly lighter overlay
+  },
+
+  // Text colors optimized for lighter backgrounds
+  text: {
+    primary: "#F8F8FA", // Brighter primary text
+    secondary: "#D1D1D6", // Brighter secondary text
+    tertiary: "#9A9AA0", // Brighter tertiary text
+    disabled: "#6C6C70", // Disabled text
+    inverse: "#1C1A22", // Text on light backgrounds
+    accent: "#B49CDA", // Lighter accent (more visible on lighter bg)
+  },
+
+  // Border colors for lighter dark mode
+  border: {
+    light: "#3E3B48", // Lighter borders
+    medium: "#4E4B58", // Medium borders
+    dark: "#5E5B68", // Dark borders
+    focus: "#A587D3", // Focus border (brighter lilac)
+  },
+
+  // Card-specific colors for content dark mode
+  card: {
+    background: "#282634",
+    backgroundElevated: "#2E2B3A",
+    border: "#3E3B48",
+    shadow: "rgba(0, 0, 0, 0.3)",
+  },
+
+  // Gradients for content dark mode
+  gradients: {
+    primary: ["#B49CDA", "#875EC5"],
+    success: ["#97C9AE", "#659A7B"],
+    dark: ["#282634", "#1C1A22"],
+    card: ["#2E2B3A", "#282634"],
+  },
+};
+
+// Helper function to get theme colors
+export function getThemeColors(isDark: boolean, isContentTab: boolean = false) {
+  if (!isDark) return Colors;
+  return isContentTab ? ContentDarkColors : DarkColors;
+}
