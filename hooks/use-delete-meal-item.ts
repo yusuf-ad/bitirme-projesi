@@ -23,8 +23,8 @@ export function useDeleteMealItem() {
     onError: (error) => {
       console.error("Error deleting meal item:", error);
       Alert.alert(
-        "Silme Hatası",
-        "Yemek silinirken bir hata oluştu. Lütfen tekrar deneyin."
+        "Delete Error",
+        "An error occurred while deleting the meal. Please try again."
       );
     },
   });

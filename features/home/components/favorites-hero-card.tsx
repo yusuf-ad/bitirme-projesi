@@ -1,15 +1,13 @@
 import { Colors } from "@/constants/theme";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View } from "react-native";
 
 interface FavoritesHeroCardProps {
   favoriteCount: number;
 }
 
-export function FavoritesHeroCard({
-  favoriteCount,
-}: FavoritesHeroCardProps) {
+export function FavoritesHeroCard({ favoriteCount }: FavoritesHeroCardProps) {
   return (
     <LinearGradient
       colors={[Colors.lilac[900], Colors.lilac[700]]}
@@ -20,15 +18,15 @@ export function FavoritesHeroCard({
       </View>
 
       <View style={styles.textWrapper}>
-        <Text style={styles.eyebrow}>İlham panon</Text>
+        <Text style={styles.eyebrow}>Your Inspiration Board</Text>
         <Text style={styles.title}>
           {favoriteCount > 0
-            ? `${favoriteCount} tarif her zaman elinin altında`
-            : "Kalbini çalan tarifleri sakla"}
+            ? `${favoriteCount} recipes always at hand`
+            : "Save recipes you love"}
         </Text>
         <Text style={styles.subtitle}>
-          Kalp ikonuna dokunduğunda tarifler bu listede toplanır. Favorilerini
-          planlarına eklemek şimdi daha kolay.
+          Recipes are collected here when you tap the heart icon. Adding
+          favorites to your plans is now easier.
         </Text>
       </View>
     </LinearGradient>
@@ -74,4 +72,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

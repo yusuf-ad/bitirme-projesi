@@ -92,7 +92,7 @@ export default function MealplanTab() {
     <ScrollView
       style={[styles.container, { paddingTop: top }]}
       showsVerticalScrollIndicator={false}
-      // safe area boşluğu + tabbar yüksekliği
+      // safe area padding + tabbar height
       contentContainerStyle={{
         paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
       }}

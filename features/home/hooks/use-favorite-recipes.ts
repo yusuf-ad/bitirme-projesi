@@ -115,8 +115,8 @@ export function useFavoriteRecipes() {
       }
 
       Alert.alert(
-        "Favoriler güncellenemedi",
-        `Hata: ${error.message}\n\nLütfen bağlantınızı kontrol edip tekrar deneyin.`
+        "Could not update favorites",
+        `Error: ${error.message}\n\nPlease check your connection and try again.`
       );
     },
     onSuccess: (data, recipe) => {
@@ -135,7 +135,7 @@ export function useFavoriteRecipes() {
   const toggleFavorite = useCallback(
     (recipe: Recipe) => {
       if (!userId) {
-        Alert.alert("Oturum bulunamadı", "Favorilere eklemek için giriş yapın.");
+        Alert.alert("Session not found", "Please log in to add to favorites.");
         return;
       }
 

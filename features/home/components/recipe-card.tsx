@@ -17,6 +17,7 @@ interface RecipeCardProps {
   onPress?: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: (recipe: Recipe) => void;
+  variant?: "default" | "chat";
 }
 
 export function RecipeCard({
@@ -24,11 +25,23 @@ export function RecipeCard({
   onPress,
   isFavorite = false,
   onToggleFavorite,
+  variant = "default",
 }: RecipeCardProps) {
   // Calorie bilgisini nutrition.nutrients array'inden çek
   const calories = recipe.nutrition?.nutrients?.find(
     (n) => n.name === "Calories"
   )?.amount;
+
+  const isChat = variant === "chat";
+
+  if (isChat) {
+    console.log(`[RecipeCard Chat] Rendering: ${recipe.title}`, {
+      readyInMinutes: recipe.readyInMinutes,
+      calories: calories,
+      nutritionDataExists: !!recipe.nutrition,
+      nutritionKeys: recipe.nutrition ? Object.keys(recipe.nutrition) : [],
+    });
+  }
 
   const handleToggleFavorite = async (
     event: GestureResponderEvent
@@ -44,7 +57,10 @@ export function RecipeCard({
   };
 
   return (
-    <Pressable style={styles.cardPressable} onPress={onPress}>
+    <Pressable
+      style={[styles.cardPressable, isChat && { width: 152 }]}
+      onPress={onPress}
+    >
       <LinearGradient
         colors={[
           "rgba(120, 73, 182, 0.65)",
@@ -54,13 +70,13 @@ export function RecipeCard({
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={styles.gradientBorder}
+        style={[styles.gradientBorder, isChat && { height: 224 }]}
       >
         <View style={styles.itemCard}>
           <View>
             <Image
               source={{ uri: recipe.image }}
-              style={styles.itemImage}
+              style={[styles.itemImage, isChat && { aspectRatio: 1 }]}
               placeholder="L4|400"
               contentFit="cover"
             />
@@ -88,35 +104,54 @@ export function RecipeCard({
             </Pressable>
           </View>
 
-          <View style={styles.itemContentContainer}>
-            <Text style={styles.itemText} numberOfLines={2}>
+          <View style={[styles.itemContentContainer, isChat && { padding: 8 }]}>
+            <Text
+              style={[
+                styles.itemText,
+                isChat && { fontSize: 12, marginBottom: 4, lineHeight: 16 },
+              ]}
+              numberOfLines={2}
+            >
               {recipe.title}
             </Text>
 
-            <View style={styles.metaContainer}>
-              {recipe.readyInMinutes && (
-                <>
-                  <View style={styles.metaItem}>
-                    <Image
-                      source={require("@/assets/icons/clock-icon.svg")}
-                      style={styles.metaIcon}
-                    />
-                    <Text style={styles.metaText}>
-                      {recipe.readyInMinutes} mins
-                    </Text>
-                  </View>
-                </>
+            <View
+              style={[styles.metaContainer, isChat && { gap: 4, marginTop: 2 }]}
+            >
+              {recipe.readyInMinutes !== undefined && (
+                <View style={styles.metaItem}>
+                  <Image
+                    source={require("@/assets/icons/clock-icon.svg")}
+                    style={[
+                      styles.metaIcon,
+                      isChat && { width: 12, height: 12 },
+                    ]}
+                  />
+                  <Text style={[styles.metaText, isChat && { fontSize: 11 }]}>
+                    {recipe.readyInMinutes}
+                    {isChat ? "m" : " mins"}
+                  </Text>
+                </View>
               )}
-              <Text style={styles.separator}>|</Text>
 
-              {calories && (
+              {recipe.readyInMinutes !== undefined &&
+                calories !== undefined && (
+                  <Text style={[styles.separator, isChat && { fontSize: 10 }]}>
+                    |
+                  </Text>
+                )}
+
+              {calories !== undefined && (
                 <View style={styles.metaItem}>
                   <Image
                     source={require("@/assets/icons/flame-icon.svg")}
-                    style={styles.metaIcon}
+                    style={[
+                      styles.metaIcon,
+                      isChat && { width: 12, height: 12 },
+                    ]}
                   />
-                  <Text style={styles.metaText}>
-                    {Math.round(calories)} cal
+                  <Text style={[styles.metaText, isChat && { fontSize: 11 }]}>
+                    {Math.round(calories)} {isChat ? "cal" : "cal"}
                   </Text>
                 </View>
               )}

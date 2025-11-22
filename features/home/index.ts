@@ -19,6 +19,7 @@ export { LoadingState } from "./components/loading-state";
 export { default as MacroCardsSection } from "./components/macro-cards-section";
 export { default as MealCard } from "./components/meal-card";
 export { default as ProgressChart } from "./components/progress-chart";
+export { RecipeCard } from "./components/recipe-card";
 export { RecipeCardSkeleton } from "./components/recipe-card-skeleton";
 export { RecipeGrid } from "./components/recipe-grid";
 export { SearchBar } from "./components/search-bar";
