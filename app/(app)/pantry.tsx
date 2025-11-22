@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { ErrorState, LoadingState, RecipeGrid } from "@/features/home";
 import {
   EmptyPantryState,
@@ -13,6 +13,7 @@ import { pantryService } from "@/features/pantry/services/pantry-service";
 import { usePantryRecipesQuery } from "@/hooks/use-pantry-recipes-query";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
+import { useTheme } from "@/providers/theme-provider";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -21,13 +22,15 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MEAL_TYPES = ["All", "Breakfast", "Lunch", "Dinner", "Snack"];
 
 export default function PantryTab() {
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMealType, setSelectedMealType] = useState("All");
@@ -179,7 +182,7 @@ export default function PantryTab() {
 
   if (isLoading && items.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
         <PantryScreenHeader
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -193,7 +196,7 @@ export default function PantryTab() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
       <PantryScreenHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -264,7 +267,7 @@ export default function PantryTab() {
               style={[styles.categoriesContainer, { paddingHorizontal: 16 }]}
             >
               <View style={styles.placeholderContainer}>
-                <Text style={styles.placeholderText}>
+                <Text style={[styles.placeholderText, { color: Colors.text.secondary }]}>
                   Add items to your pantry to see recipe ideas.
                 </Text>
               </View>
@@ -283,15 +286,22 @@ export default function PantryTab() {
                         key={type}
                         style={[
                           styles.filterChip,
-                          selectedMealType === type && styles.filterChipActive,
+                          {
+                            backgroundColor: isDark ? Colors.background.tertiary : Colors.background.tertiary,
+                            borderColor: isDark ? Colors.border.light : Colors.gray[200]
+                          },
+                          selectedMealType === type && {
+                            backgroundColor: Colors.lilac[600],
+                            borderColor: Colors.lilac[600]
+                          },
                         ]}
                         onPress={() => setSelectedMealType(type)}
                       >
                         <Text
                           style={[
                             styles.filterChipText,
-                            selectedMealType === type &&
-                              styles.filterChipTextActive,
+                            { color: Colors.text.secondary },
+                            selectedMealType === type && { color: Colors.text.inverse },
                           ]}
                         >
                           {type}
@@ -332,7 +342,6 @@ export default function PantryTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   center: {
     justifyContent: "center",
@@ -356,7 +365,6 @@ const styles = StyleSheet.create({
   placeholderText: {
     textAlign: "center",
     fontSize: 16,
-    color: Colors.gray[500],
   },
   recipeIdeasContainer: {
     flex: 1,
@@ -374,25 +382,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: Colors.background.tertiary,
     borderWidth: 1,
-    borderColor: Colors.gray[200],
-  },
-  filterChipActive: {
-    backgroundColor: Colors.lilac[600],
-    borderColor: Colors.lilac[600],
   },
   filterChipText: {
     fontSize: 14,
-    color: Colors.text.secondary,
     fontWeight: "500",
-  },
-  filterChipTextActive: {
-    color: Colors.text.inverse,
   },
   resultsText: {
     fontSize: 14,
-    color: Colors.text.secondary,
     marginLeft: 4,
   },
 });
