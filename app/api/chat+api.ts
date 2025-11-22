@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: openai("gpt-4o-mini"),
     system:
-      "You are a helpful meal planning assistant. Create 1-day meal plans with breakfast, lunch, and dinner. Use the searchRecipes tool to find recipes. Keep responses concise. Call the searchRecipes tool to find recipes for the given meal type. You can use the includeIngredients parameter to specify ingredients that should be included in the recipes (comma-separated list). Combine ingredients into a single search query when possible to avoid multiple tool calls.",
+      "You are a helpful meal planning assistant. Create 1-day meal plans with breakfast, lunch, and dinner. Use the searchRecipes tool to find recipes. Keep responses concise. Call the searchRecipes tool to find recipes for the given meal type. You can use the includeIngredients parameter to specify ingredients that should be included in the recipes (comma-separated list). Combine ingredients into a single search query when possible to avoid multiple tool calls. CRITICAL: After calling searchRecipes, do NOT repeat or summarize the results in text - the UI displays them as cards automatically.",
     messages: convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: {

@@ -151,7 +151,7 @@ export function RecipeCard({
                     ]}
                   />
                   <Text style={[styles.metaText, isChat && { fontSize: 11 }]}>
-                    {Math.round(calories)} {isChat ? "" : "cal"}
+                    {Math.round(calories)} {isChat ? "cal" : "cal"}
                   </Text>
                 </View>
               )}
