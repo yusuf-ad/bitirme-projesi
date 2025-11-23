@@ -242,7 +242,12 @@ export default function PantryTab() {
         onClear={handleClearAll}
       />
 
-      <View style={{ flex: 1, display: activeTab === "my-ingredients" ? "flex" : "none" }}>
+      <View
+        style={{
+          flex: 1,
+          display: activeTab === "my-ingredients" ? "flex" : "none",
+        }}
+      >
         <ScrollView
           style={styles.contentScroll}
           showsVerticalScrollIndicator={false}
@@ -299,7 +304,9 @@ export default function PantryTab() {
           </View>
         </ScrollView>
       </View>
-      <View style={{ flex: 1, display: activeTab === "ai-chat" ? "flex" : "none" }}>
+      <View
+        style={{ flex: 1, display: activeTab === "ai-chat" ? "flex" : "none" }}
+      >
         <PantryChatView />
       </View>
 
