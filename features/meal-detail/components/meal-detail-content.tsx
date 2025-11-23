@@ -198,12 +198,13 @@ export function MealDetailContent({
             }
             accessibilityRole="button"
           >
-            <Ionicons
-              name={isFavorited ? "heart" : "heart-outline"}
-              size={24}
-              color="#F03E3E"
-              style={styles.heartIcon}
-            />
+            <View style={styles.iconButton}>
+              <Ionicons
+                name={isFavorited ? "heart" : "heart-outline"}
+                size={24}
+                color="#F03E3E"
+              />
+            </View>
           </Pressable>
         )}
       </View>
@@ -236,7 +237,7 @@ export function MealDetailContent({
         </View>
 
         {/* Cuisine and Diet Tags */}
-        {(meal.cuisines?.length || meal.diets?.length) && (
+        {meal.cuisines?.length || meal.diets?.length ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -254,7 +255,7 @@ export function MealDetailContent({
               </View>
             ))}
           </ScrollView>
-        )}
+        ) : null}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Nutritions</Text>
@@ -420,9 +421,7 @@ const styles = StyleSheet.create({
     top: 50,
     right: 10,
   },
-  heartIcon: {
-    opacity: 0.85,
-  },
+
   sheet: {
     marginTop: -21,
     paddingTop: 16,
@@ -570,8 +569,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
     overflow: "hidden",
   },
   tabButton: {

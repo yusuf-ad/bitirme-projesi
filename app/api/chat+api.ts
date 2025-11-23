@@ -5,6 +5,7 @@ import {
   searchRecipesByIngredients,
 } from "@/lib/spoonacular";
 import { openai } from "@ai-sdk/openai";
+import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, stepCountIs, streamText, UIMessage } from "ai";
 import { z } from "zod";
 
@@ -12,11 +13,33 @@ export async function POST(req: Request) {
   const {
     messages,
     userId,
-  }: { messages: UIMessage[]; userId: string | undefined } = await req.json();
+    accessToken,
+  }: {
+    messages: UIMessage[];
+    userId: string | undefined;
+    accessToken: string | undefined;
+  } = await req.json();
 
   if (!userId) {
     return new Response("Unauthorized: Missing userId", { status: 401 });
   }
+
+  if (!accessToken) {
+    return new Response("Unauthorized: Missing access token", { status: 401 });
+  }
+
+  // Create authenticated Supabase client for this request
+  const supabaseAuth = createClient(
+    process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "",
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    }
+  );
 
   const result = streamText({
     model: openai("gpt-4o-mini"),
@@ -98,7 +121,14 @@ RIGHT: calling searchRecipesWithPantryItems (efficient, does both)
         execute: async () => {
           console.log("Tool called: getPantryItems");
           try {
-            const items = await pantryService.getItemsForUser(userId, "pantry");
+            const items = await pantryService.getItemsForUser(
+              userId,
+              "pantry",
+              supabaseAuth
+            );
+
+            console.log(items, userId);
+
             // Return simplified data - just ingredient names
             const ingredientNames = items.map((item) => item.name);
             console.log("=== PANTRY ITEMS ===");
@@ -127,8 +157,12 @@ RIGHT: calling searchRecipesWithPantryItems (efficient, does both)
         execute: async ({ number }) => {
           console.log("Tool called: searchRecipesWithPantryItems");
           try {
-            // 1. Get pantry items using server-side method
-            const items = await pantryService.getItemsForUser(userId, "pantry");
+            // 1. Get pantry items using server-side method with authenticated client
+            const items = await pantryService.getItemsForUser(
+              userId,
+              "pantry",
+              supabaseAuth
+            );
             if (!items || items.length === 0) {
               return {
                 error: "No items found in pantry. Cannot search for recipes.",

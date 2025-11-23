@@ -34,7 +34,9 @@ export function PantryChatView() {
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: generateAPIUrl("/api/chat"),
-      body: session?.user ? { userId: session.user.id } : {},
+      body: session?.user
+        ? { userId: session.user.id, accessToken: session.access_token }
+        : {},
     }),
     onError: (error) => console.error(error, "ERROR"),
   });

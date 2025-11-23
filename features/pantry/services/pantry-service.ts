@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { PantryItem } from "../types";
 
 export const pantryService = {
@@ -29,9 +30,11 @@ export const pantryService = {
   // Special method for server-side API usage
   async getItemsForUser(
     userId: string,
-    status: "pantry" | "shopping_list" = "pantry"
+    status: "pantry" | "shopping_list" = "pantry",
+    client?: SupabaseClient
   ) {
-    const { data, error } = await supabase
+    const supabaseClient = client || supabase;
+    const { data, error } = await supabaseClient
       .from("pantry_items")
       .select("*")
       .eq("user_id", userId)
