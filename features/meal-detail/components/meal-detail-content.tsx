@@ -158,6 +158,7 @@ export function MealDetailContent({
           colors={[Colors.lilac[800]]}
         />
       }
+      showsVerticalScrollIndicator={false}
     >
       <View style={styles.heroWrapper}>
         <Image

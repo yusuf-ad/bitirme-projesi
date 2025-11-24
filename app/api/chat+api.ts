@@ -1,5 +1,7 @@
 import { pantryService } from "@/features/pantry/services/pantry-service";
+import type { RandomRecipesFilters } from "@/lib/spoonacular";
 import {
+  getRandomRecipes,
   Recipe,
   searchRecipes,
   searchRecipesByIngredients,
@@ -8,6 +10,56 @@ import { openai } from "@ai-sdk/openai";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, stepCountIs, streamText, UIMessage } from "ai";
 import { z } from "zod";
+
+type UserGoalsRow = {
+  goal_ids: string[] | null;
+};
+
+type UserBodyMetricsRow = {
+  gender: "male" | "female" | "prefer-not-to-say" | null;
+  age: number | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+};
+
+type UserMealTimesRow = {
+  breakfast_time: string | null;
+  lunch_time: string | null;
+  dinner_time: string | null;
+};
+
+type UserTastePreferencesRow = {
+  meal_types: string[] | null;
+  cuisines: string[] | null;
+  cuisine_dislikes: string[] | null;
+  allergies_dislikes: string[] | null;
+  diet_preferences: string[] | null;
+  cooking_skill_level: "novice" | "basic" | "intermediate" | "advanced" | null;
+  diet_nutrition_targets: Record<string, unknown> | null;
+};
+
+type UserOnboardingProfile = {
+  goals: UserGoalsRow | null;
+  bodyMetrics: UserBodyMetricsRow | null;
+  mealTimes: UserMealTimesRow | null;
+  tastePreferences: UserTastePreferencesRow | null;
+};
+
+type MealPeriod = "AM" | "PM";
+
+type MealTimePreference = {
+  hour: number;
+  minute: number;
+  period: MealPeriod;
+};
+
+type MealTimesSchedule = {
+  breakfast: MealTimePreference;
+  lunch: MealTimePreference;
+  dinner: MealTimePreference;
+};
+
+type MealSlot = "breakfast" | "lunch" | "dinner";
 
 export async function POST(req: Request) {
   const {
@@ -41,39 +93,209 @@ export async function POST(req: Request) {
     }
   );
 
+  const DEFAULT_MEAL_TIMES: MealTimesSchedule = {
+    breakfast: { hour: 8, minute: 0, period: "AM" },
+    lunch: { hour: 1, minute: 0, period: "PM" },
+    dinner: { hour: 7, minute: 0, period: "PM" },
+  };
+
+  const parseTimeString = (
+    value: string | null | undefined,
+    fallback: MealTimePreference
+  ): MealTimePreference => {
+    if (!value) {
+      return fallback;
+    }
+
+    const [rawHour, rawMinute] = value
+      .split(":")
+      .map((segment) => Number(segment));
+    if (Number.isNaN(rawHour) || Number.isNaN(rawMinute)) {
+      return fallback;
+    }
+
+    const period: MealPeriod = rawHour >= 12 ? "PM" : "AM";
+    const normalizedHour = rawHour % 12 === 0 ? 12 : rawHour % 12;
+    return {
+      hour: normalizedHour,
+      minute: rawMinute,
+      period,
+    };
+  };
+
+  const toMinutesFromMidnight = (time: MealTimePreference): number => {
+    let hour24 = time.hour % 12;
+    if (time.period === "PM") {
+      hour24 += 12;
+    } else if (time.period === "AM" && time.hour === 12) {
+      hour24 = 0;
+    }
+    return hour24 * 60 + time.minute;
+  };
+
+  const buildMealSchedule = (mealTimes: UserMealTimesRow | null) => {
+    const schedule: MealTimesSchedule = {
+      breakfast: parseTimeString(
+        mealTimes?.breakfast_time,
+        DEFAULT_MEAL_TIMES.breakfast
+      ),
+      lunch: parseTimeString(mealTimes?.lunch_time, DEFAULT_MEAL_TIMES.lunch),
+      dinner: parseTimeString(
+        mealTimes?.dinner_time,
+        DEFAULT_MEAL_TIMES.dinner
+      ),
+    };
+
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const breakfastWindow = toMinutesFromMidnight(schedule.breakfast) + 90;
+    const lunchWindow = toMinutesFromMidnight(schedule.lunch) + 120;
+    const dinnerWindow = toMinutesFromMidnight(schedule.dinner) + 180;
+
+    let activeMealSlot: MealSlot = "dinner";
+    if (nowMinutes <= breakfastWindow) {
+      activeMealSlot = "breakfast";
+    } else if (nowMinutes <= lunchWindow) {
+      activeMealSlot = "lunch";
+    } else if (nowMinutes <= dinnerWindow) {
+      activeMealSlot = "dinner";
+    }
+
+    return { schedule, activeMealSlot };
+  };
+
+  const fetchSingleRow = async <T>(table: string): Promise<T | null> => {
+    const { data, error } = await supabaseAuth
+      .from(table)
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error && (error as any).code !== "PGRST116") {
+      console.error(`Failed to fetch ${table}:`, error);
+    }
+
+    return (data as T) ?? null;
+  };
+
+  const fetchUserOnboardingProfile =
+    async (): Promise<UserOnboardingProfile> => {
+      const [goals, bodyMetrics, mealTimes, tastePreferences] =
+        await Promise.all([
+          fetchSingleRow<UserGoalsRow>("user_goals"),
+          fetchSingleRow<UserBodyMetricsRow>("user_body_metrics"),
+          fetchSingleRow<UserMealTimesRow>("user_meal_times"),
+          fetchSingleRow<UserTastePreferencesRow>("user_taste_preferences"),
+        ]);
+
+      return {
+        goals,
+        bodyMetrics,
+        mealTimes,
+        tastePreferences,
+      };
+    };
+
+  let cachedProfile: UserOnboardingProfile | null = null;
+  const getCachedProfile = async () => {
+    if (cachedProfile) {
+      return cachedProfile;
+    }
+    cachedProfile = await fetchUserOnboardingProfile();
+    return cachedProfile;
+  };
+
+  const simplifyRecipes = (recipes: Recipe[]) =>
+    recipes.map((recipe) => ({
+      id: recipe.id,
+      title: recipe.title,
+      image: recipe.image,
+      summary: recipe.summary,
+      cuisines: recipe.cuisines || [],
+      readyInMinutes: recipe.readyInMinutes,
+      nutrition: recipe.nutrition,
+      diets: recipe.diets || [],
+    }));
+
   const result = streamText({
     model: openai("gpt-4o-mini"),
     system: `You are a helpful meal planning assistant. Create 1-day meal plans with breakfast, lunch, and dinner.
 
 CRITICAL RULES:
-1. After calling searchRecipes or searchRecipesWithPantryItems, NEVER repeat, list, or summarize the recipe results - the UI displays them as cards automatically
-2. After showing recipes, you MUST call askForMealPlanConfirmation tool to ask if user wants a meal plan
-3. WAIT for user confirmation before creating any meal plans
-4. Only create meal plans AFTER user confirms through the askForMealPlanConfirmation tool
-5. Keep all responses concise and conversational
+1. Always call getUserPreferences at the start of the conversation (only once) before suggesting recipes or meal plans so you know diets, allergies, cuisines, cooking skill, goals, and meal schedule.
+2. After calling searchRecipes, searchPersonalizedRecipes, or searchRecipesWithPantryItems, NEVER repeat, list, or summarize the recipe results - the UI already renders the cards.
+3. After showing recipes, you MUST call askForMealPlanConfirmation to ask if the user wants a meal plan, and WAIT for their confirmation before creating or modifying plans.
+4. Only create meal plans AFTER the user confirms via askForMealPlanConfirmation.
+5. Keep all responses concise, friendly, and reference the meal slot you are targeting (e.g., “Here are some dinner ideas”).
 
-TOOL USAGE PRIORITY:
-1. IF user mentions "ingredients", "pantry", "what can I make", "cook with what I have" -> YOU MUST USE searchRecipesWithPantryItems
-2. Do NOT call getPantryItems separately before searchRecipesWithPantryItems (it does it internally)
-3. Use searchRecipes ONLY for specific food requests (e.g. "I want pasta", "Show me burger recipes")
-4. Use getPantryItems ONLY if user specifically asks "What do I have?" or "Check my pantry"
+PERSONALIZATION WORKFLOW:
+- Use searchPersonalizedRecipes for general inspiration, meal planning, or when the user doesn’t name a specific dish. It automatically honors diet, allergy, cuisine, cooking skill, meal times, and goals.
+- If the user requests a specific dish or cuisine (“Show me tacos”), call searchRecipes with that query AND manually enforce any allergies or diet restrictions you learned from getUserPreferences.
+- If the user asks what they can cook with existing ingredients (“What can I cook with my pantry?”), use searchRecipesWithPantryItems. Do NOT call getPantryItems separately beforehand.
+- Only call getPantryItems when the user explicitly asks to review pantry contents (“Do I have tomatoes?”).
+- Mention when suggestions align with their schedule (e.g., breakfast vs dinner) using the activeMealSlot from getUserPreferences.
 
 WORKFLOWS:
-- User: "What can I make with my ingredients?"
+- User: “What should I eat today?”
+  -> AI: ensure getUserPreferences is already called -> call searchPersonalizedRecipes (number=3) -> show cards -> call askForMealPlanConfirmation
+
+- User: “Show me taco recipes.”
+  -> AI: use searchRecipes(query="tacos", type based on meal slot) while excluding allergies -> show cards -> call askForMealPlanConfirmation
+
+- User: “What can I make with my ingredients?”
   -> AI: call searchRecipesWithPantryItems -> show cards -> call askForMealPlanConfirmation
 
-- User: "I want tacos"
-  -> AI: call searchRecipes(query="tacos") -> show cards -> call askForMealPlanConfirmation
-
-- User: "Do I have tomatoes?"
+- User: “Do I have tomatoes?”
   -> AI: call getPantryItems -> answer yes/no
 
-WRONG: calling getPantryItems then searchRecipes (inefficient)
-RIGHT: calling searchRecipesWithPantryItems (efficient, does both)
+WRONG: calling getPantryItems before searchRecipesWithPantryItems (redundant)
+RIGHT: using searchPersonalizedRecipes first so every suggestion respects the profile
 `,
     messages: convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: {
+      getUserPreferences: {
+        description:
+          "Fetches the user's onboarding profile including diet preferences, allergies, cuisines, goals, body metrics, and preferred meal times.",
+        inputSchema: z.object({}),
+        execute: async () => {
+          console.log("Tool called: getUserPreferences");
+          try {
+            const profile = await getCachedProfile();
+            const { schedule, activeMealSlot } = buildMealSchedule(
+              profile.mealTimes
+            );
+
+            return {
+              goals: profile.goals?.goal_ids ?? [],
+              bodyMetrics: {
+                gender: profile.bodyMetrics?.gender ?? null,
+                age: profile.bodyMetrics?.age ?? null,
+                heightCm: profile.bodyMetrics?.height_cm ?? null,
+                weightKg: profile.bodyMetrics?.weight_kg ?? null,
+              },
+              preferences: {
+                mealTypes: profile.tastePreferences?.meal_types ?? [],
+                cuisines: profile.tastePreferences?.cuisines ?? [],
+                dislikedCuisines:
+                  profile.tastePreferences?.cuisine_dislikes ?? [],
+                allergies: profile.tastePreferences?.allergies_dislikes ?? [],
+                dietPreferences:
+                  profile.tastePreferences?.diet_preferences ?? [],
+                cookingSkill:
+                  profile.tastePreferences?.cooking_skill_level ?? null,
+                dietNutritionTargets:
+                  profile.tastePreferences?.diet_nutrition_targets ?? {},
+              },
+              mealTimes: schedule,
+              activeMealSlot,
+            };
+          } catch (error) {
+            console.error("Failed to fetch user preferences:", error);
+            return { error: "Could not load user preferences" };
+          }
+        },
+      },
       searchRecipes: {
         description: "Search for recipes using Spoonacular API",
         inputSchema: z.object({
@@ -205,6 +427,124 @@ RIGHT: calling searchRecipesWithPantryItems (efficient, does both)
           } catch (error) {
             console.error("Failed to search recipes with pantry items:", error);
             return { error: "Failed to search recipes" };
+          }
+        },
+      },
+      searchPersonalizedRecipes: {
+        description:
+          "Find recipes that automatically account for the user's diet, allergies, cuisines, cooking skill, and preferred meal times.",
+        inputSchema: z.object({
+          query: z
+            .string()
+            .optional()
+            .describe("Optional text query to steer the recipe theme."),
+          mealType: z
+            .enum(["breakfast", "lunch", "dinner", "snack"])
+            .optional()
+            .describe(
+              "Meal slot to target. Defaults to the user's current meal window."
+            ),
+          number: z
+            .number()
+            .default(3)
+            .describe("Number of personalized recipes to return."),
+          usePantryItems: z
+            .boolean()
+            .default(false)
+            .describe(
+              "If true, include pantry items as required ingredients where possible."
+            ),
+        }),
+        execute: async ({ query, mealType, number, usePantryItems }) => {
+          console.log("Tool called: searchPersonalizedRecipes");
+          try {
+            const profile = await getCachedProfile();
+            const { schedule, activeMealSlot } = buildMealSchedule(
+              profile.mealTimes
+            );
+
+            const taste = profile.tastePreferences;
+            const resolvedMealType = mealType ?? activeMealSlot;
+
+            const filters: RandomRecipesFilters = {
+              type: resolvedMealType,
+            };
+
+            if (taste?.diet_preferences?.length) {
+              filters.diet = taste.diet_preferences[0];
+            }
+
+            if (taste?.cuisines?.length) {
+              filters.cuisine = taste.cuisines.join(",");
+            }
+
+            if (taste?.allergies_dislikes?.length) {
+              filters.excludeIngredients = taste.allergies_dislikes.join(",");
+            }
+
+            const cookingSkill = taste?.cooking_skill_level;
+            if (cookingSkill === "novice") {
+              filters.maxReadyTime = 30;
+            } else if (cookingSkill === "basic") {
+              filters.maxReadyTime = 45;
+            }
+
+            if (usePantryItems) {
+              const pantryItems = await pantryService.getItemsForUser(
+                userId,
+                "pantry",
+                supabaseAuth
+              );
+              if (pantryItems.length > 0) {
+                filters.includeIngredients = pantryItems
+                  .map((item) => item.name)
+                  .join(",");
+              }
+            }
+
+            let recipes: Recipe[] = [];
+            if (query) {
+              const response = await searchRecipes(query, 0, number, filters);
+              recipes = response.recipes;
+            } else {
+              const response = await getRandomRecipes(number, filters);
+              recipes = response;
+            }
+
+            const disliked = (taste?.cuisine_dislikes || []).map((cuisine) =>
+              cuisine.toLowerCase()
+            );
+            const filteredRecipes = recipes.filter((recipe) => {
+              if (!disliked.length || !recipe.cuisines?.length) {
+                return true;
+              }
+              return recipe.cuisines.every(
+                (cuisine) => !disliked.includes(cuisine.toLowerCase())
+              );
+            });
+
+            const simplifiedRecipes = simplifyRecipes(filteredRecipes).slice(
+              0,
+              number
+            );
+
+            return {
+              recipes: simplifiedRecipes,
+              context: {
+                appliedMealType: resolvedMealType,
+                requestedMealType: mealType || null,
+                activeMealSlot,
+                cookingSkill,
+                diet: filters.diet || null,
+                cuisinePreferences: taste?.cuisines || [],
+                allergies: taste?.allergies_dislikes || [],
+                usingPantryItems: Boolean(filters.includeIngredients),
+                mealTimes: schedule,
+              },
+            };
+          } catch (error) {
+            console.error("Failed to search personalized recipes:", error);
+            return { error: "Could not generate personalized recipes" };
           }
         },
       },
