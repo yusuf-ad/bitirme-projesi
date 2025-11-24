@@ -52,7 +52,7 @@ export function SecondaryActionButton({
   return (
     <AnimatedPressable
       onPress={onPress}
-      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+      hitSlop={{ top: 30, bottom: 30, left: 30, right: 30 }}
       style={[styles.secondaryButton, animatedStyles]}
     >
       <FontAwesome name={iconName as any} size={20} color="#FFFFFF" />

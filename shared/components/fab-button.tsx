@@ -27,11 +27,15 @@ export function FabButton({ currentRouteName }: FabButtonProps) {
     isExpanded.value = !isExpanded.value;
   };
 
+  const ANIMATION_DURATION = 300; // Animation duration in ms
+
   const plusIconStyle = useAnimatedStyle(() => {
     const rotateValue = isExpanded.value ? "45deg" : "0deg";
 
     return {
-      transform: [{ rotate: withTiming(rotateValue) }],
+      transform: [
+        { rotate: withTiming(rotateValue, { duration: ANIMATION_DURATION }) },
+      ],
     };
   });
 
@@ -45,10 +49,10 @@ export function FabButton({ currentRouteName }: FabButtonProps) {
             onPress: () => {
               // Close FAB first, then navigate
               isExpanded.value = false;
-              // Small delay to ensure animation starts/clicks register before navigation
+              // Wait for animation to complete before navigation
               setTimeout(() => {
                 router.push("/(add)/camera");
-              }, 50);
+              }, ANIMATION_DURATION);
             },
           },
         ];
@@ -67,8 +71,12 @@ export function FabButton({ currentRouteName }: FabButtonProps) {
           {
             iconName: "book", // Example: Add to plan
             onPress: () => {
-              console.log("Add to plan");
-              handleMainButtonPress();
+              // Close FAB first, then navigate
+              isExpanded.value = false;
+              // Wait for animation to complete before navigation
+              setTimeout(() => {
+                router.push("/(plan)/create");
+              }, ANIMATION_DURATION);
             },
           },
         ];
