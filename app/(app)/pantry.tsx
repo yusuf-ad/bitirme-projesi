@@ -13,16 +13,25 @@ import {
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
+import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PantryTab() {
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -257,6 +266,17 @@ export default function PantryTab() {
           ]}
         >
           <View style={styles.categoriesContainer}>
+            {pantryStockItems.length > 0 && (
+              <Pressable
+                style={styles.suggestButton}
+                onPress={() => router.push("/pantry-recipes")}
+              >
+                <Feather name="book-open" size={20} color="#fff" />
+                <Text style={styles.suggestButtonText}>
+                  Find Recipes with these Ingredients
+                </Text>
+              </Pressable>
+            )}
             {pantryStockItems.length === 0 && !searchQuery ? (
               <EmptyPantryState onPrefill={handlePrefill} />
             ) : (
@@ -339,6 +359,21 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     marginTop: 16,
     gap: 16,
+  },
+  suggestButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.lilac[600],
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 8,
+  },
+  suggestButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
   },
   placeholderContainer: {
     padding: 32,

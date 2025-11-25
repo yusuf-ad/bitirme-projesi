@@ -655,9 +655,54 @@ export async function parseIngredients(
  * Gets common pantry staples using parseIngredients
  * Returns a list of parsed ingredients for the predefined common staples
  */
-// ...existing code...
 export async function getCommonPantryIngredients(): Promise<
   ParsedIngredient[]
 > {
   return parseIngredients(COMMON_PANTRY_STAPLES);
+}
+
+/**
+ * Find recipes by ingredients (uses findByIngredients endpoint)
+ * @param ingredients - List of ingredients
+ * @param number - Number of results (default: 10)
+ * @param ranking - 1 to maximize used ingredients, 2 to minimize missing ingredients (default: 1)
+ * @param ignorePantry - Whether to ignore typical pantry items (default: true)
+ * @returns List of recipes with used/missed ingredients
+ */
+export async function findRecipesByIngredients(
+  ingredients: string[],
+  number: number = 10,
+  ranking: number = 1,
+  ignorePantry: boolean = true
+): Promise<RecipeByIngredient[]> {
+  try {
+    const params = new URLSearchParams({
+      ingredients: ingredients.join(","),
+      number: number.toString(),
+      ranking: ranking.toString(),
+      ignorePantry: ignorePantry.toString(),
+    });
+
+    const response = await fetch(
+      `${SPOONACULAR_BASE_URL}/findByIngredients?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
+    );
+
+    logRateLimitHeaders(response);
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error finding recipes by ingredients:", error);
+    throw error;
+  }
 }
