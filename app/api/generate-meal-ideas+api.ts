@@ -33,13 +33,16 @@ export async function POST(req: Request) {
 
     const schema = z.object({
       breakfast: z
-        .string()
-        .describe("A specific meal query for breakfast")
+        .array(z.string())
+        .describe("List of 3 distinct breakfast meal queries")
         .optional(),
-      lunch: z.string().describe("A specific meal query for lunch").optional(),
+      lunch: z
+        .array(z.string())
+        .describe("List of 3 distinct lunch meal queries")
+        .optional(),
       dinner: z
-        .string()
-        .describe("A specific meal query for dinner")
+        .array(z.string())
+        .describe("List of 3 distinct dinner meal queries")
         .optional(),
     });
 
@@ -54,16 +57,21 @@ export async function POST(req: Request) {
       
       For each selected meal type (${normalizedMealTypes.join(
         ", "
-      )}), provide a simple search query (e.g., "Chicken Salad", "Oatmeal", "Pasta").
+      )}), provide 3 distinct simple search queries (e.g., "Chicken Salad", "Oatmeal", "Pasta").
       Avoid overly complex names like "Zucchini Noodles with Pesto" unless necessary. Prefer "Zucchini Noodles" or "Pesto Pasta".
       The query should be broad enough to ensure results in a recipe database.
       Do not include the words "breakfast", "lunch", or "dinner" in the query itself unless it's part of the dish name.
       Focus on the user's goals and preferences.
+
+      IMPORTANT: Be creative and varied. Do not suggest the same meals every time.
+      Ensure the 3 queries for each meal type are different from each other.
+      Random Seed: ${Math.random()}
     `;
 
     const result = await generateObject({
       model: openai("gpt-4o-mini"),
       schema,
+      temperature: 1.0,
       messages: [
         {
           role: "system",
@@ -76,14 +84,17 @@ export async function POST(req: Request) {
       ],
     });
 
-    const ideas: Record<MealType, string> = {} as Record<MealType, string>;
+    const ideas: Record<MealType, string[]> = {} as Record<MealType, string[]>;
 
     normalizedMealTypes.forEach((type) => {
-      const suggestion = result.object?.[type];
-      ideas[type] =
-        typeof suggestion === "string" && suggestion.trim().length > 0
-          ? suggestion.trim()
-          : FALLBACK_QUERIES[type];
+      const suggestions = result.object?.[type];
+      if (Array.isArray(suggestions) && suggestions.length > 0) {
+        ideas[type] = suggestions.filter(
+          (s) => typeof s === "string" && s.trim().length > 0
+        );
+      } else {
+        ideas[type] = [FALLBACK_QUERIES[type]];
+      }
     });
 
     return new Response(JSON.stringify(ideas), {

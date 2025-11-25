@@ -1,6 +1,5 @@
 import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
-import { useMealPlanGenerator } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
@@ -16,8 +15,16 @@ import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const normalizeDateParam = (value: unknown): Date => {
@@ -51,9 +58,7 @@ export default function MealPlanPreview() {
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
-  const { generateSingleMealType } = useMealPlanGenerator({
-    selectedMealTypes: { breakfast: false, lunch: false, dinner: false },
-  });
+
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [isSaving, setIsSaving] = useState(false);
@@ -66,12 +71,22 @@ export default function MealPlanPreview() {
   const planStartDate = normalizeDateParam(params.startDate);
   const planEndDate = normalizeDateParam(params.endDate ?? params.startDate);
 
-  const modalMeals = activeMealType
+  const allMeals = activeMealType
     ? mealPlan?.[activeMealType]?.results ?? []
     : [];
-  const modalSelectedIndex = activeMealType
+
+  const currentSelectedIndex = activeMealType
     ? selectedMealIndices[activeMealType] ?? 0
     : 0;
+
+  // Filter out the currently selected meal to show only alternatives
+  const alternativeMealsWithIndex = useMemo(() => {
+    return allMeals
+      .map((meal, index) => ({ meal, index }))
+      .filter(({ index }) => index !== currentSelectedIndex);
+  }, [allMeals, currentSelectedIndex]);
+
+  const modalMeals = alternativeMealsWithIndex.map(({ meal }) => meal);
 
   const modalTitle = activeMealType
     ? `Replace ${activeMealType.charAt(0).toUpperCase()}${activeMealType.slice(
@@ -83,71 +98,25 @@ export default function MealPlanPreview() {
     (index: number) => {
       if (!activeMealType) return;
 
+      // Map the index from the filtered list back to the original index
+      const originalIndex = alternativeMealsWithIndex[index]?.index;
+
+      if (originalIndex === undefined) return;
+
       setSelectedMealIndices((prev) => ({
         ...prev,
-        [activeMealType]: index,
+        [activeMealType]: originalIndex,
       }));
       setLoadingMealType(null);
       mealSelectionRef.current?.dismiss();
     },
-    [activeMealType]
+    [activeMealType, alternativeMealsWithIndex]
   );
 
   const handleModalDismiss = useCallback(() => {
     setActiveMealType(null);
     setLoadingMealType(null);
   }, []);
-
-  const handleGenerateMoreMeals = useCallback(async () => {
-    if (!activeMealType || !mealPlan) {
-      return;
-    }
-
-    if (loadingMealType === activeMealType) {
-      return;
-    }
-
-    try {
-      setLoadingMealType(activeMealType);
-      const mealLabel =
-        activeMealType.charAt(0).toUpperCase() + activeMealType.slice(1);
-      const { results, totalResults } = await generateSingleMealType(
-        activeMealType
-      );
-
-      if (results.length === 0) {
-        Alert.alert(
-          "No recipes found",
-          `We couldn't find new ${mealLabel} recipes right now.`
-        );
-        return;
-      }
-
-      setMealPlan((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          [activeMealType]: {
-            results,
-            totalResults,
-          },
-        };
-      });
-
-      setSelectedMealIndices((prev) => ({
-        ...prev,
-        [activeMealType]: 0,
-      }));
-    } catch (error) {
-      console.error("Failed to generate recipes:", error);
-      Alert.alert(
-        "Unable to generate recipes",
-        "Please try again in a moment."
-      );
-    } finally {
-      setLoadingMealType(null);
-    }
-  }, [activeMealType, mealPlan, loadingMealType]);
 
   useEffect(() => {
     if (params.mealPlanData) {
@@ -394,7 +363,10 @@ export default function MealPlanPreview() {
 
     return (
       <View key={meal.id} style={styles.mealItem}>
-        <View style={styles.mealContent}>
+        <Pressable
+          style={styles.mealContent}
+          onPress={() => router.push(`/(meal)/${meal.id}`)}
+        >
           {imageUrl ? (
             <Image
               source={{ uri: imageUrl }}
@@ -446,7 +418,7 @@ export default function MealPlanPreview() {
               </View>
             )}
           </View>
-        </View>
+        </Pressable>
         <CustomButton
           containerStyle={styles.replaceButton}
           onPress={handleReplace}
@@ -533,12 +505,10 @@ export default function MealPlanPreview() {
       <MealSelectionModal
         ref={mealSelectionRef}
         meals={modalMeals}
-        selectedIndex={modalSelectedIndex}
+        selectedIndex={-1}
         title={modalTitle}
         onSelect={handleMealSelect}
         onDismiss={handleModalDismiss}
-        onGenerateMore={activeMealType ? handleGenerateMoreMeals : undefined}
-        isGeneratingMore={loadingMealType === activeMealType}
       />
     </View>
   );

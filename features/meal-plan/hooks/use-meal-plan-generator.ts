@@ -35,7 +35,8 @@ async function runRateLimitedSearch(
   }
 
   try {
-    const response = await searchRecipes(query, 0, 4, filters);
+    // Fetch more results to allow for filtering duplicates
+    const response = await searchRecipes(query, 0, 10, filters);
     return response;
   } finally {
     lastSpoonacularRequestTime = Date.now();
@@ -108,36 +109,40 @@ export function useMealPlanGenerator({
 
   async function fetchMealsWithFallback(
     mealType: MealType,
-    query: string
+    queries: string[],
+    usedRecipeIds: Set<number>
   ): Promise<{ results: Meal[]; totalResults: number; strategy: string }> {
-    const attempts = [
-      {
-        label: "ai-query-full",
+    // Create attempts for each query
+    const attempts = [];
+
+    // 1. Try each AI query with full filters
+    for (const query of queries) {
+      attempts.push({
+        label: `ai-query-full-${query}`,
         query,
         filters: buildFilters(mealType, {
           includeDiet: true,
           includeCuisine: true,
           includeAllergies: true,
         }),
-      },
-      {
-        label: "ai-query-basic",
+      });
+    }
+
+    // 2. Try each AI query with basic filters
+    for (const query of queries) {
+      attempts.push({
+        label: `ai-query-basic-${query}`,
         query,
         filters: buildFilters(mealType, {
           includeDiet: false,
           includeCuisine: false,
           includeAllergies: true,
         }),
-      },
-      {
-        label: "ai-query-minimal",
-        query,
-        filters: buildFilters(mealType, {
-          includeDiet: false,
-          includeCuisine: false,
-          includeAllergies: false,
-        }),
-      },
+      });
+    }
+
+    // 3. Fallback queries
+    attempts.push(
       {
         label: "default-query-basic",
         query: DEFAULT_MEAL_FALLBACK_QUERIES[mealType],
@@ -173,8 +178,8 @@ export function useMealPlanGenerator({
           includeCuisine: false,
           includeAllergies: false,
         }),
-      },
-    ];
+      }
+    );
 
     let lastError: unknown = null;
 
@@ -186,9 +191,16 @@ export function useMealPlanGenerator({
           attempt.filters
         );
 
-        if (recipes.length > 0) {
+        // Filter out duplicates
+        const uniqueRecipes = recipes.filter(
+          (recipe) => !usedRecipeIds.has(recipe.id)
+        );
+
+        if (uniqueRecipes.length > 0) {
+          // Take up to 3 recipes
+          const selectedRecipes = uniqueRecipes.slice(0, 3);
           return {
-            results: recipes.map(mapRecipeToMeal),
+            results: selectedRecipes.map(mapRecipeToMeal),
             totalResults,
             strategy: attempt.label,
           };
@@ -203,7 +215,7 @@ export function useMealPlanGenerator({
         // If we hit a rate limit (429), wait extra time before next attempt
         if (error.message?.includes("429") || error.status === 429) {
           console.log("Rate limit hit, waiting 5s before retry...");
-          await new Promise((resolve) => setTimeout(resolve, 5000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
     }
@@ -261,10 +273,12 @@ export function useMealPlanGenerator({
         strategies: {} as Record<string, string>,
       };
 
+      const usedRecipeIds = new Set<number>();
+
       // 2. Fetch recipes for each meal type
       for (let i = 0; i < activeMealTypes.length; i++) {
         const type = activeMealTypes[i];
-        const query = ideas[type] || DEFAULT_MEAL_FALLBACK_QUERIES[type];
+        const queries = ideas[type] || [DEFAULT_MEAL_FALLBACK_QUERIES[type]];
 
         // Add delay if not the first request to avoid rate limits
         if (i > 0) {
@@ -272,7 +286,10 @@ export function useMealPlanGenerator({
         }
 
         const { results, totalResults, strategy } =
-          await fetchMealsWithFallback(type, query);
+          await fetchMealsWithFallback(type, queries, usedRecipeIds);
+
+        // Add found recipes to used set
+        results.forEach((r) => usedRecipeIds.add(r.id));
 
         mealPlan[type] = {
           results,
@@ -318,11 +335,12 @@ export function useMealPlanGenerator({
       }
 
       const ideas = await ideasResponse.json();
-      const query = ideas[type] || DEFAULT_MEAL_FALLBACK_QUERIES[type];
+      const queries = ideas[type] || [DEFAULT_MEAL_FALLBACK_QUERIES[type]];
 
       const { results, totalResults, strategy } = await fetchMealsWithFallback(
         type,
-        query
+        queries,
+        new Set<number>()
       );
 
       console.log(
@@ -330,7 +348,7 @@ export function useMealPlanGenerator({
         JSON.stringify(
           {
             type,
-            aiSuggestion: query,
+            aiSuggestion: queries,
             spoonacularResults: results.map((m) => m.title),
             strategy,
           },

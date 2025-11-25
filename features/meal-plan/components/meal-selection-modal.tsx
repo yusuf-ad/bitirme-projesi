@@ -17,7 +17,6 @@ import {
 } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Image,
   ListRenderItemInfo,
   Platform,
@@ -186,17 +185,56 @@ export const MealSelectionModal = forwardRef<
           </View>
 
           {hasMeals ? (
-            <View style={styles.mealListWrapper}>
-              <FlatList
-                data={meals}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderMealCard}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-                contentContainerStyle={styles.flatListContent}
-                ListFooterComponent={generateFooter}
-              />
+            <View style={styles.gridContainer}>
+              {meals.map((meal, index) => {
+                const isSelected = index === safeSelectedIndex;
+                const imageUrl = getMealImageUrl(meal);
+
+                return (
+                  <Pressable
+                    key={meal.id}
+                    onPress={() => onSelect(index)}
+                    style={({ pressed }) => [
+                      styles.mealCard,
+                      isSelected && styles.mealCardSelected,
+                      pressed && styles.mealCardPressed,
+                    ]}
+                  >
+                    {imageUrl ? (
+                      <Image
+                        source={{ uri: imageUrl }}
+                        style={styles.mealImage}
+                      />
+                    ) : (
+                      <View
+                        style={[styles.mealImage, styles.mealPlaceholder]}
+                      />
+                    )}
+                    <View style={styles.mealInfo}>
+                      <Text numberOfLines={2} style={styles.mealTitle}>
+                        {meal.title}
+                      </Text>
+                      <View style={styles.mealMeta}>
+                        {meal.nutrition?.calories && (
+                          <Text style={styles.metaText}>
+                            {Math.round(meal.nutrition.calories)} cal
+                          </Text>
+                        )}
+                        {meal.readyInMinutes && (
+                          <Text style={styles.metaText}>
+                            {meal.readyInMinutes} min
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                    {isSelected && (
+                      <View style={styles.checkmark}>
+                        <Ionicons name="checkmark" size={16} color="#fff" />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           ) : (
             <View style={styles.emptyState}>
@@ -234,16 +272,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.text.primary,
   },
-  mealListWrapper: {
-    flex: 1,
-  },
-  flatListContent: {
-    paddingHorizontal: 4,
-    paddingBottom: 12,
-    paddingRight: 16,
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "space-between",
   },
   mealCard: {
-    width: 180,
+    width: "48%",
     backgroundColor: "#fff",
     borderRadius: 16,
     overflow: "hidden",
