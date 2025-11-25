@@ -1,3 +1,4 @@
+import { DietNutritionTarget } from "@/features/onboarding/types/onboarding.types";
 import { supabase } from "@/lib/supabase";
 import {
   convertMealTimesFromDB,
@@ -9,7 +10,6 @@ import {
 } from "@/lib/supabase-onboarding";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useState } from "react";
-import { DietNutritionTarget } from "@/features/onboarding/types/onboarding.types";
 
 interface OnboardingContextType {
   // Goals
@@ -375,11 +375,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
               profile.tastePreferences.diet_preferences
             );
           }
-        if (profile.tastePreferences.diet_nutrition_targets) {
-          setDietNutritionTargets(
-            profile.tastePreferences.diet_nutrition_targets
-          );
-        }
+          if (profile.tastePreferences.diet_nutrition_targets) {
+            setDietNutritionTargets(
+              profile.tastePreferences.diet_nutrition_targets
+            );
+          }
           if (profile.tastePreferences.cooking_skill_level) {
             setSelectedCookingSkill(
               profile.tastePreferences.cooking_skill_level

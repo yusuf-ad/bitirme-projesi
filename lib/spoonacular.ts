@@ -655,6 +655,7 @@ export async function parseIngredients(
  * Gets common pantry staples using parseIngredients
  * Returns a list of parsed ingredients for the predefined common staples
  */
+// ...existing code...
 export async function getCommonPantryIngredients(): Promise<
   ParsedIngredient[]
 > {

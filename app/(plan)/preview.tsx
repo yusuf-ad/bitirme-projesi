@@ -1,9 +1,9 @@
 import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
+import { useMealPlanGenerator } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
-import { CUISINES } from "@/lib/constants";
 import { supabase } from "@/lib/supabase";
 import {
   createMealItem,
@@ -19,17 +19,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || "";
-const RAPIDAPI_HOST = "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com";
-const SPOONACULAR_ENDPOINT = `https://${RAPIDAPI_HOST}/recipes/complexSearch`;
-const DEFAULT_CUISINES = [CUISINES.MEDITERRANEAN];
-const EXCLUDED_INGREDIENTS = ["pork", "shellfish"];
-const MEAL_TYPE_INGREDIENTS: Record<MealType, string[]> = {
-  breakfast: ["eggs"],
-  lunch: ["chicken"],
-  dinner: ["fish"],
-};
 
 const normalizeDateParam = (value: unknown): Date => {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -56,155 +45,15 @@ const formatDate = (date: Date): string => {
   )}`;
 };
 
-interface MealFetchResult {
-  results: Meal[];
-  totalResults: number;
-}
-
-const fetchMealsForType = async (
-  mealType: MealType
-): Promise<MealFetchResult> => {
-  if (!RAPIDAPI_KEY) {
-    throw new Error("RapidAPI key is not configured");
-  }
-
-  const params = new URLSearchParams({
-    addRecipeInformation: "true",
-    number: "12",
-    fillNutrients: "true",
-    sort: "random",
-    type: mealType,
-  });
-
-  if (DEFAULT_CUISINES.length > 0) {
-    params.append("cuisine", DEFAULT_CUISINES.join(","));
-  }
-
-  const includedIngredients = MEAL_TYPE_INGREDIENTS[mealType] ?? [];
-  if (includedIngredients.length > 0) {
-    params.append("includeIngredients", includedIngredients.join(","));
-  }
-
-  if (EXCLUDED_INGREDIENTS.length > 0) {
-    params.append("excludeIngredients", EXCLUDED_INGREDIENTS.join(","));
-  }
-
-  const response = await fetch(`${SPOONACULAR_ENDPOINT}?${params.toString()}`, {
-    headers: {
-      "Content-Type": "application/json",
-      "x-rapidapi-key": RAPIDAPI_KEY,
-      "x-rapidapi-host": RAPIDAPI_HOST,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Spoonacular request failed with status ${response.status}`
-    );
-  }
-
-  const data = await response.json();
-
-  const processedResults: Meal[] = (
-    Array.isArray(data.results) ? data.results : []
-  ).map((recipe: any) => {
-    let calories: number | undefined;
-    let carbs: number | undefined;
-    let protein: number | undefined;
-    let fat: number | undefined;
-
-    // Extract nutrition information from nutrients array
-    if (Array.isArray(recipe?.nutrition?.nutrients)) {
-      const nutrients = recipe.nutrition.nutrients;
-
-      const caloriesNutrient = nutrients.find(
-        (n: any) =>
-          typeof n?.name === "string" && n.name.toLowerCase() === "calories"
-      );
-      if (caloriesNutrient?.amount) {
-        calories = caloriesNutrient.amount;
-      }
-
-      const carbsNutrient = nutrients.find(
-        (n: any) =>
-          typeof n?.name === "string" &&
-          n.name.toLowerCase() === "carbohydrates"
-      );
-      if (carbsNutrient?.amount) {
-        carbs = carbsNutrient.amount;
-      }
-
-      const proteinNutrient = nutrients.find(
-        (n: any) =>
-          typeof n?.name === "string" && n.name.toLowerCase() === "protein"
-      );
-      if (proteinNutrient?.amount) {
-        protein = proteinNutrient.amount;
-      }
-
-      const fatNutrient = nutrients.find(
-        (n: any) =>
-          typeof n?.name === "string" && n.name.toLowerCase() === "fat"
-      );
-      if (fatNutrient?.amount) {
-        fat = fatNutrient.amount;
-      }
-    }
-
-    // Fallback to direct nutrition fields
-    if (!calories && typeof recipe?.nutrition?.calories === "number") {
-      calories = recipe.nutrition.calories;
-    }
-    if (!carbs && typeof recipe?.nutrition?.carbs === "number") {
-      carbs = recipe.nutrition.carbs;
-    }
-    if (!protein && typeof recipe?.nutrition?.protein === "number") {
-      protein = recipe.nutrition.protein;
-    }
-    if (!fat && typeof recipe?.nutrition?.fat === "number") {
-      fat = recipe.nutrition.fat;
-    }
-
-    // Final fallback for calories from summary
-    if (!calories && typeof recipe?.summary === "string") {
-      const calorieMatch = recipe.summary.match(/(\d+)\s+calories/i);
-      if (calorieMatch) {
-        calories = parseInt(calorieMatch[1], 10);
-      }
-    }
-
-    return {
-      id: recipe.id,
-      title: recipe.title,
-      readyInMinutes: recipe.readyInMinutes,
-      servings: recipe.servings,
-      imageType: recipe.imageType,
-      image: recipe.image,
-      sourceUrl: recipe.sourceUrl,
-      nutrition: {
-        calories,
-        carbs,
-        protein,
-        fat,
-      },
-    } as Meal;
-  });
-
-  return {
-    results: processedResults,
-    totalResults:
-      typeof data.totalResults === "number"
-        ? data.totalResults
-        : processedResults.length,
-  };
-};
-
 export default function MealPlanPreview() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
+  const { generateSingleMealType } = useMealPlanGenerator({
+    selectedMealTypes: { breakfast: false, lunch: false, dinner: false },
+  });
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [isSaving, setIsSaving] = useState(false);
@@ -262,7 +111,9 @@ export default function MealPlanPreview() {
       setLoadingMealType(activeMealType);
       const mealLabel =
         activeMealType.charAt(0).toUpperCase() + activeMealType.slice(1);
-      const { results, totalResults } = await fetchMealsForType(activeMealType);
+      const { results, totalResults } = await generateSingleMealType(
+        activeMealType
+      );
 
       if (results.length === 0) {
         Alert.alert(
