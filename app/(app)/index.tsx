@@ -45,7 +45,7 @@ export default function MealplanTab() {
     setHasHydratedInitialDate(true);
   }, [params.date, hasHydratedInitialDate]);
 
-  const { data, isLoading, refetch } = useMealPlansQuery(
+  const { data, isLoading, refetch, isRefetching } = useMealPlansQuery(
     session?.user?.id,
     selectedDate
   );
@@ -99,7 +99,7 @@ export default function MealplanTab() {
       bounces={false}
       refreshControl={
         <RefreshControl
-          refreshing={isLoading}
+          refreshing={isRefetching && !isLoading}
           onRefresh={() => refetch()}
           tintColor={Colors.lilac[900]}
         />
