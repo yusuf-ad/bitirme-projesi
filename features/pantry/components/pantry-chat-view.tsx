@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import { RecipeCard } from "@/features/home";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { generateAPIUrl } from "@/lib/utils";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import { useChat } from "@ai-sdk/react";
 import { Feather } from "@expo/vector-icons";
 import { DefaultChatTransport } from "ai";
@@ -93,6 +94,40 @@ export function PantryChatView() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session } = useAuthContext();
+  const onboarding = useOnboarding();
+
+  useEffect(() => {
+    console.log(
+      "Onboarding Values:",
+      JSON.stringify(
+        {
+          goals: onboarding.selectedGoals,
+          body: {
+            gender: onboarding.selectedGender,
+            age: onboarding.age,
+            height: onboarding.height,
+            weight: onboarding.weight,
+          },
+          mealTimes: {
+            breakfast: onboarding.breakfastTime,
+            lunch: onboarding.lunchTime,
+            dinner: onboarding.dinnerTime,
+          },
+          taste: {
+            meals: onboarding.selectedMeals,
+            cuisines: onboarding.selectedCuisines,
+            dislikedCuisines: onboarding.dislikedCuisines,
+            allergies: onboarding.selectedAllergies,
+            diet: onboarding.selectedDietPreferences,
+            nutrition: onboarding.dietNutritionTargets,
+            skill: onboarding.selectedCookingSkill,
+          },
+        },
+        null,
+        2
+      )
+    );
+  }, [onboarding]);
 
   const { messages, error, sendMessage, status, addToolOutput } = useChat({
     transport: new DefaultChatTransport({

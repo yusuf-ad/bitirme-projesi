@@ -1237,25 +1237,31 @@ constants/
 - [x] Spoonacular API integration - yusuf
 - [x] Recipe search and display - yusuf
 
-- [ ] Ingredient management (CRUD operations) - yunus
+- [ ] Ingredient management (CRUD operations) - yusuf
 - [ ] Fix error states - yunus
+- [ ] Recipe detail scroll header (sticky header) - osman
+- [ ] Onboarding veri hatası ve telefon onayı düzeltilmesi - yunus
 
 - [x] Basic meal planner UI - yusuf
 
 ### Phase 3: Meal Planning (Weeks 6-7)
 
-- [ ] Weekly meal planner functionality
-- [ ] Drag-and-drop recipe assignment
+- [ ] Weekly meal planner functionality - yusuf
+- [x] Drag-and-drop recipe assignment - osman
+
 - [x] Nutrition summary calculations
-- [ ] Shopping list generation
-- [ ] Shopping list management
+
+- [ ] Shopping list generation - osman
+- [ ] Shopping list management - osman
+- [ ] Yemek eklenince shopping listeye otomatik ekleme - osman
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
 - [ ] Meal logging system
-- [ ] Nutrition tracking
-- [ ] Goal progress indicators
-- [ ] History view
+
+- [ ] Nutrition tracking - yunus
+- [ ] Goal progress indicators - yunus
+- [ ] History view - yunus
 
 ### Phase 5: Enhancements (Weeks 10-11)
 
@@ -1277,8 +1283,6 @@ constants/
 
 - [ ] Final documentation
 - [ ] Project presentation preparation
-
-evdeki malzemelerde sola sağa kaydırma
 
 ---
 
