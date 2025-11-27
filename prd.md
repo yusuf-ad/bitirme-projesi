@@ -1240,7 +1240,7 @@ constants/
 - [ ] Ingredient management (CRUD operations) - yusuf
 - [ ] Fix error states - yunus
 - [ ] Recipe detail scroll header (sticky header) - osman
-- [ ] Onboarding veri hatası ve telefon onayı düzeltilmesi - yunus
+- [ ] Onboarding veri hatası - yunus
 
 - [x] Basic meal planner UI - yusuf
 
@@ -1251,9 +1251,9 @@ constants/
 
 - [x] Nutrition summary calculations
 
-- [ ] Shopping list generation - osman
-- [ ] Shopping list management - osman
-- [ ] Yemek eklenince shopping listeye otomatik ekleme - osman
+- [ ] Shopping list generation - yusuf
+- [ ] Shopping list management - yusuf
+- [ ] Yemek eklenince shopping listeye otomatik ekleme - yusuf
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
