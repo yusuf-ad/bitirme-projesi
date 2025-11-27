@@ -1,4 +1,4 @@
-import { getThemeColors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import {
   EmptyPantryState,
   PantryCategory,
@@ -220,7 +220,12 @@ export default function PantryTab() {
 
   if (isLoading && items.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: Colors.background.secondary },
+        ]}
+      >
         <PantryScreenHeader
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -234,7 +239,12 @@ export default function PantryTab() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: Colors.background.secondary },
+      ]}
+    >
       <PantryScreenHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}

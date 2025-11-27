@@ -1240,8 +1240,8 @@ constants/
 - [ ] Ingredient management (CRUD operations) - yusuf
 - [ ] Fix error states - yunus
 - [ ] Recipe detail scroll header (sticky header) - osman
-- [ ] Onboarding veri hatası - yunus
-- [ ] spoonaculardaki diet tipleri kullanılacak ve sadece 1 diet tipi seçilme özelliği eklencek.
+- [x] Onboarding veri hatası - yunus
+- [x] spoonaculardaki diet tipleri kullanılacak ve sadece 1 diet tipi seçilme özelliği eklencek. - yunus
 
 - [x] Basic meal planner UI - yusuf
 
