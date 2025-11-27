@@ -16,7 +16,9 @@ import {
   View
 } from "react-native";
 import Animated, {
+  useAnimatedScrollHandler,
   useAnimatedStyle,
+  useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -99,6 +101,14 @@ export default function MealplanTab() {
       return total + (item.fat_per_serving || 0);
     }, 0) ?? 0;
 
+  // Scroll handling for animations
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
   return (
     <Animated.ScrollView
       style={[styles.container, containerAnimation, { paddingTop: top }]}
@@ -108,6 +118,8 @@ export default function MealplanTab() {
         paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
       }}
       bounces={false}
+      onScroll={scrollHandler}
+      scrollEventThrottle={16}
       refreshControl={
         <RefreshControl
           refreshing={isLoading}
@@ -149,7 +161,11 @@ export default function MealplanTab() {
               />
             </View>
 
-            <DailyMealsList items={data!.items} selectedDate={selectedDate} />
+            <DailyMealsList
+              items={data!.items}
+              selectedDate={selectedDate}
+              scrollY={scrollY}
+            />
           </>
         ) : (
           <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
