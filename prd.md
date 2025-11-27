@@ -1241,6 +1241,7 @@ constants/
 - [ ] Fix error states - yunus
 - [ ] Recipe detail scroll header (sticky header) - osman
 - [ ] Onboarding veri hatası - yunus
+- [ ] spoonaculardaki diet tipleri kullanılacak ve sadece 1 diet tipi seçilme özelliği eklencek.
 
 - [x] Basic meal planner UI - yusuf
 

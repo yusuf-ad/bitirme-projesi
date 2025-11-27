@@ -59,6 +59,7 @@ export function CustomTextInput({
             }}
             onChangeText={onChange}
             value={value}
+            placeholderTextColor={Colors.gray[300]}
             {...props}
           />
         )}
