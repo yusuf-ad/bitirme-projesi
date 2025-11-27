@@ -27,6 +27,13 @@ import {
   View,
 } from "react-native";
 
+import Animated, {
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useAnimatedStyle
+} from "react-native-reanimated";
+
 interface EmptyMealSlotProps {
   mealType: string;
   mealTime: string;
@@ -34,6 +41,7 @@ interface EmptyMealSlotProps {
   mealSlot: "breakfast" | "lunch" | "dinner";
   selectedDate: Date;
   onMealAdded?: () => void;
+  scrollY: SharedValue<number>;
 }
 
 type CookingTime = "<15" | "15-29" | "30-60";
@@ -52,6 +60,7 @@ export function EmptyMealSlot({
   mealSlot,
   selectedDate,
   onMealAdded,
+  scrollY,
 }: EmptyMealSlotProps) {
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
@@ -64,6 +73,52 @@ export function EmptyMealSlot({
   const [calorieRange, setCalorieRange] = useState<CalorieRange>("flexible");
   const [aiError, setAiError] = useState<string | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+
+  // Animated styles for collapsible content
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    // Expand as user scrolls down (0 -> 150px scroll)
+    const height = interpolate(
+      scrollY.value,
+      [0, 150],
+      [0, 160], // 0 height at top, 160 height when scrolled
+      Extrapolation.CLAMP
+    );
+
+    const opacity = interpolate(
+      scrollY.value,
+      [50, 150], // Start fading in after 50px scroll
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+
+    const scale = interpolate(
+      scrollY.value,
+      [0, 150],
+      [0.8, 1],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      height,
+      opacity,
+      transform: [{ scale }],
+      overflow: "hidden",
+    };
+  });
+
+  const containerAnimatedStyle = useAnimatedStyle(() => {
+    // Animate container padding/gap when collapsed
+    const paddingBottom = interpolate(
+      scrollY.value,
+      [0, 150],
+      [0, 16],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      paddingBottom,
+    };
+  });
 
   const snapPoints = useMemo(() => ["75%", "90%"], []);
 
@@ -266,46 +321,50 @@ export function EmptyMealSlot({
 
   return (
     <>
-      <Pressable
-        style={({ pressed }) => [
-          styles.container,
-          pressed && styles.containerPressed,
-        ]}
-        onPress={handlePress}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <View style={styles.mealIconContainer}>
-              <Image source={mealIcon} style={styles.mealIcon} />
+      <Animated.View style={containerAnimatedStyle}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.container,
+            pressed && styles.containerPressed,
+          ]}
+          onPress={handlePress}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={styles.mealIconContainer}>
+                <Image source={mealIcon} style={styles.mealIcon} />
+              </View>
+              <View style={styles.mealInfo}>
+                <Text style={styles.mealType}>{mealType}</Text>
+                <Text style={styles.mealTime}>{mealTime}</Text>
+              </View>
             </View>
-            <View style={styles.mealInfo}>
-              <Text style={styles.mealType}>{mealType}</Text>
-              <Text style={styles.mealTime}>{mealTime}</Text>
-            </View>
+
+            <Pressable style={styles.aiButton} onPress={handleOpenAiSheet}>
+              <MaterialIcons
+                name="auto-awesome"
+                size={18}
+                color={Colors.lilac[900]}
+              />
+              <Text style={styles.aiButtonText}>AI</Text>
+            </Pressable>
           </View>
 
-          <Pressable style={styles.aiButton} onPress={handleOpenAiSheet}>
-            <MaterialIcons
-              name="auto-awesome"
-              size={18}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.aiButtonText}>AI</Text>
-          </Pressable>
-        </View>
-
-        {/* Empty State Content */}
-        <View style={styles.emptyContent}>
-          <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIcon}>🍽️</Text>
-          </View>
-          <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
-          <Text style={styles.emptyDescription}>
-            Tap to add a meal from the recipes page
-          </Text>
-        </View>
-      </Pressable>
+          {/* Empty State Content - Animated */}
+          <Animated.View style={contentAnimatedStyle}>
+            <View style={styles.emptyContent}>
+              <View style={styles.emptyIconContainer}>
+                <Text style={styles.emptyIcon}>🍽️</Text>
+              </View>
+              <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
+              <Text style={styles.emptyDescription}>
+                Tap to add a meal from the recipes page
+              </Text>
+            </View>
+          </Animated.View>
+        </Pressable>
+      </Animated.View>
 
       <BottomSheetModal
         ref={aiSheetRef}

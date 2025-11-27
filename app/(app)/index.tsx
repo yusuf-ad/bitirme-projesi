@@ -1,25 +1,33 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { DailyOverview } from "@/features/home";
 import CalendarSection from "@/features/home/components/calendar-section";
 import Header from "@/features/home/components/header";
 import { DailyMealsList, MealPlanEmptyState } from "@/features/meal-plan";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
+import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
   RefreshControl,
-  ScrollView,
   StyleSheet,
-  View,
+  View
 } from "react-native";
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function MealplanTab() {
   const { session } = useAuthContext();
   const { bottom, top } = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const params = useLocalSearchParams<{ date?: string }>();
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const today = new Date();
@@ -27,6 +35,11 @@ export default function MealplanTab() {
     return today;
   });
   const [hasHydratedInitialDate, setHasHydratedInitialDate] = useState(false);
+
+  // Animated container for smooth theme transitions
+  const containerAnimation = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(Colors.background.secondary, { duration: 300 }),
+  }));
 
   useEffect(() => {
     if (hasHydratedInitialDate) {
@@ -88,20 +101,30 @@ export default function MealplanTab() {
       return total + (item.fat_per_serving || 0);
     }, 0) ?? 0;
 
+  // Scroll handling for animations
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: top }]}
+    <Animated.ScrollView
+      style={[styles.container, containerAnimation, { paddingTop: top }]}
       showsVerticalScrollIndicator={false}
       // safe area padding + tabbar height
       contentContainerStyle={{
         paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
       }}
       bounces={false}
+      onScroll={scrollHandler}
+      scrollEventThrottle={16}
       refreshControl={
         <RefreshControl
           refreshing={isRefetching && !isLoading}
           onRefresh={() => refetch()}
-          tintColor={Colors.lilac[900]}
+          tintColor={isDark ? Colors.lilac[400] : Colors.lilac[900]}
         />
       }
     >
@@ -138,13 +161,17 @@ export default function MealplanTab() {
               />
             </View>
 
-            <DailyMealsList items={data!.items} selectedDate={selectedDate} />
+            <DailyMealsList
+              items={data!.items}
+              selectedDate={selectedDate}
+              scrollY={scrollY}
+            />
           </>
         ) : (
           <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
         )}
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
@@ -152,7 +179,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    backgroundColor: Colors.background.secondary,
   },
   section: {
     paddingTop: 8,

@@ -1,12 +1,12 @@
 import { DietNutritionTarget } from "@/features/onboarding/types/onboarding.types";
 import { supabase } from "@/lib/supabase";
 import {
-  convertMealTimesFromDB,
-  getUserOnboardingProfile,
-  updateUserBodyMetrics,
-  updateUserGoals,
-  updateUserMealTimes,
-  updateUserTastePreferences,
+    convertMealTimesFromDB,
+    getUserOnboardingProfile,
+    updateUserBodyMetrics,
+    updateUserGoals,
+    updateUserMealTimes,
+    updateUserTastePreferences,
 } from "@/lib/supabase-onboarding";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useState } from "react";
@@ -125,7 +125,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   // Loading state
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const resetOnboardingData = () => {
+  const resetOnboardingData = async () => {
     setSelectedGoals([]);
     setSelectedGender(undefined);
     setAge(30);
@@ -141,6 +141,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setSelectedDietPreferences([]);
     setDietNutritionTargets({});
     setSelectedCookingSkill("");
+
+    try {
+      await AsyncStorage.multiRemove([
+        "onboarding_goals",
+        "onboarding_body",
+        "onboarding_meals",
+        "onboarding_taste",
+      ]);
+    } catch (error) {
+      console.error("Error clearing onboarding data from storage:", error);
+    }
   };
 
   interface TasteStoragePayload {

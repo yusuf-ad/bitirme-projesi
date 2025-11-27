@@ -1,14 +1,14 @@
 import {
-  OnboardingLayout,
-  OnboardingNavigation,
-  ProgressBar,
+    OnboardingLayout,
+    OnboardingNavigation,
+    ProgressBar,
 } from "@/features/onboarding";
 import {
-  getNextPage,
-  getPageIndex,
-  getPreviousPage,
-  getTotalPages,
-  ONBOARDING_PAGES,
+    getNextPage,
+    getPageIndex,
+    getPreviousPage,
+    getTotalPages,
+    ONBOARDING_PAGES,
 } from "@/features/onboarding/config/pages-config";
 import { BodyAge } from "@/features/onboarding/sections/body/body-age";
 import { BodyCover } from "@/features/onboarding/sections/body/body-cover";
@@ -18,18 +18,18 @@ import { BodyWeight } from "@/features/onboarding/sections/body/body-weight";
 import { GoalsContent } from "@/features/onboarding/sections/goals/goals-content";
 import { GoalsCover } from "@/features/onboarding/sections/goals/goals-cover";
 import {
-  MealTimeBreakfast,
-  MealTimeCover,
-  MealTimeDinner,
-  MealTimeLunch,
+    MealTimeBreakfast,
+    MealTimeCover,
+    MealTimeDinner,
+    MealTimeLunch,
 } from "@/features/onboarding/sections/meal-time";
 import {
-  TasteAllergies,
-  TasteCookingSkills,
-  TasteCover,
-  TasteCuisines,
-  TasteDietPreferences,
-  TasteMeals,
+    TasteAllergies,
+    TasteCookingSkills,
+    TasteCover,
+    TasteCuisines,
+    TasteDietPreferences,
+    TasteMeals,
 } from "@/features/onboarding/sections/taste";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import { router, useLocalSearchParams } from "expo-router";
@@ -480,6 +480,7 @@ export default function OnboardingFlowScreen() {
         isNextDisabled={isNextDisabled() || isSaving}
         showSkipButton={shouldShowSkipButton()}
         onSkip={handleNext}
+        skipButtonText="Skip"
       />
     </OnboardingLayout>
   );

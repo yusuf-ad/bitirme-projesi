@@ -14,18 +14,6 @@ export function OnboardingNavigation({
 }: OnboardingNavigationProps) {
   return (
     <View style={styles.container}>
-      {showSkipButton && onSkip && (
-        <View style={styles.skipContainer}>
-          <CustomButton
-            containerStyle={styles.skipButton}
-            accessibilityLabel={skipButtonText}
-            onPress={onSkip}
-          >
-            <Text style={styles.skipText}>{skipButtonText}</Text>
-          </CustomButton>
-        </View>
-      )}
-
       <View style={styles.buttonContainer}>
         <CustomButton
           containerStyle={styles.backButton}
@@ -34,6 +22,16 @@ export function OnboardingNavigation({
         >
           <Ionicons name="chevron-back" size={28} color="#2D3142" />
         </CustomButton>
+
+        {showSkipButton && onSkip && (
+          <CustomButton
+            containerStyle={styles.skipButton}
+            accessibilityLabel={skipButtonText}
+            onPress={onSkip}
+          >
+            <Text style={styles.skipText}>{skipButtonText}</Text>
+          </CustomButton>
+        )}
 
         <CustomButton
           containerStyle={[
@@ -57,37 +55,11 @@ const styles = StyleSheet.create({
   container: {
     gap: 16,
   },
-  skipContainer: {
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  skipButton: {
-    backgroundColor: "#E8E9EB",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    shadowColor: "transparent",
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  skipText: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#5D6270",
-    textAlign: "center",
-  },
   buttonContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
+    gap: 12,
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 8,
@@ -110,12 +82,35 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: "hidden",
   },
+  skipButton: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  skipText: {
+    fontFamily: "Inter",
+    fontWeight: "600",
+    fontSize: 18,
+    lineHeight: 24,
+    color: "#2D3142",
+    textAlign: "center",
+  },
   nextButton: {
     flex: 1,
     backgroundColor: "#2D3648",
     borderRadius: 16,
     paddingVertical: 20,
-    paddingHorizontal: 32,
+    paddingHorizontal: 16,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
