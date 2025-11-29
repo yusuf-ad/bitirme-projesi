@@ -11,6 +11,7 @@ import {
   TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
+import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
 import { useTheme } from "@/providers/theme-provider";
@@ -27,52 +28,39 @@ export default function PantryTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const insets = useSafeAreaInsets();
 
-  const [items, setItems] = useState<PantryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { refresh } = useLocalSearchParams();
 
   // Bottom sheet for item details
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [selectedItem, setSelectedItem] = useState<PantryItem | null>(null);
 
-  const fetchItems = async () => {
-    try {
-      console.log("Fetching pantry items...");
-      const data = await pantryService.getAllItems();
-      console.log("Fetched items count:", data.length);
-      setItems(data);
-    } catch (error) {
-      console.error("Failed to fetch items:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: items = [], isLoading, refetch } = usePantryQuery();
 
   useFocusEffect(
     useCallback(() => {
       console.log("Pantry screen focused");
-      fetchItems();
-    }, [])
+      refetch();
+    }, [refetch])
   );
 
   useEffect(() => {
     if (refresh) {
       console.log("Refetching due to refresh param:", refresh);
-      fetchItems();
+      refetch();
     }
-  }, [refresh]);
+  }, [refresh, refetch]);
 
   // Filter items based on status
   const pantryStockItems = useMemo(
-    () => items.filter((i) => i.status === "pantry"),
+    () => items.filter((i: PantryItem) => i.status === "pantry"),
     [items]
   );
   const shoppingListCount = items.filter(
-    (i) => i.status === "shopping_list"
+    (i: PantryItem) => i.status === "shopping_list"
   ).length;
 
   // Filter based on search query
-  const filteredPantryItems = pantryStockItems.filter((i) =>
+  const filteredPantryItems = pantryStockItems.filter((i: PantryItem) =>
     i.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -128,7 +116,6 @@ export default function PantryTab() {
 
   const handlePrefill = async () => {
     try {
-      setIsLoading(true);
       const commonIngredients = await getCommonPantryIngredients();
 
       const newItems = commonIngredients.map((ing) => {
@@ -148,12 +135,10 @@ export default function PantryTab() {
       });
 
       await pantryService.addItems(newItems);
-      await fetchItems();
+      refetch();
     } catch (error) {
       console.error("Failed to pre-fill pantry:", error);
       Alert.alert("Error", "Failed to pre-fill pantry. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -164,15 +149,13 @@ export default function PantryTab() {
 
   const handleUpdateItem = async (id: string, updates: Partial<PantryItem>) => {
     try {
-      // Optimistically update local state
-      setItems((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, ...updates } : i))
-      );
       if (selectedItem && selectedItem.id === id) {
         setSelectedItem((prev) => (prev ? { ...prev, ...updates } : null));
       }
       // Call API
       await pantryService.updateItem(id, updates);
+      // Refetch to ensure data consistency
+      refetch();
     } catch (error) {
       console.error("Failed to update item:", error);
       // Revert/Fetch if needed, simplified for now
@@ -181,10 +164,10 @@ export default function PantryTab() {
 
   const handleRemoveItem = async (id: string) => {
     try {
-      // Optimistically update
-      setItems((prev) => prev.filter((i) => i.id !== id));
       bottomSheetRef.current?.dismiss();
       await pantryService.deleteItem(id);
+      // Refetch to ensure data consistency
+      refetch();
     } catch (error) {
       console.error("Failed to remove item:", error);
     }
@@ -204,13 +187,12 @@ export default function PantryTab() {
           style: "destructive",
           onPress: async () => {
             try {
-              // Optimistically clear local state
-              setItems((prev) => prev.filter((i) => i.status !== "pantry"));
               await pantryService.clearPantryItems();
+              refetch(); // Refresh data after clearing
             } catch (error) {
               console.error("Failed to clear pantry:", error);
               Alert.alert("Error", "Failed to clear pantry items");
-              fetchItems(); // Revert on error
+              refetch(); // Revert on error
             }
           },
         },
@@ -277,7 +259,7 @@ export default function PantryTab() {
                 {searchQuery ? (
                   PANTRY_CATEGORIES.map((category) => {
                     const categoryItems = filteredPantryItems.filter(
-                      (i) => i.category === category
+                      (i: PantryItem) => i.category === category
                     );
                     if (categoryItems.length === 0) return null;
                     return (
@@ -298,7 +280,7 @@ export default function PantryTab() {
                     />
                     {PANTRY_CATEGORIES.map((category) => {
                       const categoryItems = filteredPantryItems.filter(
-                        (i) => i.category === category
+                        (i: PantryItem) => i.category === category
                       );
                       if (categoryItems.length === 0) return null;
                       return (

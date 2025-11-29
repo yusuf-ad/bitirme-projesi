@@ -6,13 +6,14 @@ import {
 } from "@/features/meal-plan";
 import type { MealType, MealTypeOption } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { MEAL_TYPES } from "@/lib/constants";
 import { getIngredientInformation } from "@/lib/spoonacular";
 import { searchRecipesComplex } from "@/lib/spoonacular-complex-search";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -39,6 +40,23 @@ export default function SelectMeals() {
     queryFn: () => getUserOnboardingProfile(userId!),
     enabled: !!userId,
   });
+
+  const { data: pantryData, isLoading: isPantryLoading } = usePantryQuery();
+
+  useEffect(() => {
+    if (pantryData) {
+      console.log("=== PANTRY DATA FETCHED ===");
+      console.log("Pantry items count:", pantryData.length);
+
+      // Extract spoonacular names and log as comma-separated string
+      const spoonacularNames = pantryData
+        .map((item) => item.spoonacular_name)
+        .filter((name) => name) // Filter out any empty/null names
+        .join(",");
+
+      console.log("Spoonacular names:", spoonacularNames);
+    }
+  }, [pantryData]);
 
   const [selectedMealTypes, setSelectedMealTypes] = useState<
     Record<MealType, boolean>
@@ -101,28 +119,15 @@ export default function SelectMeals() {
       const excludeIngredientsParam = allergyNames.join(",");
       console.log("Exclude Ingredients:", excludeIngredientsParam);
 
-      // Cooking Skill -> Max Ready Time Logic
-      let maxReadyTimeParam: number | undefined = undefined;
-      const skillLevel = preferences?.cooking_skill_level;
-
-      if (skillLevel === "beginner") {
-        maxReadyTimeParam = 30;
-      } else if (skillLevel === "intermediate") {
-        maxReadyTimeParam = 60;
-      }
-      // "advanced" has no time limit
-
-      // Goals -> Sorting Logic
-      let sortParam = "healthiness"; // Default
-      let sortDirectionParam: "asc" | "desc" = "desc";
-
-      if (goals.includes("gain-weight")) {
-        sortParam = "calories";
-        sortDirectionParam = "desc"; // High calories first
-      } else if (goals.includes("lose-weight")) {
-        sortParam = "calories";
-        sortDirectionParam = "asc"; // Low calories first
-      }
+      // 2. Prepare Pantry Ingredients (Include in recipes)
+      const includeIngredientsParam = pantryData
+        ?.map((item) => item.spoonacular_name)
+        .filter((name) => name)
+        .join(",");
+      console.log(
+        "Include Ingredients (from pantry):",
+        includeIngredientsParam
+      );
 
       // Filter only selected meal types
       const activeTypes = (Object.keys(selectedMealTypes) as MealType[]).filter(
@@ -141,16 +146,15 @@ export default function SelectMeals() {
           // Dynamic Parameters from Onboarding
           cuisine: cuisineParam,
           diet: dietParam,
+          includeIngredients: includeIngredientsParam, // Add pantry ingredients
           excludeIngredients: excludeIngredientsParam,
-          maxReadyTime: maxReadyTimeParam,
-          sort: sortParam,
-          sortDirection: sortDirectionParam,
+          sort: "max-used-ingredients",
 
           // Standard Parameters
           type: apiType,
           number: 3,
           addRecipeNutrition: true,
-          ignorePantry: true, // Assume user needs to buy ingredients
+          ignorePantry: false, // Don't ignore pantry since we're including our own
           fillIngredients: false,
         });
 
@@ -213,6 +217,28 @@ export default function SelectMeals() {
           </Text>
 
           <Button title="Test Fetch Recipes" onPress={fetchRecipes} />
+          <Button
+            title="Log Pantry Data"
+            onPress={() => {
+              console.log("=== MANUAL PANTRY LOG ===");
+              console.log("Pantry items count:", pantryData?.length || 0);
+
+              // Extract spoonacular names and log as comma-separated string
+              const spoonacularNames =
+                pantryData
+                  ?.map((item) => item.spoonacular_name)
+                  .filter((name) => name) // Filter out any empty/null names
+                  .join(",") || "";
+
+              console.log("Spoonacular names:", spoonacularNames);
+
+              // Also log the full data for reference
+              console.log(
+                "Full pantry items:",
+                JSON.stringify(pantryData, null, 2)
+              );
+            }}
+          />
 
           <MealTypeLabels mealTypes={MEAL_TYPE_OPTIONS} />
 
