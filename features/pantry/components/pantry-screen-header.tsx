@@ -161,7 +161,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   clearButton: {
-    backgroundColor: Colors.gray[200],
+    backgroundColor: Colors.gray[100],
+    borderWidth: 1,
+    borderColor: Colors.lilac[300],
   },
   cartButton: {
     backgroundColor: Colors.lilac[900],

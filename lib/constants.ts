@@ -15,6 +15,8 @@ export const CUISINES = {
 
 export const cuisines = Object.values(CUISINES);
 
+export type Cuisine = (typeof CUISINES)[keyof typeof CUISINES];
+
 // Diets
 export const DIETS = {
   GLUTEN_FREE: "glutenfree",
@@ -31,6 +33,8 @@ export const DIETS = {
 } as const;
 
 export const diets = Object.values(DIETS);
+
+export type Diet = (typeof DIETS)[keyof typeof DIETS];
 
 // Meal Types
 export const MEAL_TYPES = {
@@ -49,6 +53,20 @@ export const MEAL_TYPES = {
   SNACK: "snack",
   DRINK: "drink",
 } as const;
+
+export type MealType = (typeof MEAL_TYPES)[keyof typeof MEAL_TYPES];
+
+export const SORT_BY = {
+  RANDOM: "random",
+  POPULARITY: "popularity",
+  HEALTHINESS: "healthiness",
+  TIME: "time",
+  CALORIES: "calories",
+  MAX_USED_INGREDIENTS: "max-used-ingredients",
+  MIN_MISSED_INGREDIENTS: "min-missing-ingredients",
+} as const;
+
+export type SortOption = (typeof SORT_BY)[keyof typeof SORT_BY];
 
 export const meal_types = Object.values(MEAL_TYPES);
 

@@ -1,10 +1,79 @@
 // RapidAPI credentials
-const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || "";
-const RAPIDAPI_HOST = "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com";
+export const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || "";
+export const RAPIDAPI_HOST =
+  "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com";
 
 // RapidAPI Spoonacular endpoints
-const SPOONACULAR_BASE_URL = `https://${RAPIDAPI_HOST}/recipes`;
-const SPOONACULAR_FOOD_BASE_URL = `https://${RAPIDAPI_HOST}/food`;
+export const SPOONACULAR_BASE_URL = `https://${RAPIDAPI_HOST}/recipes`;
+export const SPOONACULAR_FOOD_BASE_URL = `https://${RAPIDAPI_HOST}/food`;
+
+// Rate limiting configuration
+const RATE_LIMIT_DELAY = 1000; // 1 second between requests
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 2000; // 2 seconds initial retry delay
+
+// Track last request time to enforce rate limiting
+let lastRequestTime = 0;
+
+/**
+ * Enforces rate limiting by waiting if necessary
+ */
+async function enforceRateLimit(): Promise<void> {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+
+  if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
+    const waitTime = RATE_LIMIT_DELAY - timeSinceLastRequest;
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+  }
+
+  lastRequestTime = Date.now();
+}
+
+/**
+ * Implements exponential backoff for retries
+ */
+async function exponentialBackoff(attempt: number): Promise<void> {
+  const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+  console.log(`Waiting ${delay}ms before retry (attempt ${attempt + 1})`);
+  await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+/**
+ * Makes a rate-limited API request with retry logic
+ */
+export async function makeRateLimitedRequest(
+  url: string,
+  options: RequestInit,
+  attempt: number = 0
+): Promise<Response> {
+  await enforceRateLimit();
+
+  try {
+    const response = await fetch(url, options);
+
+    logRateLimitHeaders(response);
+
+    // Handle rate limiting (429) and server errors (5xx)
+    if (
+      response.status === 429 ||
+      (response.status >= 500 && response.status < 600)
+    ) {
+      if (attempt < MAX_RETRIES) {
+        await exponentialBackoff(attempt);
+        return makeRateLimitedRequest(url, options, attempt + 1);
+      }
+    }
+
+    return response;
+  } catch (error) {
+    if (attempt < MAX_RETRIES) {
+      await exponentialBackoff(attempt);
+      return makeRateLimitedRequest(url, options, attempt + 1);
+    }
+    throw error;
+  }
+}
 
 // Test constant - API pahalı olduğu için test için 1 olarak ayarlandı
 const TEST_NUMBER_OF_RESULTS = 1;
@@ -47,7 +116,7 @@ const COMMON_PANTRY_STAPLES = [
  * Logs rate limit headers from Spoonacular API response
  * @param response - The fetch response object
  */
-function logRateLimitHeaders(response: Response): void {
+export function logRateLimitHeaders(response: Response): void {
   const rateLimitHeaders = {
     "X-Ratelimit-Classifications-Limit": response.headers.get(
       "X-Ratelimit-Classifications-Limit"
@@ -77,6 +146,7 @@ export interface Recipe {
   image: string;
   summary?: string;
   cuisines?: string[];
+  dishTypes?: string[];
   diets?: string[];
   readyInMinutes?: number;
   servings?: number;
@@ -233,7 +303,7 @@ export async function getRandomRecipes(
       params.append("sortDirection", filters.sortDirection);
     }
 
-    const response = await fetch(
+    const response = await makeRateLimitedRequest(
       `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`,
       {
         headers: {
@@ -242,8 +312,6 @@ export async function getRandomRecipes(
         },
       }
     );
-
-    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -306,7 +374,7 @@ export async function searchRecipes(
       params.append("sortDirection", filters.sortDirection);
     }
 
-    const response = await fetch(
+    const response = await makeRateLimitedRequest(
       `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`,
       {
         headers: {
@@ -315,8 +383,6 @@ export async function searchRecipes(
         },
       }
     );
-
-    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -361,7 +427,7 @@ export async function searchRecipesByIngredients(
       params.append("type", type);
     }
 
-    const response = await fetch(
+    const response = await makeRateLimitedRequest(
       `${SPOONACULAR_BASE_URL}/complexSearch?${params.toString()}`,
       {
         headers: {
@@ -370,8 +436,6 @@ export async function searchRecipesByIngredients(
         },
       }
     );
-
-    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -396,14 +460,12 @@ export async function searchRecipesByIngredients(
 export async function getRecipeDetails(id: number): Promise<Recipe> {
   try {
     const url = `${SPOONACULAR_BASE_URL}/${id}/information?includeNutrition=true`;
-    const response = await fetch(url, {
+    const response = await makeRateLimitedRequest(url, {
       headers: {
         "x-rapidapi-key": RAPIDAPI_KEY,
         "x-rapidapi-host": RAPIDAPI_HOST,
       },
     });
-
-    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -431,7 +493,7 @@ export async function getRecipesInformationBulk(
       includeNutrition: "true",
     });
 
-    const response = await fetch(
+    const response = await makeRateLimitedRequest(
       `${SPOONACULAR_BASE_URL}/informationBulk?${params.toString()}`,
       {
         headers: {
@@ -440,8 +502,6 @@ export async function getRecipesInformationBulk(
         },
       }
     );
-
-    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -513,7 +573,7 @@ export async function searchIngredients(
       params.append("language", filters.language);
     }
 
-    const response = await fetch(
+    const response = await makeRateLimitedRequest(
       `${SPOONACULAR_FOOD_BASE_URL}/ingredients/search?${params.toString()}`,
       {
         headers: {
@@ -522,8 +582,6 @@ export async function searchIngredients(
         },
       }
     );
-
-    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -590,7 +648,7 @@ export async function generateMealPlan(
       params.append("targetCalories", options.targetCalories.toString());
     }
 
-    const response = await fetch(
+    const response = await makeRateLimitedRequest(
       `${SPOONACULAR_BASE_URL}/mealplans/generate?${params.toString()}`,
       {
         headers: {
@@ -599,8 +657,6 @@ export async function generateMealPlan(
         },
       }
     );
-
-    logRateLimitHeaders(response);
 
     if (!response.ok) {
       throw new Error(
@@ -628,17 +684,18 @@ export async function parseIngredients(
     formData.append("ingredientList", ingredientList.join("\n"));
     formData.append("includeNutrition", "false");
 
-    const response = await fetch(`${SPOONACULAR_BASE_URL}/parseIngredients`, {
-      method: "POST",
-      headers: {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": RAPIDAPI_HOST,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData.toString(),
-    });
-
-    logRateLimitHeaders(response);
+    const response = await makeRateLimitedRequest(
+      `${SPOONACULAR_BASE_URL}/parseIngredients`,
+      {
+        method: "POST",
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -683,7 +740,7 @@ export async function findRecipesByIngredients(
       ignorePantry: ignorePantry.toString(),
     });
 
-    const response = await fetch(
+    const response = await makeRateLimitedRequest(
       `${SPOONACULAR_BASE_URL}/findByIngredients?${params.toString()}`,
       {
         method: "GET",
@@ -694,8 +751,6 @@ export async function findRecipesByIngredients(
       }
     );
 
-    logRateLimitHeaders(response);
-
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
     }
@@ -703,6 +758,37 @@ export async function findRecipesByIngredients(
     return await response.json();
   } catch (error) {
     console.error("Error finding recipes by ingredients:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get information about an ingredient
+ * @param id - The ingredient ID
+ * @returns Ingredient information including name
+ */
+export async function getIngredientInformation(
+  id: number
+): Promise<{ name: string }> {
+  try {
+    const response = await makeRateLimitedRequest(
+      `${SPOONACULAR_FOOD_BASE_URL}/ingredients/${id}/information`,
+      {
+        method: "GET",
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching ingredient info for ID ${id}:`, error);
     throw error;
   }
 }

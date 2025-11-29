@@ -1,15 +1,19 @@
 import { Colors } from "@/constants/theme";
 import {
   DateMealRow,
-  MealPlanFooter,
   MealSelectionHeader,
   MealTypeLabels,
-  useMealPlanGenerator,
 } from "@/features/meal-plan";
 import type { MealType, MealTypeOption } from "@/features/meal-plan/types";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { MEAL_TYPES } from "@/lib/constants";
+import { getIngredientInformation } from "@/lib/spoonacular";
+import { searchRecipesComplex } from "@/lib/spoonacular-complex-search";
+import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
+import { useQuery } from "@tanstack/react-query";
+import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MEAL_TYPE_OPTIONS: MealTypeOption[] = [
@@ -18,10 +22,23 @@ const MEAL_TYPE_OPTIONS: MealTypeOption[] = [
   { id: "dinner", label: "Dinner" },
 ];
 
+const SPOONACULAR_TYPE_MAPPING: Record<MealType, string> = {
+  breakfast: MEAL_TYPES.BREAKFAST,
+  lunch: `${MEAL_TYPES.MAIN_COURSE},${MEAL_TYPES.SALAD},${MEAL_TYPES.SOUP}`,
+  dinner: MEAL_TYPES.MAIN_COURSE,
+};
+
 export default function SelectMeals() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
+  const { session } = useAuthContext();
+  const userId = session?.user?.id;
+
+  const { data: onboardingData, isLoading } = useQuery({
+    queryKey: ["onboardingProfile", userId],
+    queryFn: () => getUserOnboardingProfile(userId!),
+    enabled: !!userId,
+  });
 
   const [selectedMealTypes, setSelectedMealTypes] = useState<
     Record<MealType, boolean>
@@ -31,10 +48,6 @@ export default function SelectMeals() {
     dinner: true,
   });
 
-  const { generateMealPlan, isGenerating } = useMealPlanGenerator({
-    selectedMealTypes,
-  });
-
   function toggleMealType(mealType: MealType) {
     setSelectedMealTypes((prev) => ({
       ...prev,
@@ -42,38 +55,138 @@ export default function SelectMeals() {
     }));
   }
 
-  async function handleGenerateMealPlan() {
-    // Validate at least one meal type is selected
-    const hasSelectedMealType = Object.values(selectedMealTypes).some(
-      (isSelected) => isSelected
-    );
-
-    if (!hasSelectedMealType) {
-      Alert.alert(
-        "No meal types selected",
-        "Please select at least one meal type."
-      );
-      return;
-    }
-
+  async function fetchRecipes() {
     try {
-      const mealPlan = await generateMealPlan();
+      if (!onboardingData) {
+        console.warn("Onboarding data is not ready yet.");
+        return;
+      }
 
-      // Navigate to preview with meal plan data
-      router.push({
-        pathname: "/preview",
-        params: {
-          mealPlanData: JSON.stringify(mealPlan),
-          startDate: params.startDate as string,
-          endDate: params.startDate as string, // Same as start date for 1-day plan
-        },
+      console.log("Fetching recipes with user preferences...");
+
+      // 1. Prepare User Preferences
+      const preferences = onboardingData.tastePreferences;
+      const goals = onboardingData.goals?.goal_ids || [];
+
+      // Cuisines
+      const cuisineParam = preferences?.cuisines?.join(",");
+
+      // Diets
+      const dietParam = preferences?.diet_preferences?.join(",");
+
+      // Allergies / Dislikes (Fetch names from IDs)
+      const allergyIds = preferences?.allergies_dislikes || [];
+      const allergyNames: string[] = [];
+
+      if (allergyIds.length > 0) {
+        console.log("Fetching allergy ingredient names...");
+        for (let i = 0; i < allergyIds.length; i++) {
+          try {
+            const id = parseInt(allergyIds[i]);
+            if (!isNaN(id)) {
+              const info = await getIngredientInformation(id);
+              if (info.name) {
+                allergyNames.push(info.name);
+              }
+            }
+          } catch (e) {
+            console.error(
+              `Failed to fetch info for allergy ID ${allergyIds[i]}`,
+              e
+            );
+          }
+        }
+      }
+
+      const excludeIngredientsParam = allergyNames.join(",");
+      console.log("Exclude Ingredients:", excludeIngredientsParam);
+
+      // Cooking Skill -> Max Ready Time Logic
+      let maxReadyTimeParam: number | undefined = undefined;
+      const skillLevel = preferences?.cooking_skill_level;
+
+      if (skillLevel === "beginner") {
+        maxReadyTimeParam = 30;
+      } else if (skillLevel === "intermediate") {
+        maxReadyTimeParam = 60;
+      }
+      // "advanced" has no time limit
+
+      // Goals -> Sorting Logic
+      let sortParam = "healthiness"; // Default
+      let sortDirectionParam: "asc" | "desc" = "desc";
+
+      if (goals.includes("gain-weight")) {
+        sortParam = "calories";
+        sortDirectionParam = "desc"; // High calories first
+      } else if (goals.includes("lose-weight")) {
+        sortParam = "calories";
+        sortDirectionParam = "asc"; // Low calories first
+      }
+
+      // Filter only selected meal types
+      const activeTypes = (Object.keys(selectedMealTypes) as MealType[]).filter(
+        (type) => selectedMealTypes[type]
+      );
+
+      const results = [];
+
+      for (let i = 0; i < activeTypes.length; i++) {
+        const mealType = activeTypes[i];
+        const apiType = SPOONACULAR_TYPE_MAPPING[mealType];
+
+        console.log(`Fetching ${mealType}...`);
+
+        const response = await searchRecipesComplex({
+          // Dynamic Parameters from Onboarding
+          cuisine: cuisineParam,
+          diet: dietParam,
+          excludeIngredients: excludeIngredientsParam,
+          maxReadyTime: maxReadyTimeParam,
+          sort: sortParam,
+          sortDirection: sortDirectionParam,
+
+          // Standard Parameters
+          type: apiType,
+          number: 3,
+          addRecipeNutrition: true,
+          ignorePantry: true, // Assume user needs to buy ingredients
+          fillIngredients: false,
+        });
+
+        results.push({
+          mealType,
+          results: response.results.map((recipe) => {
+            const nutrients = recipe.nutrition?.nutrients || [];
+            const getNutrient = (name: string) =>
+              nutrients.find((n) => n.name === name)?.amount || 0;
+
+            return {
+              id: recipe.id,
+              title: recipe.title,
+              image: recipe.image,
+              readyInMinutes: recipe.readyInMinutes,
+              mealType: mealType,
+              type: recipe.dishTypes,
+              nutrition: {
+                calories: getNutrient("Calories"),
+                protein: getNutrient("Protein"),
+                fat: getNutrient("Fat"),
+                carbs: getNutrient("Carbohydrates"),
+              },
+            };
+          }),
+        });
+      }
+
+      results.forEach((result) => {
+        console.log(
+          `\n=== ${result.mealType.toUpperCase()} RESULTS ===`,
+          JSON.stringify(result.results, null, 2)
+        );
       });
     } catch (error) {
-      console.error("Error generating meal plan:", error);
-      Alert.alert(
-        "Error generating meal plan",
-        "Please try again in a moment."
-      );
+      console.error("Error fetching recipes:", error);
     }
   }
 
@@ -99,6 +212,8 @@ export default function SelectMeals() {
             modifications here.
           </Text>
 
+          <Button title="Test Fetch Recipes" onPress={fetchRecipes} />
+
           <MealTypeLabels mealTypes={MEAL_TYPE_OPTIONS} />
 
           <DateMealRow
@@ -109,11 +224,6 @@ export default function SelectMeals() {
           />
         </View>
       </ScrollView>
-
-      <MealPlanFooter
-        onCreatePress={handleGenerateMealPlan}
-        isGenerating={isGenerating}
-      />
     </View>
   );
 }
