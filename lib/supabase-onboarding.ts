@@ -1,9 +1,9 @@
 import {
-  UserBodyMetrics,
-  UserGoals,
-  UserMealTimes,
-  UserOnboardingProfile,
-  UserTastePreferences,
+    UserBodyMetrics,
+    UserGoals,
+    UserMealTimes,
+    UserOnboardingProfile,
+    UserTastePreferences,
 } from "@/features/onboarding/types/onboarding.types";
 import { supabase } from "./supabase";
 
@@ -272,6 +272,7 @@ export async function createUserOnboardingProfile(
     dinner?: { hour: number; minute: number; period: "AM" | "PM" };
     meals?: string[];
     cuisines?: string[];
+    dislikedCuisines?: string[];
     allergies?: string[];
     diets?: string[];
     cookingSkill?: string;
@@ -295,6 +296,7 @@ export async function createUserOnboardingProfile(
         updateUserTastePreferences(userId, {
           meal_types: profileData.meals || [],
           cuisines: profileData.cuisines || [],
+          cuisine_dislikes: profileData.dislikedCuisines || [],
           allergies_dislikes: profileData.allergies || [],
           diet_preferences: profileData.diets || [],
           cooking_skill_level: profileData.cookingSkill,
