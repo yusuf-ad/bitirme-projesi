@@ -23,7 +23,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const HERO_HEIGHT = 352;
+const HERO_HEIGHT = 312;
 const HEADER_HEIGHT = 56;
 
 interface MealDetailContentProps {
@@ -300,7 +300,7 @@ export function MealDetailContent({
                 : require("@/assets/images/meal-plan-hero.png")
             }
             style={styles.heroImage}
-            contentFit="cover"
+            contentFit="contain"
             transition={200}
             accessibilityLabel={`${meal.title} hero image`}
           />
@@ -546,7 +546,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: HERO_HEIGHT,
     backgroundColor: Colors.gray[100],
-    marginTop: -(HEADER_HEIGHT + 44), // Extend hero under header (44 is approx status bar)
   },
   heroImage: {
     width: "100%",
