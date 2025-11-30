@@ -344,3 +344,8 @@ ALTER TABLE public.user_taste_preferences
 ADD COLUMN IF NOT EXISTS diet_nutrition_targets jsonb DEFAULT '{}'::jsonb;
 
   
+-- ==========================================
+-- Disliked cuisines for taste preferences
+-- ==========================================
+ALTER TABLE public.user_taste_preferences
+ADD COLUMN IF NOT EXISTS cuisine_dislikes TEXT[] DEFAULT '{}';

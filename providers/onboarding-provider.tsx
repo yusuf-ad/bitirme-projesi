@@ -249,15 +249,9 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         diet_preferences: selectedDietPreferences,
         cooking_skill_level: selectedCookingSkill || null,
         diet_nutrition_targets: dietNutritionTargets,
-      };
-      const tasteDataWithDislikes = {
-        ...tasteData,
         cuisine_dislikes: dislikedCuisines,
       };
-      await AsyncStorage.setItem(
-        "onboarding_taste",
-        JSON.stringify(tasteDataWithDislikes)
-      );
+      await AsyncStorage.setItem("onboarding_taste", JSON.stringify(tasteData));
 
       // If user exists, also save to Supabase
       const {
@@ -506,15 +500,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
               : taste.cooking_skill_level,
         };
 
-        const { cuisine_dislikes, ...tasteWithoutDislikes } = mappedTaste;
         const result = await updateUserTastePreferences(
           userId,
-          tasteWithoutDislikes
+          mappedTaste
         );
         if (!result) {
           throw new Error("Failed to save taste preferences");
         }
-        setDislikedCuisines(cuisine_dislikes || []);
+        setDislikedCuisines(mappedTaste.cuisine_dislikes || []);
         setDietNutritionTargets(mappedTaste.diet_nutrition_targets || {});
       }
 

@@ -23,51 +23,75 @@ const cuisineDescriptions: Record<string, { description: string; image: any }> =
   {
     american: {
       description: "Classic comfort food",
-      image: require("@/assets/images/italian-breakfast.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
+      },
     },
     asian: {
       description: "Stir-fry, noodles & spices",
-      image: require("@/assets/images/grilled-chicken.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
+      },
     },
     chinese: {
       description: "Wok-fired & flavorful",
-      image: require("@/assets/images/grilled-chicken.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=800&q=80",
+      },
     },
     french: {
       description: "Elegant & sophisticated",
-      image: require("@/assets/images/spaghetti-carbonara.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
+      },
     },
     greek: {
       description: "Mediterranean classics",
-      image: require("@/assets/images/spaghetti-carbonara.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1539136788836-5699e78bfc75?auto=format&fit=crop&w=800&q=80",
+      },
     },
     indian: {
       description: "Spicy & aromatic",
-      image: require("@/assets/images/grilled-chicken.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=800&q=80",
+      },
     },
     italian: {
       description: "Pasta, risotto, pizza",
-      image: require("@/assets/images/italian-breakfast.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1498579150354-977475b7ea0b?auto=format&fit=crop&w=800&q=80",
+      },
     },
     japanese: {
       description: "Delicate & precise",
-      image: require("@/assets/images/spaghetti-carbonara.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80",
+      },
     },
     mediterranean: {
       description: "Fresh, healthy & colorful",
-      image: require("@/assets/images/spaghetti-carbonara.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+      },
     },
     mexican: {
       description: "Bold & vibrant",
-      image: require("@/assets/images/grilled-chicken.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80",
+      },
     },
     middleeastern: {
       description: "Aromatic & flavorful",
-      image: require("@/assets/images/grilled-chicken.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=800&q=80",
+      },
     },
     thai: {
       description: "Sweet, sour & spicy",
-      image: require("@/assets/images/grilled-chicken.png"),
+      image: {
+        uri: "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=800&q=80",
+      },
     },
   };
 
@@ -104,22 +128,6 @@ export function TasteCuisines({
     setDislikedCuisines(initialDisliked);
   }, [initialDisliked]);
 
-  const updateLikedCuisines = (updater: (current: string[]) => string[]) => {
-    setLikedCuisines((current) => {
-      const next = updater(current);
-      onSelectionChange?.(next);
-      return next;
-    });
-  };
-
-  const updateDislikedCuisines = (updater: (current: string[]) => string[]) => {
-    setDislikedCuisines((current) => {
-      const next = updater(current);
-      onDislikeChange?.(next);
-      return next;
-    });
-  };
-
   const toggleCuisine = (cuisineId: string, like: boolean) => {
     if (like) {
       // Like button pressed
@@ -127,15 +135,20 @@ export function TasteCuisines({
 
       if (isCurrentlyLiked) {
         // Remove from liked
-        updateLikedCuisines((current) =>
-          current.filter((c) => c !== cuisineId)
-        );
+        const newLiked = likedCuisines.filter((c) => c !== cuisineId);
+        setLikedCuisines(newLiked);
+        onSelectionChange?.(newLiked);
       } else {
         // Add to liked and remove from disliked if exists
-        updateLikedCuisines((current) => [...current, cuisineId]);
-        updateDislikedCuisines((current) =>
-          current.filter((c) => c !== cuisineId)
-        );
+        const newLiked = [...likedCuisines, cuisineId];
+        setLikedCuisines(newLiked);
+        onSelectionChange?.(newLiked);
+
+        if (dislikedCuisines.includes(cuisineId)) {
+          const newDisliked = dislikedCuisines.filter((c) => c !== cuisineId);
+          setDislikedCuisines(newDisliked);
+          onDislikeChange?.(newDisliked);
+        }
 
         // Auto scroll to next card
         setTimeout(() => {
@@ -153,15 +166,20 @@ export function TasteCuisines({
 
       if (isCurrentlyDisliked) {
         // Remove from disliked
-        updateDislikedCuisines((current) =>
-          current.filter((c) => c !== cuisineId)
-        );
+        const newDisliked = dislikedCuisines.filter((c) => c !== cuisineId);
+        setDislikedCuisines(newDisliked);
+        onDislikeChange?.(newDisliked);
       } else {
         // Add to disliked and remove from liked if exists
-        updateDislikedCuisines((current) => [...current, cuisineId]);
-        updateLikedCuisines((current) =>
-          current.filter((c) => c !== cuisineId)
-        );
+        const newDisliked = [...dislikedCuisines, cuisineId];
+        setDislikedCuisines(newDisliked);
+        onDislikeChange?.(newDisliked);
+
+        if (likedCuisines.includes(cuisineId)) {
+          const newLiked = likedCuisines.filter((c) => c !== cuisineId);
+          setLikedCuisines(newLiked);
+          onSelectionChange?.(newLiked);
+        }
 
         // Auto scroll to next card
         setTimeout(() => {
