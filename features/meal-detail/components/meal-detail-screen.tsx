@@ -18,9 +18,10 @@ import { MealDetailContent } from "./meal-detail-content";
 
 interface MealDetailScreenProps {
   mealId: number | null;
+  mealSlot?: string;
 }
 
-export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
+export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
   const router = useRouter();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
@@ -76,13 +77,19 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
       macros: macroSnapshot,
     };
 
+    const params: any = {
+      recipe: JSON.stringify(payload),
+    };
+    
+    if (mealSlot) {
+      params.mealSlot = mealSlot;
+    }
+
     router.push({
       pathname: "/(plan)/assign-meal",
-      params: {
-        recipe: JSON.stringify(payload),
-      },
+      params,
     });
-  }, [data, router, macroSnapshot]);
+  }, [data, router, macroSnapshot, mealSlot]);
 
   const renderState = () => {
     if (!canLoadMeal) {
@@ -130,6 +137,7 @@ export function MealDetailScreen({ mealId }: MealDetailScreenProps) {
         onToggleFavorite={handleToggleFavorite}
         onBack={handleBack}
         onPlanMeal={handlePlanMeal}
+        mealSlot={mealSlot}
       />
     );
   };
