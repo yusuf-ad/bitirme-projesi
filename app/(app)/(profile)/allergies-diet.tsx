@@ -1,18 +1,22 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors } from "@/constants/theme";
+import { TasteAllergies } from "@/features/onboarding/sections/taste";
 import {
   resolveAllergiesFast,
   resolveDietPreferences,
   type DisplayAllergy,
   type DisplayDietPreference
 } from "@/lib/allergies-diet-helpers";
+import { supabase } from "@/lib/supabase";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -26,6 +30,8 @@ export default function AllergiesDietScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const [dietItems, setDietItems] = useState<DisplayDietPreference[]>([]);
   const [allergyItems, setAllergyItems] = useState<DisplayAllergy[]>([]);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [tempSelectedAllergies, setTempSelectedAllergies] = useState<string[]>([]);
 
   useEffect(() => {
     onboarding.loadOnboardingData();
@@ -80,6 +86,99 @@ export default function AllergiesDietScreen() {
       </Text>
     </View>
   );
+
+  const handleEditAllergies = () => {
+    setTempSelectedAllergies(onboarding.selectedAllergies);
+    setIsEditModalVisible(true);
+  };
+
+  const handleSaveAllergies = async () => {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("No user logged in");
+        alert("Error: You must be logged in to save allergies");
+        return;
+      }
+
+      console.log("Saving allergies for user:", user.id);
+      console.log("New allergies list:", tempSelectedAllergies);
+
+      // Update local state first
+      onboarding.setSelectedAllergies(tempSelectedAllergies);
+      
+      // Prepare complete taste preferences data
+      const tasteData = {
+        meal_types: onboarding.selectedMeals,
+        cuisines: onboarding.selectedCuisines,
+        allergies_dislikes: tempSelectedAllergies, // NEW allergies list
+        diet_preferences: onboarding.selectedDietPreferences,
+        cooking_skill_level: onboarding.selectedCookingSkill || null,
+        diet_nutrition_targets: onboarding.dietNutritionTargets,
+        cuisine_dislikes: onboarding.dislikedCuisines,
+      };
+
+      // First check if user taste preferences exist
+      const { data: existingPrefs, error: fetchError } = await supabase
+        .from('user_taste_preferences')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error("Error fetching taste preferences:", fetchError);
+        throw fetchError;
+      }
+
+      let result;
+      if (!existingPrefs) {
+        // Create new taste preferences if they don't exist
+        console.log("Creating new user taste preferences");
+        result = await supabase
+          .from('user_taste_preferences')
+          .insert({
+            user_id: user.id,
+            ...tasteData
+          });
+      } else {
+        // Update existing taste preferences
+        console.log("Updating existing user taste preferences");
+        result = await supabase
+          .from('user_taste_preferences')
+          .update(tasteData)
+          .eq('user_id', user.id);
+      }
+
+      if (result.error) {
+        console.error("Supabase error:", result.error);
+        alert(`Database error: ${result.error.message}`);
+        throw result.error;
+      }
+
+      console.log("Successfully saved to Supabase");
+
+      // Also update AsyncStorage for consistency
+      await AsyncStorage.setItem(
+        "onboarding_taste",
+        JSON.stringify(tasteData)
+      );
+
+      console.log("Successfully saved allergies to Supabase:", tempSelectedAllergies);
+      setIsEditModalVisible(false);
+    } catch (error) {
+      console.error("Error saving allergies:", error);
+      alert(`Error saving allergies: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Revert on error
+      setTempSelectedAllergies(onboarding.selectedAllergies);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalVisible(false);
+    setTempSelectedAllergies(onboarding.selectedAllergies);
+  };
 
   return (
     <View style={[styles.container, { paddingTop: top }]}>
@@ -142,12 +241,15 @@ export default function AllergiesDietScreen() {
                   color="#FFFFFF"
                 />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.sectionTitle}>Allergies & Dislikes</Text>
                 <Text style={styles.sectionSubtitle}>
                   {allergyItems.length} item{allergyItems.length !== 1 ? "s" : ""} avoided
                 </Text>
               </View>
+              <Pressable onPress={handleEditAllergies} style={styles.editButton}>
+                <MaterialCommunityIcons name="pencil" size={20} color="#EF4444" />
+              </Pressable>
             </View>
             
             <FlatList
@@ -176,7 +278,7 @@ export default function AllergiesDietScreen() {
             <Text style={styles.emptyStateText}>
               You haven't set any dietary preferences or allergies yet.
             </Text>
-            <Pressable 
+            <Pressable
               style={styles.emptyStateButton}
               onPress={() => router.push("/(onboarding)/flow")}
             >
@@ -184,7 +286,53 @@ export default function AllergiesDietScreen() {
             </Pressable>
           </View>
         )}
+
+        {/* Add Allergies Button (when no allergies but has diets) */}
+        {allergyItems.length === 0 && dietItems.length > 0 && (
+          <Pressable
+            style={styles.addAllergiesButton}
+            onPress={handleEditAllergies}
+          >
+            <View style={styles.addAllergiesIcon}>
+              <MaterialCommunityIcons name="plus" size={24} color="#EF4444" />
+            </View>
+            <Text style={styles.addAllergiesText}>Add Allergies & Dislikes</Text>
+          </Pressable>
+        )}
       </ScrollView>
+
+      {/* Edit Allergies Modal */}
+      <Modal
+        visible={isEditModalVisible}
+        animationType="slide"
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Pressable onPress={handleCloseModal} style={styles.modalCloseButton}>
+              <MaterialCommunityIcons name="close" size={24} color="#000000" />
+            </Pressable>
+            <Text style={styles.modalTitle}>Edit Allergies & Dislikes</Text>
+            <View style={styles.modalHeaderRight} />
+          </View>
+          <View style={styles.modalContent}>
+            <TasteAllergies
+              title="Allergies & Dislikes"
+              description="What products do you dislike or don't eat?"
+              onSelectionChange={setTempSelectedAllergies}
+              initialSelection={tempSelectedAllergies}
+            />
+          </View>
+          <View style={styles.modalFooter}>
+            <Pressable
+              onPress={handleSaveAllergies}
+              style={styles.saveButton}
+            >
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -393,5 +541,101 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Inter",
+  },
+  editButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: "#FEE2E2",
+    marginLeft: 8,
+  },
+  addAllergiesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "#FECACA",
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 16,
+    marginTop: 8,
+  },
+  addAllergiesIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  addAllergiesText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#DC2626",
+    fontFamily: "Inter",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E8E3ED",
+    backgroundColor: "#FFFFFF",
+  },
+  modalCloseButton: {
+    padding: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text.primary,
+    fontFamily: "Inter",
+  },
+  modalHeaderRight: {
+    width: 40,
+  },
+  modalContent: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+  },
+  modalFooter: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 32,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E8E3ED",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  saveButton: {
+    backgroundColor: Colors.lilac[900],
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "700",
+    fontFamily: "Inter",
+    letterSpacing: 0.5,
   },
 });

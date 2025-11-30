@@ -1,5 +1,5 @@
 import { Recipe } from "@/lib/spoonacular";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { RecipeCard } from "./recipe-card";
 
@@ -14,13 +14,25 @@ export function RecipeGrid({
   favoriteIds,
   onToggleFavorite,
 }: RecipeGridProps) {
+  const params = useLocalSearchParams<{ mealSlot?: string }>();
+  const mealSlot = params.mealSlot;
+
   return (
     <View style={styles.gridContainer}>
       {recipes.map((recipe) => (
         <View key={recipe.id} style={styles.gridItem}>
           <RecipeCard
             recipe={recipe}
-            onPress={() => router.push(`/(meal)/${recipe.id}`)}
+            onPress={() => {
+              const navigationParams: any = { id: recipe.id };
+              if (mealSlot) {
+                navigationParams.mealSlot = mealSlot;
+              }
+              router.push({
+                pathname: "/(meal)/[id]",
+                params: navigationParams,
+              });
+            }}
             isFavorite={favoriteIds?.has(recipe.id)}
             onToggleFavorite={
               onToggleFavorite ? () => onToggleFavorite(recipe) : undefined

@@ -137,7 +137,7 @@ export default function AssignMealScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const dateModalRef = useRef<BottomSheetModal>(null);
 
-  const params = useLocalSearchParams<{ recipe?: string }>();
+  const params = useLocalSearchParams<{ recipe?: string; mealSlot?: string }>();
   const payload = useMemo<RecipePlanPayload | null>(() => {
     const rawValue = Array.isArray(params.recipe)
       ? params.recipe[0]
@@ -164,8 +164,13 @@ export default function AssignMealScreen() {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState<Date>(today);
-  const [selectedMealType, setSelectedMealType] =
-    useState<MealSlot>("breakfast");
+  const [selectedMealType, setSelectedMealType] = useState<MealSlot>(() => {
+    const mealSlotParam = params.mealSlot;
+    if (mealSlotParam === "breakfast" || mealSlotParam === "lunch" || mealSlotParam === "dinner") {
+      return mealSlotParam;
+    }
+    return "breakfast";
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   const imageSource = payload?.image ? { uri: payload.image } : null;

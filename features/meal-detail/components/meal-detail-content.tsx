@@ -34,6 +34,7 @@ interface MealDetailContentProps {
   onToggleFavorite?: () => void;
   onBack?: () => void;
   onPlanMeal?: () => void;
+  mealSlot?: string;
 }
 
 const TAB_ITEMS = [
@@ -65,6 +66,7 @@ export function MealDetailContent({
   onToggleFavorite,
   onBack,
   onPlanMeal,
+  mealSlot,
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
   const insets = useSafeAreaInsets();

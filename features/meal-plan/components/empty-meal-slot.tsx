@@ -135,7 +135,10 @@ export function EmptyMealSlot({
 
   const handlePress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push("/(app)/recipes");
+    router.push({
+      pathname: "/(app)/recipes",
+      params: { mealSlot },
+    });
   };
 
   const handleOpenAiSheet = async () => {
