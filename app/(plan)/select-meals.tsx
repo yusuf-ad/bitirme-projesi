@@ -13,7 +13,7 @@ import { searchRecipesComplex } from "@/lib/spoonacular-complex-search";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,28 +35,12 @@ export default function SelectMeals() {
   const { session } = useAuthContext();
   const userId = session?.user?.id;
 
-  const { data: onboardingData, isLoading } = useQuery({
+  const { data: onboardingData } = useQuery({
     queryKey: ["onboardingProfile", userId],
     queryFn: () => getUserOnboardingProfile(userId!),
     enabled: !!userId,
   });
-
-  const { data: pantryData, isLoading: isPantryLoading } = usePantryQuery();
-
-  useEffect(() => {
-    if (pantryData) {
-      console.log("=== PANTRY DATA FETCHED ===");
-      console.log("Pantry items count:", pantryData.length);
-
-      // Extract spoonacular names and log as comma-separated string
-      const spoonacularNames = pantryData
-        .map((item) => item.spoonacular_name)
-        .filter((name) => name) // Filter out any empty/null names
-        .join(",");
-
-      console.log("Spoonacular names:", spoonacularNames);
-    }
-  }, [pantryData]);
+  const { data: pantryData } = usePantryQuery();
 
   const [selectedMealTypes, setSelectedMealTypes] = useState<
     Record<MealType, boolean>
@@ -170,6 +154,7 @@ export default function SelectMeals() {
               title: recipe.title,
               image: recipe.image,
               readyInMinutes: recipe.readyInMinutes,
+              cuisines: recipe.cuisines,
               mealType: mealType,
               type: recipe.dishTypes,
               nutrition: {
