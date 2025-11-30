@@ -12,7 +12,7 @@ import { getIngredientInformation } from "@/lib/spoonacular";
 import { searchRecipesComplex } from "@/lib/spoonacular-complex-search";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -218,6 +218,10 @@ export default function SelectMeals() {
 
           <Button title="Test Fetch Recipes" onPress={fetchRecipes} />
           <Button
+            title="go to preview"
+            onPress={() => router.push("/preview")}
+          />
+          <Button
             title="Log Pantry Data"
             onPress={() => {
               console.log("=== MANUAL PANTRY LOG ===");
@@ -263,7 +267,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingVertical: 28,
+    paddingVertical: 20,
   },
   description: {
     fontSize: 16,

@@ -461,16 +461,17 @@ export default function MealPlanPreview() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
+        <Pressable onPress={() => router.back()}>
           <MaterialIcons
             name="arrow-back"
             size={24}
             color={Colors.text.primary}
-            onPress={() => router.back()}
           />
-        </View>
+        </Pressable>
         <Text style={styles.headerTitle}>Meal plan preview</Text>
-        <View style={styles.headerRight} />
+        <Pressable onPress={() => router.dismissTo("/")}>
+          <Text style={styles.closeButton}>Close</Text>
+        </Pressable>
       </View>
 
       {/* Content */}
@@ -524,21 +525,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  headerLeft: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
+    paddingVertical: 12,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "600",
     color: Colors.text.primary,
-    textAlign: "center",
   },
-  headerRight: {
-    width: 48,
+  closeButton: {
+    fontSize: 16,
+    color: Colors.lilac[600],
+    fontWeight: "500",
   },
   scrollView: {
     flex: 1,
@@ -552,7 +549,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: Colors.text.primary,
-    marginBottom: 12,
+    marginVertical: 12,
   },
   mealItem: {
     flexDirection: "row",
