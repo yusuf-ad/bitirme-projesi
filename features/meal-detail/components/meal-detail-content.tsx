@@ -14,6 +14,17 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const HERO_HEIGHT = 352;
+const HEADER_HEIGHT = 56;
 
 interface MealDetailContentProps {
   meal: Recipe;
@@ -56,6 +67,61 @@ export function MealDetailContent({
   onPlanMeal,
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+
+  // Scroll threshold - when content title reaches header position
+  const SCROLL_THRESHOLD = HERO_HEIGHT - (HEADER_HEIGHT + insets.top);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  // Hero image fade out animation
+  const heroAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, SCROLL_THRESHOLD * 0.6],
+      [1, 0],
+      Extrapolation.CLAMP
+    );
+    return { opacity };
+  });
+
+  // Header background fade in animation (synced with title)
+  const headerBackgroundStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.9, SCROLL_THRESHOLD * 1.1],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    return {
+      opacity,
+    };
+  });
+
+  // Header title slide in animation
+  const headerTitleStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.9, SCROLL_THRESHOLD * 1.1],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    const translateY = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.9, SCROLL_THRESHOLD * 1.1],
+      [10, 0],
+      Extrapolation.CLAMP
+    );
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
 
   const nutrients = useMemo(
     () => meal.nutrition?.nutrients ?? [],
@@ -147,235 +213,268 @@ export function MealDetailContent({
   );
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.lilac[800]}
-          colors={[Colors.lilac[800]]}
-        />
-      }
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.heroWrapper}>
-        <Image
-          source={
-            meal.image
-              ? { uri: meal.image }
-              : require("@/assets/images/meal-plan-hero.png")
-          }
-          style={styles.heroImage}
-          contentFit="cover"
-          transition={200}
-          accessibilityLabel={`${meal.title} hero image`}
+    <View style={styles.container}>
+      {/* Fixed Header */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]}>
+        {/* Header Background (fades in on scroll) */}
+        <Animated.View
+          style={[
+            styles.headerBackground,
+            { height: HEADER_HEIGHT + insets.top },
+            headerBackgroundStyle,
+          ]}
         />
 
-        {/* Back button overlay */}
-        {onBack && (
-          <Pressable
-            onPress={onBack}
-            style={styles.backButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
+        {/* Header Content */}
+        <View style={styles.headerContent}>
+          {/* Back Button */}
+          {onBack && (
+            <Pressable
+              onPress={onBack}
+              style={styles.headerButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
+            >
+              <View style={styles.iconButton}>
+                <Ionicons name="chevron-back" size={24} color="#312A35" />
+              </View>
+            </Pressable>
+          )}
+
+          {/* Header Title (slides in on scroll) */}
+          <Animated.View
+            style={[styles.headerTitleContainer, headerTitleStyle]}
           >
-            <View style={styles.iconButton}>
-              <Ionicons name="chevron-back" size={24} color="#312A35" />
-            </View>
-          </Pressable>
-        )}
-
-        {/* Favorite button overlay */}
-        {onToggleFavorite && (
-          <Pressable
-            onPress={onToggleFavorite}
-            style={styles.favoriteButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel={
-              isFavorited ? "Remove from favorites" : "Add to favorites"
-            }
-            accessibilityRole="button"
-          >
-            <View style={styles.iconButton}>
-              <Ionicons
-                name={isFavorited ? "heart" : "heart-outline"}
-                size={24}
-                color="#F03E3E"
-              />
-            </View>
-          </Pressable>
-        )}
-      </View>
-
-      <View style={styles.sheet}>
-        <Text style={styles.title} accessibilityRole="header">
-          {meal.title}
-        </Text>
-
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <Image
-              source={require("@/assets/icons/clock-icon.svg")}
-              style={styles.metaIcon}
-              contentFit="contain"
-            />
-            <Text style={styles.metaText}>{readyInMinutes}</Text>
-          </View>
-          <Text style={styles.metaSeparator}>|</Text>
-          <View style={styles.metaItem}>
-            <Image
-              source={require("@/assets/icons/flame-icon.svg")}
-              style={styles.metaIcon}
-              contentFit="contain"
-            />
-            <Text style={styles.metaText}>
-              {caloriesAmount !== null ? `${caloriesAmount} kcal` : "—"}
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {meal.title}
             </Text>
-          </View>
-        </View>
+          </Animated.View>
 
-        {/* Cuisine and Diet Tags */}
-        {meal.cuisines?.length || meal.diets?.length ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.tagsScrollView}
-            contentContainerStyle={styles.tagsContainer}
-          >
-            {meal.cuisines?.map((cuisine) => (
-              <View key={cuisine} style={styles.cuisineTag}>
-                <Text style={styles.cuisineTagText}>{cuisine}</Text>
-              </View>
-            ))}
-            {meal.diets?.map((diet) => (
-              <View key={diet} style={styles.dietTag}>
-                <Text style={styles.dietTagText}>{diet}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        ) : null}
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nutritions</Text>
-        </View>
-
-        <View style={styles.macrosWrapper}>
-          {macros.map((macro) => (
-            <View key={macro.label} style={styles.macroColumn}>
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      height: `${Math.min(macro.percentValue, 100)}%`,
-                      backgroundColor: macro.color,
-                    },
-                  ]}
+          {/* Favorite Button */}
+          {onToggleFavorite && (
+            <Pressable
+              onPress={onToggleFavorite}
+              style={styles.headerButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel={
+                isFavorited ? "Remove from favorites" : "Add to favorites"
+              }
+              accessibilityRole="button"
+            >
+              <View style={styles.iconButton}>
+                <Ionicons
+                  name={isFavorited ? "heart" : "heart-outline"}
+                  size={24}
+                  color="#F03E3E"
                 />
               </View>
-              <View style={styles.macroInfo}>
-                <Text style={styles.macroPercent}>{macro.percentLabel}</Text>
-                <View style={styles.macroLabelContainer}>
-                  <Text
-                    style={[styles.macroAmount, { color: macro.color }]}
-                    accessibilityLabel={`${macro.label} amount`}
-                  >
-                    {macro.amountLabel}
-                  </Text>
-                  <Text style={styles.macroLabel}>{macro.label}</Text>
-                </View>
-              </View>
-            </View>
-          ))}
+            </Pressable>
+          )}
         </View>
-
-        <View style={styles.tabsContainer} accessibilityRole="tablist">
-          {TAB_ITEMS.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <Pressable
-                key={tab.key}
-                onPress={() => handleTabPress(tab.key)}
-                style={[
-                  styles.tabButton,
-                  isActive ? styles.tabButtonActive : styles.tabButtonInactive,
-                ]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-              >
-                <Text
-                  style={[styles.tabLabel, isActive && styles.tabLabelActive]}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {activeTab === "ingredients" ? (
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Ingredients</Text>
-            <View style={styles.ingredientsList}>
-              {(meal.extendedIngredients ?? []).map((ingredient, index) => (
-                <View
-                  key={`${ingredient.id}-${ingredient.original}-${index}`}
-                  style={styles.ingredientRow}
-                >
-                  <View style={styles.bulletPoint} />
-                  <Text style={styles.ingredientText}>
-                    {ingredient.original}
-                  </Text>
-                </View>
-              ))}
-              {(!meal.extendedIngredients ||
-                meal.extendedIngredients.length === 0) && (
-                <Text style={styles.emptyText}>
-                  No ingredients were provided for this recipe.
-                </Text>
-              )}
-            </View>
-          </View>
-        ) : (
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Instructions</Text>
-            <View style={styles.instructionsList}>
-              {instructions.length > 0 ? (
-                instructions.map((step) => (
-                  <View key={step.number} style={styles.stepRow}>
-                    <View style={styles.stepBadge}>
-                      <Text style={styles.stepBadgeText}>{step.number}</Text>
-                    </View>
-                    <Text style={styles.stepText}>{step.text}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyText}>
-                  No instructions were provided for this recipe.
-                </Text>
-              )}
-            </View>
-          </View>
-        )}
       </View>
 
-      {!!onPlanMeal && (
-        <View style={styles.planCtaWrapper}>
-          <CustomButton
-            onPress={onPlanMeal}
-            containerStyle={styles.planButton}
-            accessibilityRole="button"
-            accessibilityLabel="Plan this meal"
-          >
-            <Text style={styles.planButtonText}>Plan this meal</Text>
-          </CustomButton>
+      {/* Scrollable Content */}
+      <Animated.ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.lilac[800]}
+            colors={[Colors.lilac[800]]}
+            progressViewOffset={HEADER_HEIGHT + insets.top}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero Image (extends under header, fades out on scroll) */}
+        <Animated.View style={[styles.heroWrapper, heroAnimatedStyle]}>
+          <Image
+            source={
+              meal.image
+                ? { uri: meal.image }
+                : require("@/assets/images/meal-plan-hero.png")
+            }
+            style={styles.heroImage}
+            contentFit="cover"
+            transition={200}
+            accessibilityLabel={`${meal.title} hero image`}
+          />
+        </Animated.View>
+
+        <View style={styles.sheet}>
+          <Text style={styles.title} accessibilityRole="header">
+            {meal.title}
+          </Text>
+
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Image
+                source={require("@/assets/icons/clock-icon.svg")}
+                style={styles.metaIcon}
+                contentFit="contain"
+              />
+              <Text style={styles.metaText}>{readyInMinutes}</Text>
+            </View>
+            <Text style={styles.metaSeparator}>|</Text>
+            <View style={styles.metaItem}>
+              <Image
+                source={require("@/assets/icons/flame-icon.svg")}
+                style={styles.metaIcon}
+                contentFit="contain"
+              />
+              <Text style={styles.metaText}>
+                {caloriesAmount !== null ? `${caloriesAmount} kcal` : "—"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Cuisine and Diet Tags */}
+          {meal.cuisines?.length || meal.diets?.length ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tagsScrollView}
+              contentContainerStyle={styles.tagsContainer}
+            >
+              {meal.cuisines?.map((cuisine) => (
+                <View key={cuisine} style={styles.cuisineTag}>
+                  <Text style={styles.cuisineTagText}>{cuisine}</Text>
+                </View>
+              ))}
+              {meal.diets?.map((diet) => (
+                <View key={diet} style={styles.dietTag}>
+                  <Text style={styles.dietTagText}>{diet}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          ) : null}
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Nutritions</Text>
+          </View>
+
+          <View style={styles.macrosWrapper}>
+            {macros.map((macro) => (
+              <View key={macro.label} style={styles.macroColumn}>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        height: `${Math.min(macro.percentValue, 100)}%`,
+                        backgroundColor: macro.color,
+                      },
+                    ]}
+                  />
+                </View>
+                <View style={styles.macroInfo}>
+                  <Text style={styles.macroPercent}>{macro.percentLabel}</Text>
+                  <View style={styles.macroLabelContainer}>
+                    <Text
+                      style={[styles.macroAmount, { color: macro.color }]}
+                      accessibilityLabel={`${macro.label} amount`}
+                    >
+                      {macro.amountLabel}
+                    </Text>
+                    <Text style={styles.macroLabel}>{macro.label}</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.tabsContainer} accessibilityRole="tablist">
+            {TAB_ITEMS.map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => handleTabPress(tab.key)}
+                  style={[
+                    styles.tabButton,
+                    isActive
+                      ? styles.tabButtonActive
+                      : styles.tabButtonInactive,
+                  ]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Text
+                    style={[styles.tabLabel, isActive && styles.tabLabelActive]}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {activeTab === "ingredients" ? (
+            <View style={styles.contentSection}>
+              <Text style={styles.sectionTitle}>Ingredients</Text>
+              <View style={styles.ingredientsList}>
+                {(meal.extendedIngredients ?? []).map((ingredient, index) => (
+                  <View
+                    key={`${ingredient.id}-${ingredient.original}-${index}`}
+                    style={styles.ingredientRow}
+                  >
+                    <View style={styles.bulletPoint} />
+                    <Text style={styles.ingredientText}>
+                      {ingredient.original}
+                    </Text>
+                  </View>
+                ))}
+                {(!meal.extendedIngredients ||
+                  meal.extendedIngredients.length === 0) && (
+                  <Text style={styles.emptyText}>
+                    No ingredients were provided for this recipe.
+                  </Text>
+                )}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.contentSection}>
+              <Text style={styles.sectionTitle}>Instructions</Text>
+              <View style={styles.instructionsList}>
+                {instructions.length > 0 ? (
+                  instructions.map((step) => (
+                    <View key={step.number} style={styles.stepRow}>
+                      <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>{step.number}</Text>
+                      </View>
+                      <Text style={styles.stepText}>{step.text}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyText}>
+                    No instructions were provided for this recipe.
+                  </Text>
+                )}
+              </View>
+            </View>
+          )}
         </View>
-      )}
-    </ScrollView>
+
+        {!!onPlanMeal && (
+          <View style={styles.planCtaWrapper}>
+            <CustomButton
+              onPress={onPlanMeal}
+              containerStyle={styles.planButton}
+              accessibilityRole="button"
+              accessibilityLabel="Plan this meal"
+            >
+              <Text style={styles.planButtonText}>Plan this meal</Text>
+            </CustomButton>
+          </View>
+        )}
+      </Animated.ScrollView>
+    </View>
   );
 }
 
@@ -387,6 +486,55 @@ function sanitizeText(value: string | undefined) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background.secondary,
+  },
+  fixedHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background.surface,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: HEADER_HEIGHT,
+    paddingHorizontal: 10,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  headerTitle: {
+    fontFamily: "Inter",
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text.primary,
+    textAlign: "center",
+  },
   scroll: {
     flex: 1,
     backgroundColor: Colors.background.secondary,
@@ -396,18 +544,13 @@ const styles = StyleSheet.create({
   },
   heroWrapper: {
     width: "100%",
-    height: 313,
+    height: HERO_HEIGHT,
     backgroundColor: Colors.gray[100],
-    position: "relative",
+    marginTop: -(HEADER_HEIGHT + 44), // Extend hero under header (44 is approx status bar)
   },
   heroImage: {
     width: "100%",
     height: "100%",
-  },
-  backButton: {
-    position: "absolute",
-    top: 50,
-    left: 10,
   },
   iconButton: {
     width: 40,
@@ -416,11 +559,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(242, 240, 244, 0.85)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  favoriteButton: {
-    position: "absolute",
-    top: 50,
-    right: 10,
   },
 
   sheet: {
