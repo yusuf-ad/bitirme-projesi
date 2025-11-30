@@ -1,9 +1,12 @@
 import { Colors } from "@/constants/theme";
+import { resolveAllergiesFast } from "@/lib/allergies-diet-helpers";
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
 import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -36,11 +39,19 @@ interface IngredientModalProps {
   onIngredientsSelect?: (ingredients: Ingredient[]) => void;
 }
 
+interface DisplayAllergy {
+  id: string;
+  name: string;
+  image?: string;
+  imageUrl?: string;
+}
+
 export const IngredientModal = forwardRef<
   BottomSheetModal,
   IngredientModalProps
 >(({ onIngredientsSelect }, ref) => {
   const { top } = useSafeAreaInsets();
+  const onboarding = useOnboarding();
   const [selectedIngredients, setSelectedIngredients] = useState<
     Map<string, Ingredient | (typeof POPULAR_INGREDIENTS)[0]>
   >(new Map());
@@ -48,12 +59,22 @@ export const IngredientModal = forwardRef<
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
+  const [showAllergies, setShowAllergies] = useState<boolean>(false);
+  const [userAllergies, setUserAllergies] = useState<DisplayAllergy[]>([]);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const screenHeight =
     Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
   const INGREDIENT_IMAGE_BASE_URL =
     "https://spoonacular.com/cdn/ingredients_100x100";
+
+  // Load user allergies when modal opens
+  useEffect(() => {
+    if (onboarding.selectedAllergies && onboarding.selectedAllergies.length > 0) {
+      const allergies = resolveAllergiesFast(onboarding.selectedAllergies);
+      setUserAllergies(allergies);
+    }
+  }, [onboarding.selectedAllergies]);
 
   const handleSheetChanges = useCallback((index: number) => {
     console.log("handleSheetChanges", index);
@@ -164,17 +185,28 @@ export const IngredientModal = forwardRef<
     return Array.from(selectedIngredients.values());
   }, [selectedIngredients]);
 
+  // Check if ingredient contains allergens
+  const containsAllergens = useCallback((ingredientName: string): boolean => {
+    if (!userAllergies.length) return false;
+    
+    const lowerIngredientName = ingredientName.toLowerCase();
+    return userAllergies.some(allergy =>
+      lowerIngredientName.includes(allergy.name.toLowerCase())
+    );
+  }, [userAllergies]);
+
   // Display items - either search results or popular
-  // Filter search results to exclude already selected items
+  // Filter search results to exclude already selected items and allergens
   const displayItems = useMemo(() => {
     if (!hasSearched) {
-      return POPULAR_INGREDIENTS;
+      // Filter popular ingredients to exclude allergens
+      return POPULAR_INGREDIENTS.filter(item => !containsAllergens(item.name));
     }
-    // Filter out search results that are already selected
+    // Filter out search results that are already selected or contain allergens
     return searchResults.filter(
-      (item) => !selectedIngredients.has(getIngredientKey(item))
+      (item) => !selectedIngredients.has(getIngredientKey(item)) && !containsAllergens(item.name)
     );
-  }, [hasSearched, searchResults, selectedIngredients, getIngredientKey]);
+  }, [hasSearched, searchResults, selectedIngredients, getIngredientKey, containsAllergens]);
 
   // Unselected items from display
   const unselectedItems = useMemo(() => {
@@ -320,15 +352,43 @@ export const IngredientModal = forwardRef<
         <View>
           <View style={styles.header}>
             <Text style={styles.title}>Search by Ingredients</Text>
+            
+            <View style={styles.headerRightButtons}>
+              {userAllergies.length > 0 && (
+                <Pressable
+                  hitSlop={24}
+                  onPress={() => setShowAllergies(true)}
+                  style={({ pressed }) => [
+                    styles.allergyBadge,
+                    pressed && styles.allergyBadgePressed
+                  ]}
+                >
+                  <View style={styles.allergyIconContainer}>
+                    <MaterialCommunityIcons
+                      name="alert-circle"
+                      size={14}
+                      color="#FFFFFF"
+                    />
+                  </View>
+                  <Text style={styles.allergyCount}>
+                    {userAllergies.length}
+                  </Text>
+                </Pressable>
+              )}
 
-            <Pressable
-              hitSlop={24}
-              onPress={() =>
-                typeof ref !== "function" && ref?.current?.dismiss()
-              }
-            >
-              <AntDesign name="close" size={20} color="black" />
-            </Pressable>
+              <Pressable
+                hitSlop={24}
+                onPress={() =>
+                  typeof ref !== "function" && ref?.current?.dismiss()
+                }
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  pressed && styles.closeButtonPressed
+                ]}
+              >
+                <AntDesign name="close" size={20} color="#6B7280" />
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.searchBar}>
@@ -407,6 +467,66 @@ export const IngredientModal = forwardRef<
           </CustomButton>
         </View>
       </BottomSheetView>
+
+      {/* Allergies Info Modal */}
+      {showAllergies && (
+        <Pressable
+          style={styles.allergiesOverlay}
+          onPress={() => setShowAllergies(false)}
+        >
+          <Pressable style={styles.allergiesContainer} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.allergiesHeader}>
+              <View style={styles.allergiesTitleContainer}>
+                <View style={styles.allergiesIconWrapper}>
+                  <MaterialCommunityIcons name="shield-alert" size={24} color="#EF4444" />
+                </View>
+                <Text style={styles.allergiesTitle}>Allergen Alert</Text>
+              </View>
+              <Pressable
+                onPress={() => setShowAllergies(false)}
+                style={({ pressed }) => [
+                  styles.modalCloseButton,
+                  pressed && styles.modalCloseButtonPressed
+                ]}
+              >
+                <AntDesign name="close" size={20} color="#9CA3AF" />
+              </Pressable>
+            </View>
+            
+            <Text style={styles.allergiesSubtitle}>
+              {userAllergies.length} allergen{userAllergies.length !== 1 ? 's' : ''} filtered from results
+            </Text>
+            
+            <View style={styles.allergiesList}>
+              {userAllergies.map((allergy) => (
+                <View key={allergy.id} style={styles.allergyItem}>
+                  {allergy.imageUrl ? (
+                    <Image
+                      source={{ uri: allergy.imageUrl }}
+                      style={styles.allergyImage}
+                    />
+                  ) : (
+                    <View style={styles.allergyImagePlaceholder}>
+                      <MaterialCommunityIcons name="food-off" size={20} color="#EF4444" />
+                    </View>
+                  )}
+                  <View style={styles.allergyInfo}>
+                    <Text style={styles.allergyName}>{allergy.name}</Text>
+                    <Text style={styles.allergyStatus}>Filtered from search</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            
+            <View style={styles.allergiesFooter}>
+              <MaterialCommunityIcons name="information-outline" size={16} color="#9CA3AF" />
+              <Text style={styles.allergiesNote}>
+                Ingredients containing these allergens are automatically hidden from search results to keep you safe.
+              </Text>
+            </View>
+          </Pressable>
+        </Pressable>
+      )}
     </BottomSheetModal>
   );
 });
@@ -456,6 +576,61 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  headerRightButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  allergyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  allergyBadgePressed: {
+    transform: [{ scale: 0.95 }],
+    opacity: 0.8,
+  },
+  allergyIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+  allergyCount: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#DC2626',
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  closeButtonPressed: {
+    transform: [{ scale: 0.95 }],
+    opacity: 0.8,
   },
   ingredientsContainer: {
     flexDirection: "row",
@@ -545,5 +720,131 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: Colors.gray[400],
+  },
+  allergiesOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  allergiesContainer: {
+    backgroundColor: "white",
+    borderRadius: 24,
+    padding: 24,
+    marginHorizontal: 20,
+    maxHeight: "70%",
+    width: "90%",
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  allergiesHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  allergiesTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  allergiesIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  allergiesTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.text.primary,
+  },
+  allergiesSubtitle: {
+    fontSize: 14,
+    color: Colors.text.tertiary,
+    marginBottom: 20,
+    marginLeft: 52,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseButtonPressed: {
+    backgroundColor: '#F3F4F6',
+  },
+  allergiesList: {
+    marginBottom: 20,
+  },
+  allergyItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#FFF5F5',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+  },
+  allergyImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  allergyImagePlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  allergyInfo: {
+    flex: 1,
+  },
+  allergyName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text.primary,
+    marginBottom: 2,
+  },
+  allergyStatus: {
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '500',
+  },
+  allergiesFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  allergiesNote: {
+    fontSize: 13,
+    color: Colors.text.tertiary,
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 18,
   },
 });
