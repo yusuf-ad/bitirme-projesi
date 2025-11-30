@@ -1,3 +1,4 @@
+import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
@@ -8,7 +9,6 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -73,6 +73,7 @@ export default function ProfileTab() {
   const { top, bottom } = useSafeAreaInsets();
   const { theme, toggleTheme, isDark } = useTheme();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const Colors = getThemeColors(isDark);
 
   // Animation for theme toggle icon
@@ -136,6 +137,13 @@ export default function ProfileTab() {
     onboarding.selectedDietPreferences,
     onboarding.selectedCookingSkill,
   ]);
+
+  // Manage loading state to prevent double loading screen
+  useEffect(() => {
+    if (!onboarding.isLoading && !authLoading) {
+      setIsLoading(false);
+    }
+  }, [onboarding.isLoading, authLoading]);
 
   const loadProfileData = async () => {
     try {
@@ -515,20 +523,8 @@ export default function ProfileTab() {
     </View>
   );
 
-  if (onboarding.isLoading || authLoading) {
-    return (
-      <View
-        style={[
-          styles.loadingContainer,
-          { backgroundColor: Colors.background.secondary },
-        ]}
-      >
-        <ActivityIndicator size="large" color={Colors.lilac[900]} />
-        <Text style={[styles.loadingText, { color: Colors.text.secondary }]}>
-          Loading profile...
-        </Text>
-      </View>
-    );
+  if (isLoading) {
+    return <ProfessionalLoadingScreen />;
   }
 
   return (
@@ -703,15 +699,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
   },
   headerBar: {
     flexDirection: "row",
