@@ -3,6 +3,7 @@ import { TabType } from "@/features/pantry";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface PantryScreenHeaderProps {
@@ -10,17 +11,23 @@ interface PantryScreenHeaderProps {
   onTabChange: (tab: TabType) => void;
   searchQuery: string;
   onSearchChange: (text: string) => void;
+  recipeSearchQuery: string;
+  onRecipeSearchChange: (text: string) => void;
   shoppingListCount?: number;
   ingredientsCount?: number;
   recipeIdeasCount?: number;
   onClear?: () => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function PantryScreenHeader({
   activeTab,
   onTabChange,
   searchQuery,
   onSearchChange,
+  recipeSearchQuery,
+  onRecipeSearchChange,
   shoppingListCount = 0,
   ingredientsCount = 0,
   recipeIdeasCount = 0,
@@ -36,20 +43,24 @@ export function PantryScreenHeader({
         <Text style={styles.title}>My Pantry</Text>
 
         <View style={styles.actionsContainer}>
-          {activeTab === "my-ingredients" &&
-            ingredientsCount > 0 &&
-            onClear && (
-              <Pressable
-                style={[styles.pillButton, styles.clearButton]}
-                onPress={onClear}
-              >
-                <Feather
-                  name="trash-2"
-                  size={16}
-                  color={Colors.semantic.error.main}
-                />
-              </Pressable>
-            )}
+          <View style={styles.clearButtonSpacer}>
+            {activeTab === "my-ingredients" &&
+              ingredientsCount > 0 &&
+              onClear && (
+                <AnimatedPressable
+                  style={[styles.pillButton, styles.clearButton]}
+                  onPress={onClear}
+                  entering={FadeIn.duration(300)}
+                  exiting={FadeOut.duration(300)}
+                >
+                  <Feather
+                    name="trash-2"
+                    size={16}
+                    color={Colors.semantic.error.main}
+                  />
+                </AnimatedPressable>
+              )}
+          </View>
           <Pressable
             style={[styles.pillButton, styles.cartButton]}
             onPress={() => router.push("/shopping-list")}
@@ -61,23 +72,31 @@ export function PantryScreenHeader({
       </View>
 
       {/* Search Bar */}
-      {activeTab === "my-ingredients" && (
-        <View style={styles.searchContainer}>
-          <Feather
-            name="search"
-            size={20}
-            color={Colors.gray[400]}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search ingredients..."
-            placeholderTextColor={Colors.gray[400]}
-            value={searchQuery}
-            onChangeText={onSearchChange}
-          />
-        </View>
-      )}
+      <View style={styles.searchContainer}>
+        <Feather
+          name="search"
+          size={20}
+          color={Colors.gray[400]}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={
+            activeTab === "my-ingredients"
+              ? "Search ingredients..."
+              : "Search recipes..."
+          }
+          placeholderTextColor={Colors.gray[400]}
+          value={
+            activeTab === "my-ingredients" ? searchQuery : recipeSearchQuery
+          }
+          onChangeText={
+            activeTab === "my-ingredients"
+              ? onSearchChange
+              : onRecipeSearchChange
+          }
+        />
+      </View>
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
@@ -158,6 +177,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.secondary,
     paddingHorizontal: 24,
     paddingBottom: 0,
+    minHeight: 160, // Fixed minimum height to prevent layout shift
   },
   topRow: {
     flexDirection: "row",
@@ -168,6 +188,13 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: "row",
     gap: 6,
+    alignItems: "center", // Ensure vertical alignment
+  },
+  clearButtonSpacer: {
+    width: 44, // Fixed width to maintain layout when button is hidden
+    height: 36, // Fixed height to match pill button
+    justifyContent: "center",
+    alignItems: "center",
   },
   pillButton: {
     flexDirection: "row",
@@ -176,6 +203,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 24,
     gap: 8,
+    height: 36, // Fixed height for consistency
   },
   clearButton: {
     backgroundColor: Colors.gray[100],

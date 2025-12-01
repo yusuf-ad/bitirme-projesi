@@ -25,6 +25,7 @@ import { PantryItem } from "../types";
 
 interface RecipeIdeasViewProps {
   pantryItems: PantryItem[];
+  searchQuery: string;
   onTotalResultsChange?: (total: number) => void;
 }
 
@@ -39,6 +40,7 @@ const FILTER_OPTIONS: { label: string; value: MealTypeFilter }[] = [
 
 export function RecipeIdeasView({
   pantryItems,
+  searchQuery,
   onTotalResultsChange,
 }: RecipeIdeasViewProps) {
   const router = useRouter();
@@ -49,6 +51,7 @@ export function RecipeIdeasView({
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<MealTypeFilter>("all");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   // Cache allergy names to avoid refetching
   const allergyNamesCache = useRef<string[]>([]);
@@ -143,6 +146,10 @@ export function RecipeIdeasView({
         options.type = selectedFilter;
       }
 
+      if (debouncedSearchQuery.trim()) {
+        options.query = debouncedSearchQuery.trim();
+      }
+
       const response = await searchRecipesComplex(options);
       setRecipes(response.results);
       onTotalResultsChange?.(response.totalResults);
@@ -157,11 +164,21 @@ export function RecipeIdeasView({
     pantryItems.length,
     onboardingData,
     onTotalResultsChange,
+    debouncedSearchQuery,
   ]);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchRecipes();
-  }, [fetchRecipes]);
+  }, [fetchRecipes, debouncedSearchQuery]);
 
   const handleRecipePress = (recipe: Recipe) => {
     router.push(`/(meal)/${recipe.id}`);

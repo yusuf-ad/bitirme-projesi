@@ -26,6 +26,7 @@ export default function PantryTab() {
   const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
+  const [recipeSearchQuery, setRecipeSearchQuery] = useState("");
   const [recipeIdeasCount, setRecipeIdeasCount] = useState(0);
   const insets = useSafeAreaInsets();
 
@@ -214,6 +215,8 @@ export default function PantryTab() {
           onTabChange={setActiveTab}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          recipeSearchQuery={recipeSearchQuery}
+          onRecipeSearchChange={setRecipeSearchQuery}
           shoppingListCount={0}
         />
         <PantrySkeleton />
@@ -233,6 +236,8 @@ export default function PantryTab() {
         onTabChange={setActiveTab}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        recipeSearchQuery={recipeSearchQuery}
+        onRecipeSearchChange={setRecipeSearchQuery}
         shoppingListCount={shoppingListCount}
         ingredientsCount={pantryStockItems.length}
         recipeIdeasCount={recipeIdeasCount}
@@ -309,6 +314,7 @@ export default function PantryTab() {
       >
         <RecipeIdeasView
           pantryItems={pantryStockItems}
+          searchQuery={recipeSearchQuery}
           onTotalResultsChange={setRecipeIdeasCount}
         />
       </View>
