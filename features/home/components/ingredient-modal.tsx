@@ -3,7 +3,6 @@ import { resolveAllergiesFast } from "@/lib/allergies-diet-helpers";
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
 import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
 import { useOnboarding } from "@/providers/onboarding-provider";
-import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -13,8 +12,8 @@ import {
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   forwardRef,
   useCallback,
@@ -35,27 +34,27 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
   FadeOut,
   FadeOutDown,
-  FadeOutUp,
+  interpolateColor,
   Layout,
+  runOnJS,
   SlideInRight,
   SlideOutRight,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
   ZoomIn,
-  ZoomOut,
-  interpolateColor,
-  withSequence,
-  runOnJS,
+  ZoomOut
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface IngredientModalProps {
   onIngredientsSelect?: (ingredients: Ingredient[]) => void;
@@ -85,9 +84,14 @@ export const IngredientModal = forwardRef<
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [showAllergies, setShowAllergies] = useState<boolean>(false);
   const [userAllergies, setUserAllergies] = useState<DisplayAllergy[]>([]);
+  const [lastAddedKey, setLastAddedKey] = useState<string | null>(null);
+  const [isScrolledDown, setIsScrolledDown] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchFocused = useSharedValue(0);
   const allergyPulse = useSharedValue(1);
+  const scrollY = useSharedValue(0);
+  const selectedSectionHeight = useSharedValue(0);
+  const isCollapsed = useSharedValue(0);
 
   const screenHeight =
     Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
@@ -142,8 +146,10 @@ export const IngredientModal = forwardRef<
         const newMap = new Map(prev);
         if (newMap.has(key)) {
           newMap.delete(key);
+          setLastAddedKey(null);
         } else {
           newMap.set(key, item);
+          setLastAddedKey(key);
         }
         return newMap;
       });
@@ -153,6 +159,7 @@ export const IngredientModal = forwardRef<
 
   const handleClearAll = useCallback(() => {
     setSelectedIngredients(new Map());
+    setLastAddedKey(null);
   }, []);
 
   const performSearch = useCallback(async (query: string) => {
@@ -301,6 +308,28 @@ export const IngredientModal = forwardRef<
     }
   }, [userAllergies.length]);
 
+  // Scroll handler for collapsing selected section
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+      const shouldCollapse = event.contentOffset.y > 80;
+      if (shouldCollapse && isCollapsed.value === 0) {
+        isCollapsed.value = 1;
+        runOnJS(setIsScrolledDown)(true);
+      } else if (!shouldCollapse && isCollapsed.value === 1) {
+        isCollapsed.value = 0;
+        runOnJS(setIsScrolledDown)(false);
+      }
+    },
+  });
+
+  // Animated style for floating selected bar - simple fade in
+  const floatingSelectedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isCollapsed.value, { duration: 200 }),
+    };
+  });
+
   const renderIngredientItem = (
     item: Ingredient | (typeof POPULAR_INGREDIENTS)[0],
     isSelected: boolean,
@@ -373,13 +402,13 @@ export const IngredientModal = forwardRef<
     const ingredientName = getItemName(item);
     const ingredientImage = getItemImage(item);
     const key = getIngredientKey(item);
+    const isNewlyAdded = key === lastAddedKey;
 
     return (
       <Animated.View
         key={`selected-${key}`}
-        entering={SlideInRight.delay(index * 50).springify()}
+        entering={isNewlyAdded ? SlideInRight.springify() : undefined}
         exiting={SlideOutRight.duration(200)}
-        layout={Layout.springify()}
       >
         <Pressable
           style={({ pressed }) => [
@@ -421,16 +450,31 @@ export const IngredientModal = forwardRef<
     );
   };
 
+  const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
   const ScrollContent = ({ children }: { children: React.ReactNode }) =>
     Platform.OS === "ios" ? (
-      <ScrollView
+      <AnimatedScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 28, paddingTop: 12 }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         {children}
-      </ScrollView>
+      </AnimatedScrollView>
     ) : (
-      <BottomSheetScrollView showsVerticalScrollIndicator={false}>
+      <BottomSheetScrollView 
+        showsVerticalScrollIndicator={false}
+        onScroll={(e: { nativeEvent: { contentOffset: { y: number } } }) => {
+          scrollY.value = e.nativeEvent.contentOffset.y;
+          const shouldCollapse = e.nativeEvent.contentOffset.y > 60;
+          if (shouldCollapse !== isScrolledDown) {
+            setIsScrolledDown(shouldCollapse);
+            isCollapsed.value = withSpring(shouldCollapse ? 1 : 0, { damping: 20, stiffness: 300 });
+          }
+        }}
+        scrollEventThrottle={16}
+      >
         <View
           style={{
             height: screenHeight,
@@ -440,6 +484,50 @@ export const IngredientModal = forwardRef<
         </View>
       </BottomSheetScrollView>
     );
+
+  // Render floating selected chips
+  const renderFloatingSelectedChip = (
+    item: Ingredient | (typeof POPULAR_INGREDIENTS)[0],
+    index: number
+  ) => {
+    const ingredientName = getItemName(item);
+    const ingredientImage = getItemImage(item);
+    const key = getIngredientKey(item);
+
+    return (
+      <Animated.View
+        key={`floating-${key}`}
+        entering={FadeIn.delay(index * 50).springify()}
+        exiting={FadeOut.duration(150)}
+        style={styles.floatingChip}
+      >
+        <Pressable
+          style={({ pressed }) => [
+            styles.floatingChipContent,
+            pressed && styles.floatingChipPressed,
+          ]}
+          onPress={() => toggleIngredient(item)}
+        >
+          {ingredientImage ? (
+            <Image
+              source={{
+                uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}`,
+              }}
+              style={styles.floatingChipImage}
+            />
+          ) : (
+            <View style={[styles.floatingChipImage, styles.floatingChipImagePlaceholder]} />
+          )}
+          <Text style={styles.floatingChipText} numberOfLines={1}>
+            {ingredientName}
+          </Text>
+          <View style={styles.floatingChipRemove}>
+            <AntDesign name="close" size={10} color={Colors.lilac[600]} />
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  };
 
   return (
     <BottomSheetModal
@@ -545,7 +633,7 @@ export const IngredientModal = forwardRef<
                   onPress={() => setSearchQuery("")}
                   style={styles.clearSearchButton}
                 >
-                  <AntDesign name="closecircle" size={16} color={Colors.gray[400]} />
+                  <AntDesign name="close-circle" size={16} color={Colors.gray[400]} />
                 </Pressable>
               </Animated.View>
             )}
@@ -561,14 +649,39 @@ export const IngredientModal = forwardRef<
         </View>
 
         {/* Main Content */}
-        <View style={{ flex: 1 }}>
-          <ScrollContent>
-            {/* Selected Items Section */}
-            {selectedItems.length > 0 && (
-              <Animated.View
-                entering={FadeInDown.springify()}
-                layout={Layout.springify()}
+        <View style={{ flex: 1, position: 'relative' }}>
+          {/* Floating Selected Bar - Shows when scrolled down */}
+          {selectedItems.length > 0 && isScrolledDown && (
+            <Animated.View style={[styles.floatingSelectedBar, floatingSelectedStyle]}>
+              <LinearGradient
+                colors={['#FFFFFF', '#FAFAFA']}
+                style={styles.floatingSelectedGradient}
               >
+                <View style={styles.floatingSelectedHeader}>
+                  <View style={styles.floatingSelectedTitleRow}>
+                    <View style={styles.floatingSelectedIcon}>
+                      <Ionicons name="checkmark-circle" size={14} color={Colors.lilac[600]} />
+                    </View>
+                    <Text style={styles.floatingSelectedTitle}>Selected</Text>
+                    <View style={styles.floatingSelectedBadge}>
+                      <Text style={styles.floatingSelectedBadgeText}>{selectedItems.length}</Text>
+                    </View>
+                  </View>
+                </View>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.floatingChipsContainer}
+                >
+                  {selectedItems.map((item, index) => renderFloatingSelectedChip(item, index))}
+                </ScrollView>
+              </LinearGradient>
+            </Animated.View>
+          )}
+          <ScrollContent>
+            {/* Selected Items Section - Original (hides when scrolled) */}
+            {selectedItems.length > 0 && !isScrolledDown && (
+              <View>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionTitleRow}>
                     <View style={styles.sectionIconWrapper}>
@@ -585,7 +698,7 @@ export const IngredientModal = forwardRef<
                     renderSelectedIngredientItem(item, index)
                   )}
                 </View>
-              </Animated.View>
+              </View>
             )}
 
             {/* Main Content Section */}
@@ -991,6 +1104,116 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: '700',
+  },
+
+  // Floating Selected Bar
+  floatingSelectedBar: {
+    position: 'absolute',
+    top: 0,
+    left: -20,
+    right: -20,
+    zIndex: 100,
+    shadowColor: Colors.lilac[900],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  floatingSelectedGradient: {
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: Colors.lilac[200],
+    backgroundColor: '#FFFFFF',
+  },
+  floatingSelectedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  floatingSelectedTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  floatingSelectedIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: Colors.lilac[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingSelectedTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  floatingSelectedBadge: {
+    backgroundColor: Colors.lilac[600],
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  floatingSelectedBadgeText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  floatingChipsContainer: {
+    paddingHorizontal: 16,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  floatingChip: {
+    marginRight: 8,
+  },
+  floatingChipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.lilac[100],
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingLeft: 6,
+    paddingRight: 10,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+    gap: 6,
+  },
+  floatingChipPressed: {
+    backgroundColor: Colors.lilac[200],
+    transform: [{ scale: 0.95 }],
+  },
+  floatingChipImage: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: Colors.lilac[300],
+  },
+  floatingChipImagePlaceholder: {
+    backgroundColor: Colors.gray[100],
+  },
+  floatingChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.lilac[800],
+    maxWidth: 80,
+  },
+  floatingChipRemove: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.lilac[200],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Ingredients Grid
