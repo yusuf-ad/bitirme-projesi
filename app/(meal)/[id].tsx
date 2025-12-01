@@ -3,7 +3,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 
 export default function MealDetailPage() {
-  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const { id, mealSlot } = useLocalSearchParams<{ id?: string | string[]; mealSlot?: string }>();
 
   const mealId = useMemo(() => {
     const normalizedId = Array.isArray(id) ? id[0] : id;
@@ -11,5 +11,5 @@ export default function MealDetailPage() {
     return Number.isFinite(numericId) ? numericId : null;
   }, [id]);
 
-  return <MealDetailScreen mealId={mealId} />;
+  return <MealDetailScreen mealId={mealId} mealSlot={mealSlot} />;
 }

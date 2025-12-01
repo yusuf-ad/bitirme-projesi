@@ -1,10 +1,10 @@
+import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors } from "@/constants/theme";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -33,11 +33,7 @@ export default function MealTimesScreen() {
   };
 
   if (onboarding.isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.lilac[900]} />
-      </View>
-    );
+    return <ProfessionalLoadingScreen />;
   }
 
   return (
@@ -120,12 +116,6 @@ export default function MealTimesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: Colors.background.secondary,
   },
   header: {
