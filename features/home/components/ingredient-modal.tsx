@@ -37,22 +37,17 @@ import {
 import Animated, {
   FadeIn,
   FadeInDown,
+  FadeInRight,
   FadeInUp,
   FadeOut,
   FadeOutDown,
   interpolateColor,
-  Layout,
-  runOnJS,
-  SlideInRight,
-  SlideOutRight,
-  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withSpring,
   withTiming,
   ZoomIn,
-  ZoomOut
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -84,13 +79,11 @@ export const IngredientModal = forwardRef<
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [showAllergies, setShowAllergies] = useState<boolean>(false);
   const [userAllergies, setUserAllergies] = useState<DisplayAllergy[]>([]);
-  const [lastAddedKey, setLastAddedKey] = useState<string | null>(null);
   const [isScrolledDown, setIsScrolledDown] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchFocused = useSharedValue(0);
   const allergyPulse = useSharedValue(1);
   const scrollY = useSharedValue(0);
-  const selectedSectionHeight = useSharedValue(0);
   const isCollapsed = useSharedValue(0);
 
   const screenHeight =
@@ -146,10 +139,8 @@ export const IngredientModal = forwardRef<
         const newMap = new Map(prev);
         if (newMap.has(key)) {
           newMap.delete(key);
-          setLastAddedKey(null);
         } else {
           newMap.set(key, item);
-          setLastAddedKey(key);
         }
         return newMap;
       });
@@ -159,7 +150,9 @@ export const IngredientModal = forwardRef<
 
   const handleClearAll = useCallback(() => {
     setSelectedIngredients(new Map());
-    setLastAddedKey(null);
+    setSearchQuery("");
+    setSearchResults([]);
+    setHasSearched(false);
   }, []);
 
   const performSearch = useCallback(async (query: string) => {
@@ -309,19 +302,14 @@ export const IngredientModal = forwardRef<
   }, [userAllergies.length]);
 
   // Scroll handler for collapsing selected section
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-      const shouldCollapse = event.contentOffset.y > 80;
-      if (shouldCollapse && isCollapsed.value === 0) {
-        isCollapsed.value = 1;
-        runOnJS(setIsScrolledDown)(true);
-      } else if (!shouldCollapse && isCollapsed.value === 1) {
-        isCollapsed.value = 0;
-        runOnJS(setIsScrolledDown)(false);
-      }
-    },
-  });
+  const handleScroll = (offsetY: number) => {
+    scrollY.value = offsetY;
+    const shouldCollapse = offsetY > 80;
+    if (shouldCollapse !== isScrolledDown) {
+      setIsScrolledDown(shouldCollapse);
+      isCollapsed.value = withTiming(shouldCollapse ? 1 : 0, { duration: 200 });
+    }
+  };
 
   // Animated style for floating selected bar - simple fade in
   const floatingSelectedStyle = useAnimatedStyle(() => {
@@ -333,19 +321,14 @@ export const IngredientModal = forwardRef<
   const renderIngredientItem = (
     item: Ingredient | (typeof POPULAR_INGREDIENTS)[0],
     isSelected: boolean,
-    index: number
+    _index: number
   ) => {
     const ingredientName = getItemName(item);
     const ingredientImage = getItemImage(item);
     const key = getIngredientKey(item);
 
     return (
-      <Animated.View
-        key={`ingredient-${key}`}
-        entering={FadeInUp.delay(index * 30).springify()}
-        exiting={FadeOutDown.duration(200)}
-        layout={Layout.springify()}
-      >
+      <View key={`ingredient-${key}`}>
         <Pressable
           style={({ pressed }) => [
             styles.ingredientItem,
@@ -377,21 +360,17 @@ export const IngredientModal = forwardRef<
             {ingredientName}
           </Text>
           {isSelected && (
-            <Animated.View
-              entering={ZoomIn.springify()}
-              exiting={ZoomOut.duration(150)}
-              style={styles.checkmark}
-            >
+            <View style={styles.checkmark}>
               <LinearGradient
                 colors={[Colors.lilac[600], Colors.lilac[800]]}
                 style={styles.checkmarkGradient}
               >
                 <Ionicons name="checkmark" size={14} color="white" />
               </LinearGradient>
-            </Animated.View>
+            </View>
           )}
         </Pressable>
-      </Animated.View>
+      </View>
     );
   };
 
@@ -402,13 +381,11 @@ export const IngredientModal = forwardRef<
     const ingredientName = getItemName(item);
     const ingredientImage = getItemImage(item);
     const key = getIngredientKey(item);
-    const isNewlyAdded = key === lastAddedKey;
 
     return (
-      <Animated.View
+      <Animated.View 
         key={`selected-${key}`}
-        entering={isNewlyAdded ? SlideInRight.springify() : undefined}
-        exiting={SlideOutRight.duration(200)}
+        entering={FadeInRight.delay(index * 40).duration(250)}
       >
         <Pressable
           style={({ pressed }) => [
@@ -434,9 +411,9 @@ export const IngredientModal = forwardRef<
           <Text style={styles.ingredientText} numberOfLines={2}>
             {ingredientName}
           </Text>
-          <Animated.View
-            entering={ZoomIn.springify()}
+          <Animated.View 
             style={styles.checkmark}
+            entering={ZoomIn.delay(index * 30 + 80).duration(150)}
           >
             <LinearGradient
               colors={[Colors.lilac[600], Colors.lilac[800]]}
@@ -450,28 +427,21 @@ export const IngredientModal = forwardRef<
     );
   };
 
-  const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
-
   const ScrollContent = ({ children }: { children: React.ReactNode }) =>
     Platform.OS === "ios" ? (
-      <AnimatedScrollView
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 28, paddingTop: 12 }}
-        onScroll={scrollHandler}
+        onScroll={(e) => handleScroll(e.nativeEvent.contentOffset.y)}
         scrollEventThrottle={16}
       >
         {children}
-      </AnimatedScrollView>
+      </ScrollView>
     ) : (
       <BottomSheetScrollView 
         showsVerticalScrollIndicator={false}
         onScroll={(e: { nativeEvent: { contentOffset: { y: number } } }) => {
-          scrollY.value = e.nativeEvent.contentOffset.y;
-          const shouldCollapse = e.nativeEvent.contentOffset.y > 60;
-          if (shouldCollapse !== isScrolledDown) {
-            setIsScrolledDown(shouldCollapse);
-            isCollapsed.value = withSpring(shouldCollapse ? 1 : 0, { damping: 20, stiffness: 300 });
-          }
+          handleScroll(e.nativeEvent.contentOffset.y);
         }}
         scrollEventThrottle={16}
       >
@@ -488,17 +458,15 @@ export const IngredientModal = forwardRef<
   // Render floating selected chips
   const renderFloatingSelectedChip = (
     item: Ingredient | (typeof POPULAR_INGREDIENTS)[0],
-    index: number
+    _index: number
   ) => {
     const ingredientName = getItemName(item);
     const ingredientImage = getItemImage(item);
     const key = getIngredientKey(item);
 
     return (
-      <Animated.View
+      <View
         key={`floating-${key}`}
-        entering={FadeIn.delay(index * 50).springify()}
-        exiting={FadeOut.duration(150)}
         style={styles.floatingChip}
       >
         <Pressable
@@ -525,7 +493,7 @@ export const IngredientModal = forwardRef<
             <AntDesign name="close" size={10} color={Colors.lilac[600]} />
           </View>
         </Pressable>
-      </Animated.View>
+      </View>
     );
   };
 
@@ -869,10 +837,9 @@ export const IngredientModal = forwardRef<
               style={styles.allergiesList}
               showsVerticalScrollIndicator={false}
             >
-              {userAllergies.map((allergy, index) => (
-                <Animated.View
+              {userAllergies.map((allergy) => (
+                <View
                   key={allergy.id}
-                  entering={FadeInUp.delay(index * 80).springify()}
                   style={styles.allergyItem}
                 >
                   <LinearGradient
@@ -900,7 +867,7 @@ export const IngredientModal = forwardRef<
                       <Ionicons name="shield-checkmark" size={20} color="#10B981" />
                     </View>
                   </LinearGradient>
-                </Animated.View>
+                </View>
               ))}
             </ScrollView>
             
