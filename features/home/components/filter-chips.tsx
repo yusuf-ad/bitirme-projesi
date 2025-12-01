@@ -1,7 +1,12 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
+import { useEffect, useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import Animated, {
+  Layout,
+  SlideInRight,
+} from "react-native-reanimated";
 
 interface FilterChipsProps {
   filters: string[];
@@ -26,6 +31,24 @@ export function FilterChips({
   onTimePress,
   selectedTimeLabel,
 }: FilterChipsProps) {
+  const prevSelectedFiltersRef = useRef<string[]>([]);
+  const newlyAddedFiltersRef = useRef<Set<string>>(new Set());
+
+  // Track newly added filters for animation
+  useEffect(() => {
+    const prevSelected = prevSelectedFiltersRef.current;
+    const newlyAdded = new Set<string>();
+    
+    // Find filters that are now selected but weren't before
+    selectedFilters.forEach(filter => {
+      if (!prevSelected.includes(filter)) {
+        newlyAdded.add(filter);
+      }
+    });
+    
+    newlyAddedFiltersRef.current = newlyAdded;
+    prevSelectedFiltersRef.current = [...selectedFilters];
+  }, [selectedFilters]);
   const getIngredientButtonText = () => {
     if (selectedIngredients.length === 0) return "Ingredients";
     if (selectedIngredients.length === 1) return selectedIngredients[0];
@@ -89,25 +112,35 @@ export function FilterChips({
         </CustomButton>
       )}
 
-      {filters.map((filter) => (
-        <Pressable
-          key={filter}
-          style={[
-            styles.filterChip,
-            selectedFilters.includes(filter) && styles.filterChipActive,
-          ]}
-          onPress={() => onToggleFilter(filter)}
-        >
-          <Text
-            style={[
-              styles.filterChipText,
-              selectedFilters.includes(filter) && styles.filterChipTextActive,
-            ]}
+      {filters.map((filter) => {
+        const isSelected = selectedFilters.includes(filter);
+        const isNewlyAdded = newlyAddedFiltersRef.current.has(filter);
+        
+        return (
+          <Animated.View
+            key={`${filter}-${isNewlyAdded ? 'new' : 'existing'}`}
+            entering={isNewlyAdded ? SlideInRight.springify() : undefined}
+            layout={Layout.springify()}
           >
-            {filter}
-          </Text>
-        </Pressable>
-      ))}
+            <Pressable
+              style={[
+                styles.filterChip,
+                isSelected && styles.filterChipActive,
+              ]}
+              onPress={() => onToggleFilter(filter)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  isSelected && styles.filterChipTextActive,
+                ]}
+              >
+                {filter}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        );
+      })}
     </ScrollView>
   );
 }
