@@ -88,6 +88,7 @@ export function RecipeIdeasView({
       onboardingData?.tastePreferences?.cuisines?.join(",") ?? "",
       onboardingData?.tastePreferences?.diet_preferences?.join(",") ?? "",
       onboardingData?.tastePreferences?.allergies_dislikes?.join(",") ?? "",
+      onboardingData?.tastePreferences?.cuisine_dislikes?.join(",") ?? "",
     ],
     [
       ingredientsString,
@@ -145,15 +146,23 @@ export function RecipeIdeasView({
         }
 
         const excludeIngredientsParam = allergyNames.join(",");
+
+        // Cuisine dislikes
+        const excludeCuisineParam = preferences?.cuisine_dislikes
+          ?.map((c: string) => c.toLowerCase())
+          .join(",");
+
         console.log("User preferences:", {
           cuisines: cuisineParam,
           diets: dietParam,
           excludeIngredients: excludeIngredientsParam,
+          excludeCuisine: excludeCuisineParam,
         });
 
         const options: ComplexSearchOptions = {
           // Dynamic Parameters from Onboarding
           cuisine: cuisineParam,
+          excludeCuisine: excludeCuisineParam,
           diet: dietParam,
           excludeIngredients: excludeIngredientsParam,
 
