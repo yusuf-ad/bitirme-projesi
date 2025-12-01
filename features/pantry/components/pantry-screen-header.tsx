@@ -117,18 +117,35 @@ export function PantryScreenHeader({
           </View>
         </Pressable>
         <Pressable
-          style={[styles.tab, activeTab === "ai-chat" && styles.activeTab]}
-          onPress={() => onTabChange("ai-chat")}
+          style={[styles.tab, activeTab === "recipe-ideas" && styles.activeTab]}
+          onPress={() => onTabChange("recipe-ideas")}
         >
           <View style={styles.tabContent}>
             <Text
               style={[
                 styles.tabText,
-                activeTab === "ai-chat" && styles.activeTabText,
+                activeTab === "recipe-ideas" && styles.activeTabText,
               ]}
             >
-              AI Chat
+              Recipe Ideas
             </Text>
+            {recipeIdeasCount > 0 && (
+              <View
+                style={[
+                  styles.badge,
+                  activeTab === "recipe-ideas" && styles.activeBadge,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    activeTab === "recipe-ideas" && styles.activeBadgeText,
+                  ]}
+                >
+                  {recipeIdeasCount > 99 ? "99+" : recipeIdeasCount}
+                </Text>
+              </View>
+            )}
           </View>
         </Pressable>
       </View>

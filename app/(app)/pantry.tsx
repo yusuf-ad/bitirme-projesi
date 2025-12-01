@@ -3,11 +3,11 @@ import {
   EmptyPantryState,
   PantryCategory,
   PantryCategoryPreview,
-  PantryChatView,
   PantryItem,
   PantryItemDetailSheet,
   PantryScreenHeader,
   PantrySkeleton,
+  RecipeIdeasView,
   TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
@@ -26,6 +26,7 @@ export default function PantryTab() {
   const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
+  const [recipeIdeasCount, setRecipeIdeasCount] = useState(0);
   const insets = useSafeAreaInsets();
 
   const { refresh } = useLocalSearchParams();
@@ -234,6 +235,7 @@ export default function PantryTab() {
         onSearchChange={setSearchQuery}
         shoppingListCount={shoppingListCount}
         ingredientsCount={pantryStockItems.length}
+        recipeIdeasCount={recipeIdeasCount}
         onClear={handleClearAll}
       />
 
@@ -300,9 +302,15 @@ export default function PantryTab() {
         </ScrollView>
       </View>
       <View
-        style={{ flex: 1, display: activeTab === "ai-chat" ? "flex" : "none" }}
+        style={{
+          flex: 1,
+          display: activeTab === "recipe-ideas" ? "flex" : "none",
+        }}
       >
-        <PantryChatView />
+        <RecipeIdeasView
+          pantryItems={pantryStockItems}
+          onTotalResultsChange={setRecipeIdeasCount}
+        />
       </View>
 
       <PantryItemDetailSheet
