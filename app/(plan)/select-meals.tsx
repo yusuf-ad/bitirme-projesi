@@ -136,7 +136,7 @@ export default function SelectMeals() {
 
           // Standard Parameters
           type: apiType,
-          number: 3,
+          number: 1,
           addRecipeNutrition: true,
           ignorePantry: false, // Don't ignore pantry since we're including our own
           fillIngredients: false,
@@ -154,6 +154,7 @@ export default function SelectMeals() {
               title: recipe.title,
               image: recipe.image,
               readyInMinutes: recipe.readyInMinutes,
+              totalResults: response.totalResults,
               cuisines: recipe.cuisines,
               mealType: mealType,
               type: recipe.dishTypes,

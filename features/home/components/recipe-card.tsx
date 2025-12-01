@@ -97,9 +97,7 @@ export function RecipeCard({
               <Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={20}
-                color={
-                  isFavorite ? Colors.lilac[600] : Colors.background.surface
-                }
+                color={isFavorite ? "#F03E3E" : Colors.background.surface}
               />
             </Pressable>
           </View>
