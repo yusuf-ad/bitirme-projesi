@@ -3,6 +3,10 @@ import { useAuthContext } from "@/hooks/use-auth-context";
 import AuthProvider from "@/providers/auth-provider";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
 import { ThemeProvider, useTheme } from "@/providers/theme-provider";
+import {
+  AttachMenuOverlay,
+  AttachMenuProvider,
+} from "@/shared/components/attach-menu";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -50,12 +54,15 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthProvider>
           <OnboardingProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <BottomSheetModalProvider>
-                <SplashScreenController />
-                <RootNavigator />
-              </BottomSheetModalProvider>
-            </GestureHandlerRootView>
+            <AttachMenuProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <BottomSheetModalProvider>
+                  <SplashScreenController />
+                  <RootNavigator />
+                  <AttachMenuOverlay />
+                </BottomSheetModalProvider>
+              </GestureHandlerRootView>
+            </AttachMenuProvider>
           </OnboardingProvider>
         </AuthProvider>
       </ThemeProvider>

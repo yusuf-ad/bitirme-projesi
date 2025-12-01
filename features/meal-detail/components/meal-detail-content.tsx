@@ -23,7 +23,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const HERO_HEIGHT = 352;
+const HERO_HEIGHT = 312;
 const HEADER_HEIGHT = 56;
 
 interface MealDetailContentProps {
@@ -231,9 +231,9 @@ export function MealDetailContent({
         <View style={styles.headerContent}>
           {/* Back Button */}
           {onBack && (
-            <Pressable
+            <CustomButton
               onPress={onBack}
-              style={styles.headerButton}
+              containerStyle={styles.headerButton}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityLabel="Go back"
               accessibilityRole="button"
@@ -241,7 +241,7 @@ export function MealDetailContent({
               <View style={styles.iconButton}>
                 <Ionicons name="chevron-back" size={24} color="#312A35" />
               </View>
-            </Pressable>
+            </CustomButton>
           )}
 
           {/* Header Title (slides in on scroll) */}
@@ -255,9 +255,9 @@ export function MealDetailContent({
 
           {/* Favorite Button */}
           {onToggleFavorite && (
-            <Pressable
+            <CustomButton
               onPress={onToggleFavorite}
-              style={styles.headerButton}
+              containerStyle={styles.headerButton}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityLabel={
                 isFavorited ? "Remove from favorites" : "Add to favorites"
@@ -271,7 +271,7 @@ export function MealDetailContent({
                   color="#F03E3E"
                 />
               </View>
-            </Pressable>
+            </CustomButton>
           )}
         </View>
       </View>
@@ -302,7 +302,7 @@ export function MealDetailContent({
                 : require("@/assets/images/meal-plan-hero.png")
             }
             style={styles.heroImage}
-            contentFit="cover"
+            contentFit="fill"
             transition={200}
             accessibilityLabel={`${meal.title} hero image`}
           />
@@ -498,6 +498,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+
+    elevation: 3,
   },
   headerBackground: {
     position: "absolute",
@@ -548,7 +558,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: HERO_HEIGHT,
     backgroundColor: Colors.gray[100],
-    marginTop: -(HEADER_HEIGHT + 44), // Extend hero under header (44 is approx status bar)
   },
   heroImage: {
     width: "100%",

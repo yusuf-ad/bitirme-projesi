@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useAttachMenu } from "./attach-menu";
 import { SecondaryActionButton } from "./secondary-action-button";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -22,15 +23,24 @@ interface FabAction {
 export function FabButton({ currentRouteName }: FabButtonProps) {
   const router = useRouter();
   const isExpanded = useSharedValue(false);
+  const { toggleMenu, isOpen } = useAttachMenu();
 
   const handleMainButtonPress = () => {
+    // For pantry, use the attach menu
+    if (currentRouteName === "pantry") {
+      toggleMenu();
+      return;
+    }
     isExpanded.value = !isExpanded.value;
   };
 
   const ANIMATION_DURATION = 300; // Animation duration in ms
 
   const plusIconStyle = useAnimatedStyle(() => {
-    const rotateValue = isExpanded.value ? "45deg" : "0deg";
+    // For pantry, sync rotation with attach menu state
+    const shouldRotate =
+      currentRouteName === "pantry" ? isOpen : isExpanded.value;
+    const rotateValue = shouldRotate ? "45deg" : "0deg";
 
     return {
       transform: [
@@ -43,19 +53,8 @@ export function FabButton({ currentRouteName }: FabButtonProps) {
   const getActions = (): FabAction[] => {
     switch (currentRouteName) {
       case "pantry":
-        return [
-          {
-            iconName: "camera",
-            onPress: () => {
-              // Close FAB first, then navigate
-              isExpanded.value = false;
-              // Wait for animation to complete before navigation
-              setTimeout(() => {
-                router.push("/(add)/camera");
-              }, ANIMATION_DURATION);
-            },
-          },
-        ];
+        // Pantry now uses AttachMenu, so no secondary actions needed
+        return [];
       case "recipes":
         return [
           {
