@@ -9,10 +9,11 @@ import {
   searchRecipesComplex,
 } from "@/lib/spoonacular-complex-search";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Pressable,
   ScrollView,
@@ -31,9 +32,15 @@ interface RecipeIdeasViewProps {
 
 type MealTypeFilter = "all" | string;
 
+const SPOONACULAR_TYPE_MAPPING: Record<string, string> = {
+  breakfast: MEAL_TYPES.BREAKFAST,
+  lunch: `${MEAL_TYPES.MAIN_COURSE},${MEAL_TYPES.SALAD},${MEAL_TYPES.SOUP}`,
+  dinner: MEAL_TYPES.MAIN_COURSE,
+};
+
 const FILTER_OPTIONS: { label: string; value: MealTypeFilter }[] = [
   { label: "All", value: "all" },
-  { label: "Breakfast", value: MEAL_TYPES.BREAKFAST },
+  { label: "Breakfast", value: "breakfast" },
   { label: "Lunch", value: "lunch" },
   { label: "Dinner", value: "dinner" },
 ];
@@ -48,10 +55,9 @@ export function RecipeIdeasView({
   const { session } = useAuthContext();
   const userId = session?.user?.id;
 
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<MealTypeFilter>("all");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const PAGE_SIZE = 20;
 
   // Cache allergy names to avoid refetching
   const allergyNamesCache = useRef<string[]>([]);
@@ -72,100 +78,151 @@ export function RecipeIdeasView({
       .join(",");
   }, [pantryItems]);
 
-  const fetchRecipes = useCallback(async () => {
-    if (pantryItems.length === 0) return;
+  // Create stable query key
+  const queryKey = useMemo(
+    () => [
+      "recipeIdeas",
+      ingredientsString,
+      selectedFilter,
+      debouncedSearchQuery,
+      onboardingData?.tastePreferences?.cuisines?.join(",") ?? "",
+      onboardingData?.tastePreferences?.diet_preferences?.join(",") ?? "",
+      onboardingData?.tastePreferences?.allergies_dislikes?.join(",") ?? "",
+    ],
+    [
+      ingredientsString,
+      selectedFilter,
+      debouncedSearchQuery,
+      onboardingData?.tastePreferences,
+    ]
+  );
 
-    setIsLoading(true);
-    try {
-      // Prepare user preferences from onboarding data
-      const preferences = onboardingData?.tastePreferences;
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
+    useInfiniteQuery({
+      queryKey,
+      queryFn: async ({ pageParam = 0 }) => {
+        // Prepare user preferences from onboarding data
+        const preferences = onboardingData?.tastePreferences;
 
-      // Cuisines
-      const cuisineParam = preferences?.cuisines?.join(",");
+        // Cuisines
+        const cuisineParam = preferences?.cuisines?.join(",");
 
-      // Diets
-      const dietParam = preferences?.diet_preferences?.join(",");
+        // Diets
+        const dietParam = preferences?.diet_preferences?.join(",");
 
-      // Allergies / Dislikes (Fetch names from IDs)
-      const allergyIds = preferences?.allergies_dislikes || [];
-      let allergyNames: string[] = [];
+        // Allergies / Dislikes (Fetch names from IDs)
+        const allergyIds = preferences?.allergies_dislikes || [];
+        let allergyNames: string[] = [];
 
-      // Check if allergy IDs changed, if not use cached names
-      const allergyIdsChanged =
-        JSON.stringify(allergyIds) !== JSON.stringify(lastAllergyIds.current);
+        // Check if allergy IDs changed, if not use cached names
+        const allergyIdsChanged =
+          JSON.stringify(allergyIds) !== JSON.stringify(lastAllergyIds.current);
 
-      if (allergyIds.length > 0 && allergyIdsChanged) {
-        console.log("Fetching allergy ingredient names...");
-        for (let i = 0; i < allergyIds.length; i++) {
-          try {
-            const id = parseInt(allergyIds[i]);
-            if (!isNaN(id)) {
-              const info = await getIngredientInformation(id);
-              if (info.name) {
-                allergyNames.push(info.name);
+        if (allergyIds.length > 0 && allergyIdsChanged) {
+          console.log("Fetching allergy ingredient names...");
+          for (let i = 0; i < allergyIds.length; i++) {
+            try {
+              const id = parseInt(allergyIds[i]);
+              if (!isNaN(id)) {
+                const info = await getIngredientInformation(id);
+                if (info.name) {
+                  allergyNames.push(info.name);
+                }
               }
+            } catch (e) {
+              console.error(
+                `Failed to fetch info for allergy ID ${allergyIds[i]}`,
+                e
+              );
             }
-          } catch (e) {
-            console.error(
-              `Failed to fetch info for allergy ID ${allergyIds[i]}`,
-              e
-            );
           }
+          // Cache the results
+          allergyNamesCache.current = allergyNames;
+          lastAllergyIds.current = allergyIds;
+        } else if (allergyIds.length > 0) {
+          // Use cached names
+          allergyNames = allergyNamesCache.current;
         }
-        // Cache the results
-        allergyNamesCache.current = allergyNames;
-        lastAllergyIds.current = allergyIds;
-      } else if (allergyIds.length > 0) {
-        // Use cached names
-        allergyNames = allergyNamesCache.current;
-      }
 
-      const excludeIngredientsParam = allergyNames.join(",");
-      console.log("User preferences:", {
-        cuisines: cuisineParam,
-        diets: dietParam,
-        excludeIngredients: excludeIngredientsParam,
-      });
+        const excludeIngredientsParam = allergyNames.join(",");
+        console.log("User preferences:", {
+          cuisines: cuisineParam,
+          diets: dietParam,
+          excludeIngredients: excludeIngredientsParam,
+        });
 
-      const options: ComplexSearchOptions = {
-        // Dynamic Parameters from Onboarding
-        cuisine: cuisineParam,
-        diet: dietParam,
-        excludeIngredients: excludeIngredientsParam,
+        const options: ComplexSearchOptions = {
+          // Dynamic Parameters from Onboarding
+          cuisine: cuisineParam,
+          diet: dietParam,
+          excludeIngredients: excludeIngredientsParam,
 
-        // Pantry ingredients
-        includeIngredients: ingredientsString,
-        addRecipeNutrition: true,
-        number: 20,
-        sort: "max-used-ingredients",
-        fillIngredients: true,
-        ignorePantry: false,
-      };
+          // Pantry ingredients
+          includeIngredients: ingredientsString,
+          addRecipeNutrition: true,
+          number: PAGE_SIZE,
+          offset: pageParam,
+          sort: "max-used-ingredients",
+          fillIngredients: false,
+          ignorePantry: false,
+        };
 
-      if (selectedFilter !== "all") {
-        options.type = selectedFilter;
-      }
+        if (selectedFilter === "all") {
+          // For "all", combine all meal types
+          const allTypes = Object.values(SPOONACULAR_TYPE_MAPPING).join(",");
+          options.type = allTypes;
+        } else {
+          const apiType =
+            SPOONACULAR_TYPE_MAPPING[selectedFilter] || selectedFilter;
+          options.type = apiType;
+        }
 
-      if (debouncedSearchQuery.trim()) {
-        options.query = debouncedSearchQuery.trim();
-      }
+        if (debouncedSearchQuery.trim()) {
+          options.query = debouncedSearchQuery.trim();
+        }
 
-      const response = await searchRecipesComplex(options);
-      setRecipes(response.results);
-      onTotalResultsChange?.(response.totalResults);
-    } catch (error) {
-      console.error("Failed to fetch recipe ideas:", error);
-    } finally {
-      setIsLoading(false);
+        const response = await searchRecipesComplex(options);
+        return {
+          recipes: response.results,
+          totalResults: response.totalResults,
+          offset: pageParam,
+        };
+      },
+      getNextPageParam: (lastPage, allPages) => {
+        const totalFetched = allPages.reduce(
+          (sum, page) => sum + page.recipes.length,
+          0
+        );
+        return totalFetched < lastPage.totalResults ? totalFetched : undefined;
+      },
+      initialPageParam: 0,
+      enabled: pantryItems.length > 0,
+      gcTime: 1000 * 60 * 30, // Keep cache for 30 minutes
+      staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    });
+
+  // Flatten and deduplicate all pages
+  const recipes = useMemo(() => {
+    if (!data?.pages) return [];
+    const allRecipes = data.pages.flatMap((page) => page.recipes);
+    // Deduplicate by id
+    const seenIds = new Set<number>();
+    return allRecipes.filter((recipe) => {
+      if (seenIds.has(recipe.id)) return false;
+      seenIds.add(recipe.id);
+      return true;
+    });
+  }, [data?.pages]);
+
+  const isLoading = status === "pending";
+  const hasMore = hasNextPage ?? false;
+
+  // Update total results when data changes
+  useEffect(() => {
+    if (data?.pages?.[0]?.totalResults !== undefined) {
+      onTotalResultsChange?.(data.pages[0].totalResults);
     }
-  }, [
-    ingredientsString,
-    selectedFilter,
-    pantryItems.length,
-    onboardingData,
-    onTotalResultsChange,
-    debouncedSearchQuery,
-  ]);
+  }, [data?.pages, onTotalResultsChange]);
 
   // Debounce search query
   useEffect(() => {
@@ -176,19 +233,31 @@ export function RecipeIdeasView({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => {
-    fetchRecipes();
-  }, [fetchRecipes, debouncedSearchQuery]);
-
   const handleRecipePress = (recipe: Recipe) => {
     router.push(`/(meal)/${recipe.id}`);
   };
+
+  const handleLoadMore = useCallback(() => {
+    if (!isFetchingNextPage && hasMore) {
+      fetchNextPage();
+    }
+  }, [isFetchingNextPage, hasMore, fetchNextPage]);
 
   const renderRecipeCard = ({ item }: { item: Recipe }) => (
     <View style={styles.cardContainer}>
       <RecipeCard recipe={item} onPress={() => handleRecipePress(item)} />
     </View>
   );
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={Colors.lilac[900]} />
+        <Text style={styles.loadingMoreText}>Loading more recipes...</Text>
+      </View>
+    );
+  };
 
   if (pantryItems.length === 0) {
     return (
@@ -251,6 +320,9 @@ export function RecipeIdeasView({
             { paddingBottom: insets.bottom * 2 + 52 },
           ]}
           showsVerticalScrollIndicator={false}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
         />
       )}
     </View>
@@ -338,5 +410,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.secondary,
     textAlign: "center",
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: Colors.text.secondary,
   },
 });
