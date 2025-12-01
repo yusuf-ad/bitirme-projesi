@@ -129,7 +129,7 @@ export function PantryScreenHeader({
             >
               Recipe Ideas
             </Text>
-            {recipeIdeasCount > 0 && (
+            {recipeIdeasCount >= 0 && (
               <View
                 style={[
                   styles.badge,

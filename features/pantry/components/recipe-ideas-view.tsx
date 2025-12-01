@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { LoadingState } from "@/features/home";
 import { RecipeCard } from "@/features/home/components/recipe-card";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { MEAL_TYPES } from "@/lib/constants";
@@ -12,7 +13,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   ScrollView,
@@ -189,7 +189,9 @@ export function RecipeIdeasView({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filterScrollView}
         contentContainerStyle={styles.filterContainer}
+        bounces={false}
       >
         {FILTER_OPTIONS.map((filter) => (
           <Pressable
@@ -214,9 +216,12 @@ export function RecipeIdeasView({
 
       {/* Recipe Grid */}
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.lilac[600]} />
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <LoadingState count={8} />
+        </ScrollView>
       ) : (
         <FlatList
           data={recipes}
@@ -253,10 +258,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  filterScrollView: {
+    flexGrow: 0,
+  },
   filterContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingBottom: 24,
+    paddingBottom: 20,
+    width: "100%",
+    borderBottomColor: Colors.lilac[400],
+    borderBottomWidth: 1,
     gap: 4,
   },
   filterButton: {
@@ -284,6 +295,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  skeletonContainer: {
+    paddingHorizontal: 16,
+    gap: 16,
   },
   listContent: {
     paddingHorizontal: 16,
