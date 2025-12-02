@@ -468,8 +468,11 @@ export default function MealPlanPreview() {
   const renderDayMeals = (mealType: MealType) => {
     const dayData = mealPlan?.[mealType];
 
-    // Show empty state if no results
-    if (!dayData || dayData.results.length === 0) {
+    // If meal type was not selected (doesn't exist in mealPlan), don't show anything
+    if (!dayData) return null;
+
+    // Show empty state if meal type was selected but no results found
+    if (dayData.results.length === 0) {
       return renderEmptyMealState(mealType);
     }
 
