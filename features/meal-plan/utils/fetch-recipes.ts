@@ -1,21 +1,10 @@
+import type { UserOnboardingProfile } from "@/features/onboarding/types/onboarding.types";
 import { MEAL_TYPES } from "@/lib/constants";
 import { getIngredientInformation } from "@/lib/spoonacular";
 import { searchRecipesComplex } from "@/lib/spoonacular-complex-search";
 import type { MealType } from "../types";
 
 // Types
-interface TastePreferences {
-  cuisines?: string[];
-  cuisine_dislikes?: string[];
-  diet_preferences?: string[];
-  allergies_dislikes?: string[];
-}
-
-interface OnboardingData {
-  tastePreferences?: TastePreferences | null;
-  goals?: { goal_ids?: string[] } | null;
-}
-
 interface PantryItem {
   spoonacular_name?: string;
 }
@@ -151,7 +140,7 @@ async function fetchRecipesForMealType(
 
 // Main Function
 export async function fetchRecipes(
-  onboardingData: OnboardingData | undefined,
+  onboardingData: UserOnboardingProfile | undefined,
   pantryData: PantryItem[] | undefined,
   selectedMealTypes: Record<MealType, boolean>
 ): Promise<MealTypeResults[] | undefined> {
@@ -160,12 +149,17 @@ export async function fetchRecipes(
     return;
   }
 
+  const preferences = onboardingData.tastePreferences;
+
+  const goal_ids = onboardingData.goals?.goal_ids;
+
   console.log("Fetching recipes with user preferences...");
 
   try {
-    const preferences = onboardingData.tastePreferences;
+    const cookingSkillLevel = preferences?.cooking_skill_level || "beginner";
 
     console.log("User Taste Preferences:", preferences);
+    console.log("User Cooking Skill Level:", cookingSkillLevel);
 
     // Prepare search parameters
     const cuisineParam = preferences?.cuisines?.join(",");
@@ -191,7 +185,7 @@ export async function fetchRecipes(
 
     for (const mealType of activeMealTypes) {
       const mealResults = await fetchRecipesForMealType(mealType, {
-        cuisine: cuisineParam,
+        // cuisine: cuisineParam,
         excludeCuisine: excludeCuisineParam,
         diet: dietParam,
         includeIngredients: includeIngredientsParam,

@@ -9,6 +9,7 @@ import type { MealType, MealTypeOption } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
+import CustomButton from "@/shared/components/custom-button";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -32,6 +33,7 @@ export default function SelectMeals() {
     queryFn: () => getUserOnboardingProfile(userId!),
     enabled: !!userId,
   });
+
   const { data: pantryData } = usePantryQuery();
 
   const [selectedMealTypes, setSelectedMealTypes] = useState<
@@ -91,16 +93,13 @@ export default function SelectMeals() {
               console.log("=== MANUAL PANTRY LOG ===");
               console.log("Pantry items count:", pantryData?.length || 0);
 
-              // Extract spoonacular names and log as comma-separated string
               const spoonacularNames =
                 pantryData
                   ?.map((item) => item.spoonacular_name)
-                  .filter((name) => name) // Filter out any empty/null names
+                  .filter((name) => name)
                   .join(",") || "";
 
               console.log("Spoonacular names:", spoonacularNames);
-
-              // Also log the full data for reference
               console.log(
                 "Full pantry items:",
                 JSON.stringify(pantryData, null, 2)
@@ -118,6 +117,15 @@ export default function SelectMeals() {
           />
         </View>
       </ScrollView>
+
+      <View style={styles.footer}>
+        <CustomButton
+          containerStyle={styles.createButton}
+          onPress={() => router.push("/preview")}
+        >
+          <Text style={styles.createButtonText}>Create</Text>
+        </CustomButton>
+      </View>
     </View>
   );
 }
@@ -139,5 +147,18 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     marginBottom: 24,
     fontWeight: "400",
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  createButton: {
+    paddingVertical: 14,
+    backgroundColor: Colors.lilac[900],
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.background.primary,
   },
 });
