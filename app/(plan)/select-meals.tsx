@@ -15,6 +15,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Button,
   ScrollView,
   StyleSheet,
   Text,
@@ -127,6 +128,41 @@ export default function SelectMeals() {
             Below are the meals we will include in your plan. You can make any
             modifications here.
           </Text>
+
+          <Button
+            title="Test Fetch Recipes"
+            onPress={async () => {
+              const results = await fetchRecipes(
+                onboardingData,
+                pantryData,
+                selectedMealTypes
+              );
+              console.log("Fetch results:", results);
+            }}
+          />
+          <Button
+            title="go to preview"
+            onPress={() => router.push("/preview")}
+          />
+          <Button
+            title="Log Pantry Data"
+            onPress={() => {
+              console.log("=== MANUAL PANTRY LOG ===");
+              console.log("Pantry items count:", pantryData?.length || 0);
+
+              const spoonacularNames =
+                pantryData
+                  ?.map((item) => item.spoonacular_name)
+                  .filter((name) => name)
+                  .join(",") || "";
+
+              console.log("Spoonacular names:", spoonacularNames);
+              console.log(
+                "Full pantry items:",
+                JSON.stringify(pantryData, null, 2)
+              );
+            }}
+          />
 
           <MealTypeLabels mealTypes={MEAL_TYPE_OPTIONS} />
 
