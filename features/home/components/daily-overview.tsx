@@ -1,6 +1,9 @@
 import EnergyIcon from "@/assets/icons/energy-icon";
 import { Colors } from "@/constants/theme";
+import { DIET_OPTIONS } from "@/features/onboarding/sections/taste/diet-options";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import CalorieProgressBar from "@/shared/components/calorie-progress-bar";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MacroCardsSection from "./macro-cards-section";
 
@@ -19,7 +22,23 @@ export default function DailyOverview({
   totalFat = 0,
   isEmpty = false,
 }: DailyOverviewProps) {
-  const goalCalories = 2200;
+  const { selectedDietPreferences, dietNutritionTargets } = useOnboarding();
+
+  const goalCalories = useMemo(() => {
+    if (selectedDietPreferences.length > 0) {
+      const dietId = selectedDietPreferences[0];
+      // Check for custom target
+      if (dietNutritionTargets[dietId]?.calories) {
+        return dietNutritionTargets[dietId].calories;
+      }
+      // Check for default target from options
+      const dietOption = DIET_OPTIONS.find((d) => d.id === dietId);
+      if (dietOption?.targetCalories) {
+        return dietOption.targetCalories;
+      }
+    }
+    return 2200;
+  }, [selectedDietPreferences, dietNutritionTargets]);
 
   return (
     <View style={styles.container}>
