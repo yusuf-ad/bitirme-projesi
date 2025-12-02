@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -98,117 +99,125 @@ export function RecipeIdeasView({
     ]
   );
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
-    useInfiniteQuery({
-      queryKey,
-      queryFn: async ({ pageParam = 0 }) => {
-        // Prepare user preferences from onboarding data
-        const preferences = onboardingData?.tastePreferences;
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-        // Cuisines
-        const cuisineParam = preferences?.cuisines?.join(",");
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey,
+    queryFn: async ({ pageParam = 0 }) => {
+      // Prepare user preferences from onboarding data
+      const preferences = onboardingData?.tastePreferences;
 
-        // Diets
-        const dietParam = preferences?.diet_preferences?.join(",");
+      // Cuisines
+      const cuisineParam = preferences?.cuisines?.join(",");
 
-        // Allergies / Dislikes (Fetch names from IDs)
-        const allergyIds = preferences?.allergies_dislikes || [];
-        let allergyNames: string[] = [];
+      // Diets
+      const dietParam = preferences?.diet_preferences?.join(",");
 
-        // Check if allergy IDs changed, if not use cached names
-        const allergyIdsChanged =
-          JSON.stringify(allergyIds) !== JSON.stringify(lastAllergyIds.current);
+      // Allergies / Dislikes (Fetch names from IDs)
+      const allergyIds = preferences?.allergies_dislikes || [];
+      let allergyNames: string[] = [];
 
-        if (allergyIds.length > 0 && allergyIdsChanged) {
-          console.log("Fetching allergy ingredient names...");
-          for (let i = 0; i < allergyIds.length; i++) {
-            try {
-              const id = parseInt(allergyIds[i]);
-              if (!isNaN(id)) {
-                const info = await getIngredientInformation(id);
-                if (info.name) {
-                  allergyNames.push(info.name);
-                }
+      // Check if allergy IDs changed, if not use cached names
+      const allergyIdsChanged =
+        JSON.stringify(allergyIds) !== JSON.stringify(lastAllergyIds.current);
+
+      if (allergyIds.length > 0 && allergyIdsChanged) {
+        console.log("Fetching allergy ingredient names...");
+        for (let i = 0; i < allergyIds.length; i++) {
+          try {
+            const id = parseInt(allergyIds[i]);
+            if (!isNaN(id)) {
+              const info = await getIngredientInformation(id);
+              if (info.name) {
+                allergyNames.push(info.name);
               }
-            } catch (e) {
-              console.error(
-                `Failed to fetch info for allergy ID ${allergyIds[i]}`,
-                e
-              );
             }
+          } catch (e) {
+            console.error(
+              `Failed to fetch info for allergy ID ${allergyIds[i]}`,
+              e
+            );
           }
-          // Cache the results
-          allergyNamesCache.current = allergyNames;
-          lastAllergyIds.current = allergyIds;
-        } else if (allergyIds.length > 0) {
-          // Use cached names
-          allergyNames = allergyNamesCache.current;
         }
+        // Cache the results
+        allergyNamesCache.current = allergyNames;
+        lastAllergyIds.current = allergyIds;
+      } else if (allergyIds.length > 0) {
+        // Use cached names
+        allergyNames = allergyNamesCache.current;
+      }
 
-        const excludeIngredientsParam = allergyNames.join(",");
+      const excludeIngredientsParam = allergyNames.join(",");
 
-        // Cuisine dislikes
-        const excludeCuisineParam = preferences?.cuisine_dislikes
-          ?.map((c: string) => c.toLowerCase())
-          .join(",");
+      // Cuisine dislikes
+      const excludeCuisineParam = preferences?.cuisine_dislikes
+        ?.map((c: string) => c.toLowerCase())
+        .join(",");
 
-        console.log("User preferences:", {
-          cuisines: cuisineParam,
-          diets: dietParam,
-          excludeIngredients: excludeIngredientsParam,
-          excludeCuisine: excludeCuisineParam,
-        });
+      console.log("User preferences:", {
+        cuisines: cuisineParam,
+        diets: dietParam,
+        excludeIngredients: excludeIngredientsParam,
+        excludeCuisine: excludeCuisineParam,
+      });
 
-        const options: ComplexSearchOptions = {
-          // Dynamic Parameters from Onboarding
-          cuisine: cuisineParam,
-          excludeCuisine: excludeCuisineParam,
-          diet: dietParam,
-          excludeIngredients: excludeIngredientsParam,
+      const options: ComplexSearchOptions = {
+        // Dynamic Parameters from Onboarding
+        cuisine: cuisineParam,
+        excludeCuisine: excludeCuisineParam,
+        diet: dietParam,
+        excludeIngredients: excludeIngredientsParam,
 
-          // Pantry ingredients
-          includeIngredients: ingredientsString,
-          addRecipeNutrition: true,
-          number: PAGE_SIZE,
-          offset: pageParam,
-          sort: "max-used-ingredients",
-          fillIngredients: false,
-          ignorePantry: false,
-        };
+        // Pantry ingredients
+        includeIngredients: ingredientsString,
+        addRecipeNutrition: true,
+        number: PAGE_SIZE,
+        offset: pageParam,
+        sort: "max-used-ingredients",
+        fillIngredients: false,
+        ignorePantry: false,
+      };
 
-        if (selectedFilter === "all") {
-          // For "all", combine all meal types
-          const allTypes = Object.values(SPOONACULAR_TYPE_MAPPING).join(",");
-          options.type = allTypes;
-        } else {
-          const apiType =
-            SPOONACULAR_TYPE_MAPPING[selectedFilter] || selectedFilter;
-          options.type = apiType;
-        }
+      if (selectedFilter === "all") {
+        // For "all", combine all meal types
+        const allTypes = Object.values(SPOONACULAR_TYPE_MAPPING).join(",");
+        options.type = allTypes;
+      } else {
+        const apiType =
+          SPOONACULAR_TYPE_MAPPING[selectedFilter] || selectedFilter;
+        options.type = apiType;
+      }
 
-        if (debouncedSearchQuery.trim()) {
-          options.query = debouncedSearchQuery.trim();
-        }
+      if (debouncedSearchQuery.trim()) {
+        options.query = debouncedSearchQuery.trim();
+      }
 
-        const response = await searchRecipesComplex(options);
-        return {
-          recipes: response.results,
-          totalResults: response.totalResults,
-          offset: pageParam,
-        };
-      },
-      getNextPageParam: (lastPage, allPages) => {
-        const totalFetched = allPages.reduce(
-          (sum, page) => sum + page.recipes.length,
-          0
-        );
-        return totalFetched < lastPage.totalResults ? totalFetched : undefined;
-      },
-      initialPageParam: 0,
-      enabled: pantryItems.length > 0,
-      gcTime: 1000 * 60 * 30, // Keep cache for 30 minutes
-      staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    });
+      const response = await searchRecipesComplex(options);
+      return {
+        recipes: response.results,
+        totalResults: response.totalResults,
+        offset: pageParam,
+      };
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      const totalFetched = allPages.reduce(
+        (sum, page) => sum + page.recipes.length,
+        0
+      );
+      return totalFetched < lastPage.totalResults ? totalFetched : undefined;
+    },
+    initialPageParam: 0,
+    enabled: pantryItems.length > 0,
+    gcTime: 1000 * 60 * 30, // Keep cache for 30 minutes
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+  });
 
   // Flatten and deduplicate all pages
   const recipes = useMemo(() => {
@@ -251,6 +260,15 @@ export function RecipeIdeasView({
       fetchNextPage();
     }
   }, [isFetchingNextPage, hasMore, fetchNextPage]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   const renderRecipeCard = ({ item }: { item: Recipe }) => (
     <View style={styles.cardContainer}>
@@ -332,6 +350,13 @@ export function RecipeIdeasView({
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={Colors.lilac[900]}
+            />
+          }
         />
       )}
     </View>
