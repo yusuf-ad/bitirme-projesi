@@ -56,6 +56,7 @@ CREATE TABLE public.pantry_items (
   category text DEFAULT 'other'::text,
   status text DEFAULT 'pantry'::text CHECK (status = ANY (ARRAY['pantry'::text, 'shopping_list'::text])),
   checked boolean DEFAULT false,
+  recipe_name text,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT pantry_items_pkey PRIMARY KEY (id),

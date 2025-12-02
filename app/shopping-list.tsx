@@ -4,9 +4,10 @@ import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,141 +16,53 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const MOCK_ITEMS: PantryItem[] = [
-  {
-    id: "mock-1",
-    user_id: "mock-user",
-    name: "Bananas",
-    amount: 1,
-    unit: "bunch",
-    is_weight: false,
-    category: "Fruits & Vegetables",
-    status: "shopping_list",
-    checked: false,
-  },
-  {
-    id: "mock-2",
-    user_id: "mock-user",
-    name: "Milk",
-    amount: 1,
-    unit: "gallon",
-    is_weight: false,
-    category: "Dairy",
-    status: "shopping_list",
-    checked: false,
-  },
-  {
-    id: "mock-3",
-    user_id: "mock-user",
-    name: "Eggs",
-    amount: 12,
-    unit: "count",
-    is_weight: false,
-    category: "Dairy",
-    status: "shopping_list",
-    checked: false,
-  },
-  {
-    id: "mock-4",
-    user_id: "mock-user",
-    name: "Bread",
-    amount: 1,
-    unit: "loaf",
-    is_weight: false,
-    category: "Bakery",
-    status: "shopping_list",
-    checked: false,
-  },
-  {
-    id: "mock-5",
-    user_id: "mock-user",
-    name: "Chicken Breast",
-    amount: 2,
-    unit: "lbs",
-    is_weight: true,
-    category: "Meat & Seafood",
-    status: "shopping_list",
-    checked: false,
-  },
-  {
-    id: "mock-6",
-    user_id: "mock-user",
-    name: "Rice",
-    amount: 5,
-    unit: "lbs",
-    is_weight: true,
-    category: "Pasta, Sauces & Grain",
-    status: "shopping_list",
-    checked: false,
-  },
-  {
-    id: "mock-7",
-    user_id: "mock-user",
-    name: "Pasta Sauce",
-    amount: 1,
-    unit: "jar",
-    is_weight: false,
-    category: "Pasta, Sauces & Grain",
-    status: "shopping_list",
-    checked: false,
-  },
-  {
-    id: "mock-8",
-    user_id: "mock-user",
-    name: "Cheddar Cheese",
-    amount: 8,
-    unit: "oz",
-    is_weight: true,
-    category: "Dairy",
-    status: "shopping_list",
-    checked: true,
-  },
-  {
-    id: "mock-9",
-    user_id: "mock-user",
-    name: "Apples",
-    amount: 6,
-    unit: "count",
-    is_weight: false,
-    category: "Fruits & Vegetables",
-    status: "shopping_list",
-    checked: true,
-  },
-  {
-    id: "mock-10",
-    user_id: "mock-user",
-    name: "Ground Beef",
-    amount: 1,
-    unit: "lb",
-    is_weight: true,
-    category: "Meat & Seafood",
-    status: "shopping_list",
-    checked: true,
-  },
-];
-
 export default function ShoppingListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasCheckedItems = useRef(false);
 
   const fetchItems = async () => {
     try {
-      const data = await pantryService.getAllItems();
-      setItems([...MOCK_ITEMS, ...data]);
+      const data = await pantryService.getItems("shopping_list");
+      setItems(data);
+      // Track if there are any checked items
+      hasCheckedItems.current = data.some((item) => item.checked);
     } catch (error) {
       console.error("Failed to fetch items:", error);
-      setItems(MOCK_ITEMS);
+      setItems([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Sayfadan çıkıldığında tiklenen öğeleri pantry'e taşı
+  const moveCheckedToPantry = useCallback(async () => {
+    if (!hasCheckedItems.current) return;
+
+    try {
+      const { movedCount, error } =
+        await pantryService.moveCheckedItemsToPantry();
+      if (error) {
+        console.error("Error moving items:", error);
+      } else if (movedCount > 0) {
+        console.log(`${movedCount} item(s) moved to pantry`);
+      }
+    } catch (error) {
+      console.error("Failed to move items to pantry:", error);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       fetchItems();
-    }, [])
+
+      // Cleanup: sayfa blur olduğunda tiklenen öğeleri pantry'e taşı
+      return () => {
+        moveCheckedToPantry();
+      };
+    }, [moveCheckedToPantry])
   );
 
   const shoppingListItems = items.filter((i) => i.status === "shopping_list");
@@ -162,18 +75,50 @@ export default function ShoppingListScreen() {
 
     const newChecked = !item.checked;
 
+    // Optimistic update
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, checked: newChecked } : i))
+    );
+
+    // Track checked state
+    hasCheckedItems.current = items.some((i) =>
+      i.id === id ? newChecked : i.checked
     );
 
     try {
       await pantryService.updateItem(id, { checked: newChecked });
     } catch (error) {
       console.error("Failed to update item", error);
+      // Revert on error
       setItems((prev) =>
         prev.map((i) => (i.id === id ? { ...i, checked: !newChecked } : i))
       );
+      hasCheckedItems.current = items.some((i) =>
+        i.id === id ? !newChecked : i.checked
+      );
     }
+  };
+
+  const handleBackPress = async () => {
+    // Geri gitmeden önce tiklenen öğeleri pantry'e taşı
+    if (checkedItems.length > 0) {
+      try {
+        const { movedCount } = await pantryService.moveCheckedItemsToPantry();
+        if (movedCount > 0) {
+          Alert.alert(
+            "Pantry Updated",
+            `${movedCount} item${
+              movedCount > 1 ? "s" : ""
+            } added to your pantry.`,
+            [{ text: "OK", onPress: () => router.back() }]
+          );
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to move items:", error);
+      }
+    }
+    router.back();
   };
 
   const getCategoryItems = (itemsList: PantryItem[], category: string) => {
@@ -187,12 +132,26 @@ export default function ShoppingListScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleBackPress} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
         </Pressable>
         <Text style={styles.title}>Groceries</Text>
         <View style={{ width: 24 }} />
       </View>
+
+      {/* Summary bar */}
+      {shoppingListItems.length > 0 && (
+        <View style={styles.summaryBar}>
+          <Text style={styles.summaryText}>
+            {uncheckedItems.length} to buy • {checkedItems.length} done
+          </Text>
+          {checkedItems.length > 0 && (
+            <Text style={styles.summaryHint}>
+              Items will be added to pantry when you leave
+            </Text>
+          )}
+        </View>
+      )}
 
       {isLoading && items.length === 0 ? (
         <View style={styles.center}>
@@ -293,5 +252,22 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: Colors.gray[500],
+  },
+  summaryBar: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: Colors.background.primary,
+    borderRadius: 12,
+  },
+  summaryText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text.primary,
+  },
+  summaryHint: {
+    fontSize: 12,
+    color: Colors.text.secondary,
+    marginTop: 4,
   },
 });

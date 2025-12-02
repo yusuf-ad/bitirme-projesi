@@ -1,5 +1,9 @@
 import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
+import {
+  mealPlanIngredientsService,
+  MealPlanItemRecord,
+} from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
@@ -17,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Pressable,
@@ -62,6 +67,7 @@ export default function MealPlanPreview() {
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [isSaving, setIsSaving] = useState(false);
+  const [isAddingToShoppingList, setIsAddingToShoppingList] = useState(false);
   const [selectedMealIndices, setSelectedMealIndices] = useState<
     Partial<Record<MealType, number>>
   >({});
@@ -313,12 +319,26 @@ export default function MealPlanPreview() {
         queryKey: ["meal-plans"],
       });
 
-      Alert.alert("Meal plan saved", "Your meal plan has been saved.", [
-        {
-          text: "OK",
-          onPress: () => router.replace("/(app)"),
-        },
-      ]);
+      // Convert mealItems to MealPlanItemRecord format for the ingredients service
+      const savedMealPlanItems: MealPlanItemRecord[] = itemsPayload.map(
+        (item, index) => ({
+          id: index, // Temporary ID, not needed for fetching recipes
+          meal_plan_id: newPlan.id,
+          spoonacular_recipe_id: item.spoonacular_recipe_id,
+          recipe_name: item.recipe_name,
+          recipe_image_url: item.recipe_image_url,
+          calories_per_serving: item.calories_per_serving,
+          carbs_per_serving: item.carbs_per_serving,
+          protein_per_serving: item.protein_per_serving,
+          fat_per_serving: item.fat_per_serving,
+          ready_in_minutes: item.ready_in_minutes,
+          meal_date: item.meal_date,
+          meal_type: item.meal_type,
+        })
+      );
+
+      // Automatically add missing ingredients to shopping list
+      await handleAddMissingIngredients(savedMealPlanItems);
     } catch (error) {
       console.error("Error saving meal plan:", error);
       const message =
@@ -326,6 +346,77 @@ export default function MealPlanPreview() {
       Alert.alert("Error saving meal plan", message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAddMissingIngredients = async (
+    mealPlanItems: MealPlanItemRecord[]
+  ) => {
+    setIsAddingToShoppingList(true);
+
+    try {
+      const result =
+        await mealPlanIngredientsService.addMissingIngredientsToShoppingList(
+          mealPlanItems
+        );
+
+      // Invalidate pantry query to refresh shopping list
+      await queryClient.invalidateQueries({
+        queryKey: ["pantry"],
+      });
+
+      if (result.addedCount > 0) {
+        Alert.alert(
+          "Meal plan saved! 🎉",
+          `${result.addedCount} missing ingredient${
+            result.addedCount > 1 ? "s" : ""
+          } added to your shopping list.${
+            result.alreadyInPantryCount > 0
+              ? `\n\n${result.alreadyInPantryCount} ingredient${
+                  result.alreadyInPantryCount !== 1 ? "s" : ""
+                } already in your pantry.`
+              : ""
+          }`,
+          [
+            {
+              text: "View Shopping List",
+              onPress: () => router.replace("/shopping-list"),
+            },
+            {
+              text: "Go to Home",
+              onPress: () => router.replace("/(app)"),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Meal plan saved! ✨",
+          `All ${result.alreadyInPantryCount} ingredient${
+            result.alreadyInPantryCount !== 1 ? "s" : ""
+          } already in your pantry. No shopping needed!`,
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/(app)"),
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error("Error adding ingredients to shopping list:", error);
+      // Still show success for meal plan save, but note the shopping list error
+      Alert.alert(
+        "Meal plan saved!",
+        "Your meal plan was saved, but we couldn't check your pantry for missing ingredients.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/(app)"),
+          },
+        ]
+      );
+    } finally {
+      setIsAddingToShoppingList(false);
     }
   };
 
@@ -537,13 +628,25 @@ export default function MealPlanPreview() {
         <CustomButton
           containerStyle={styles.saveButton}
           onPress={handleSaveMealPlan}
-          disabled={isSaving}
+          disabled={isSaving || isAddingToShoppingList}
         >
           <Text style={styles.saveButtonText}>
             {isSaving ? "Saving..." : "Save Meal Plan"}
           </Text>
         </CustomButton>
       </View>
+
+      {/* Loading Overlay for Shopping List */}
+      {isAddingToShoppingList && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.lilac[600]} />
+            <Text style={styles.loadingText}>
+              Checking pantry and adding{"\n"}missing ingredients...
+            </Text>
+          </View>
+        </View>
+      )}
 
       <MealSelectionModal
         ref={mealSelectionRef}
@@ -755,5 +858,31 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: "#fff",
     textAlign: "center",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    gap: 16,
+    marginHorizontal: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
