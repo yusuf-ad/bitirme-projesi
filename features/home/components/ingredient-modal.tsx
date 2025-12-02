@@ -91,11 +91,18 @@ export const IngredientModal = forwardRef<
   const INGREDIENT_IMAGE_BASE_URL =
     "https://spoonacular.com/cdn/ingredients_100x100";
 
+  // Load onboarding data when modal mounts (ensures allergies are loaded even if profile wasn't visited)
+  useEffect(() => {
+    onboarding.loadOnboardingData();
+  }, []);
+
   // Load user allergies when modal opens
   useEffect(() => {
     if (onboarding.selectedAllergies && onboarding.selectedAllergies.length > 0) {
       const allergies = resolveAllergiesFast(onboarding.selectedAllergies);
       setUserAllergies(allergies);
+    } else {
+      setUserAllergies([]);
     }
   }, [onboarding.selectedAllergies]);
 
