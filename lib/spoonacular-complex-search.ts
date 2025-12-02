@@ -57,8 +57,23 @@ export async function searchRecipesComplex(
   try {
     const params = new URLSearchParams();
 
+    // Always set maxAlcohol to 0 to exclude alcoholic recipes
+    params.append("maxAlcohol", "0");
+
+    // Always exclude pork from recipes
+    const userExcludeIngredients = options.excludeIngredients;
+    const excludeIngredients = userExcludeIngredients
+      ? `pork,${userExcludeIngredients}`
+      : "pork";
+    params.append("excludeIngredients", excludeIngredients);
+
     Object.entries(options).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        key !== "maxAlcohol" &&
+        key !== "excludeIngredients"
+      ) {
         params.append(key, value.toString());
       }
     });
