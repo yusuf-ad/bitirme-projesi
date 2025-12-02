@@ -5,18 +5,19 @@ interface MacroCardsSectionProps {
   totalCarbs?: number;
   totalProtein?: number;
   totalFat?: number;
+  goalCarbs?: number;
+  goalProtein?: number;
+  goalFat?: number;
 }
 
 export default function MacroCardsSection({
   totalCarbs = 0,
   totalProtein = 0,
   totalFat = 0,
+  goalCarbs = 275,
+  goalProtein = 138,
+  goalFat = 61,
 }: MacroCardsSectionProps) {
-  // Goal values based on 2200 calorie diet
-  const goalCarbs = 359; // ~55% of calories
-  const goalProtein = 143; // ~25% of calories
-  const goalFat = 73; // ~30% of calories
-
   return (
     <View style={styles.macroCardsContainer}>
       <MacroCard
