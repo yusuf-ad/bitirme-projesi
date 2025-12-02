@@ -1,20 +1,23 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
+import { Ionicons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { useRef } from "react";
 import {
-  Animated,
-  ImageSourcePropType,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    ImageSourcePropType,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
+import { MealActionModal } from "./meal-action-modal";
 
 interface MealCardProps {
   mealType: string;
@@ -27,8 +30,11 @@ interface MealCardProps {
   carbs?: string;
   protein?: string;
   fat?: string;
+  isEaten?: boolean;
   onPress?: () => void;
   onDelete?: () => void;
+  onToggleEaten?: (eaten: boolean) => void;
+  onReplace?: () => void;
 }
 
 export default function MealCard({
@@ -42,12 +48,17 @@ export default function MealCard({
   carbs,
   protein,
   fat,
+  isEaten = false,
   onPress,
   onDelete,
+  onToggleEaten,
+  onReplace,
 }: MealCardProps) {
+  const mealActionModalRef = useRef<BottomSheetModal>(null);
+
   const handleEditPress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push("/(app)/recipes");
+    mealActionModalRef.current?.present();
   };
 
   const handleDelete = async () => {
@@ -83,12 +94,13 @@ export default function MealCard({
   };
 
   return (
-    <Swipeable
-      renderRightActions={renderRightActions}
-      overshootRight={false}
-      friction={2}
-    >
-      <View style={styles.container}>
+    <>
+      <Swipeable
+        renderRightActions={renderRightActions}
+        overshootRight={false}
+        friction={2}
+      >
+        <View style={styles.container}>
         {/* Meal Header */}
         <View style={styles.header}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -96,7 +108,14 @@ export default function MealCard({
               <Image source={mealIcon} style={styles.mealIcon} />
             </View>
             <View style={styles.mealInfo}>
-              <Text style={styles.mealType}>{mealType}</Text>
+              <View style={styles.mealTypeRow}>
+                <Text style={styles.mealType}>{mealType}</Text>
+                {isEaten && (
+                  <View style={styles.eatenBadge}>
+                    <Ionicons name="checkmark-circle" size={16} color={Colors.semantic.success.main} />
+                  </View>
+                )}
+              </View>
               <Text style={styles.mealTime}>{mealTime}</Text>
             </View>
           </View>
@@ -205,8 +224,19 @@ export default function MealCard({
             </View>
           </View>
         </Pressable>
-      </View>
-    </Swipeable>
+        </View>
+      </Swipeable>
+
+      <MealActionModal
+        ref={mealActionModalRef}
+        mealType={mealType}
+        recipeName={recipeName}
+        isEaten={isEaten}
+        onToggleEaten={onToggleEaten}
+        onReplace={onReplace}
+        onDelete={onDelete}
+      />
+    </>
   );
 }
 
@@ -254,12 +284,21 @@ const styles = StyleSheet.create({
   mealInfo: {
     justifyContent: "center",
   },
+  mealTypeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   mealType: {
     fontFamily: "Inter",
     fontWeight: "500",
     fontSize: 14,
     lineHeight: 21,
     color: Colors.text.primary,
+  },
+  eatenBadge: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   mealTime: {
     fontFamily: "Inter",

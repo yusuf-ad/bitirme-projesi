@@ -4,9 +4,10 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    FadeIn,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 
 interface HeaderProps {
@@ -45,7 +46,7 @@ export default function Header({ firstName, motivationText }: HeaderProps) {
   }
 
   return (
-    <View style={styles.header}>
+    <Animated.View style={styles.header} entering={FadeIn.duration(500)}>
       <View style={styles.headerLeft}>
         <View>
           <Text style={styles.greeting}>Hello, {firstName}!</Text>
@@ -68,7 +69,7 @@ export default function Header({ firstName, motivationText }: HeaderProps) {
           </Animated.View>
         </Pressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

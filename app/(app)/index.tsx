@@ -9,17 +9,18 @@ import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  View
+    ActivityIndicator,
+    Platform,
+    RefreshControl,
+    StyleSheet,
+    View
 } from "react-native";
 import Animated, {
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    FadeInDown,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -152,14 +153,17 @@ export default function MealplanTab() {
           </View>
         ) : hasMeals ? (
           <>
-            <View style={styles.section}>
+            <Animated.View
+              style={styles.section}
+              entering={FadeInDown.duration(400).springify()}
+            >
               <DailyOverview
                 totalCalories={totalCalories}
                 totalCarbs={totalCarbs}
                 totalProtein={totalProtein}
                 totalFat={totalFat}
               />
-            </View>
+            </Animated.View>
 
             <DailyMealsList
               items={data!.items}
