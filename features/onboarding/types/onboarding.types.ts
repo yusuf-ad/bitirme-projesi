@@ -51,9 +51,9 @@ export interface UserMealTimes {
 
 export interface DietNutritionTarget {
   calories: number;
-  proteinPercent: number;
-  fatPercent: number;
-  carbPercent: number;
+  protein: number;
+  fat: number;
+  carbs: number;
 }
 
 export interface UserTastePreferences {

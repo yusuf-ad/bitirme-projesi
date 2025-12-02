@@ -24,20 +24,47 @@ export default function DailyOverview({
 }: DailyOverviewProps) {
   const { selectedDietPreferences, dietNutritionTargets } = useOnboarding();
 
-  const goalCalories = useMemo(() => {
+  const { goalCalories, goalCarbs, goalProtein, goalFat } = useMemo(() => {
+    // Default values
+    let targets = {
+      goalCalories: 2200,
+      goalCarbs: 275, // ~50%
+      goalProtein: 138, // ~25%
+      goalFat: 61, // ~25%
+    };
+
     if (selectedDietPreferences.length > 0) {
       const dietId = selectedDietPreferences[0];
-      // Check for custom target
-      if (dietNutritionTargets[dietId]?.calories) {
-        return dietNutritionTargets[dietId].calories;
-      }
-      // Check for default target from options
-      const dietOption = DIET_OPTIONS.find((d) => d.id === dietId);
-      if (dietOption?.targetCalories) {
-        return dietOption.targetCalories;
+      const customTarget = dietNutritionTargets[dietId];
+
+      if (customTarget) {
+        // User has custom targets (already in grams)
+        targets = {
+          goalCalories: customTarget.calories,
+          goalCarbs: customTarget.carbs,
+          goalProtein: customTarget.protein,
+          goalFat: customTarget.fat,
+        };
+      } else {
+        // Fallback to diet option defaults (percentages)
+        const dietOption = DIET_OPTIONS.find((d) => d.id === dietId);
+        if (dietOption) {
+          const cals = dietOption.targetCalories;
+          targets = {
+            goalCalories: cals,
+            goalCarbs: Math.round(
+              (cals * dietOption.defaultMacros.carbohydrates) / 4
+            ),
+            goalProtein: Math.round(
+              (cals * dietOption.defaultMacros.protein) / 4
+            ),
+            goalFat: Math.round((cals * dietOption.defaultMacros.fat) / 9),
+          };
+        }
       }
     }
-    return 2200;
+
+    return targets;
   }, [selectedDietPreferences, dietNutritionTargets]);
 
   return (
@@ -76,6 +103,9 @@ export default function DailyOverview({
         totalCarbs={totalCarbs}
         totalProtein={totalProtein}
         totalFat={totalFat}
+        goalCarbs={goalCarbs}
+        goalProtein={goalProtein}
+        goalFat={goalFat}
       />
     </View>
   );

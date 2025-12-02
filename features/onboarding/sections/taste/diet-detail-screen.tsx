@@ -1,20 +1,20 @@
+import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Image,
+    Linking,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOnboarding } from "@/providers/onboarding-provider";
+import Svg, { Circle } from "react-native-svg";
 import { useDietSummary } from "../../hooks/use-diet-summary";
 import { DIET_OPTIONS, DietOption } from "./diet-options";
 
@@ -58,64 +58,52 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
       return null;
     }
 
-    const calories =
-      savedTarget?.calories ?? data?.calories ?? dietOption.targetCalories ?? 0;
-
+    // If user has saved targets (grams), use them directly
     if (savedTarget) {
+      const { calories, protein, fat, carbs } = savedTarget;
+      
       const macros = [
         {
           key: "protein" as const,
           label: "Protein",
           color: MACRO_COLORS.protein,
-          percentage: savedTarget.proteinPercent,
-          grams:
-            calories > 0
-              ? (calories * savedTarget.proteinPercent) /
-                (100 * MACRO_CALORIES.protein)
-              : 0,
+          grams: protein,
         },
         {
           key: "fat" as const,
           label: "Fat",
           color: MACRO_COLORS.fat,
-          percentage: savedTarget.fatPercent,
-          grams:
-            calories > 0
-              ? (calories * savedTarget.fatPercent) /
-                (100 * MACRO_CALORIES.fat)
-              : 0,
+          grams: fat,
         },
         {
           key: "carbohydrates" as const,
           label: "Carb",
           color: MACRO_COLORS.carbohydrates,
-          percentage: savedTarget.carbPercent,
-          grams:
-            calories > 0
-              ? (calories * savedTarget.carbPercent) /
-                (100 * MACRO_CALORIES.carbohydrates)
-              : 0,
+          grams: carbs,
         },
       ];
 
-      return { calories, macros };
+      // Calculate percentages for the donut chart
+      const totalGrams = protein + fat + carbs;
+      const macrosWithPercentages = macros.map(m => ({
+        ...m,
+        percentage: totalGrams > 0 ? (m.grams / totalGrams) * 100 : 0
+      }));
+
+      return { calories, macros: macrosWithPercentages };
     }
 
+    // Fallback: Calculate grams from default percentages
+    const targetCalories = dietOption.targetCalories;
     const fallbackRatios = dietOption.defaultMacros;
 
     const fallbackGrams = {
-      protein: calories
-        ? (calories * fallbackRatios.protein) / MACRO_CALORIES.protein
-        : 0,
-      fat: calories
-        ? (calories * fallbackRatios.fat) / MACRO_CALORIES.fat
-        : 0,
-      carbohydrates: calories
-        ? (calories * fallbackRatios.carbohydrates) /
-          MACRO_CALORIES.carbohydrates
-        : 0,
+      protein: Math.round((targetCalories * fallbackRatios.protein) / MACRO_CALORIES.protein),
+      fat: Math.round((targetCalories * fallbackRatios.fat) / MACRO_CALORIES.fat),
+      carbohydrates: Math.round((targetCalories * fallbackRatios.carbohydrates) / MACRO_CALORIES.carbohydrates),
     };
 
+    // Use API data if available, otherwise fallback grams
     const macros = [
       {
         key: "protein" as const,
@@ -137,33 +125,16 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
       },
     ];
 
-    const macrosWithPercentages = macros.map((macro) => {
-      const caloriesFromMacro = macro.grams * MACRO_CALORIES[macro.key];
-      const totalCalories =
-        data?.calories ??
-        macros.reduce(
-          (sum, current) =>
-            sum + current.grams * MACRO_CALORIES[current.key],
-          0
-        );
-
-      const fallbackPercentage =
-        dietOption.defaultMacros[macro.key] * 100;
-
-      return {
-        ...macro,
-        calories: caloriesFromMacro,
-        percentage:
-          totalCalories > 0
-            ? (caloriesFromMacro / totalCalories) * 100
-            : fallbackPercentage,
-      };
-    });
+    const totalGrams = macros.reduce((sum, m) => sum + m.grams, 0);
+    const macrosWithPercentages = macros.map(m => ({
+      ...m,
+      percentage: totalGrams > 0 ? (m.grams / totalGrams) * 100 : 0
+    }));
 
     const totalCalories =
       data?.calories ??
-      macrosWithPercentages.reduce(
-        (sum, macro) => sum + macro.calories,
+      macros.reduce(
+        (sum, macro) => sum + macro.grams * MACRO_CALORIES[macro.key],
         0
       );
 

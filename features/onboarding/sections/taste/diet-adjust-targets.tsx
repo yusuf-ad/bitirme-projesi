@@ -1,16 +1,15 @@
+import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Pressable,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOnboarding } from "@/providers/onboarding-provider";
 import { DIET_OPTIONS } from "./diet-options";
 
 interface DietAdjustTargetsProps {
@@ -43,77 +42,78 @@ export function DietAdjustTargetsScreen({
   const savedTarget = dietId
     ? onboarding.dietNutritionTargets[dietId]
     : undefined;
-  const [calorieInput, setCalorieInput] = useState(
-    String(savedTarget?.calories ?? diet?.targetCalories ?? 2200)
-  );
-  const [protein, setProtein] = useState(
-    savedTarget?.proteinPercent ??
-      Math.round((diet?.defaultMacros.protein ?? 0.3) * 100)
-  );
-  const [fat, setFat] = useState(
-    savedTarget?.fatPercent ??
-      Math.round((diet?.defaultMacros.fat ?? 0.3) * 100)
-  );
-  const [carb, setCarb] = useState(
-    savedTarget?.carbPercent ??
-      Math.round((diet?.defaultMacros.carbohydrates ?? 0.4) * 100)
-  );
 
+  // Initialize state with saved values or calculated defaults (grams)
+  const [protein, setProtein] = useState(() => {
+    if (savedTarget?.protein) return savedTarget.protein;
+    const cals = diet?.targetCalories ?? 2200;
+    const percent = diet?.defaultMacros.protein ?? 0.3;
+    return Math.round((cals * percent) / 4);
+  });
+
+  const [fat, setFat] = useState(() => {
+    if (savedTarget?.fat) return savedTarget.fat;
+    const cals = diet?.targetCalories ?? 2200;
+    const percent = diet?.defaultMacros.fat ?? 0.3;
+    return Math.round((cals * percent) / 9);
+  });
+
+  const [carb, setCarb] = useState(() => {
+    if (savedTarget?.carbs) return savedTarget.carbs;
+    const cals = diet?.targetCalories ?? 2200;
+    const percent = diet?.defaultMacros.carbohydrates ?? 0.4;
+    return Math.round((cals * percent) / 4);
+  });
+
+  // Re-sync if dietId changes (though usually this screen is for one diet)
   useEffect(() => {
-    if (!diet) {
-      return;
+    if (!diet) return;
+    if (savedTarget) {
+      setProtein(savedTarget.protein);
+      setFat(savedTarget.fat);
+      setCarb(savedTarget.carbs);
+    } else {
+      const cals = diet.targetCalories;
+      setProtein(Math.round((cals * diet.defaultMacros.protein) / 4));
+      setFat(Math.round((cals * diet.defaultMacros.fat) / 9));
+      setCarb(Math.round((cals * diet.defaultMacros.carbohydrates) / 4));
     }
-    const nextCalories = savedTarget?.calories ?? diet.targetCalories ?? 2200;
-    setCalorieInput(String(nextCalories));
-    setProtein(
-      savedTarget?.proteinPercent ??
-        Math.round(diet.defaultMacros.protein * 100)
-    );
-    setFat(
-      savedTarget?.fatPercent ?? Math.round(diet.defaultMacros.fat * 100)
-    );
-    setCarb(
-      savedTarget?.carbPercent ??
-        Math.round(diet.defaultMacros.carbohydrates * 100)
-    );
   }, [dietId, savedTarget, diet]);
 
-  const calories = Math.max(0, parseInt(calorieInput, 10) || 0);
-  const total = protein + fat + carb;
-  const isTotalValid = total === 100;
+  // Calculate total calories from grams
+  const calculatedCalories = Math.round(protein * 4 + fat * 9 + carb * 4);
 
   const handleMacroChange = (
     setter: (value: number) => void,
     nextValue: number
   ) => {
-    const clamped = Math.max(0, Math.min(100, nextValue));
+    // Cap at reasonable max (e.g. 1000g) to prevent overflow/UI issues
+    const clamped = Math.max(0, Math.min(1000, nextValue));
     setter(clamped);
   };
 
   const handleSave = async (useDefaults = false) => {
-    if (!diet || !dietId) {
-      return;
-    }
-
-    if (!isTotalValid && !useDefaults) {
-      return;
-    }
+    if (!diet || !dietId) return;
 
     await Haptics.selectionAsync();
 
-    const payload = useDefaults
-      ? {
-          calories: diet.targetCalories,
-          proteinPercent: Math.round(diet.defaultMacros.protein * 100),
-          fatPercent: Math.round(diet.defaultMacros.fat * 100),
-          carbPercent: Math.round(diet.defaultMacros.carbohydrates * 100),
-        }
-      : {
-          calories,
-          proteinPercent: protein,
-          fatPercent: fat,
-          carbPercent: carb,
-        };
+    let payload;
+    if (useDefaults) {
+      const cals = diet.targetCalories;
+      payload = {
+        calories: cals,
+        protein: Math.round((cals * diet.defaultMacros.protein) / 4),
+        fat: Math.round((cals * diet.defaultMacros.fat) / 9),
+        carbs: Math.round((cals * diet.defaultMacros.carbohydrates) / 4),
+      };
+    } else {
+      payload = {
+        calories: calculatedCalories,
+        protein,
+        fat,
+        carbs: carb,
+      };
+    }
 
     await onboarding.saveDietNutritionTarget(diet.id, payload);
 
@@ -130,10 +130,10 @@ export function DietAdjustTargetsScreen({
 
   const handleUseDefaults = async () => {
     if (!diet) return;
-    setCalorieInput(String(diet.targetCalories));
-    setProtein(Math.round(diet.defaultMacros.protein * 100));
-    setFat(Math.round(diet.defaultMacros.fat * 100));
-    setCarb(Math.round(diet.defaultMacros.carbohydrates * 100));
+    const cals = diet.targetCalories;
+    setProtein(Math.round((cals * diet.defaultMacros.protein) / 4));
+    setFat(Math.round((cals * diet.defaultMacros.fat) / 9));
+    setCarb(Math.round((cals * diet.defaultMacros.carbohydrates) / 4));
     await handleSave(true);
   };
 
@@ -155,51 +155,35 @@ export function DietAdjustTargetsScreen({
         What are your daily nutrition targets?
       </Text>
 
+      {/* Calculated Calories Display */}
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Calories per day</Text>
-        <TextInput
-          style={styles.calorieInput}
-          keyboardType="number-pad"
-          value={calorieInput}
-          onChangeText={(text) => {
-            const sanitized = text.replace(/\D/g, "");
-            setCalorieInput(sanitized);
-          }}
-        />
+        <Text style={styles.cardLabel}>Calculated Calories</Text>
+        <Text style={styles.calorieDisplay}>
+          {calculatedCalories} <Text style={styles.calorieUnit}>kcal</Text>
+        </Text>
       </View>
 
       <View style={styles.macrosContainer}>
         <MacroRow
-          label="Protein"
+          label="Protein (g)"
           value={protein}
           onChange={(next) => handleMacroChange(setProtein, next)}
         />
         <MacroRow
-          label="Fat"
+          label="Fat (g)"
           value={fat}
           onChange={(next) => handleMacroChange(setFat, next)}
         />
         <MacroRow
-          label="Carbohydrates"
+          label="Carbohydrates (g)"
           value={carb}
           onChange={(next) => handleMacroChange(setCarb, next)}
         />
       </View>
 
-      <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>Total targets</Text>
-        <Text style={styles.totalValue}>{total}%</Text>
-        {!isTotalValid && (
-          <Text style={styles.totalError}>
-            The total amount must be exactly 100%
-          </Text>
-        )}
-      </View>
-
       <Pressable
-        style={[styles.primaryButton, !isTotalValid && styles.buttonDisabled]}
+        style={styles.primaryButton}
         onPress={() => handleSave()}
-        disabled={!isTotalValid}
       >
         <Text style={styles.primaryButtonText}>Save</Text>
       </Pressable>
@@ -274,12 +258,17 @@ const styles = StyleSheet.create({
     color: "#6366F1",
     marginBottom: 12,
   },
-  calorieInput: {
+  calorieDisplay: {
     fontFamily: "Inter",
     fontSize: 40,
     fontWeight: "700",
     textAlign: "center",
     color: "#111827",
+  },
+  calorieUnit: {
+    fontSize: 20,
+    fontWeight: "500",
+    color: "#6B7280",
   },
   macrosContainer: {
     gap: 12,
