@@ -13,7 +13,13 @@ import CustomButton from "@/shared/components/custom-button";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MEAL_TYPE_OPTIONS: MealTypeOption[] = [
@@ -44,6 +50,8 @@ export default function SelectMeals() {
     dinner: true,
   });
 
+  const [isLoading, setIsLoading] = useState(false);
+
   function toggleMealType(mealType: MealType) {
     setSelectedMealTypes((prev) => ({
       ...prev,
@@ -51,13 +59,51 @@ export default function SelectMeals() {
     }));
   }
 
-  async function handleFetchRecipes() {
-    const results = await fetchRecipes(
-      onboardingData,
-      pantryData,
-      selectedMealTypes
-    );
-    // TODO: Handle results (e.g., navigate to preview or update state)
+  async function handleCreateMealPlan() {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const results = await fetchRecipes(
+        onboardingData,
+        pantryData,
+        selectedMealTypes
+      );
+
+      if (!results || results.length === 0) {
+        console.warn("No recipes found");
+        setIsLoading(false);
+        return;
+      }
+
+      // Transform results array into MealPlan object format
+      const mealPlanData: Record<
+        string,
+        { results: any[]; totalResults: number }
+      > = {};
+
+      for (const result of results) {
+        mealPlanData[result.mealType] = {
+          results: result.results,
+          totalResults:
+            result.results[0]?.totalResults || result.results.length,
+        };
+      }
+
+      // Navigate to preview with the meal plan data
+      router.push({
+        pathname: "/preview",
+        params: {
+          startDate: params.startDate as string,
+          endDate: (params.endDate as string) || (params.startDate as string),
+          mealPlanData: JSON.stringify(mealPlanData),
+        },
+      });
+    } catch (error) {
+      console.error("Error creating meal plan:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -82,31 +128,6 @@ export default function SelectMeals() {
             modifications here.
           </Text>
 
-          <Button title="Test Fetch Recipes" onPress={handleFetchRecipes} />
-          <Button
-            title="go to preview"
-            onPress={() => router.push("/preview")}
-          />
-          <Button
-            title="Log Pantry Data"
-            onPress={() => {
-              console.log("=== MANUAL PANTRY LOG ===");
-              console.log("Pantry items count:", pantryData?.length || 0);
-
-              const spoonacularNames =
-                pantryData
-                  ?.map((item) => item.spoonacular_name)
-                  .filter((name) => name)
-                  .join(",") || "";
-
-              console.log("Spoonacular names:", spoonacularNames);
-              console.log(
-                "Full pantry items:",
-                JSON.stringify(pantryData, null, 2)
-              );
-            }}
-          />
-
           <MealTypeLabels mealTypes={MEAL_TYPE_OPTIONS} />
 
           <DateMealRow
@@ -120,10 +141,18 @@ export default function SelectMeals() {
 
       <View style={styles.footer}>
         <CustomButton
-          containerStyle={styles.createButton}
-          onPress={() => router.push("/preview")}
+          containerStyle={[
+            styles.createButton,
+            isLoading && styles.createButtonDisabled,
+          ]}
+          onPress={handleCreateMealPlan}
+          disabled={isLoading}
         >
-          <Text style={styles.createButtonText}>Create</Text>
+          {isLoading ? (
+            <ActivityIndicator color={Colors.background.primary} />
+          ) : (
+            <Text style={styles.createButtonText}>Create</Text>
+          )}
         </CustomButton>
       </View>
     </View>
@@ -160,5 +189,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.background.primary,
+  },
+  createButtonDisabled: {
+    opacity: 0.7,
   },
 });

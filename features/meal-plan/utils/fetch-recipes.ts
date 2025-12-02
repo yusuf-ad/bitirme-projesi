@@ -123,7 +123,7 @@ async function fetchRecipesForMealType(
   const response = await searchRecipesComplex({
     ...params,
     type: apiType,
-    number: 1,
+    number: 3,
     addRecipeNutrition: true,
     ignorePantry: false,
     fillIngredients: false,
