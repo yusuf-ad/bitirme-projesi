@@ -3,10 +3,13 @@ import MealCard from "@/features/home/components/meal-card";
 import { MealPlanItemRecord, MealSlot } from "@/features/meal-plan/types";
 import { useDeleteMealItem } from "@/hooks/use-delete-meal-item";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { ImageSourcePropType, StyleSheet, View } from "react-native";
+import Animated, {
+    FadeInDown,
+    SharedValue,
+} from "react-native-reanimated";
 import { EmptyMealSlot } from "./empty-meal-slot";
-
-import { SharedValue } from "react-native-reanimated";
 
 interface DailyMealsListProps {
   items: MealPlanItemRecord[];
@@ -50,6 +53,15 @@ const DEFAULT_MEAL_DETAILS: Record<
 
 export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListProps) {
   const deleteMutation = useDeleteMealItem();
+  const [eatenMeals, setEatenMeals] = useState<Set<number>>(new Set());
+  const [shouldAnimate, setShouldAnimate] = useState(true);
+
+  // Reset animation when date changes
+  useEffect(() => {
+    setShouldAnimate(true);
+    const timer = setTimeout(() => setShouldAnimate(false), 1000);
+    return () => clearTimeout(timer);
+  }, [selectedDate.toISOString()]);
 
   // Group meals by type
   const mealsByType = new Map<MealSlot, MealPlanItemRecord>();
@@ -63,25 +75,42 @@ export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListP
     deleteMutation.mutate(mealId);
   };
 
+  const handleToggleEaten = (mealId: number, eaten: boolean) => {
+    setEatenMeals((prev) => {
+      const newSet = new Set(prev);
+      if (eaten) {
+        newSet.add(mealId);
+      } else {
+        newSet.delete(mealId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.list}>
-        {MEAL_ORDER.map((mealType) => {
+        {MEAL_ORDER.map((mealType, index) => {
           const item = mealsByType.get(mealType);
           const details = DEFAULT_MEAL_DETAILS[mealType];
+          const staggerDelay = index * 100; // 100ms delay between each card
 
           if (!item) {
             // Show empty slot for missing meals
             return (
-              <EmptyMealSlot
+              <Animated.View
                 key={mealType}
-                mealType={details.label}
-                mealTime={details.time}
-                mealIcon={details.icon}
-                mealSlot={mealType}
-                selectedDate={selectedDate}
-                scrollY={scrollY}
-              />
+                entering={shouldAnimate ? FadeInDown.delay(staggerDelay).duration(400).springify() : undefined}
+              >
+                <EmptyMealSlot
+                  mealType={details.label}
+                  mealTime={details.time}
+                  mealIcon={details.icon}
+                  mealSlot={mealType}
+                  selectedDate={selectedDate}
+                  scrollY={scrollY}
+                />
+              </Animated.View>
             );
           }
 
@@ -109,23 +138,29 @@ export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListP
             : undefined;
 
           return (
-            <MealCard
+            <Animated.View
               key={item.id}
-              mealType={mealLabel}
-              mealTime={mealTime}
-              mealIcon={mealIcon}
-              recipeName={item.recipe_name}
-              recipeImage={recipeImage}
-              prepTime={prepTime}
-              calories={calories}
-              carbs={carbs}
-              protein={protein}
-              fat={fat}
-              onPress={() =>
-                router.push(`/(meal)/${item.spoonacular_recipe_id}`)
-              }
-              onDelete={() => handleDelete(item.id)}
-            />
+              entering={shouldAnimate ? FadeInDown.delay(staggerDelay).duration(400).springify() : undefined}
+            >
+              <MealCard
+                mealType={mealLabel}
+                mealTime={mealTime}
+                mealIcon={mealIcon}
+                recipeName={item.recipe_name}
+                recipeImage={recipeImage}
+                prepTime={prepTime}
+                calories={calories}
+                carbs={carbs}
+                protein={protein}
+                fat={fat}
+                isEaten={eatenMeals.has(item.id)}
+                onPress={() =>
+                  router.push(`/(meal)/${item.spoonacular_recipe_id}`)
+                }
+                onDelete={() => handleDelete(item.id)}
+                onToggleEaten={(eaten) => handleToggleEaten(item.id, eaten)}
+              />
+            </Animated.View>
           );
         })}
       </View>

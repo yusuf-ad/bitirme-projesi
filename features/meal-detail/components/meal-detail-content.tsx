@@ -7,21 +7,37 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useCallback, useMemo, useState } from "react";
 import {
+  LayoutAnimation,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  UIManager,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+  Easing,
   Extrapolation,
+  FadeInDown,
+  FadeOutUp,
   interpolate,
+  runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const SWIPE_THRESHOLD = 30;
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const HERO_HEIGHT = 312;
 const HEADER_HEIGHT = 56;
@@ -66,11 +82,11 @@ export function MealDetailContent({
   onToggleFavorite,
   onBack,
   onPlanMeal,
-  mealSlot,
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
+  const tabProgress = useSharedValue(0);
 
   // Scroll threshold - when content title reaches header position
   const SCROLL_THRESHOLD = HERO_HEIGHT - (HEADER_HEIGHT + insets.top);
@@ -203,16 +219,74 @@ export function MealDetailContent({
     return [];
   }, [meal.analyzedInstructions, meal.instructions]);
 
-  const handleTabPress = useCallback(
-    async (tabKey: TabKey) => {
-      if (tabKey === activeTab) {
-        return;
-      }
-      await Haptics.selectionAsync();
+  const switchTab = useCallback(
+    (tabKey: TabKey) => {
+      if (tabKey === activeTab) return;
+
+      Haptics.selectionAsync();
+
+      // Animate layout change - faster duration
+      LayoutAnimation.configureNext({
+        duration: 180,
+        update: {
+          type: LayoutAnimation.Types.easeOut,
+        },
+      });
+
+      // Update tab progress for indicator animation - smooth easing without bounce
+      tabProgress.value = withTiming(tabKey === "ingredients" ? 0 : 1, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+      });
+
       setActiveTab(tabKey);
     },
-    [activeTab]
+    [activeTab, tabProgress]
   );
+
+  const handleTabPress = useCallback(
+    (tabKey: TabKey) => {
+      switchTab(tabKey);
+    },
+    [switchTab]
+  );
+
+  // Swipe gesture for tab switching - more responsive
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-15, 15])
+    .onEnd((event) => {
+      const { translationX, velocityX } = event;
+
+      // Swipe left -> go to instructions (lower threshold for faster response)
+      if ((translationX < -SWIPE_THRESHOLD || velocityX < -300) && activeTab === "ingredients") {
+        runOnJS(switchTab)("instructions");
+      }
+      // Swipe right -> go to ingredients
+      else if ((translationX > SWIPE_THRESHOLD || velocityX > 300) && activeTab === "instructions") {
+        runOnJS(switchTab)("ingredients");
+      }
+    });
+
+  // Tab indicator animated style - snappier, using interpolate for smooth transition
+  const tabIndicatorStyle = useAnimatedStyle(() => {
+    const leftPercent = interpolate(tabProgress.value, [0, 1], [0, 50], Extrapolation.CLAMP);
+    return {
+      left: `${leftPercent}%`,
+    };
+  });
+
+  // Ingredients tab text animated style
+  const ingredientsTabStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(tabProgress.value, [0, 1], [1, 0.5], Extrapolation.CLAMP);
+    return { opacity };
+  });
+
+  // Instructions tab text animated style
+  const instructionsTabStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(tabProgress.value, [0, 1], [0.5, 1], Extrapolation.CLAMP);
+    return { opacity };
+  });
 
   return (
     <View style={styles.container}>
@@ -390,77 +464,134 @@ export function MealDetailContent({
             ))}
           </View>
 
-          <View style={styles.tabsContainer} accessibilityRole="tablist">
-            {TAB_ITEMS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <Pressable
-                  key={tab.key}
-                  onPress={() => handleTabPress(tab.key)}
-                  style={[
-                    styles.tabButton,
-                    isActive
-                      ? styles.tabButtonActive
-                      : styles.tabButtonInactive,
-                  ]}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: isActive }}
-                >
-                  <Text
-                    style={[styles.tabLabel, isActive && styles.tabLabelActive]}
-                  >
-                    {tab.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          {/* Modern Pill Tab Bar */}
+          <View style={styles.tabsOuterContainer}>
+            <View style={styles.tabsContainer} accessibilityRole="tablist">
+              <Animated.View style={[styles.tabIndicator, tabIndicatorStyle]} />
+              <Pressable
+                onPress={() => handleTabPress("ingredients")}
+                style={styles.tabButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="tab"
+              >
+                <Animated.Text style={[styles.tabLabel, ingredientsTabStyle]}>
+                  Ingredients
+                </Animated.Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handleTabPress("instructions")}
+                style={styles.tabButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="tab"
+              >
+                <Animated.Text style={[styles.tabLabel, instructionsTabStyle]}>
+                  Instructions
+                </Animated.Text>
+              </Pressable>
+            </View>
           </View>
 
-          {activeTab === "ingredients" ? (
-            <View style={styles.contentSection}>
-              <Text style={styles.sectionTitle}>Ingredients</Text>
-              <View style={styles.ingredientsList}>
-                {(meal.extendedIngredients ?? []).map((ingredient, index) => (
-                  <View
-                    key={`${ingredient.id}-${ingredient.original}-${index}`}
-                    style={styles.ingredientRow}
+          {/* Tab Content - Swipeable with modern card design */}
+          <GestureDetector gesture={swipeGesture}>
+            <View style={styles.tabContentWrapper}>
+              {activeTab === "ingredients" ? (
+                <View key="ingredients" style={styles.contentSection}>
+                  {/* Header with staggered animation */}
+                  <Animated.View
+                    entering={FadeInDown.duration(200).delay(0)}
+                    exiting={FadeOutUp.duration(100)}
+                    style={styles.contentHeader}
                   >
-                    <View style={styles.bulletPoint} />
-                    <Text style={styles.ingredientText}>
-                      {ingredient.original}
-                    </Text>
-                  </View>
-                ))}
-                {(!meal.extendedIngredients ||
-                  meal.extendedIngredients.length === 0) && (
-                  <Text style={styles.emptyText}>
-                    No ingredients were provided for this recipe.
-                  </Text>
-                )}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.contentSection}>
-              <Text style={styles.sectionTitle}>Instructions</Text>
-              <View style={styles.instructionsList}>
-                {instructions.length > 0 ? (
-                  instructions.map((step) => (
-                    <View key={step.number} style={styles.stepRow}>
-                      <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>{step.number}</Text>
-                      </View>
-                      <Text style={styles.stepText}>{step.text}</Text>
+                    <View style={styles.contentHeaderIcon}>
+                      <Ionicons name="leaf-outline" size={16} color={Colors.lilac[700]} />
                     </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyText}>
-                    No instructions were provided for this recipe.
-                  </Text>
-                )}
-              </View>
+                    <Text style={styles.contentHeaderTitle}>
+                      {(meal.extendedIngredients ?? []).length} Ingredients
+                    </Text>
+                  </Animated.View>
+                  <View style={styles.ingredientsList}>
+                    {(meal.extendedIngredients ?? []).map((ingredient, index) => (
+                      <Animated.View
+                        key={`${ingredient.id}-${ingredient.original}-${index}`}
+                        entering={FadeInDown.duration(200).delay(50 + index * 30)}
+                        exiting={FadeOutUp.duration(80)}
+                        style={styles.ingredientCard}
+                      >
+                        <View style={styles.ingredientIconWrapper}>
+                          <View style={styles.ingredientIcon} />
+                        </View>
+                        <Text style={styles.ingredientText}>
+                          {ingredient.original}
+                        </Text>
+                      </Animated.View>
+                    ))}
+                    {(!meal.extendedIngredients ||
+                      meal.extendedIngredients.length === 0) && (
+                        <Animated.View
+                          entering={FadeInDown.duration(200).delay(50)}
+                          style={styles.emptyState}
+                        >
+                          <Ionicons name="basket-outline" size={48} color={Colors.gray[300]} />
+                          <Text style={styles.emptyText}>
+                            No ingredients available
+                          </Text>
+                        </Animated.View>
+                      )}
+                  </View>
+                </View>
+              ) : (
+                <View key="instructions" style={styles.contentSection}>
+                  {/* Header with staggered animation */}
+                  <Animated.View
+                    entering={FadeInDown.duration(200).delay(0)}
+                    exiting={FadeOutUp.duration(100)}
+                    style={styles.contentHeader}
+                  >
+                    <View style={styles.contentHeaderIcon}>
+                      <Ionicons name="list-outline" size={16} color={Colors.lilac[700]} />
+                    </View>
+                    <Text style={styles.contentHeaderTitle}>
+                      {instructions.length} Steps
+                    </Text>
+                  </Animated.View>
+                  <View style={styles.instructionsList}>
+                    {instructions.length > 0 ? (
+                      instructions.map((step, index) => (
+                        <Animated.View
+                          key={step.number}
+                          entering={FadeInDown.duration(200).delay(50 + index * 40)}
+                          exiting={FadeOutUp.duration(80)}
+                          style={styles.stepCard}
+                        >
+                          <View style={styles.stepNumberContainer}>
+                            <View style={styles.stepBadge}>
+                              <Text style={styles.stepBadgeText}>{step.number}</Text>
+                            </View>
+                            {index < instructions.length - 1 && (
+                              <View style={styles.stepConnector} />
+                            )}
+                          </View>
+                          <View style={styles.stepContent}>
+                            <Text style={styles.stepText}>{step.text}</Text>
+                          </View>
+                        </Animated.View>
+                      ))
+                    ) : (
+                      <Animated.View
+                        entering={FadeInDown.duration(200).delay(50)}
+                        style={styles.emptyState}
+                      >
+                        <Ionicons name="document-text-outline" size={48} color={Colors.gray[300]} />
+                        <Text style={styles.emptyText}>
+                          No instructions available
+                        </Text>
+                      </Animated.View>
+                    )}
+                  </View>
+                </View>
+              )}
             </View>
-          )}
+          </GestureDetector>
         </View>
 
         {!!onPlanMeal && (
@@ -715,53 +846,91 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     lineHeight: 16,
   },
+  tabsOuterContainer: {
+    marginTop: 8,
+  },
   tabsContainer: {
     flexDirection: "row",
     alignItems: "center",
+    position: "relative",
+    backgroundColor: Colors.gray[100],
     borderRadius: 12,
-    overflow: "hidden",
+    padding: 4,
+  },
+  tabIndicator: {
+    position: "absolute",
+    top: 4,
+    bottom: 4,
+    width: "50%",
+    backgroundColor: Colors.background.surface,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
-    borderBottomWidth: 2,
-  },
-  tabButtonActive: {
-    borderBottomColor: Colors.lilac[800],
-  },
-  tabButtonInactive: {
-    borderBottomColor: Colors.gray[100],
+    zIndex: 1,
   },
   tabLabel: {
-    fontFamily: "Poppins",
+    fontFamily: "Inter",
     fontSize: 14,
-    fontWeight: "500",
-    color: Colors.gray[500],
-  },
-  tabLabelActive: {
+    fontWeight: "600",
     color: Colors.lilac[800],
   },
-  contentSection: {
-    gap: 16,
+  tabContentWrapper: {
+    minHeight: 100,
+    marginTop: 1,
   },
-  ingredientsList: {
+  contentSection: {
+    gap: 7,
+  },
+  contentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
-  ingredientRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    minHeight: 24,
-    paddingVertical: 2,
+  contentHeaderIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Colors.lilac[100],
+    alignItems: "center",
+    justifyContent: "center",
   },
-  bulletPoint: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  contentHeaderTitle: {
+    fontFamily: "Inter",
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.text.primary,
+    letterSpacing: 0.3,
+  },
+  ingredientsList: {
+    gap: 3,
+  },
+  ingredientCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.gray[100],
+    paddingVertical: 8,
+    paddingHorizontal: 1,
+    borderRadius: 12,
+  },
+  ingredientIconWrapper: {
+    width: 6,
+    height: 6,
+  },
+  ingredientIcon: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: Colors.lilac[700],
-    marginTop: 6,
   },
   ingredientText: {
     flex: 1,
@@ -769,45 +938,63 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: Colors.gray[700],
-    lineHeight: 16,
+    lineHeight: 19,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+    gap: 12,
   },
   emptyText: {
     fontFamily: "Inter",
-    fontSize: 14,
-    color: Colors.gray[500],
+    fontSize: 15,
+    fontWeight: "500",
+    color: Colors.gray[400],
+    textAlign: "center",
   },
   instructionsList: {
-    gap: 14,
+    gap: 2,
   },
-  stepRow: {
+  stepCard: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
+    gap: 12,
+  },
+  stepNumberContainer: {
+    alignItems: "center",
+    width: 26,
   },
   stepBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 32,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.lilac[800],
-    paddingHorizontal: 8,
-    paddingVertical: 4,
   },
   stepBadgeText: {
     fontFamily: "Inter",
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "600",
     color: Colors.background.surface,
-    lineHeight: 16,
+  },
+  stepConnector: {
+    width: 2,
+    flex: 1,
+    backgroundColor: Colors.lilac[100],
+    marginVertical: 4,
+    borderRadius: 1,
+  },
+  stepContent: {
+    flex: 1,
+    paddingBottom: 16,
   },
   stepText: {
-    flex: 1,
     fontFamily: "Inter",
     fontSize: 14,
     fontWeight: "500",
     color: Colors.gray[700],
-    lineHeight: 16,
+    lineHeight: 20,
   },
   planCtaWrapper: {
     paddingHorizontal: 16,

@@ -74,49 +74,64 @@ export function EmptyMealSlot({
   const [aiError, setAiError] = useState<string | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
-  // Animated styles for collapsible content
+  // Animated styles for collapsible content - optimized for UI thread
+  // Using only GPU-accelerated properties (opacity, transform) for 60fps animations
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    // Expand as user scrolls down (0 -> 150px scroll)
-    const height = interpolate(
+    'worklet';
+
+    const progress = interpolate(
       scrollY.value,
       [0, 150],
-      [0, 160], // 0 height at top, 160 height when scrolled
-      Extrapolation.CLAMP
-    );
-
-    const opacity = interpolate(
-      scrollY.value,
-      [50, 150], // Start fading in after 50px scroll
       [0, 1],
       Extrapolation.CLAMP
     );
 
-    const scale = interpolate(
+    // Smooth fade and slide animation
+    const opacity = interpolate(progress, [0, 0.3, 1], [0, 0, 1]);
+    const translateY = interpolate(progress, [0, 1], [-40, 0]);
+    const scale = interpolate(progress, [0, 1], [0.95, 1]);
+
+    return {
+      opacity,
+      transform: [
+        { translateY },
+        { scale },
+      ],
+    };
+  });
+
+  // Wrapper style for height animation using max-height approach
+  const wrapperAnimatedStyle = useAnimatedStyle(() => {
+    'worklet';
+
+    const progress = interpolate(
       scrollY.value,
       [0, 150],
-      [0.8, 1],
+      [0, 1],
       Extrapolation.CLAMP
     );
 
+    // Animate max height for smooth expand/collapse
+    const maxHeight = interpolate(progress, [0, 1], [0, 160]);
+
     return {
-      height,
-      opacity,
-      transform: [{ scale }],
-      overflow: "hidden",
+      maxHeight,
+      overflow: 'hidden' as const,
     };
   });
 
   const containerAnimatedStyle = useAnimatedStyle(() => {
-    // Animate container padding/gap when collapsed
-    const paddingBottom = interpolate(
+    'worklet';
+
+    const progress = interpolate(
       scrollY.value,
       [0, 150],
-      [0, 16],
+      [0, 1],
       Extrapolation.CLAMP
     );
 
     return {
-      paddingBottom,
+      marginBottom: interpolate(progress, [0, 1], [0, 16]),
     };
   });
 
@@ -355,16 +370,18 @@ export function EmptyMealSlot({
           </View>
 
           {/* Empty State Content - Animated */}
-          <Animated.View style={contentAnimatedStyle}>
-            <View style={styles.emptyContent}>
-              <View style={styles.emptyIconContainer}>
-                <Text style={styles.emptyIcon}>🍽️</Text>
+          <Animated.View style={wrapperAnimatedStyle}>
+            <Animated.View style={[styles.emptyContentWrapper, contentAnimatedStyle]}>
+              <View style={styles.emptyContent}>
+                <View style={styles.emptyIconContainer}>
+                  <Text style={styles.emptyIcon}>🍽️</Text>
+                </View>
+                <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
+                <Text style={styles.emptyDescription}>
+                  Tap to add a meal from the recipes page
+                </Text>
               </View>
-              <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
-              <Text style={styles.emptyDescription}>
-                Tap to add a meal from the recipes page
-              </Text>
-            </View>
+            </Animated.View>
           </Animated.View>
         </Pressable>
       </Animated.View>
@@ -681,6 +698,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 21,
     color: Colors.gray[400],
+  },
+  emptyContentWrapper: {
+    minHeight: 160,
   },
   emptyContent: {
     alignItems: "center",
