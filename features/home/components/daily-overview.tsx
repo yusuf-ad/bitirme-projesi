@@ -9,6 +9,7 @@ interface DailyOverviewProps {
   totalCarbs?: number;
   totalProtein?: number;
   totalFat?: number;
+  isEmpty?: boolean;
 }
 
 export default function DailyOverview({
@@ -16,6 +17,7 @@ export default function DailyOverview({
   totalCarbs = 0,
   totalProtein = 0,
   totalFat = 0,
+  isEmpty = false,
 }: DailyOverviewProps) {
   const goalCalories = 2200;
 
@@ -25,8 +27,21 @@ export default function DailyOverview({
       <View style={styles.header}>
         <View style={styles.mealInfo}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <EnergyIcon color={Colors.lilac[900]} width={16} height={16} />
-            <Text style={styles.mealType}>Daily Overview</Text>
+            <EnergyIcon
+              color={isEmpty ? Colors.gray[400] : Colors.lilac[900]}
+              width={16}
+              height={16}
+            />
+            <Text
+              style={[styles.mealType, isEmpty && { color: Colors.gray[500] }]}
+            >
+              Daily Overview
+            </Text>
+            {isEmpty && (
+              <View style={styles.emptyBadge}>
+                <Text style={styles.emptyBadgeText}>No meals</Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -99,6 +114,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     color: Colors.text.primary,
+  },
+  emptyBadge: {
+    backgroundColor: Colors.gray[200],
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  emptyBadgeText: {
+    fontFamily: "Inter",
+    fontSize: 10,
+    fontWeight: "600",
+    color: Colors.gray[600],
   },
   mealTime: {
     fontFamily: "Inter",

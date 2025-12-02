@@ -1,17 +1,30 @@
 import { CalendarDay, Meal, TodayProgress } from "../types/home.types";
 
-export const mockCalendarDays: CalendarDay[] = (() => {
+export const generateCalendarDays = (userRegistrationDate?: Date): CalendarDay[] => {
   const days: CalendarDay[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
 
-  // Start from 15 days before today
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - 15);
+  // Use user registration date if provided, otherwise default to 15 days before today
+  let startDate: Date;
+  if (userRegistrationDate) {
+    startDate = new Date(userRegistrationDate);
+    startDate.setHours(0, 0, 0, 0);
+  } else {
+    startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 15);
+  }
+
+  // Calculate the number of days from start date to 15 days in the future
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 15);
 
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  
+  // Calculate total days to show
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)) + 1;
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < totalDays; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
 
@@ -24,7 +37,10 @@ export const mockCalendarDays: CalendarDay[] = (() => {
   }
 
   return days;
-})();
+};
+
+// Legacy export for backward compatibility
+export const mockCalendarDays: CalendarDay[] = generateCalendarDays();
 
 export const mockTodayProgress: TodayProgress = {
   calories: 1284,
