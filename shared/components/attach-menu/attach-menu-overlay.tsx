@@ -1,6 +1,6 @@
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -24,8 +24,13 @@ interface MenuItem {
   onPress: () => void;
 }
 
+interface MenuConfig {
+  title: string;
+  items: MenuItem[];
+}
+
 export function AttachMenuOverlay() {
-  const { isOpen, closeMenu } = useAttachMenu();
+  const { isOpen, closeMenu, currentRoute } = useAttachMenu();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const progress = useSharedValue(0);
@@ -52,13 +57,101 @@ export function AttachMenuOverlay() {
     }, ANIMATION_DURATION);
   };
 
-  const menuItems: MenuItem[] = [
-    {
-      icon: "camera-outline",
-      label: "Camera",
-      onPress: handleCameraPress,
-    },
-  ];
+  const handleCreateMealPlan = () => {
+    closeMenu();
+    setTimeout(() => {
+      router.push("/(plan)/create");
+    }, ANIMATION_DURATION);
+  };
+
+  const handleAIPlan = () => {
+    closeMenu();
+    setTimeout(() => {
+      router.push("/(plan)/ai-plan");
+    }, ANIMATION_DURATION);
+  };
+
+  const handleAddRecipe = () => {
+    closeMenu();
+    // TODO: Navigate to add recipe screen when available
+    console.log("Add recipe");
+  };
+
+  const handleSearchRecipe = () => {
+    closeMenu();
+    setTimeout(() => {
+      router.push("/(app)/recipes");
+    }, ANIMATION_DURATION);
+  };
+
+  const getMenuConfig = (): MenuConfig => {
+    switch (currentRoute) {
+      case "index":
+        return {
+          title: "Add to Plan",
+          items: [
+            {
+              icon: "calendar-outline",
+              label: "Create Meal Plan",
+              onPress: handleCreateMealPlan,
+            },
+            {
+              icon: "sparkles-outline",
+              label: "AI Meal Plan",
+              onPress: handleAIPlan,
+            },
+          ],
+        };
+      case "recipes":
+        return {
+          title: "Add Recipe",
+          items: [
+            {
+              icon: "add-circle-outline",
+              label: "Add New Recipe",
+              onPress: handleAddRecipe,
+            },
+            {
+              icon: "search-outline",
+              label: "Search Recipes",
+              onPress: handleSearchRecipe,
+            },
+          ],
+        };
+      case "pantry":
+        return {
+          title: "Add to Pantry",
+          items: [
+            {
+              icon: "camera-outline",
+              label: "Camera",
+              onPress: handleCameraPress,
+            },
+          ],
+        };
+      case "(profile)":
+        return {
+          title: "Settings",
+          items: [
+            {
+              icon: "settings-outline",
+              label: "Settings",
+              onPress: () => {
+                closeMenu();
+                console.log("Settings");
+              },
+            },
+          ],
+        };
+      default:
+        return {
+          title: "Actions",
+          items: [],
+        };
+    }
+  };
+
+  const menuConfig = useMemo(() => getMenuConfig(), [currentRoute]);
 
   // Overlay background animation
   const overlayStyle = useAnimatedStyle(() => {
@@ -148,11 +241,11 @@ export function AttachMenuOverlay() {
         {/* Header */}
         <Animated.View style={[styles.header, headerStyle]}>
           <Animated.Text style={styles.headerTitle}>
-            Add to Pantry
+            {menuConfig.title}
           </Animated.Text>
         </Animated.View>
 
-        {menuItems.map((item, index) => (
+        {menuConfig.items.map((item, index) => (
           <AttachMenuRow
             key={item.label}
             icon={item.icon}

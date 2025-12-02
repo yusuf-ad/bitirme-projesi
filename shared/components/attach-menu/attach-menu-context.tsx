@@ -1,10 +1,14 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
 
+export type AttachMenuRoute = "index" | "recipes" | "pantry" | "(profile)";
+
 interface AttachMenuContextType {
   isOpen: boolean;
+  currentRoute: AttachMenuRoute;
   openMenu: () => void;
   closeMenu: () => void;
   toggleMenu: () => void;
+  setCurrentRoute: (route: AttachMenuRoute) => void;
 }
 
 const AttachMenuContext = createContext<AttachMenuContextType | undefined>(
@@ -17,6 +21,7 @@ export function AttachMenuProvider({
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentRoute, setCurrentRoute] = useState<AttachMenuRoute>("index");
 
   const openMenu = useCallback(() => setIsOpen(true), []);
   const closeMenu = useCallback(() => setIsOpen(false), []);
@@ -24,7 +29,14 @@ export function AttachMenuProvider({
 
   return (
     <AttachMenuContext.Provider
-      value={{ isOpen, openMenu, closeMenu, toggleMenu }}
+      value={{
+        isOpen,
+        currentRoute,
+        openMenu,
+        closeMenu,
+        toggleMenu,
+        setCurrentRoute,
+      }}
     >
       {children}
     </AttachMenuContext.Provider>

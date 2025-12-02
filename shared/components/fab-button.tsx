@@ -1,13 +1,11 @@
 import AntDesign from "@expo/vector-icons/build/AntDesign";
-import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
-  useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { useAttachMenu } from "./attach-menu";
-import { SecondaryActionButton } from "./secondary-action-button";
+import { useAttachMenu, type AttachMenuRoute } from "./attach-menu";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -15,32 +13,24 @@ interface FabButtonProps {
   currentRouteName: string;
 }
 
-interface FabAction {
-  iconName: string;
-  onPress: () => void;
-}
-
 export function FabButton({ currentRouteName }: FabButtonProps) {
-  const router = useRouter();
-  const isExpanded = useSharedValue(false);
-  const { toggleMenu, isOpen } = useAttachMenu();
+  const { toggleMenu, isOpen, setCurrentRoute } = useAttachMenu();
+
+  // Update current route when it changes
+  useEffect(() => {
+    setCurrentRoute(currentRouteName as AttachMenuRoute);
+  }, [currentRouteName, setCurrentRoute]);
 
   const handleMainButtonPress = () => {
-    // For pantry, use the attach menu
-    if (currentRouteName === "pantry") {
-      toggleMenu();
-      return;
-    }
-    isExpanded.value = !isExpanded.value;
+    // All tabs now use the attach menu
+    toggleMenu();
   };
 
   const ANIMATION_DURATION = 300; // Animation duration in ms
 
   const plusIconStyle = useAnimatedStyle(() => {
-    // For pantry, sync rotation with attach menu state
-    const shouldRotate =
-      currentRouteName === "pantry" ? isOpen : isExpanded.value;
-    const rotateValue = shouldRotate ? "45deg" : "0deg";
+    // Sync rotation with attach menu state for all tabs
+    const rotateValue = isOpen ? "45deg" : "0deg";
 
     return {
       transform: [
@@ -49,66 +39,8 @@ export function FabButton({ currentRouteName }: FabButtonProps) {
     };
   });
 
-  // Define actions based on the current route
-  const getActions = (): FabAction[] => {
-    switch (currentRouteName) {
-      case "pantry":
-        // Pantry now uses AttachMenu, so no secondary actions needed
-        return [];
-      case "recipes":
-        return [
-          {
-            iconName: "plus",
-            onPress: () => {
-              console.log("Add recipe");
-              handleMainButtonPress();
-            },
-          },
-        ];
-      case "index": // Home
-        return [
-          {
-            iconName: "book", // Example: Add to plan
-            onPress: () => {
-              // Close FAB first, then navigate
-              isExpanded.value = false;
-              // Wait for animation to complete before navigation
-              setTimeout(() => {
-                router.push("/(plan)/create");
-              }, ANIMATION_DURATION);
-            },
-          },
-        ];
-      case "(profile)":
-        return [
-          {
-            iconName: "gear", // Example: Settings
-            onPress: () => {
-              console.log("Settings");
-              handleMainButtonPress();
-            },
-          },
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const actions = getActions();
-
   return (
     <View style={styles.fabContainer}>
-      {/* Secondary Action Buttons */}
-      {actions.map((action, index) => (
-        <SecondaryActionButton
-          key={`${currentRouteName}-${index}`}
-          isExpanded={isExpanded}
-          index={index + 1} // 1-based index for animation calculation
-          iconName={action.iconName}
-          onPress={action.onPress}
-        />
-      ))}
-
       {/* Main FAB Button */}
       <AnimatedPressable
         onPress={handleMainButtonPress}

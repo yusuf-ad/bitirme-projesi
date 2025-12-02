@@ -8,3 +8,5 @@ export { MealSelectionHeader } from "./components/meal-selection-header";
 export { MealTypeLabels } from "./components/meal-type-labels";
 export { useMealPlanGenerator } from "./hooks/use-meal-plan-generator";
 export type { MealPlanItemRecord, MealPlanRecord, MealSlot } from "./types";
+export { fetchRecipes } from "./utils/fetch-recipes";
+export type { FetchedRecipe, MealTypeResults } from "./utils/fetch-recipes";
