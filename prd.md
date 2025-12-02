@@ -1255,6 +1255,7 @@ constants/
 - [ ] Shopping list generation - yusuf
 - [ ] Shopping list management - yusuf
 - [ ] Yemek eklenince shopping listeye otomatik ekleme - yusuf
+- [ ] servings ayarlama
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
