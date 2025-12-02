@@ -185,7 +185,7 @@ export async function fetchRecipes(
 
     for (const mealType of activeMealTypes) {
       const mealResults = await fetchRecipesForMealType(mealType, {
-        // cuisine: cuisineParam,
+        cuisine: cuisineParam,
         excludeCuisine: excludeCuisineParam,
         diet: dietParam,
         includeIngredients: includeIngredientsParam,
