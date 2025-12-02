@@ -54,6 +54,13 @@ const goalOptions = [
   },
 ];
 
+// Define conflicting goals that cannot be selected together
+const conflictingGoals: Record<string, string[]> = {
+  "lose-weight": ["gain-weight"],
+  "gain-weight": ["lose-weight"],
+};
+
+
 export function GoalsContent({
   title,
   description,
@@ -64,9 +71,19 @@ export function GoalsContent({
     useState<string[]>(initialSelection);
 
   function toggleGoal(goalId: string) {
-    const newSelection = selectedGoals.includes(goalId)
-      ? selectedGoals.filter((id) => id !== goalId)
-      : [...selectedGoals, goalId];
+    let newSelection: string[];
+    
+    if (selectedGoals.includes(goalId)) {
+      // Deselect the goal
+      newSelection = selectedGoals.filter((id) => id !== goalId);
+    } else {
+      // Select the goal and remove any conflicting goals
+      const conflictingGoalIds = conflictingGoals[goalId] || [];
+      newSelection = [
+        ...selectedGoals.filter((id) => !conflictingGoalIds.includes(id)),
+        goalId,
+      ];
+    }
 
     setSelectedGoals(newSelection);
     onSelectionChange?.(newSelection);
