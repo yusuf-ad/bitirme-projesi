@@ -7,20 +7,20 @@ import { useAuthContext } from "@/hooks/use-auth-context";
 import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
 import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Platform,
-    RefreshControl,
-    StyleSheet,
-    View
+  ActivityIndicator,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  View
 } from "react-native";
 import Animated, {
-    FadeInDown,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  FadeInDown,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -68,6 +68,11 @@ export default function MealplanTab() {
   const fullName = session?.user?.user_metadata?.fullName || "User";
   const firstName = fullName.split(" ")[0];
 
+  // Get user registration date from Supabase session
+  const userRegistrationDate = session?.user?.created_at
+    ? new Date(session.user.created_at)
+    : undefined;
+
   function handleCreateMealPlan() {
     router.push("/(plan)/create");
   }
@@ -79,6 +84,14 @@ export default function MealplanTab() {
   }, []);
 
   const hasMeals = (data?.items?.length ?? 0) > 0;
+
+  // Check if selected date is in the past
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const isPastDate = selectedDate < today;
 
   // Calculate total calories from meal plan items
   const totalCalories =
@@ -136,6 +149,7 @@ export default function MealplanTab() {
       <CalendarSection
         selectedDate={selectedDate}
         onDateSelect={handleDateSelect}
+        userRegistrationDate={userRegistrationDate}
       />
 
       {/* Meals for selected date */}
@@ -151,28 +165,41 @@ export default function MealplanTab() {
           <View style={styles.loaderContainer}>
             <ActivityIndicator color={Colors.lilac[900]} />
           </View>
-        ) : hasMeals ? (
-          <>
-            <Animated.View
-              style={styles.section}
-              entering={FadeInDown.duration(400).springify()}
-            >
-              <DailyOverview
-                totalCalories={totalCalories}
-                totalCarbs={totalCarbs}
-                totalProtein={totalProtein}
-                totalFat={totalFat}
-              />
-            </Animated.View>
-
-            <DailyMealsList
-              items={data!.items}
-              selectedDate={selectedDate}
-              scrollY={scrollY}
-            />
-          </>
         ) : (
-          <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
+          <>
+            {(hasMeals || isPastDate) && (
+              <Animated.View
+                style={styles.section}
+                entering={FadeInDown.duration(400).springify()}
+              >
+                <DailyOverview
+                  totalCalories={totalCalories}
+                  totalCarbs={totalCarbs}
+                  totalProtein={totalProtein}
+                  totalFat={totalFat}
+                  isEmpty={!hasMeals}
+                />
+              </Animated.View>
+            )}
+
+            {hasMeals ? (
+              <DailyMealsList
+                items={data!.items}
+                selectedDate={selectedDate}
+                scrollY={scrollY}
+              />
+            ) : isPastDate ? (
+              // Show empty meal slots for past dates
+              <DailyMealsList
+                items={[]}
+                selectedDate={selectedDate}
+                scrollY={scrollY}
+              />
+            ) : (
+              // Show create meal plan prompt for today and future dates
+              <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
+            )}
+          </>
         )}
       </View>
     </Animated.ScrollView>
