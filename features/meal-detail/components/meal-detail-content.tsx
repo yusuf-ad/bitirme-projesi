@@ -7,21 +7,37 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useCallback, useMemo, useState } from "react";
 import {
+  LayoutAnimation,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  UIManager,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+  Easing,
   Extrapolation,
+  FadeIn,
+  FadeOut,
   interpolate,
+  runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const SWIPE_THRESHOLD = 30;
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const HERO_HEIGHT = 312;
 const HEADER_HEIGHT = 56;
@@ -66,11 +82,11 @@ export function MealDetailContent({
   onToggleFavorite,
   onBack,
   onPlanMeal,
-  mealSlot,
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
+  const tabProgress = useSharedValue(0);
 
   // Scroll threshold - when content title reaches header position
   const SCROLL_THRESHOLD = HERO_HEIGHT - (HEADER_HEIGHT + insets.top);
@@ -203,16 +219,74 @@ export function MealDetailContent({
     return [];
   }, [meal.analyzedInstructions, meal.instructions]);
 
-  const handleTabPress = useCallback(
-    async (tabKey: TabKey) => {
-      if (tabKey === activeTab) {
-        return;
-      }
-      await Haptics.selectionAsync();
+  const switchTab = useCallback(
+    (tabKey: TabKey) => {
+      if (tabKey === activeTab) return;
+
+      Haptics.selectionAsync();
+
+      // Animate layout change - faster duration
+      LayoutAnimation.configureNext({
+        duration: 180,
+        update: {
+          type: LayoutAnimation.Types.easeOut,
+        },
+      });
+
+      // Update tab progress for indicator animation - smooth easing without bounce
+      tabProgress.value = withTiming(tabKey === "ingredients" ? 0 : 1, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+      });
+
       setActiveTab(tabKey);
     },
-    [activeTab]
+    [activeTab, tabProgress]
   );
+
+  const handleTabPress = useCallback(
+    (tabKey: TabKey) => {
+      switchTab(tabKey);
+    },
+    [switchTab]
+  );
+
+  // Swipe gesture for tab switching - more responsive
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-15, 15])
+    .onEnd((event) => {
+      const { translationX, velocityX } = event;
+      
+      // Swipe left -> go to instructions (lower threshold for faster response)
+      if ((translationX < -SWIPE_THRESHOLD || velocityX < -300) && activeTab === "ingredients") {
+        runOnJS(switchTab)("instructions");
+      }
+      // Swipe right -> go to ingredients
+      else if ((translationX > SWIPE_THRESHOLD || velocityX > 300) && activeTab === "instructions") {
+        runOnJS(switchTab)("ingredients");
+      }
+    });
+
+  // Tab indicator animated style - snappier, using interpolate for smooth transition
+  const tabIndicatorStyle = useAnimatedStyle(() => {
+    const leftPercent = interpolate(tabProgress.value, [0, 1], [0, 50], Extrapolation.CLAMP);
+    return {
+      left: `${leftPercent}%`,
+    };
+  });
+
+  // Ingredients tab text animated style
+  const ingredientsTabStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(tabProgress.value, [0, 1], [1, 0.5], Extrapolation.CLAMP);
+    return { opacity };
+  });
+
+  // Instructions tab text animated style
+  const instructionsTabStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(tabProgress.value, [0, 1], [0.5, 1], Extrapolation.CLAMP);
+    return { opacity };
+  });
 
   return (
     <View style={styles.container}>
@@ -390,77 +464,90 @@ export function MealDetailContent({
             ))}
           </View>
 
+          {/* Animated Tab Bar */}
           <View style={styles.tabsContainer} accessibilityRole="tablist">
-            {TAB_ITEMS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <Pressable
-                  key={tab.key}
-                  onPress={() => handleTabPress(tab.key)}
-                  style={[
-                    styles.tabButton,
-                    isActive
-                      ? styles.tabButtonActive
-                      : styles.tabButtonInactive,
-                  ]}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: isActive }}
-                >
-                  <Text
-                    style={[styles.tabLabel, isActive && styles.tabLabelActive]}
-                  >
-                    {tab.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+            <Animated.View style={[styles.tabIndicator, tabIndicatorStyle]} />
+            <Pressable
+              onPress={() => handleTabPress("ingredients")}
+              style={styles.tabButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="tab"
+            >
+              <Animated.Text style={[styles.tabLabel, styles.tabLabelActive, ingredientsTabStyle]}>
+                Ingredients
+              </Animated.Text>
+            </Pressable>
+            <Pressable
+              onPress={() => handleTabPress("instructions")}
+              style={styles.tabButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="tab"
+            >
+              <Animated.Text style={[styles.tabLabel, styles.tabLabelActive, instructionsTabStyle]}>
+                Instructions
+              </Animated.Text>
+            </Pressable>
           </View>
 
-          {activeTab === "ingredients" ? (
-            <View style={styles.contentSection}>
-              <Text style={styles.sectionTitle}>Ingredients</Text>
-              <View style={styles.ingredientsList}>
-                {(meal.extendedIngredients ?? []).map((ingredient, index) => (
-                  <View
-                    key={`${ingredient.id}-${ingredient.original}-${index}`}
-                    style={styles.ingredientRow}
-                  >
-                    <View style={styles.bulletPoint} />
-                    <Text style={styles.ingredientText}>
-                      {ingredient.original}
-                    </Text>
-                  </View>
-                ))}
-                {(!meal.extendedIngredients ||
-                  meal.extendedIngredients.length === 0) && (
-                  <Text style={styles.emptyText}>
-                    No ingredients were provided for this recipe.
-                  </Text>
-                )}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.contentSection}>
-              <Text style={styles.sectionTitle}>Instructions</Text>
-              <View style={styles.instructionsList}>
-                {instructions.length > 0 ? (
-                  instructions.map((step) => (
-                    <View key={step.number} style={styles.stepRow}>
-                      <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>{step.number}</Text>
+          {/* Tab Content - Swipeable and animates height based on content */}
+          <GestureDetector gesture={swipeGesture}>
+            <View style={styles.tabContentWrapper}>
+              {activeTab === "ingredients" ? (
+                <Animated.View
+                  key="ingredients"
+                  entering={FadeIn.duration(120)}
+                  exiting={FadeOut.duration(80)}
+                  style={styles.contentSection}
+                >
+                  <Text style={styles.sectionTitle}>Ingredients</Text>
+                  <View style={styles.ingredientsList}>
+                    {(meal.extendedIngredients ?? []).map((ingredient, index) => (
+                      <View
+                        key={`${ingredient.id}-${ingredient.original}-${index}`}
+                        style={styles.ingredientRow}
+                      >
+                        <View style={styles.bulletPoint} />
+                        <Text style={styles.ingredientText}>
+                          {ingredient.original}
+                        </Text>
                       </View>
-                      <Text style={styles.stepText}>{step.text}</Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyText}>
-                    No instructions were provided for this recipe.
-                  </Text>
-                )}
-              </View>
+                    ))}
+                    {(!meal.extendedIngredients ||
+                      meal.extendedIngredients.length === 0) && (
+                        <Text style={styles.emptyText}>
+                          No ingredients were provided for this recipe.
+                        </Text>
+                      )}
+                  </View>
+                </Animated.View>
+              ) : (
+                <Animated.View
+                  key="instructions"
+                  entering={FadeIn.duration(120)}
+                  exiting={FadeOut.duration(80)}
+                  style={styles.contentSection}
+                >
+                  <Text style={styles.sectionTitle}>Instructions</Text>
+                  <View style={styles.instructionsList}>
+                    {instructions.length > 0 ? (
+                      instructions.map((step) => (
+                        <View key={step.number} style={styles.stepRow}>
+                          <View style={styles.stepBadge}>
+                            <Text style={styles.stepBadgeText}>{step.number}</Text>
+                          </View>
+                          <Text style={styles.stepText}>{step.text}</Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.emptyText}>
+                        No instructions were provided for this recipe.
+                      </Text>
+                    )}
+                  </View>
+                </Animated.View>
+              )}
             </View>
-          )}
+          </GestureDetector>
         </View>
 
         {!!onPlanMeal && (
@@ -718,21 +805,24 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 12,
-    overflow: "hidden",
+    position: "relative",
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[100],
+  },
+  tabIndicator: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    width: "50%",
+    height: 2,
+    backgroundColor: Colors.lilac[800],
+    borderRadius: 1,
   },
   tabButton: {
     flex: 1,
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    borderBottomWidth: 2,
-  },
-  tabButtonActive: {
-    borderBottomColor: Colors.lilac[800],
-  },
-  tabButtonInactive: {
-    borderBottomColor: Colors.gray[100],
   },
   tabLabel: {
     fontFamily: "Poppins",
@@ -742,6 +832,9 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     color: Colors.lilac[800],
+  },
+  tabContentWrapper: {
+    minHeight: 100,
   },
   contentSection: {
     gap: 16,
