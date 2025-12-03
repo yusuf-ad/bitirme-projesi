@@ -1,17 +1,19 @@
 export {
   CALORIE_RANGE_OPTIONS,
-  ChipSection,
   COOKING_TIME_OPTIONS,
+  ChipSection,
   InfoChip,
   MEAL_TYPE_OPTIONS,
   SelectableChip,
 } from "./components/ai-generator-chips";
 export type {
+  MealTypeOption as AIMealTypeOption,
   CalorieRangeOption,
   ChipOption,
   CookingTimeOption,
-  MealTypeOption as AIMealTypeOption,
 } from "./components/ai-generator-chips";
+export { AIRecipeGenerating } from "./components/ai-recipe-generating";
+export { AIRecipePreview } from "./components/ai-recipe-preview";
 export { DailyMealsList } from "./components/daily-meals-list";
 export { DateMealRow } from "./components/date-meal-row";
 export { EmptyMealSlot } from "./components/empty-meal-slot";
@@ -32,4 +34,3 @@ export type { AddToShoppingListResult } from "./services/meal-plan-ingredients-s
 export type { MealPlanItemRecord, MealPlanRecord, MealSlot } from "./types";
 export { fetchRecipes } from "./utils/fetch-recipes";
 export type { FetchedRecipe, MealTypeResults } from "./utils/fetch-recipes";
-

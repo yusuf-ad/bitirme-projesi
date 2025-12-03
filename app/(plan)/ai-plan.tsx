@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/theme";
 import {
   AIMealTypeOption,
+  AIRecipeGenerating,
+  AIRecipePreview,
   CALORIE_RANGE_OPTIONS,
   CalorieRangeOption,
   ChipSection,
@@ -17,13 +19,16 @@ import {
   resolveAllergiesFast,
   resolveDietPreferences,
 } from "@/lib/allergies-diet-helpers";
+import { Recipe } from "@/lib/spoonacular";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -32,6 +37,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+type ViewState = "form" | "generating" | "preview";
+
+interface AIGeneratedRecipe extends Recipe {
+  isAiGenerated?: boolean;
+}
 
 const INGREDIENT_IMAGE_BASE_URL =
   "https://spoonacular.com/cdn/ingredients_100x100";
@@ -93,10 +104,14 @@ export default function AiPlan() {
     () => onboardingData?.tastePreferences?.diet_preferences || [],
     [onboardingData?.tastePreferences?.diet_preferences]
   );
-  const selectedCuisines: string[] =
-    onboardingData?.tastePreferences?.cuisines || [];
-  const dislikedCuisines: string[] =
-    onboardingData?.tastePreferences?.cuisine_dislikes || [];
+  const selectedCuisines = useMemo(
+    () => onboardingData?.tastePreferences?.cuisines || [],
+    [onboardingData?.tastePreferences?.cuisines]
+  );
+  const dislikedCuisines = useMemo(
+    () => onboardingData?.tastePreferences?.cuisine_dislikes || [],
+    [onboardingData?.tastePreferences?.cuisine_dislikes]
+  );
 
   // Resolve allergies and diet preferences with images
   const resolvedAllergies = useMemo(
@@ -118,6 +133,12 @@ export default function AiPlan() {
     useState<CookingTimeOption>("<15");
   const [selectedCalorieRange, setSelectedCalorieRange] =
     useState<CalorieRangeOption>("<200");
+
+  // View state management
+  const [viewState, setViewState] = useState<ViewState>("form");
+  const [generatedRecipe, setGeneratedRecipe] =
+    useState<AIGeneratedRecipe | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Set initial meal type from params
   useEffect(() => {
@@ -141,20 +162,170 @@ export default function AiPlan() {
     setSelectedIngredients((prev) => prev.filter((ing) => ing.id !== id));
   };
 
-  const handleGenerateRecipe = () => {
-    // TODO: Implement recipe generation logic
+  const handleGenerateRecipe = useCallback(async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     const ingredientNames = selectedIngredients.map((ing) => ing.name);
-    console.log("Generate recipe with:", {
-      ingredients: ingredientNames,
-      mealType: selectedMealType,
-      cookingTime: selectedCookingTime,
-      calorieRange: selectedCalorieRange,
-      allergies: selectedAllergies,
-      dietPreferences: selectedDietPreferences,
-      cuisines: selectedCuisines,
-      dislikedCuisines,
+
+    setViewState("generating");
+    setIsRegenerating(false);
+
+    try {
+      const response = await fetch("/api/generate-recipe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ingredients: ingredientNames,
+          mealType: selectedMealType,
+          cookingTime: selectedCookingTime,
+          calorieRange: selectedCalorieRange,
+          allergies: selectedAllergies,
+          dietPreferences: selectedDietPreferences,
+          cuisines: selectedCuisines,
+          dislikedCuisines,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate recipe");
+      }
+
+      const recipe: AIGeneratedRecipe = await response.json();
+      setGeneratedRecipe(recipe);
+      setViewState("preview");
+    } catch (error) {
+      console.error("Error generating recipe:", error);
+      Alert.alert(
+        "Generation Failed",
+        "We couldn't create a recipe. Please try again.",
+        [
+          {
+            text: "Cancel",
+            onPress: () => setViewState("form"),
+            style: "cancel",
+          },
+          { text: "Retry", onPress: handleGenerateRecipe },
+        ]
+      );
+    }
+  }, [
+    selectedIngredients,
+    selectedMealType,
+    selectedCookingTime,
+    selectedCalorieRange,
+    selectedAllergies,
+    selectedDietPreferences,
+    selectedCuisines,
+    dislikedCuisines,
+  ]);
+
+  const handleRegenerate = useCallback(async () => {
+    setIsRegenerating(true);
+    await handleGenerateRecipe();
+  }, [handleGenerateRecipe]);
+
+  const handleConfirmRecipe = useCallback(() => {
+    if (!generatedRecipe) return;
+
+    // Convert AI-generated recipe to Meal format for preview
+    const aiMeal = {
+      id: generatedRecipe.id,
+      title: generatedRecipe.title,
+      image: generatedRecipe.image || "",
+      readyInMinutes: generatedRecipe.readyInMinutes ?? undefined,
+      servings: generatedRecipe.servings ?? undefined,
+      nutrition: {
+        calories: generatedRecipe.nutrition?.nutrients?.find(
+          (n) => n.name.toLowerCase() === "calories"
+        )?.amount,
+        protein: generatedRecipe.nutrition?.nutrients?.find(
+          (n) => n.name.toLowerCase() === "protein"
+        )?.amount,
+        carbs: generatedRecipe.nutrition?.nutrients?.find(
+          (n) => n.name.toLowerCase() === "carbohydrates"
+        )?.amount,
+        fat: generatedRecipe.nutrition?.nutrients?.find(
+          (n) => n.name.toLowerCase() === "fat"
+        )?.amount,
+      },
+    };
+
+    // Create or merge with existing meal plan data
+    const mealType = selectedMealType as "breakfast" | "lunch" | "dinner";
+
+    // Parse existing meal plan data if provided
+    let baseMealPlan = {
+      breakfast: { results: [], totalResults: 0 },
+      lunch: { results: [], totalResults: 0 },
+      dinner: { results: [], totalResults: 0 },
+    };
+
+    if (params.existingMealPlanData) {
+      try {
+        const existing = JSON.parse(params.existingMealPlanData as string);
+        baseMealPlan = {
+          breakfast: existing.breakfast || { results: [], totalResults: 0 },
+          lunch: existing.lunch || { results: [], totalResults: 0 },
+          dinner: existing.dinner || { results: [], totalResults: 0 },
+        };
+      } catch (e) {
+        console.error("Error parsing existing meal plan data:", e);
+      }
+    }
+
+    // Add the new AI meal to the appropriate slot
+    const mealPlanData = {
+      ...baseMealPlan,
+      [mealType]: { results: [aiMeal], totalResults: 1 },
+    };
+
+    // Get dates from params or use today
+    const startDate =
+      (params.startDate as string) || new Date().toISOString().split("T")[0];
+    const endDate = (params.endDate as string) || startDate;
+
+    router.push({
+      pathname: "/(plan)/preview",
+      params: {
+        mealPlanData: JSON.stringify(mealPlanData),
+        startDate,
+        endDate,
+      },
     });
-  };
+  }, [
+    generatedRecipe,
+    selectedMealType,
+    params.startDate,
+    params.endDate,
+    params.existingMealPlanData,
+    router,
+  ]);
+
+  const handleBackFromPreview = useCallback(() => {
+    setViewState("form");
+    setGeneratedRecipe(null);
+  }, []);
+
+  // Render generating state
+  if (viewState === "generating") {
+    return <AIRecipeGenerating />;
+  }
+
+  // Render preview state
+  if (viewState === "preview" && generatedRecipe) {
+    return (
+      <AIRecipePreview
+        recipe={generatedRecipe}
+        onConfirm={handleConfirmRecipe}
+        onRegenerate={handleRegenerate}
+        onBack={handleBackFromPreview}
+        mealSlot={params.mealSlot as string | undefined}
+        isRegenerating={isRegenerating}
+      />
+    );
+  }
 
   return (
     <View

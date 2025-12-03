@@ -517,12 +517,18 @@ export default function MealPlanPreview() {
   };
 
   const handleGenerateWithAI = (mealType: MealType) => {
+    // Pass existing meal plan data so AI can add to it
+    const existingMealPlanData = mealPlan
+      ? JSON.stringify(mealPlan)
+      : undefined;
+
     router.push({
       pathname: "/(plan)/ai-plan",
       params: {
         mealType,
         startDate: formatDate(planStartDate),
         endDate: formatDate(planEndDate),
+        existingMealPlanData,
       },
     });
   };
@@ -559,11 +565,8 @@ export default function MealPlanPreview() {
   const renderDayMeals = (mealType: MealType) => {
     const dayData = mealPlan?.[mealType];
 
-    // If meal type was not selected (doesn't exist in mealPlan), don't show anything
-    if (!dayData) return null;
-
-    // Show empty state if meal type was selected but no results found
-    if (dayData.results.length === 0) {
+    // Show empty state with "Generate with AI" button if no data or no results
+    if (!dayData || dayData.results.length === 0) {
       return renderEmptyMealState(mealType);
     }
 
