@@ -1,6 +1,5 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,18 +16,36 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// Lazy import camera to handle missing native module
+let CameraView: any = null;
+let useCameraPermissions: any = null;
+
+try {
+  const cameraModule = require("expo-camera");
+  CameraView = cameraModule.CameraView;
+  useCameraPermissions = cameraModule.useCameraPermissions;
+} catch {
+  // Camera module not available (Expo Go)
+}
+
 export default function CameraPantry() {
   const router = useRouter();
-  const cameraRef = useRef<CameraView>(null);
-  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<any>(null);
+  const [permission, setPermission] = useState<{ granted: boolean } | null>(null);
   const [mediaPermission, requestMediaPermission] =
     ImagePicker.useMediaLibraryPermissions();
   const [flash, setFlash] = useState<"off" | "on">("off");
   const [isCapturing, setIsCapturing] = useState(false);
+  const [cameraAvailable, setCameraAvailable] = useState(!!CameraView);
   const insets = useSafeAreaInsets();
   const shutterScale = useRef(new Animated.Value(1)).current;
   const capturingRef = useRef(false);
   const lastShotAtRef = useRef(0);
+
+  // Use camera permissions hook if available
+  const cameraPermissionHook = useCameraPermissions?.() ?? [null, () => Promise.resolve({ granted: false })];
+  const [cameraPermission, requestCameraPermission] = cameraPermissionHook;
+
 
   // Reset capture lock whenever this screen regains focus
   useFocusEffect(
@@ -44,15 +61,17 @@ export default function CameraPantry() {
   const cameraHeight = (screenWidth * 4) / 3;
 
   useEffect(() => {
-    if (!permission?.granted) {
-      requestPermission();
+    if (cameraAvailable && cameraPermission) {
+      setPermission(cameraPermission);
+      if (!cameraPermission.granted) {
+        requestCameraPermission();
+      }
     }
-  }, [permission, requestPermission]);
+  }, [cameraAvailable, cameraPermission, requestCameraPermission]);
 
   const takePhoto = useCallback(async () => {
     try {
       const now = Date.now();
-      // Debounce rapid taps (within 1s) and prevent re-entrancy
       if (capturingRef.current || now - lastShotAtRef.current < 1000) return;
       lastShotAtRef.current = now;
       capturingRef.current = true;
@@ -71,12 +90,10 @@ export default function CameraPantry() {
       }
     } catch (error) {
       console.error("Failed to take photo:", error);
-      // Allow retry only if there was an error
       setIsCapturing(false);
       capturingRef.current = false;
     }
   }, [router]);
-
 
   const onShutterPressIn = useCallback(() => {
     Animated.timing(shutterScale, {
@@ -122,7 +139,7 @@ export default function CameraPantry() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsMultipleSelection: false,
         quality: 1,
       });
@@ -137,6 +154,39 @@ export default function CameraPantry() {
       console.error("Failed to pick image:", error);
     }
   }, [ensureMediaLibraryPermission, router]);
+
+
+  // Camera not available - show fallback UI
+  if (!cameraAvailable) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <View style={styles.header}>
+          <Pressable
+            style={styles.iconButton}
+            accessibilityLabel="Close"
+            onPress={handleClose}
+          >
+            <Ionicons name="close" size={22} color="#fff" />
+          </Pressable>
+        </View>
+        <View style={styles.centered}>
+          <Ionicons name="camera-outline" size={64} color="#666" />
+          <Text style={styles.fallbackTitle}>Camera Not Available</Text>
+          <Text style={styles.fallbackText}>
+            Camera requires a development build.{"\n"}
+            You can still pick images from your gallery.
+          </Text>
+          <Pressable
+            style={styles.galleryButton}
+            onPress={pickImageFromLibrary}
+          >
+            <Ionicons name="images" size={24} color="#fff" />
+            <Text style={styles.galleryButtonText}>Pick from Gallery</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   // Show loading while requesting permissions
   if (!permission?.granted) {
@@ -165,12 +215,14 @@ export default function CameraPantry() {
             },
           ]}
         >
-          <CameraView
-            ref={cameraRef}
-            style={styles.camera}
-            facing="back"
-            flash={flash}
-          />
+          {CameraView && (
+            <CameraView
+              ref={cameraRef}
+              style={styles.camera}
+              facing="back"
+              flash={flash}
+            />
+          )}
         </View>
       </View>
 
@@ -238,6 +290,7 @@ export default function CameraPantry() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -269,12 +322,41 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
+    paddingHorizontal: 32,
+    gap: 16,
   },
   permissionText: {
     color: "#fff",
     fontSize: 16,
     marginTop: 16,
     textAlign: "center",
+  },
+  fallbackTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  fallbackText: {
+    color: "#888",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  galleryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#333",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  galleryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "500",
   },
   header: {
     flexDirection: "row",

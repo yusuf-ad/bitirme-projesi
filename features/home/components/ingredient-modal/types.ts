@@ -36,6 +36,7 @@ export interface AllergiesModalProps {
   visible: boolean;
   onClose: () => void;
   allergies: DisplayAllergy[];
+  onNavigateToSettings?: () => void;
 }
 
 export interface FloatingSelectedBarProps {

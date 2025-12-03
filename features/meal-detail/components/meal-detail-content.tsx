@@ -276,16 +276,16 @@ export function MealDetailContent({
     };
   });
 
-  // Ingredients tab text animated style
+  // Ingredients tab animated style
   const ingredientsTabStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(tabProgress.value, [0, 1], [1, 0.5], Extrapolation.CLAMP);
-    return { opacity };
+    const scale = interpolate(tabProgress.value, [0, 1], [1, 0.95], Extrapolation.CLAMP);
+    return { transform: [{ scale }] };
   });
 
-  // Instructions tab text animated style
+  // Instructions tab animated style
   const instructionsTabStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(tabProgress.value, [0, 1], [0.5, 1], Extrapolation.CLAMP);
-    return { opacity };
+    const scale = interpolate(tabProgress.value, [0, 1], [0.95, 1], Extrapolation.CLAMP);
+    return { transform: [{ scale }] };
   });
 
   return (
@@ -464,19 +464,28 @@ export function MealDetailContent({
             ))}
           </View>
 
-          {/* Modern Pill Tab Bar */}
+          {/* Modern Underline Tab Bar */}
           <View style={styles.tabsOuterContainer}>
             <View style={styles.tabsContainer} accessibilityRole="tablist">
-              <Animated.View style={[styles.tabIndicator, tabIndicatorStyle]} />
               <Pressable
                 onPress={() => handleTabPress("ingredients")}
                 style={styles.tabButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="tab"
               >
-                <Animated.Text style={[styles.tabLabel, ingredientsTabStyle]}>
-                  Ingredients
-                </Animated.Text>
+                <Animated.View style={[styles.tabInner, ingredientsTabStyle]}>
+                  <Ionicons 
+                    name="leaf" 
+                    size={18} 
+                    color={activeTab === "ingredients" ? Colors.lilac[800] : Colors.gray[400]} 
+                  />
+                  <Text style={[
+                    styles.tabLabel, 
+                    activeTab === "ingredients" ? styles.tabLabelActive : styles.tabLabelInactive
+                  ]}>
+                    Ingredients
+                  </Text>
+                </Animated.View>
               </Pressable>
               <Pressable
                 onPress={() => handleTabPress("instructions")}
@@ -484,10 +493,24 @@ export function MealDetailContent({
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="tab"
               >
-                <Animated.Text style={[styles.tabLabel, instructionsTabStyle]}>
-                  Instructions
-                </Animated.Text>
+                <Animated.View style={[styles.tabInner, instructionsTabStyle]}>
+                  <Ionicons 
+                    name="reader-outline" 
+                    size={18} 
+                    color={activeTab === "instructions" ? Colors.lilac[800] : Colors.gray[400]} 
+                  />
+                  <Text style={[
+                    styles.tabLabel, 
+                    activeTab === "instructions" ? styles.tabLabelActive : styles.tabLabelInactive
+                  ]}>
+                    Instructions
+                  </Text>
+                </Animated.View>
               </Pressable>
+            </View>
+            {/* Animated Underline */}
+            <View style={styles.tabUnderlineTrack}>
+              <Animated.View style={[styles.tabUnderline, tabIndicatorStyle]} />
             </View>
           </View>
 
@@ -510,7 +533,7 @@ export function MealDetailContent({
                     </Text>
                   </Animated.View>
                   <View style={styles.ingredientsList}>
-                    {(meal.extendedIngredients ?? []).map((ingredient, index) => (
+                    {(meal.extendedIngredients ?? []).map((ingredient, index, arr) => (
                       <Animated.View
                         key={`${ingredient.id}-${ingredient.original}-${index}`}
                         entering={FadeInDown.duration(200).delay(50 + index * 30)}
@@ -519,10 +542,15 @@ export function MealDetailContent({
                       >
                         <View style={styles.ingredientIconWrapper}>
                           <View style={styles.ingredientIcon} />
+                          {index < arr.length - 1 && (
+                            <View style={styles.ingredientConnector} />
+                          )}
                         </View>
-                        <Text style={styles.ingredientText}>
-                          {ingredient.original}
-                        </Text>
+                        <View style={styles.ingredientContent}>
+                          <Text style={styles.ingredientText}>
+                            {ingredient.original}
+                          </Text>
+                        </View>
                       </Animated.View>
                     ))}
                     {(!meal.extendedIngredients ||
@@ -847,41 +875,51 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   tabsOuterContainer: {
-    marginTop: 8,
+    marginTop: 20,
+    marginBottom: 16,
   },
   tabsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    position: "relative",
-    backgroundColor: Colors.gray[100],
-    borderRadius: 12,
-    padding: 4,
   },
-  tabIndicator: {
+  tabUnderlineTrack: {
+    height: 3,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 2,
+    marginTop: 12,
+    overflow: "hidden",
+  },
+  tabUnderline: {
     position: "absolute",
-    top: 4,
-    bottom: 4,
+    top: 0,
+    bottom: 0,
     width: "50%",
-    backgroundColor: Colors.background.surface,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: Colors.lilac[700],
+    borderRadius: 2,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 8,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1,
+  },
+  tabInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
   },
   tabLabel: {
     fontFamily: "Inter",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  tabLabelActive: {
     color: Colors.lilac[800],
+  },
+  tabLabelInactive: {
+    color: Colors.gray[400],
   },
   tabContentWrapper: {
     minHeight: 100,
@@ -911,34 +949,40 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   ingredientsList: {
-    gap: 3,
+    gap: 0,
   },
   ingredientCard: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.gray[100],
-    paddingVertical: 8,
-    paddingHorizontal: 1,
-    borderRadius: 12,
+    gap: 12,
   },
   ingredientIconWrapper: {
-    width: 6,
-    height: 6,
+    alignItems: "center",
+    width: 26,
   },
   ingredientIcon: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.lilac[700],
+    marginTop: 6,
+  },
+  ingredientConnector: {
+    width: 2,
+    flex: 1,
+    backgroundColor: Colors.lilac[100],
+    marginTop: 4,
+    borderRadius: 1,
+  },
+  ingredientContent: {
+    flex: 1,
+    paddingBottom: 16,
   },
   ingredientText: {
-    flex: 1,
     fontFamily: "Inter",
     fontSize: 14,
     fontWeight: "500",
     color: Colors.gray[700],
-    lineHeight: 19,
+    lineHeight: 20,
   },
   emptyState: {
     alignItems: "center",
