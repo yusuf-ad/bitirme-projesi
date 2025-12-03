@@ -1,17 +1,19 @@
-import EnergyIcon from "@/assets/icons/energy-icon";
 import { Colors } from "@/constants/theme";
-import { DIET_OPTIONS } from "@/features/onboarding/sections/taste/diet-options";
 import { useOnboarding } from "@/providers/onboarding-provider";
-import CalorieProgressBar from "@/shared/components/calorie-progress-bar";
+import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import MacroCardsSection from "./macro-cards-section";
+import CalorieProgressBar from "../../../shared/components/calorie-progress-bar";
+import { DIET_OPTIONS } from "../../onboarding/sections/taste/diet-options";
 
 interface DailyOverviewProps {
   totalCalories?: number;
   totalCarbs?: number;
   totalProtein?: number;
   totalFat?: number;
+  goalCarbs?: number;
+  goalProtein?: number;
+  goalFat?: number;
   isEmpty?: boolean;
 }
 
@@ -68,55 +70,86 @@ export default function DailyOverview({
   }, [selectedDietPreferences, dietNutritionTargets]);
 
   return (
-    <View style={styles.container}>
-      {/* Meal Header */}
+    <View style={styles.card}>
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.mealInfo}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <EnergyIcon
-              color={isEmpty ? Colors.gray[400] : Colors.lilac[900]}
-              width={16}
-              height={16}
-            />
-            <Text
-              style={[styles.mealType, isEmpty && { color: Colors.gray[500] }]}
-            >
-              Daily Overview
-            </Text>
-            {isEmpty && (
-              <View style={styles.emptyBadge}>
-                <Text style={styles.emptyBadgeText}>No meals</Text>
-              </View>
-            )}
-          </View>
+        <View style={styles.iconContainer}>
+          <Ionicons name="flash" size={16} color={Colors.lilac[600]} />
         </View>
+        <Text style={styles.headerTitle}>Daily Overview</Text>
       </View>
 
-      {/* Progress bar */}
-      <CalorieProgressBar
-        currentValue={totalCalories}
-        goalValue={goalCalories}
-      />
+      <View style={styles.divider} />
 
-      {/* Macro Cards */}
-      <MacroCardsSection
-        totalCarbs={totalCarbs}
-        totalProtein={totalProtein}
-        totalFat={totalFat}
-        goalCarbs={goalCarbs}
-        goalProtein={goalProtein}
-        goalFat={goalFat}
-      />
+      {/* Calories */}
+      <View style={styles.calorieContainer}>
+        <Text style={styles.currentCalories}>{Math.round(totalCalories)}</Text>
+        <Text style={styles.goalCalories}>/{goalCalories} cal goal</Text>
+      </View>
+
+      {/* Progress Bar */}
+      <View style={styles.progressBarWrapper}>
+        <CalorieProgressBar
+          currentValue={totalCalories}
+          goalValue={goalCalories}
+          filledColor={["#A78BFA", "#7C3AED"]} // Gradient Purple
+          height={10}
+        />
+      </View>
+
+      {/* Macros */}
+      <View style={styles.macrosContainer}>
+        <MacroItem
+          label="Carbs"
+          value={totalCarbs}
+          goal={goalCarbs}
+          color="#10B981" // Greenish for carbs/veg? Or stick to design colors
+        />
+        <MacroItem
+          label="Protein"
+          value={totalProtein}
+          goal={goalProtein}
+          color="#F59E0B" // Orange
+        />
+        <MacroItem
+          label="Fat"
+          value={totalFat}
+          goal={goalFat}
+          color="#EF4444" // Red
+        />
+      </View>
+    </View>
+  );
+}
+
+function MacroItem({
+  label,
+  value,
+  goal,
+  color,
+}: {
+  label: string;
+  value: number;
+  goal: number;
+  color: string;
+}) {
+  return (
+    <View style={styles.macroItem}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <Text style={styles.macroLabel}>{label}</Text>
+      <Text style={styles.macroValue}>
+        <Text style={styles.macroCurrent}>{Math.round(value)}</Text>
+        <Text style={styles.macroGoal}>/{goal}g</Text>
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 10,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-    paddingBottom: 12,
+  card: {
+    gap: 8, // increased from 4
+    paddingHorizontal: 12, // increased from 10
+    paddingBottom: 12, // increased from 8
     backgroundColor: Colors.background.surface,
     borderWidth: 1,
     borderColor: Colors.lilac[200],
@@ -131,135 +164,91 @@ const styles = StyleSheet.create({
     shadowRadius: 1.41,
 
     elevation: 2,
+    marginBottom: 12, // increased from 8
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    gap: 8, // increased from 6
+    paddingVertical: 8, // increased from 6
     borderBottomWidth: 1,
     borderBottomColor: Colors.lilac[200],
+    marginBottom: 8, // increased from 6
   },
-  mealIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: Colors.lilac[200],
+  iconContainer: {
     justifyContent: "center",
     alignItems: "center",
+    height: 16, // increased from 14
+    width: 16, // increased from 14
   },
-  mealIcon: {
-    width: 40,
-    height: 40,
-  },
-  mealInfo: {
-    justifyContent: "center",
-    gap: 4,
-  },
-  mealType: {
+  headerTitle: {
     fontFamily: "Inter",
+    fontSize: 13, // increased from 12
+    lineHeight: 16, // increased from 14
     fontWeight: "500",
-    fontSize: 14,
-    lineHeight: 21,
-    color: Colors.text.primary,
+    color: "#4B5563",
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
-  emptyBadge: {
-    backgroundColor: Colors.gray[200],
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+  divider: {
+    display: "none",
   },
-  emptyBadgeText: {
+  calorieContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+    marginBottom: 6, // increased from 4
+    paddingHorizontal: 4, // increased from 2
+  },
+  currentCalories: {
     fontFamily: "Inter",
-    fontSize: 10,
+    fontSize: 24, // increased from 20
+    fontWeight: "700",
+    color: "#111827",
+  },
+  goalCalories: {
+    fontFamily: "Inter",
+    fontSize: 12, // increased from 11
+    fontWeight: "400",
+    color: "#6B7280",
+  },
+  progressBarWrapper: {
+    marginBottom: 12, // increased from 8
+    paddingHorizontal: 4, // increased from 2
+  },
+  macrosContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 4, // increased from 2
+  },
+  macroItem: {
+    flexDirection: "row", // Side by side
+    alignItems: "center",
+    gap: 6,
+  },
+  // macroHeader removed
+  dot: {
+    width: 6, // increased from 4
+    height: 6, // increased from 4
+    borderRadius: 3,
+  },
+  macroLabel: {
+    fontFamily: "Inter",
+    fontSize: 12, // increased from 11
+    fontWeight: "400",
+    color: "#6B7280",
+  },
+  macroValue: {
+    fontFamily: "Inter",
+    fontSize: 12, // increased from 11
+    marginLeft: -2,
+  },
+  macroCurrent: {
     fontWeight: "600",
-    color: Colors.gray[600],
+    color: "#111827",
   },
-  mealTime: {
-    fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 12,
-    lineHeight: 21,
-    color: Colors.gray[400],
-  },
-  arrowButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 36,
-    height: 36,
-  },
-  arrowIcon: {
-    width: 20,
-    height: 20,
-  },
-  recipeCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.gray[100],
-    borderRadius: 12,
-  },
-  recipeImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 12,
-  },
-  recipeInfo: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  recipeTextContainer: {
-    flex: 1,
-    justifyContent: "center",
-    gap: 8,
-    padding: 4,
-  },
-  recipeName: {
-    fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 14,
-    lineHeight: 16,
-    color: Colors.text.primary,
-  },
-  recipeDescription: {
-    fontFamily: "Inter",
+  macroGoal: {
     fontWeight: "400",
-    fontSize: 12,
-    lineHeight: 16,
-    color: Colors.text.primary,
-  },
-  recipeMetaContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 4,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  metaIcon: {
-    width: 16,
-    height: 16,
-  },
-  metaText: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 12,
-    lineHeight: 24,
-    color: Colors.gray[600],
-  },
-  separator: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 12,
-    lineHeight: 24,
-    letterSpacing: -1,
-    color: Colors.gray[600],
+    color: "#9CA3AF",
   },
 });

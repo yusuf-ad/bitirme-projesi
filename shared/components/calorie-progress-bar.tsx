@@ -1,32 +1,29 @@
 import { Colors } from "@/constants/theme";
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from "react-native-reanimated";
 
 interface CalorieProgressBarProps {
   currentValue: number;
   goalValue: number;
-  showDecorations?: boolean;
-  decorationSpacing?: number;
-  decorationColor?: string;
-  filledColor?: string;
+  filledColor?: string | string[]; // Can now accept array for gradient
   emptyColor?: string;
+  height?: number;
 }
 
 export default function CalorieProgressBar({
   currentValue,
   goalValue,
-  showDecorations = true,
-  decorationSpacing = 20,
-  decorationColor = "rgba(255,255,255,0.3)",
-  filledColor = Colors.lilac[800],
-  emptyColor = Colors.lilac[100],
+  filledColor = [Colors.lilac[400], Colors.lilac[800]], // Default gradient
+  emptyColor = "#F3F4F6",
+  height = 12,
 }: CalorieProgressBarProps) {
   const rawPercentage = (currentValue / goalValue) * 100;
   const progressPercentage = Math.min(100, Math.max(0, rawPercentage));
@@ -34,22 +31,25 @@ export default function CalorieProgressBar({
   // 1. Fill Animation (0 -> current)
   const animatedProgress = useSharedValue(0);
 
-  // 2. Continuous Pattern Animation
-  const patternOffset = useSharedValue(0);
+  // 2. Shimmer Animation
+  const shimmerOffset = useSharedValue(-80);
 
   useEffect(() => {
     // Animate fill width
-    animatedProgress.value = withTiming(progressPercentage, { duration: 1000 });
+    animatedProgress.value = withTiming(progressPercentage, {
+      duration: 1500,
+      easing: Easing.out(Easing.exp),
+    });
   }, [progressPercentage]);
 
   useEffect(() => {
-    // Start continuous pattern loop - runs once on mount (or if spacing changes)
-    patternOffset.value = withRepeat(
-      withTiming(decorationSpacing, { duration: 1000, easing: Easing.linear }),
+    // Continuous shimmer loop
+    shimmerOffset.value = withRepeat(
+      withTiming(100, { duration: 1200, easing: Easing.linear }),
       -1, // Infinite
       false // Do not reverse
     );
-  }, [decorationSpacing]);
+  }, []);
 
   const animatedWidthStyle = useAnimatedStyle(() => {
     return {
@@ -57,134 +57,77 @@ export default function CalorieProgressBar({
     };
   });
 
-  // Dynamic Color Logic
-  const animatedColorStyle = useAnimatedStyle(() => {
-    // Interpolate color based on progress
-    let color = filledColor;
-    if (rawPercentage > 100) color = "#EF4444"; // Red if over
-    else if (rawPercentage > 80) color = "#10B981"; // Green if close to goal
-    else if (rawPercentage > 50) color = "#8B5CF6"; // Purple/Lilac
-    else color = Colors.lilac[800]; // Default dark lilac
-
+  const shimmerStyle = useAnimatedStyle(() => {
     return {
-      backgroundColor: withTiming(color, { duration: 500 }),
-    };
-  });
-
-  const animatedPatternStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: -patternOffset.value }],
+      left: `${shimmerOffset.value}%`,
     };
   });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.remainingText}>
-        <Text style={styles.remainingNumber}>{Math.round(currentValue)}</Text> /
-        {goalValue} cal goal
-      </Text>
-
-      <View style={styles.progressBarContainer}>
-        {/* Background (Empty) */}
-        <View
-          style={[
-            styles.progressBarEmpty,
-            { backgroundColor: emptyColor, position: "absolute", width: "100%" },
-          ]}
+    <View
+      style={[
+        styles.progressBarContainer,
+        { height, backgroundColor: emptyColor },
+      ]}
+    >
+      {/* Foreground (Filled) with Animation */}
+      <Animated.View
+        style={[
+          styles.progressBarFill,
+          animatedWidthStyle,
+          { overflow: "hidden" }, // Clip the shimmer
+        ]}
+      >
+        {/* Gradient Fill */}
+        <LinearGradient
+          colors={
+            (Array.isArray(filledColor)
+              ? filledColor
+              : [filledColor, filledColor]) as [string, string, ...string[]]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
         />
 
-        {/* Foreground (Filled) with Animation */}
-        <Animated.View
-          style={[
-            styles.progressBarFill,
-            animatedWidthStyle,
-            animatedColorStyle,
-          ]}
-        >
-          {showDecorations && (
-            <View
-              style={{ ...StyleSheet.absoluteFillObject, overflow: "hidden" }}
-            >
-              <Animated.View
-                style={[
-                  {
-                    position: "absolute",
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: -decorationSpacing, // Extra space for sliding
-                    flexDirection: "row",
-                    gap: decorationSpacing,
-                    paddingLeft: 0,
-                  },
-                  animatedPatternStyle,
-                ]}
-              >
-                {Array.from({ length: 30 }).map((_, i) => (
-                  <View
-                    key={i}
-                    style={{
-                      height: "150%",
-                      width: 8,
-                      backgroundColor: decorationColor,
-                      transform: [{ rotate: "20deg" }, { translateY: -4 }],
-                    }}
-                  />
-                ))}
-              </Animated.View>
-            </View>
-          )}
+        {/* Shimmer Effect */}
+        <Animated.View style={[styles.shimmer, shimmerStyle]}>
+          <LinearGradient
+            colors={[
+              "rgba(255,255,255,0)",
+              "rgba(255,255,255,0.4)",
+              "rgba(255,255,255,0)",
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
         </Animated.View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 8,
-  },
-  remainingText: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 14,
-    color: Colors.gray[400],
-  },
-  remainingNumber: {
-    fontFamily: "Inter",
-    fontWeight: "700",
-    fontSize: 24,
-    color: Colors.text.primary,
-  },
   progressBarContainer: {
     width: "100%",
-    height: 12,
-    borderRadius: 8,
-    backgroundColor: Colors.lilac[100], // Default background
-    overflow: "hidden", // Clip the animated fill
+    borderRadius: 999, // Pill shape
+    overflow: "hidden",
     position: "relative",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: 8,
+    borderRadius: 999,
     position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
   },
-  progressBarEmpty: {
-    height: "100%",
-    borderRadius: 8,
-  },
-  progressLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  progressLabel: {
-    fontFamily: "Inter",
-    fontWeight: "400",
-    fontSize: 12,
-    color: Colors.gray[400],
+  shimmer: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: "50%", // Width of the shimmer beam
+    transform: [{ skewX: "-20deg" }],
   },
 });
