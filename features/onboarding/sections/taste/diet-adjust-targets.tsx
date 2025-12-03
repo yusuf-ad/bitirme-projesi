@@ -214,7 +214,7 @@ function MacroRow({ label, value, onChange }: MacroRowProps) {
       </Pressable>
       <View style={styles.macroMiddle}>
         <Text style={styles.macroLabel}>{label}</Text>
-        <Text style={styles.macroValue}>{value}%</Text>
+        <Text style={styles.macroValue}>{value}</Text>
       </View>
       <Pressable
         onPress={() => handlePress(value + MACRO_STEP)}
