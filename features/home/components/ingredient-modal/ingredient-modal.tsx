@@ -140,6 +140,7 @@ export const IngredientModal = forwardRef<
       onChange={handleSheetChanges}
       backdropComponent={renderBackdrop}
       enableOverDrag={false}
+      enablePanDownToClose={false}
       handleIndicatorStyle={styles.handleIndicator}
       backgroundStyle={styles.modalBackground}
       snapPoints={snapPoints}
