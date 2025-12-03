@@ -1,6 +1,9 @@
 import EnergyIcon from "@/assets/icons/energy-icon";
 import { Colors } from "@/constants/theme";
+import { DIET_OPTIONS } from "@/features/onboarding/sections/taste/diet-options";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import CalorieProgressBar from "@/shared/components/calorie-progress-bar";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MacroCardsSection from "./macro-cards-section";
 
@@ -9,6 +12,7 @@ interface DailyOverviewProps {
   totalCarbs?: number;
   totalProtein?: number;
   totalFat?: number;
+  isEmpty?: boolean;
 }
 
 export default function DailyOverview({
@@ -16,8 +20,52 @@ export default function DailyOverview({
   totalCarbs = 0,
   totalProtein = 0,
   totalFat = 0,
+  isEmpty = false,
 }: DailyOverviewProps) {
-  const goalCalories = 2200;
+  const { selectedDietPreferences, dietNutritionTargets } = useOnboarding();
+
+  const { goalCalories, goalCarbs, goalProtein, goalFat } = useMemo(() => {
+    // Default values
+    let targets = {
+      goalCalories: 2200,
+      goalCarbs: 275, // ~50%
+      goalProtein: 138, // ~25%
+      goalFat: 61, // ~25%
+    };
+
+    if (selectedDietPreferences.length > 0) {
+      const dietId = selectedDietPreferences[0];
+      const customTarget = dietNutritionTargets[dietId];
+
+      if (customTarget) {
+        // User has custom targets (already in grams)
+        targets = {
+          goalCalories: customTarget.calories,
+          goalCarbs: customTarget.carbs,
+          goalProtein: customTarget.protein,
+          goalFat: customTarget.fat,
+        };
+      } else {
+        // Fallback to diet option defaults (percentages)
+        const dietOption = DIET_OPTIONS.find((d) => d.id === dietId);
+        if (dietOption) {
+          const cals = dietOption.targetCalories;
+          targets = {
+            goalCalories: cals,
+            goalCarbs: Math.round(
+              (cals * dietOption.defaultMacros.carbohydrates) / 4
+            ),
+            goalProtein: Math.round(
+              (cals * dietOption.defaultMacros.protein) / 4
+            ),
+            goalFat: Math.round((cals * dietOption.defaultMacros.fat) / 9),
+          };
+        }
+      }
+    }
+
+    return targets;
+  }, [selectedDietPreferences, dietNutritionTargets]);
 
   return (
     <View style={styles.container}>
@@ -25,8 +73,21 @@ export default function DailyOverview({
       <View style={styles.header}>
         <View style={styles.mealInfo}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <EnergyIcon color={Colors.lilac[900]} width={16} height={16} />
-            <Text style={styles.mealType}>Daily Overview</Text>
+            <EnergyIcon
+              color={isEmpty ? Colors.gray[400] : Colors.lilac[900]}
+              width={16}
+              height={16}
+            />
+            <Text
+              style={[styles.mealType, isEmpty && { color: Colors.gray[500] }]}
+            >
+              Daily Overview
+            </Text>
+            {isEmpty && (
+              <View style={styles.emptyBadge}>
+                <Text style={styles.emptyBadgeText}>No meals</Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -42,6 +103,9 @@ export default function DailyOverview({
         totalCarbs={totalCarbs}
         totalProtein={totalProtein}
         totalFat={totalFat}
+        goalCarbs={goalCarbs}
+        goalProtein={goalProtein}
+        goalFat={goalFat}
       />
     </View>
   );
@@ -99,6 +163,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     color: Colors.text.primary,
+  },
+  emptyBadge: {
+    backgroundColor: Colors.gray[200],
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  emptyBadgeText: {
+    fontFamily: "Inter",
+    fontSize: 10,
+    fontWeight: "600",
+    color: Colors.gray[600],
   },
   mealTime: {
     fontFamily: "Inter",

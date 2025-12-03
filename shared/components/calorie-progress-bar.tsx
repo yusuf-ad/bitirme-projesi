@@ -1,6 +1,13 @@
 import { Colors } from "@/constants/theme";
-import { useState } from "react";
+import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import Animated, {
+    Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withTiming,
+} from "react-native-reanimated";
 
 interface CalorieProgressBarProps {
   currentValue: number;
@@ -16,79 +23,118 @@ export default function CalorieProgressBar({
   currentValue,
   goalValue,
   showDecorations = true,
-  decorationSpacing = 16,
-  decorationColor = Colors.lilac[600],
+  decorationSpacing = 20,
+  decorationColor = "rgba(255,255,255,0.3)",
   filledColor = Colors.lilac[800],
   emptyColor = Colors.lilac[100],
 }: CalorieProgressBarProps) {
-  const [progressBarWidth, setProgressBarWidth] = useState(0);
-  const remainingValue = goalValue - currentValue;
-  const progressPercentage = (currentValue / goalValue) * 100;
+  const rawPercentage = (currentValue / goalValue) * 100;
+  const progressPercentage = Math.min(100, Math.max(0, rawPercentage));
 
-  // Progress bar üzerinde gösterilecek süsleri hesapla
-  const decorations = [];
-  if (showDecorations) {
-    const filledWidth = (progressBarWidth * progressPercentage) / 100;
-    for (
-      let i = decorationSpacing;
-      i < filledWidth - 10;
-      i += decorationSpacing
-    ) {
-      decorations.push(i);
-    }
-  }
+  // 1. Fill Animation (0 -> current)
+  const animatedProgress = useSharedValue(0);
+
+  // 2. Continuous Pattern Animation
+  const patternOffset = useSharedValue(0);
+
+  useEffect(() => {
+    // Animate fill width
+    animatedProgress.value = withTiming(progressPercentage, { duration: 1000 });
+  }, [progressPercentage]);
+
+  useEffect(() => {
+    // Start continuous pattern loop - runs once on mount (or if spacing changes)
+    patternOffset.value = withRepeat(
+      withTiming(decorationSpacing, { duration: 1000, easing: Easing.linear }),
+      -1, // Infinite
+      false // Do not reverse
+    );
+  }, [decorationSpacing]);
+
+  const animatedWidthStyle = useAnimatedStyle(() => {
+    return {
+      width: `${animatedProgress.value}%`,
+    };
+  });
+
+  // Dynamic Color Logic
+  const animatedColorStyle = useAnimatedStyle(() => {
+    // Interpolate color based on progress
+    let color = filledColor;
+    if (rawPercentage > 100) color = "#EF4444"; // Red if over
+    else if (rawPercentage > 80) color = "#10B981"; // Green if close to goal
+    else if (rawPercentage > 50) color = "#8B5CF6"; // Purple/Lilac
+    else color = Colors.lilac[800]; // Default dark lilac
+
+    return {
+      backgroundColor: withTiming(color, { duration: 500 }),
+    };
+  });
+
+  const animatedPatternStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: -patternOffset.value }],
+    };
+  });
 
   return (
     <View style={styles.container}>
       <Text style={styles.remainingText}>
-        <Text style={styles.remainingNumber}>{remainingValue}</Text> /
+        <Text style={styles.remainingNumber}>{Math.round(currentValue)}</Text> /
         {goalValue} cal goal
       </Text>
 
-      <View
-        style={styles.progressBarContainer}
-        onLayout={(event) => {
-          const { width } = event.nativeEvent.layout;
-          setProgressBarWidth(width);
-        }}
-      >
-        <View
-          style={[
-            styles.progressBarFill,
-            { flex: progressPercentage, backgroundColor: filledColor },
-          ]}
-        >
-          {showDecorations &&
-            decorations.map((position, index) => (
-              <View
-                key={index}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  left: position,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <View
-                  style={{
-                    height: index % 2 === 0 ? 12 : 16,
-                    transform: [{ rotate: "30deg" }],
-                    width: 5,
-                    backgroundColor: decorationColor,
-                  }}
-                />
-              </View>
-            ))}
-        </View>
-        <View style={styles.progressBarGap} />
+      <View style={styles.progressBarContainer}>
+        {/* Background (Empty) */}
         <View
           style={[
             styles.progressBarEmpty,
-            { flex: 100 - progressPercentage, backgroundColor: emptyColor },
+            { backgroundColor: emptyColor, position: "absolute", width: "100%" },
           ]}
         />
+
+        {/* Foreground (Filled) with Animation */}
+        <Animated.View
+          style={[
+            styles.progressBarFill,
+            animatedWidthStyle,
+            animatedColorStyle,
+          ]}
+        >
+          {showDecorations && (
+            <View
+              style={{ ...StyleSheet.absoluteFillObject, overflow: "hidden" }}
+            >
+              <Animated.View
+                style={[
+                  {
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: -decorationSpacing, // Extra space for sliding
+                    flexDirection: "row",
+                    gap: decorationSpacing,
+                    paddingLeft: 0,
+                  },
+                  animatedPatternStyle,
+                ]}
+              >
+                {Array.from({ length: 30 }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      height: "150%",
+                      width: 8,
+                      backgroundColor: decorationColor,
+                      transform: [{ rotate: "20deg" }, { translateY: -4 }],
+                    }}
+                  />
+                ))}
+              </Animated.View>
+            </View>
+          )}
+        </Animated.View>
       </View>
     </View>
   );
@@ -113,19 +159,21 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     width: "100%",
     height: 12,
-    flexDirection: "row",
-    alignItems: "center",
+    borderRadius: 8,
+    backgroundColor: Colors.lilac[100], // Default background
+    overflow: "hidden", // Clip the animated fill
+    position: "relative",
   },
   progressBarFill: {
-    height: 12,
+    height: "100%",
     borderRadius: 8,
-    overflow: "hidden",
-  },
-  progressBarGap: {
-    width: 4,
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
   },
   progressBarEmpty: {
-    height: 12,
+    height: "100%",
     borderRadius: 8,
   },
   progressLabels: {

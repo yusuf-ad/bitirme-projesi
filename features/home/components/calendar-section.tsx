@@ -1,5 +1,5 @@
 import CalendarDay from "@/features/home/components/calendar-day";
-import { mockCalendarDays } from "@/features/home/data/mock-data";
+import { generateCalendarDays } from "@/features/home/data/mock-data";
 import { useEffect, useMemo, useRef } from "react";
 import { FlatList, StyleSheet } from "react-native";
 import Animated, { FadeInRight } from "react-native-reanimated";
@@ -9,6 +9,7 @@ const ITEM_WIDTH = 52 + 12; // width + gap
 interface CalendarSectionProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
+  userRegistrationDate?: Date;
 }
 
 const isSameDay = (a: Date, b: Date) => {
@@ -22,6 +23,7 @@ const isSameDay = (a: Date, b: Date) => {
 export default function CalendarSection({
   selectedDate,
   onDateSelect,
+  userRegistrationDate,
 }: CalendarSectionProps) {
   const ref = useRef<FlatList>(null);
   const today = useMemo(() => {
@@ -30,7 +32,7 @@ export default function CalendarSection({
     return d;
   }, []);
 
-  const calendarDays = useMemo(() => mockCalendarDays, []);
+  const calendarDays = useMemo(() => generateCalendarDays(userRegistrationDate), [userRegistrationDate]);
 
   const computedIndex = calendarDays.findIndex((day) =>
     isSameDay(day.date, selectedDate)

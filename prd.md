@@ -1257,7 +1257,7 @@ constants/
 - [ ] Yemek eklenince shopping listeye otomatik ekleme - yusuf
 - [ ] servings ayarlama
 
-- [ ] Multiple conflicting goals? If user selects both lose-weight and gain-weight, how should we prioritize? / Recommend prioritizing the first selected goal or showing a warning.
+- [x] Multiple conflicting goals? If user selects both lose-weight and gain-weight, how should we prioritize? / Recommend prioritizing the first selected goal or showing a warning.
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
@@ -1265,7 +1265,7 @@ constants/
 
 - [ ] Nutrition tracking - yunus
 - [ ] Goal progress indicators - yunus
-- [ ] History view - yunus
+- [x] History view - yunus
 
 ### Phase 5: Enhancements (Weeks 10-11)
 
