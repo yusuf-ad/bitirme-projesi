@@ -15,32 +15,45 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Camera,
-  useCameraDevice,
-  useCameraPermission,
-} from "react-native-vision-camera";
+
+// Lazy import camera to handle missing native module
+let CameraView: any = null;
+let useCameraPermissions: any = null;
+
+try {
+  const cameraModule = require("expo-camera");
+  CameraView = cameraModule.CameraView;
+  useCameraPermissions = cameraModule.useCameraPermissions;
+} catch {
+  // Camera module not available (Expo Go)
+}
 
 export default function CameraPantry() {
   const router = useRouter();
-  const camera = useRef<Camera>(null);
-  const device = useCameraDevice("back");
-  const { hasPermission, requestPermission } = useCameraPermission();
+  const cameraRef = useRef<any>(null);
+  const [permission, setPermission] = useState<{ granted: boolean } | null>(null);
   const [mediaPermission, requestMediaPermission] =
     ImagePicker.useMediaLibraryPermissions();
   const [flash, setFlash] = useState<"off" | "on">("off");
-  const [isActive] = useState(true);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [cameraAvailable, setCameraAvailable] = useState(!!CameraView);
   const insets = useSafeAreaInsets();
   const shutterScale = useRef(new Animated.Value(1)).current;
   const capturingRef = useRef(false);
   const lastShotAtRef = useRef(0);
 
+  // Use camera permissions hook if available
+  const cameraPermissionHook = useCameraPermissions?.() ?? [null, () => Promise.resolve({ granted: false })];
+  const [cameraPermission, requestCameraPermission] = cameraPermissionHook;
+
+
   // Reset capture lock whenever this screen regains focus
-  useFocusEffect(() => {
-    setIsCapturing(false);
-    capturingRef.current = false;
-  });
+  useFocusEffect(
+    useCallback(() => {
+      setIsCapturing(false);
+      capturingRef.current = false;
+    }, [])
+  );
 
   // Calculate camera dimensions with 4:3 aspect ratio
   const screenWidth = Dimensions.get("window").width;
@@ -48,37 +61,39 @@ export default function CameraPantry() {
   const cameraHeight = (screenWidth * 4) / 3;
 
   useEffect(() => {
-    if (!hasPermission) {
-      requestPermission();
+    if (cameraAvailable && cameraPermission) {
+      setPermission(cameraPermission);
+      if (!cameraPermission.granted) {
+        requestCameraPermission();
+      }
     }
-  }, [hasPermission, requestPermission]);
+  }, [cameraAvailable, cameraPermission, requestCameraPermission]);
 
   const takePhoto = useCallback(async () => {
     try {
       const now = Date.now();
-      // Debounce rapid taps (within 1s) and prevent re-entrancy
       if (capturingRef.current || now - lastShotAtRef.current < 1000) return;
       lastShotAtRef.current = now;
       capturingRef.current = true;
       setIsCapturing(true);
-      if (camera.current) {
-        const photo = await camera.current.takePhoto({
-          flash,
-          enableShutterSound: true,
+      if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 1,
         });
-        console.log("Photo taken:", photo.path);
-        router.push({
-          pathname: "/(add)/preview",
-          params: { uri: photo.path },
-        });
+        if (photo?.uri) {
+          console.log("Photo taken:", photo.uri);
+          router.push({
+            pathname: "/(add)/preview",
+            params: { uri: photo.uri },
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to take photo:", error);
-      // Allow retry only if there was an error
       setIsCapturing(false);
       capturingRef.current = false;
     }
-  }, [flash, router]);
+  }, [router]);
 
   const onShutterPressIn = useCallback(() => {
     Animated.timing(shutterScale, {
@@ -124,7 +139,7 @@ export default function CameraPantry() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsMultipleSelection: false,
         quality: 1,
       });
@@ -140,8 +155,41 @@ export default function CameraPantry() {
     }
   }, [ensureMediaLibraryPermission, router]);
 
+
+  // Camera not available - show fallback UI
+  if (!cameraAvailable) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <View style={styles.header}>
+          <Pressable
+            style={styles.iconButton}
+            accessibilityLabel="Close"
+            onPress={handleClose}
+          >
+            <Ionicons name="close" size={22} color="#fff" />
+          </Pressable>
+        </View>
+        <View style={styles.centered}>
+          <Ionicons name="camera-outline" size={64} color="#666" />
+          <Text style={styles.fallbackTitle}>Camera Not Available</Text>
+          <Text style={styles.fallbackText}>
+            Camera requires a development build.{"\n"}
+            You can still pick images from your gallery.
+          </Text>
+          <Pressable
+            style={styles.galleryButton}
+            onPress={pickImageFromLibrary}
+          >
+            <Ionicons name="images" size={24} color="#fff" />
+            <Text style={styles.galleryButtonText}>Pick from Gallery</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   // Show loading while requesting permissions
-  if (!hasPermission) {
+  if (!permission?.granted) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.centered}>
@@ -167,24 +215,13 @@ export default function CameraPantry() {
             },
           ]}
         >
-          {device ? (
-            <Camera
-              ref={camera}
+          {CameraView && (
+            <CameraView
+              ref={cameraRef}
               style={styles.camera}
-              device={device}
-              isActive={isActive}
-              photo={true}
-              enableZoomGesture
+              facing="back"
+              flash={flash}
             />
-          ) : (
-            <View style={styles.cameraLoadingContainer}>
-              <ActivityIndicator size="large" color="#fff" />
-              <Text style={styles.permissionText}>Loading camera...</Text>
-              <Text style={styles.simulatorHint}>
-                Camera not available in simulator.{"\n"}Use the gallery button
-                below.
-              </Text>
-            </View>
           )}
         </View>
       </View>
@@ -221,15 +258,12 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={[
-              styles.shutterButton,
-              (isCapturing || !device) && styles.shutterDisabled,
-            ]}
+            style={[styles.shutterButton, isCapturing && styles.shutterDisabled]}
             accessibilityLabel="Take photo"
             onPress={takePhoto}
             onPressIn={onShutterPressIn}
             onPressOut={onShutterPressOut}
-            disabled={isCapturing || !device}
+            disabled={isCapturing}
           >
             <Animated.View
               style={[
@@ -240,15 +274,14 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={[styles.iconButton, !device && styles.iconButtonDisabled]}
+            style={styles.iconButton}
             accessibilityLabel="Toggle flash"
             onPress={toggleFlash}
-            disabled={!device}
           >
             <MaterialIcons
               name={flash === "on" ? "flash-on" : "flash-off"}
               size={26}
-              color={device ? "#fff" : "rgba(255,255,255,0.3)"}
+              color="#fff"
             />
           </Pressable>
         </View>
@@ -256,6 +289,7 @@ export default function CameraPantry() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -274,19 +308,6 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  cameraLoadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1a1a1a",
-  },
-  simulatorHint: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 14,
-    marginTop: 12,
-    textAlign: "center",
-    paddingHorizontal: 32,
-  },
   overlay: {
     position: "absolute",
     top: 0,
@@ -301,12 +322,41 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
+    paddingHorizontal: 32,
+    gap: 16,
   },
   permissionText: {
     color: "#fff",
     fontSize: 16,
     marginTop: 16,
     textAlign: "center",
+  },
+  fallbackTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  fallbackText: {
+    color: "#888",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  galleryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#333",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  galleryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "500",
   },
   header: {
     flexDirection: "row",
@@ -322,9 +372,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  iconButtonDisabled: {
-    opacity: 0.3,
   },
   bottomBar: {
     flexDirection: "row",

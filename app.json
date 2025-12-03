@@ -52,11 +52,9 @@
       ],
       "expo-secure-store",
       [
-        "react-native-vision-camera",
+        "expo-camera",
         {
-          "cameraPermissionText": "This app needs access to your camera to scan food items for your pantry.",
-          "enableMicrophonePermission": true,
-          "microphonePermissionText": "This app needs access to your microphone for camera functionality."
+          "cameraPermission": "This app needs access to your camera to scan food items for your pantry."
         }
       ]
     ],
