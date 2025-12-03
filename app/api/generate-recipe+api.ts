@@ -81,6 +81,17 @@ export async function POST(req: Request) {
       dislikedCuisines,
     } = await req.json();
 
+    console.log("Generating recipe with preferences:", {
+      ingredients,
+      mealType,
+      cookingTime,
+      calorieRange,
+      allergies,
+      dietPreferences,
+      cuisines,
+      dislikedCuisines,
+    });
+
     // Get readable cooking time and calorie range
     const cookingTimeText = COOKING_TIME_MAP[cookingTime] || "any duration";
     const calorieRangeObj = CALORIE_RANGE_MAP[calorieRange] || {
@@ -111,7 +122,7 @@ ${dietPreferences?.length > 0 ? dietPreferences.join(", ") : "None specified"}
 **Preferred Cuisines:**
 ${cuisines?.length > 0 ? cuisines.join(", ") : "Any cuisine"}
 
-**Cuisines to Avoid:**
+**Cuisines to AVOID (DO NOT use these cuisine styles):**
 ${dislikedCuisines?.length > 0 ? dislikedCuisines.join(", ") : "None"}
 
 Requirements:
@@ -125,8 +136,11 @@ Requirements:
 6. Provide clear, numbered cooking instructions (5-10 steps)
 7. List all ingredients with precise measurements
 8. Make it delicious and practical for home cooking
+9. Be realistic with the recipe name - do NOT always start with cuisine names like "Mediterranean", "Asian", etc. Use descriptive food names instead (e.g., "Herb-Crusted Chicken", "Spicy Beef Stir-Fry", "Creamy Garlic Pasta")
+10. If preferred cuisines are specified, incorporate those flavors. If cuisines to avoid are specified, DO NOT use any ingredients or techniques from those cuisines.
 
-Generate a unique recipe ID between 900000 and 999999 (to distinguish from real recipe IDs).
+IMPORTANT: Generate a UNIQUE and CREATIVE recipe name. Avoid generic prefixes.
+Random seed for variety: ${Math.random().toString(36).substring(7)}
 `;
 
     const result = await generateObject({

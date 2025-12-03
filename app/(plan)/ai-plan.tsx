@@ -167,6 +167,9 @@ export default function AiPlan() {
 
     const ingredientNames = selectedIngredients.map((ing) => ing.name);
 
+    // Convert allergy IDs to names using resolved allergies
+    const allergyNames = resolvedAllergies.map((allergy) => allergy.name);
+
     setViewState("generating");
     setIsRegenerating(false);
 
@@ -181,7 +184,7 @@ export default function AiPlan() {
           mealType: selectedMealType,
           cookingTime: selectedCookingTime,
           calorieRange: selectedCalorieRange,
-          allergies: selectedAllergies,
+          allergies: allergyNames,
           dietPreferences: selectedDietPreferences,
           cuisines: selectedCuisines,
           dislikedCuisines,
@@ -215,7 +218,7 @@ export default function AiPlan() {
     selectedMealType,
     selectedCookingTime,
     selectedCalorieRange,
-    selectedAllergies,
+    resolvedAllergies,
     selectedDietPreferences,
     selectedCuisines,
     dislikedCuisines,
@@ -427,6 +430,7 @@ export default function AiPlan() {
           allergies={resolvedAllergies}
           dietPreferences={resolvedDietPreferences}
           cuisines={selectedCuisines}
+          dislikedCuisines={dislikedCuisines}
         />
       </ScrollView>
 

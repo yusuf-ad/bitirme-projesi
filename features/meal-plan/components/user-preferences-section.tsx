@@ -50,15 +50,20 @@ interface UserPreferencesSectionProps {
   allergies: DisplayAllergy[];
   dietPreferences: DisplayDietPreference[];
   cuisines: string[];
+  dislikedCuisines?: string[];
 }
 
 export function UserPreferencesSection({
   allergies,
   dietPreferences,
   cuisines,
+  dislikedCuisines = [],
 }: UserPreferencesSectionProps) {
   const hasPreferences =
-    allergies.length > 0 || dietPreferences.length > 0 || cuisines.length > 0;
+    allergies.length > 0 ||
+    dietPreferences.length > 0 ||
+    cuisines.length > 0 ||
+    dislikedCuisines.length > 0;
 
   if (!hasPreferences) return null;
 
@@ -106,6 +111,18 @@ export function UserPreferencesSection({
           <View style={styles.infoChipsContainer}>
             {cuisines.map((cuisine) => (
               <InfoChip key={cuisine} label={cuisine} />
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Disliked Cuisines */}
+      {dislikedCuisines.length > 0 && (
+        <View style={styles.preferenceGroup}>
+          <Text style={styles.preferenceLabel}>Disliked Cuisines</Text>
+          <View style={styles.infoChipsContainer}>
+            {dislikedCuisines.map((cuisine) => (
+              <InfoChip key={cuisine} label={cuisine} variant="negative" />
             ))}
           </View>
         </View>

@@ -72,10 +72,28 @@ export function SelectableChip<T extends string>({
 }
 
 // Info Chip Component (readonly for showing user preferences)
-export function InfoChip({ label }: { label: string }) {
+export function InfoChip({
+  label,
+  variant = "default",
+}: {
+  label: string;
+  variant?: "default" | "negative";
+}) {
   return (
-    <View style={styles.infoChip}>
-      <Text style={styles.infoChipLabel}>{label}</Text>
+    <View
+      style={[
+        styles.infoChip,
+        variant === "negative" && styles.infoChipNegative,
+      ]}
+    >
+      <Text
+        style={[
+          styles.infoChipLabel,
+          variant === "negative" && styles.infoChipLabelNegative,
+        ]}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
@@ -159,9 +177,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.lilac[300],
   },
+  infoChipNegative: {
+    backgroundColor: Colors.semantic.error.light,
+    borderColor: Colors.semantic.error.main,
+  },
   infoChipLabel: {
     fontSize: 13,
     fontWeight: "500",
     color: Colors.lilac[900],
+  },
+  infoChipLabelNegative: {
+    color: Colors.semantic.error.dark,
   },
 });
