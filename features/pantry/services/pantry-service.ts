@@ -115,4 +115,99 @@ export const pantryService = {
 
     if (error) throw error;
   },
+
+  /**
+   * Tiklenen shopping list öğelerini pantry'e taşır
+   * Shopping list sayfasından çıkıldığında çağrılır
+   */
+  async moveCheckedItemsToPantry(): Promise<{
+    movedCount: number;
+    error: string | null;
+  }> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { movedCount: 0, error: "User not authenticated" };
+      }
+
+      // Tiklenen öğeleri bul
+      const { data: checkedItems, error: fetchError } = await supabase
+        .from("pantry_items")
+        .select(
+          "id, name, spoonacular_id, amount, unit, category, is_weight, spoonacular_name, spoonacular_image"
+        )
+        .eq("user_id", user.id)
+        .eq("status", "shopping_list")
+        .eq("checked", true);
+
+      if (fetchError) {
+        console.error("Error fetching checked items:", fetchError);
+        return { movedCount: 0, error: fetchError.message };
+      }
+
+      if (!checkedItems || checkedItems.length === 0) {
+        return { movedCount: 0, error: null };
+      }
+
+      // Her bir tiklenen öğe için pantry'de aynı malzeme var mı kontrol et
+      for (const item of checkedItems) {
+        // Pantry'de aynı malzeme var mı? (spoonacular_id veya isim ile)
+        let existingPantryItem = null;
+
+        if (item.spoonacular_id) {
+          const { data } = await supabase
+            .from("pantry_items")
+            .select("id, amount")
+            .eq("user_id", user.id)
+            .eq("status", "pantry")
+            .eq("spoonacular_id", item.spoonacular_id)
+            .maybeSingle();
+          existingPantryItem = data;
+        }
+
+        // spoonacular_id ile bulunamadıysa isim ile dene
+        if (!existingPantryItem) {
+          const { data } = await supabase
+            .from("pantry_items")
+            .select("id, amount")
+            .eq("user_id", user.id)
+            .eq("status", "pantry")
+            .ilike("name", item.name)
+            .maybeSingle();
+          existingPantryItem = data;
+        }
+
+        if (existingPantryItem) {
+          // Varsa miktarı güncelle ve shopping list öğesini sil
+          const newAmount =
+            (existingPantryItem.amount || 0) + (item.amount || 0);
+
+          await supabase
+            .from("pantry_items")
+            .update({ amount: newAmount, updated_at: new Date().toISOString() })
+            .eq("id", existingPantryItem.id);
+
+          await supabase.from("pantry_items").delete().eq("id", item.id);
+        } else {
+          // Yoksa status'u pantry olarak güncelle
+          await supabase
+            .from("pantry_items")
+            .update({
+              status: "pantry",
+              checked: false,
+              recipe_name: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", item.id);
+        }
+      }
+
+      return { movedCount: checkedItems.length, error: null };
+    } catch (error) {
+      console.error("Error moving items to pantry:", error);
+      return { movedCount: 0, error: "Bir hata oluştu" };
+    }
+  },
 };

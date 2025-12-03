@@ -1,9 +1,9 @@
 import { Colors } from "@/constants/theme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
-    BottomSheetBackdrop,
-    BottomSheetModal,
-    BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,8 +21,21 @@ interface MealActionModalProps {
   onDelete?: () => void;
 }
 
-export const MealActionModal = forwardRef<BottomSheetModal, MealActionModalProps>(
-  ({ mealType, recipeName, isEaten = false, onToggleEaten, onReplace, onDelete }, ref) => {
+export const MealActionModal = forwardRef<
+  BottomSheetModal,
+  MealActionModalProps
+>(
+  (
+    {
+      mealType,
+      recipeName,
+      isEaten = false,
+      onToggleEaten,
+      onReplace,
+      onDelete,
+    },
+    ref
+  ) => {
     const [eaten, setEaten] = useState(isEaten);
 
     // Sync internal state with prop when it changes
@@ -87,20 +100,32 @@ export const MealActionModal = forwardRef<BottomSheetModal, MealActionModalProps
       >
         <BottomSheetView style={styles.contentContainer}>
           {/* Header */}
-          <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
+          <Animated.View
+            entering={FadeInDown.delay(100).springify()}
+            style={styles.header}
+          >
             <View style={styles.titleContainer}>
               <View style={styles.titleIconWrapper}>
-                <Ionicons name="restaurant" size={20} color={Colors.lilac[600]} />
+                <Ionicons
+                  name="restaurant"
+                  size={20}
+                  color={Colors.lilac[600]}
+                />
               </View>
               <View style={styles.titleTextContainer}>
                 <Text style={styles.title}>{mealType}</Text>
-                <Text style={styles.subtitle} numberOfLines={1}>{recipeName}</Text>
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {recipeName}
+                </Text>
               </View>
             </View>
             <Pressable
               hitSlop={24}
               onPress={dismiss}
-              style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}
+              style={({ pressed }) => [
+                styles.closeButton,
+                pressed && styles.closeButtonPressed,
+              ]}
             >
               <Ionicons name="close" size={20} color={Colors.gray[400]} />
             </Pressable>
@@ -118,13 +143,25 @@ export const MealActionModal = forwardRef<BottomSheetModal, MealActionModalProps
                 ]}
                 onPress={handleToggleEaten}
               >
-                <View style={[styles.actionIconWrapper, eaten && styles.actionIconWrapperActive]}>
+                <View
+                  style={[
+                    styles.actionIconWrapper,
+                    eaten && styles.actionIconWrapperActive,
+                  ]}
+                >
                   {eaten ? (
                     <LinearGradient
-                      colors={[Colors.semantic.success.main, Colors.semantic.success.dark]}
+                      colors={[
+                        Colors.semantic.success.main,
+                        Colors.semantic.success.dark,
+                      ]}
                       style={styles.actionIconGradient}
                     >
-                      <Ionicons name="checkmark-circle" size={24} color="white" />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color="white"
+                      />
                     </LinearGradient>
                   ) : (
                     <MaterialCommunityIcons
@@ -135,15 +172,32 @@ export const MealActionModal = forwardRef<BottomSheetModal, MealActionModalProps
                   )}
                 </View>
                 <View style={styles.actionTextContainer}>
-                  <Text style={[styles.actionTitle, eaten && styles.actionTitleActive]}>
-                    {eaten ? "Yenildi" : "Yenilmedi"}
+                  <Text
+                    style={[
+                      styles.actionTitle,
+                      eaten && styles.actionTitleActive,
+                    ]}
+                  >
+                    {eaten ? "Eaten" : "Not eaten"}
                   </Text>
                   <Text style={styles.actionDescription}>
-                    {eaten ? "Bu öğünü yediniz olarak işaretlediniz" : "Bu öğünü yenildi olarak işaretleyin"}
+                    {eaten
+                      ? "You marked this meal as eaten"
+                      : "Mark this meal as eaten"}
                   </Text>
                 </View>
-                <View style={[styles.toggleSwitch, eaten && styles.toggleSwitchActive]}>
-                  <View style={[styles.toggleThumb, eaten && styles.toggleThumbActive]} />
+                <View
+                  style={[
+                    styles.toggleSwitch,
+                    eaten && styles.toggleSwitchActive,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.toggleThumb,
+                      eaten && styles.toggleThumbActive,
+                    ]}
+                  />
                 </View>
               </Pressable>
             </Animated.View>
@@ -151,17 +205,30 @@ export const MealActionModal = forwardRef<BottomSheetModal, MealActionModalProps
             {/* Replace */}
             <Animated.View entering={FadeInUp.delay(200).springify()}>
               <Pressable
-                style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]}
+                style={({ pressed }) => [
+                  styles.actionItem,
+                  pressed && styles.actionItemPressed,
+                ]}
                 onPress={handleReplace}
               >
                 <View style={styles.actionIconWrapper}>
-                  <MaterialCommunityIcons name="swap-horizontal" size={24} color={Colors.lilac[600]} />
+                  <MaterialCommunityIcons
+                    name="swap-horizontal"
+                    size={24}
+                    color={Colors.lilac[600]}
+                  />
                 </View>
                 <View style={styles.actionTextContainer}>
-                  <Text style={styles.actionTitle}>Değiştir</Text>
-                  <Text style={styles.actionDescription}>Başka bir tarif seçin</Text>
+                  <Text style={styles.actionTitle}>Replace</Text>
+                  <Text style={styles.actionDescription}>
+                    Choose another recipe
+                  </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={Colors.gray[400]}
+                />
               </Pressable>
             </Animated.View>
 
@@ -175,12 +242,25 @@ export const MealActionModal = forwardRef<BottomSheetModal, MealActionModalProps
                 ]}
                 onPress={handleDelete}
               >
-                <View style={[styles.actionIconWrapper, styles.actionIconWrapperDanger]}>
-                  <Ionicons name="trash-outline" size={24} color={Colors.semantic.error.main} />
+                <View
+                  style={[
+                    styles.actionIconWrapper,
+                    styles.actionIconWrapperDanger,
+                  ]}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={24}
+                    color={Colors.semantic.error.main}
+                  />
                 </View>
                 <View style={styles.actionTextContainer}>
-                  <Text style={[styles.actionTitle, styles.actionTitleDanger]}>Sil</Text>
-                  <Text style={styles.actionDescription}>Bu öğünü planınızdan kaldırın</Text>
+                  <Text style={[styles.actionTitle, styles.actionTitleDanger]}>
+                    Delete
+                  </Text>
+                  <Text style={styles.actionDescription}>
+                    Remove this meal from your plan
+                  </Text>
                 </View>
               </Pressable>
             </Animated.View>

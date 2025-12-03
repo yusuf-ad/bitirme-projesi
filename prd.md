@@ -1239,7 +1239,7 @@ constants/
 
 - [ ] Ingredient management (CRUD operations) - yusuf
 - [ ] Fix error states - yunus
-- [ ] Recipe detail scroll header (sticky header) - osman
+- [x] Recipe detail scroll header (sticky header) - osman
 - [x] Onboarding veri hatası - yunus
 - [x] spoonaculardaki diet tipleri kullanılacak ve sadece 1 diet tipi seçilme özelliği eklencek. - yunus
 

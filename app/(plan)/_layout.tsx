@@ -21,6 +21,12 @@ export default function MealPlanLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="ai-plan"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
