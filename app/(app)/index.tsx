@@ -9,23 +9,23 @@ import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  View
+    ActivityIndicator,
+    Platform,
+    RefreshControl,
+    StyleSheet,
+    View
 } from "react-native";
 import Animated, {
-  FadeInDown,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    FadeInDown,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function MealplanTab() {
-  const { session } = useAuthContext();
+  const { session, profile } = useAuthContext();
   const { bottom, top } = useSafeAreaInsets();
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
@@ -143,7 +143,11 @@ export default function MealplanTab() {
       }
     >
       {/* Header */}
-      <Header firstName={firstName} motivationText="Let's plan your meals!" />
+      <Header
+        firstName={firstName}
+        motivationText="Let's plan your meals!"
+        avatarUrl={profile?.avatar_url}
+      />
 
       {/* Calendar */}
       <CalendarSection

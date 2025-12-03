@@ -6,21 +6,22 @@ import { useOnboarding } from "@/providers/onboarding-provider";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
+import { Image as ExpoImage } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -582,12 +583,21 @@ export default function ProfileTab() {
         <View
           style={[
             styles.avatarContainer,
-            { backgroundColor: Colors.text.primary },
+            { backgroundColor: profile?.avatar_url ? "transparent" : Colors.text.primary },
           ]}
         >
-          <Text style={[styles.avatarText, { color: Colors.text.inverse }]}>
-            {getUserInitials()}
-          </Text>
+          {profile?.avatar_url ? (
+            <ExpoImage
+              source={{ uri: profile.avatar_url }}
+              style={styles.avatarImage}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <Text style={[styles.avatarText, { color: Colors.text.inverse }]}>
+              {getUserInitials()}
+            </Text>
+          )}
         </View>
         <View style={styles.profileInfo}>
           <Text style={[styles.profileName, { color: Colors.text.primary }]}>
@@ -740,6 +750,11 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   avatarText: {
     fontSize: 24,
