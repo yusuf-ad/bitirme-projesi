@@ -1,5 +1,6 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,21 +16,14 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Camera,
-  useCameraDevice,
-  useCameraPermission,
-} from "react-native-vision-camera";
 
 export default function CameraPantry() {
   const router = useRouter();
-  const camera = useRef<Camera>(null);
-  const device = useCameraDevice("back");
-  const { hasPermission, requestPermission } = useCameraPermission();
+  const cameraRef = useRef<CameraView>(null);
+  const [permission, requestPermission] = useCameraPermissions();
   const [mediaPermission, requestMediaPermission] =
     ImagePicker.useMediaLibraryPermissions();
   const [flash, setFlash] = useState<"off" | "on">("off");
-  const [isActive] = useState(true);
   const [isCapturing, setIsCapturing] = useState(false);
   const insets = useSafeAreaInsets();
   const shutterScale = useRef(new Animated.Value(1)).current;
@@ -37,10 +31,12 @@ export default function CameraPantry() {
   const lastShotAtRef = useRef(0);
 
   // Reset capture lock whenever this screen regains focus
-  useFocusEffect(() => {
-    setIsCapturing(false);
-    capturingRef.current = false;
-  });
+  useFocusEffect(
+    useCallback(() => {
+      setIsCapturing(false);
+      capturingRef.current = false;
+    }, [])
+  );
 
   // Calculate camera dimensions with 4:3 aspect ratio
   const screenWidth = Dimensions.get("window").width;
@@ -48,10 +44,10 @@ export default function CameraPantry() {
   const cameraHeight = (screenWidth * 4) / 3;
 
   useEffect(() => {
-    if (!hasPermission) {
+    if (!permission?.granted) {
       requestPermission();
     }
-  }, [hasPermission, requestPermission]);
+  }, [permission, requestPermission]);
 
   const takePhoto = useCallback(async () => {
     try {
@@ -61,16 +57,17 @@ export default function CameraPantry() {
       lastShotAtRef.current = now;
       capturingRef.current = true;
       setIsCapturing(true);
-      if (camera.current) {
-        const photo = await camera.current.takePhoto({
-          flash,
-          enableShutterSound: true,
+      if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 1,
         });
-        console.log("Photo taken:", photo.path);
-        router.push({
-          pathname: "/(add)/preview",
-          params: { uri: photo.path },
-        });
+        if (photo?.uri) {
+          console.log("Photo taken:", photo.uri);
+          router.push({
+            pathname: "/(add)/preview",
+            params: { uri: photo.uri },
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to take photo:", error);
@@ -78,7 +75,8 @@ export default function CameraPantry() {
       setIsCapturing(false);
       capturingRef.current = false;
     }
-  }, [flash, router]);
+  }, [router]);
+
 
   const onShutterPressIn = useCallback(() => {
     Animated.timing(shutterScale, {
@@ -141,7 +139,7 @@ export default function CameraPantry() {
   }, [ensureMediaLibraryPermission, router]);
 
   // Show loading while requesting permissions
-  if (!hasPermission) {
+  if (!permission?.granted) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.centered}>
@@ -167,25 +165,12 @@ export default function CameraPantry() {
             },
           ]}
         >
-          {device ? (
-            <Camera
-              ref={camera}
-              style={styles.camera}
-              device={device}
-              isActive={isActive}
-              photo={true}
-              enableZoomGesture
-            />
-          ) : (
-            <View style={styles.cameraLoadingContainer}>
-              <ActivityIndicator size="large" color="#fff" />
-              <Text style={styles.permissionText}>Loading camera...</Text>
-              <Text style={styles.simulatorHint}>
-                Camera not available in simulator.{"\n"}Use the gallery button
-                below.
-              </Text>
-            </View>
-          )}
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing="back"
+            flash={flash}
+          />
         </View>
       </View>
 
@@ -221,15 +206,12 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={[
-              styles.shutterButton,
-              (isCapturing || !device) && styles.shutterDisabled,
-            ]}
+            style={[styles.shutterButton, isCapturing && styles.shutterDisabled]}
             accessibilityLabel="Take photo"
             onPress={takePhoto}
             onPressIn={onShutterPressIn}
             onPressOut={onShutterPressOut}
-            disabled={isCapturing || !device}
+            disabled={isCapturing}
           >
             <Animated.View
               style={[
@@ -240,15 +222,14 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={[styles.iconButton, !device && styles.iconButtonDisabled]}
+            style={styles.iconButton}
             accessibilityLabel="Toggle flash"
             onPress={toggleFlash}
-            disabled={!device}
           >
             <MaterialIcons
               name={flash === "on" ? "flash-on" : "flash-off"}
               size={26}
-              color={device ? "#fff" : "rgba(255,255,255,0.3)"}
+              color="#fff"
             />
           </Pressable>
         </View>
@@ -273,19 +254,6 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
-  },
-  cameraLoadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1a1a1a",
-  },
-  simulatorHint: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 14,
-    marginTop: 12,
-    textAlign: "center",
-    paddingHorizontal: 32,
   },
   overlay: {
     position: "absolute",
@@ -322,9 +290,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  iconButtonDisabled: {
-    opacity: 0.3,
   },
   bottomBar: {
     flexDirection: "row",
