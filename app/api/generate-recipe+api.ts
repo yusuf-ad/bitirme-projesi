@@ -136,15 +136,20 @@ Requirements:
 6. Provide clear, numbered cooking instructions (5-10 steps)
 7. List all ingredients with precise measurements
 8. Make it delicious and practical for home cooking
-9. Be realistic with the recipe name - do NOT always start with cuisine names like "Mediterranean", "Asian", etc. Use descriptive food names instead (e.g., "Herb-Crusted Chicken", "Spicy Beef Stir-Fry", "Creamy Garlic Pasta")
+9. RECIPE NAMING RULES (VERY IMPORTANT):
+   - DO NOT start with adjectives like "Savory", "Delicious", "Hearty", "Classic", "Homestyle", "Quick", "Easy", "Simple", "Perfect", "Ultimate", "Best"
+   - DO NOT start with cuisine names like "Mediterranean", "Asian", "Italian", "Mexican"
+   - START directly with the main ingredient or cooking method
+   - Good examples: "Tomato Butter Eggs", "Garlic Herb Chicken", "Beef Stir-Fry", "Lemon Pasta", "Mushroom Risotto"
+   - Bad examples: "Savory Tomato Bowl", "Delicious Chicken Dish", "Hearty Beef Stew", "Classic Italian Pasta"
 10. If preferred cuisines are specified, incorporate those flavors. If cuisines to avoid are specified, DO NOT use any ingredients or techniques from those cuisines.
 
-IMPORTANT: Generate a UNIQUE and CREATIVE recipe name. Avoid generic prefixes.
+IMPORTANT: The recipe name MUST start with a NOUN (ingredient, food item) or a cooking verb (Grilled, Roasted, Pan-Fried), NEVER with a descriptive adjective.
 Random seed for variety: ${Math.random().toString(36).substring(7)}
 `;
 
     const result = await generateObject({
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4o"),
       schema: recipeSchema,
       temperature: 0.8,
       messages: [
