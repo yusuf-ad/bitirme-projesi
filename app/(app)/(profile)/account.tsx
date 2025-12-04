@@ -6,7 +6,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Modal,
@@ -50,6 +50,13 @@ export default function AccountScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState(profile?.avatar_url || "");
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setSelectedAvatar(profile.avatar_url || "");
+    }
+  }, [profile]);
 
   const getUserInitials = useCallback(() => {
     if (profile?.full_name) {
@@ -100,6 +107,33 @@ export default function AccountScreen() {
       Alert.alert("Error", "Failed to update profile. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleUpdateAvatar = async (newAvatar: string) => {
+    if (!session?.user?.id) return;
+    Haptics.selectionAsync();
+    setSelectedAvatar(newAvatar);
+    setIsAvatarModalVisible(false);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: newAvatar,
+        })
+        .eq("id", session.user.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+      Alert.alert("Error", "Failed to update avatar. Please try again.");
+      // Revert to profile avatar if failed
+      if (profile?.avatar_url) {
+        setSelectedAvatar(profile.avatar_url);
+      }
     }
   };
 
@@ -538,9 +572,7 @@ export default function AccountScreen() {
                     },
                   ]}
                   onPress={() => {
-                    Haptics.selectionAsync();
-                    setSelectedAvatar(avatar);
-                    setIsAvatarModalVisible(false);
+                    handleUpdateAvatar(avatar);
                   }}
                 >
                   <ExpoImage
