@@ -3,13 +3,19 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { ImageSourcePropType, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import Animated, {
   Extrapolation,
   interpolate,
   SharedValue,
-  useAnimatedStyle
+  useAnimatedStyle,
 } from "react-native-reanimated";
 
 interface EmptyMealSlotProps {
@@ -34,7 +40,7 @@ export function EmptyMealSlot({
   // Animated styles for collapsible content - optimized for UI thread
   // Using only GPU-accelerated properties (opacity, transform) for 60fps animations
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    'worklet';
+    "worklet";
 
     const progress = interpolate(
       scrollY.value,
@@ -50,16 +56,13 @@ export function EmptyMealSlot({
 
     return {
       opacity,
-      transform: [
-        { translateY },
-        { scale },
-      ],
+      transform: [{ translateY }, { scale }],
     };
   });
 
   // Wrapper style for height animation using max-height approach
   const wrapperAnimatedStyle = useAnimatedStyle(() => {
-    'worklet';
+    "worklet";
 
     const progress = interpolate(
       scrollY.value,
@@ -73,12 +76,12 @@ export function EmptyMealSlot({
 
     return {
       maxHeight,
-      overflow: 'hidden' as const,
+      overflow: "hidden" as const,
     };
   });
 
   const containerAnimatedStyle = useAnimatedStyle(() => {
-    'worklet';
+    "worklet";
 
     const progress = interpolate(
       scrollY.value,
@@ -145,7 +148,9 @@ export function EmptyMealSlot({
 
         {/* Empty State Content - Animated */}
         <Animated.View style={wrapperAnimatedStyle}>
-          <Animated.View style={[styles.emptyContentWrapper, contentAnimatedStyle]}>
+          <Animated.View
+            style={[styles.emptyContentWrapper, contentAnimatedStyle]}
+          >
             <View style={styles.emptyContent}>
               <View style={styles.emptyIconContainer}>
                 <Text style={styles.emptyIcon}>🍽️</Text>
