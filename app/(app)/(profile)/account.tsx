@@ -176,7 +176,7 @@ export default function AccountScreen() {
       transform: [{ scale: scale.value }],
     }));
 
-    const iconColor = danger ? "#EF4444" : Colors.lilac[600];
+    const iconColor = danger ? "#EF4444" : Colors.lilac[900];
     const textColor = danger ? "#EF4444" : Colors.text.primary;
 
     return (
@@ -286,7 +286,7 @@ export default function AccountScreen() {
             }}
           >
             <LinearGradient
-                colors={['#A78BFA', '#7C3AED', '#4ADE80']}
+                colors={[Colors.lilac[900], Colors.lilac[900], Colors.lilac[900]]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.avatarGradientBorder}
@@ -325,7 +325,7 @@ export default function AccountScreen() {
               <MaterialCommunityIcons
                 name="calendar-check"
                 size={14}
-                color={Colors.green[600]}
+                color={Colors.lilac[900]}
               />
               <Text style={[styles.memberText, { color: Colors.text.tertiary }]}>
                 Member since {getMemberSinceDate()}
@@ -355,7 +355,7 @@ export default function AccountScreen() {
                 <MaterialCommunityIcons
                   name="account-outline"
                   size={20}
-                  color={Colors.lilac[600]}
+                  color={Colors.lilac[900]}
                 />
                 <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
                   Full Name
@@ -396,7 +396,7 @@ export default function AccountScreen() {
                 <MaterialCommunityIcons
                   name="email-outline"
                   size={20}
-                  color={Colors.lilac[600]}
+                  color={Colors.lilac[900]}
                 />
                 <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
                   Email Address
@@ -429,7 +429,7 @@ export default function AccountScreen() {
                     </Text>
                   </Pressable>
                   <Pressable
-                    style={[styles.saveBtn, { backgroundColor: Colors.lilac[600] }]}
+                    style={[styles.saveBtn, { backgroundColor: Colors.lilac[900] }]}
                     onPress={handleSave}
                     disabled={isSaving}
                   >
@@ -465,7 +465,7 @@ export default function AccountScreen() {
                   <MaterialCommunityIcons
                     name="pencil-outline"
                     size={18}
-                    color={Colors.text.primary}
+                    color={Colors.lilac[900]}
                   />
                   <Text
                     style={[

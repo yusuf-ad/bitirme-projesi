@@ -1,143 +1,130 @@
-import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
-import { Colors } from "@/constants/theme";
-import { useOnboarding } from "@/providers/onboarding-provider";
+import { getThemeColors } from "@/constants/theme";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const CUISINES = [
+  "Italian", "Mexican", "Chinese", "Japanese", "Indian", "Thai", "French", "Greek", "Spanish", "Mediterranean", "American", "Korean"
+];
+
+const DISLIKES = [
+  "Mushrooms", "Olives", "Cilantro", "Onions", "Garlic", "Spicy Food", "Seafood", "Dairy", "Gluten", "Nuts"
+];
+
 export default function TastePreferencesScreen() {
-  const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
+  const { profile } = useAuthContext();
 
-  useEffect(() => {
-    onboarding.loadOnboardingData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>(["Italian", "Japanese", "Mexican"]);
+  const [selectedDislikes, setSelectedDislikes] = useState<string[]>(["Mushrooms"]);
 
-  const getCookingSkillEmoji = (skill?: string) => {
-    switch (skill) {
-      case "novice":
-        return "🍳";
-      case "basic":
-        return "🥘";
-      case "intermediate":
-        return "👨‍🍳";
-      case "advanced":
-        return "🍰";
-      default:
-        return "🍳";
+  const toggleSelection = (item: string, list: string[], setList: (l: string[]) => void) => {
+    Haptics.selectionAsync();
+    if (list.includes(item)) {
+      setList(list.filter((i) => i !== item));
+    } else {
+      setList([...list, item]);
     }
   };
 
-  const getCookingSkillLabel = (skill?: string) => {
-    switch (skill) {
-      case "novice":
-        return "Novice";
-      case "basic":
-        return "Basic";
-      case "intermediate":
-        return "Intermediate";
-      case "advanced":
-        return "Advanced";
-      default:
-        return "Not set";
-    }
-  };
+  const Section = ({ title, children, delay = 0 }: { title: string; children: React.ReactNode; delay?: number }) => (
+    <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>{title}</Text>
+      <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
+        {children}
+      </View>
+    </Animated.View>
+  );
 
-  if (onboarding.isLoading) {
-    return <ProfessionalLoadingScreen />;
-  }
+  const ChipGrid = ({ items, selected, onToggle }: { items: string[]; selected: string[]; onToggle: (item: string) => void }) => (
+    <View style={styles.chipGrid}>
+      {items.map((item) => {
+        const isSelected = selected.includes(item);
+        return (
+          <Pressable
+            key={item}
+            onPress={() => onToggle(item)}
+            style={[
+              styles.chip,
+              { 
+                backgroundColor: isSelected ? Colors.lilac[900] : (isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"),
+                borderColor: isSelected ? Colors.lilac[900] : "transparent"
+              }
+            ]}
+          >
+            <Text style={[styles.chipText, { color: isSelected ? "#FFFFFF" : Colors.text.primary }]}>
+              {item}
+            </Text>
+            {isSelected && (
+              <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
+    <View style={[styles.container, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color={Colors.text.primary}
-          />
+      <View style={[styles.header, { backgroundColor: Colors.background.surface }]}>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.back();
+          }}
+          style={styles.backButton}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.text.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Taste Preferences</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>Taste Preferences</Text>
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingBottom: bottom + 20 }]}
-      >
-        {/* Cooking Skill */}
-        {onboarding.selectedCookingSkill && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons
-                name="chef-hat"
-                size={20}
-                color={Colors.lilac[900]}
-              />
-              <Text style={styles.sectionTitle}>Cooking Skill</Text>
-            </View>
-            <View style={styles.cookingSkillBadge}>
-              <Text style={styles.cookingSkillEmoji}>
-                {getCookingSkillEmoji(onboarding.selectedCookingSkill)}
-              </Text>
-              <Text style={styles.cookingSkillText}>
-                {getCookingSkillLabel(onboarding.selectedCookingSkill)}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Meal Types */}
-        {onboarding.selectedMeals.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons
-                name="silverware-fork-knife"
-                size={20}
-                color={Colors.lilac[900]}
-              />
-              <Text style={styles.sectionTitle}>Meal Types</Text>
-            </View>
-            <View style={styles.tagsContainer}>
-              {onboarding.selectedMeals.map((meal, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{meal}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + 40 }]}>
+        
         {/* Cuisines */}
-        {onboarding.selectedCuisines.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons
-                name="earth"
-                size={20}
-                color={Colors.lilac[900]}
-              />
-              <Text style={styles.sectionTitle}>Favorite Cuisines</Text>
-            </View>
-            <View style={styles.tagsContainer}>
-              {onboarding.selectedCuisines.map((cuisine, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{cuisine}</Text>
-                </View>
-              ))}
-            </View>
+        <Section title="Favorite Cuisines" delay={100}>
+          <View style={styles.sectionContent}>
+            <Text style={[styles.description, { color: Colors.text.secondary }]}>
+              Select the cuisines you enjoy the most. We'll prioritize recipes from these categories.
+            </Text>
+            <ChipGrid 
+              items={CUISINES} 
+              selected={selectedCuisines} 
+              onToggle={(item) => toggleSelection(item, selectedCuisines, setSelectedCuisines)} 
+            />
           </View>
-        )}
+        </Section>
+
+        {/* Dislikes */}
+        <Section title="Dislikes & Exclusions" delay={200}>
+          <View style={styles.sectionContent}>
+            <Text style={[styles.description, { color: Colors.text.secondary }]}>
+              Ingredients you want to avoid. We'll do our best to exclude recipes containing these.
+            </Text>
+            <ChipGrid 
+              items={DISLIKES} 
+              selected={selectedDislikes} 
+              onToggle={(item) => toggleSelection(item, selectedDislikes, setSelectedDislikes)} 
+            />
+          </View>
+        </Section>
+
       </ScrollView>
     </View>
   );
@@ -146,84 +133,77 @@ export default function TastePreferencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   backButton: {
-    padding: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "600",
-    color: Colors.text.primary,
+    letterSpacing: 0.5,
   },
   headerRight: {
-    width: 32,
-  },
-  scrollView: {
-    flex: 1,
+    width: 40,
   },
   content: {
     padding: 16,
+    gap: 24,
   },
   section: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text.primary,
-  },
-  cookingSkillBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.lilac[100],
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    alignSelf: "flex-start",
     gap: 12,
   },
-  cookingSkillEmoji: {
-    fontSize: 24,
-  },
-  cookingSkillText: {
-    fontSize: 18,
+  sectionTitle: {
+    fontSize: 14,
     fontWeight: "600",
-    color: Colors.lilac[900],
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginLeft: 4,
   },
-  tagsContainer: {
+  card: {
+    borderRadius: 20,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionContent: {
+    padding: 16,
+    gap: 16,
+  },
+  description: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  chipGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
-  tag: {
-    backgroundColor: Colors.lilac[100],
-    paddingHorizontal: 16,
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  tagText: {
+  chipText: {
     fontSize: 14,
-    color: Colors.lilac[900],
     fontWeight: "500",
   },
 });

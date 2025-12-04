@@ -11,25 +11,25 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Pressable,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Dimensions,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    Extrapolation,
-    FadeInDown,
-    FadeInRight,
-    interpolate,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  Extrapolation,
+  FadeInDown,
+  FadeInRight,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -131,7 +131,7 @@ const MenuItemComponent = ({ item, index, isDark }: { item: MenuItem; index: num
                   styles.menuItemDescription,
                   { color: isDark ? "#9CA3AF" : "#6B7280" },
                 ]}
-                numberOfLines={1}
+                numberOfLines={2}
               >
                 {item.description}
               </Text>
@@ -140,7 +140,10 @@ const MenuItemComponent = ({ item, index, isDark }: { item: MenuItem; index: num
         </View>
         <View style={styles.metaWrapper}>
           {item.meta && (
-            <Text style={[styles.menuItemMeta, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>
+            <Text 
+              style={[styles.menuItemMeta, { color: isDark ? "#9CA3AF" : "#6B7280" }]}
+              numberOfLines={1}
+            >
               {item.meta}
             </Text>
           )}
@@ -514,8 +517,8 @@ export default function ProfileTab() {
             description: "Macro targets, measurement system",
             meta: formattedUnitsSummary,
             icon: "tune",
-            onPress: () => router.push("/(app)/(profile)/preferences"),
-            color: Colors.green[600],
+            onPress: () => router.push("/(app)/(profile)/units-nutrition"),
+            color: Colors.lilac[900],
           },
           {
             id: "goals-metrics",
@@ -523,7 +526,7 @@ export default function ProfileTab() {
             description: "Weight, activity & progress",
             icon: "chart-line",
             onPress: () => router.push("/(app)/(profile)/goals-metrics"),
-            color: Colors.purple[600],
+            color: Colors.lilac[900],
           },
           {
             id: "privacy",
@@ -531,7 +534,7 @@ export default function ProfileTab() {
             description: "Manage insights & sharing",
             icon: "shield-check-outline",
             onPress: () => router.push("/(app)/(profile)/privacy"),
-            color: Colors.gray[600],
+            color: Colors.lilac[900],
           },
           {
             id: "notifications",
@@ -539,7 +542,7 @@ export default function ProfileTab() {
             description: "Meal reminders & summaries",
             icon: "bell-outline",
             onPress: () => router.push("/(app)/(profile)/notifications"),
-            color: Colors.beige[700],
+            color: Colors.lilac[900],
           },
         ],
       },
@@ -548,12 +551,20 @@ export default function ProfileTab() {
         title: "App Settings",
         items: [
           {
+            id: "preferences-general",
+            title: "Preferences",
+            description: "Language, units & app settings",
+            icon: "cog-outline",
+            onPress: () => router.push("/(app)/(profile)/preferences"),
+            color: Colors.lilac[900],
+          },
+          {
             id: "meal-times",
             title: "Meal Times",
             description: "Breakfast, lunch and dinner windows",
             icon: "calendar-clock",
             onPress: () => router.push("/(app)/(profile)/meal-times"),
-            color: Colors.lilac[500],
+            color: Colors.lilac[900],
           },
           {
             id: "apple-watch",
@@ -565,7 +576,7 @@ export default function ProfileTab() {
                 pathname: "/(app)/(profile)/integrations",
                 params: { focus: "apple" },
               }),
-            color: "#000000",
+            color: Colors.lilac[900],
           },
           {
             id: "partner-accounts",
@@ -577,7 +588,7 @@ export default function ProfileTab() {
                 pathname: "/(app)/(profile)/integrations",
                 params: { focus: "partners" },
               }),
-            color: Colors.green[500],
+            color: Colors.lilac[900],
           },
           {
             id: "social-sharing",
@@ -585,7 +596,7 @@ export default function ProfileTab() {
             description: "Invite friends & share wins",
             icon: "share-variant-outline",
             onPress: () => handleShareApp(),
-            color: Colors.purple[500],
+            color: Colors.lilac[900],
           },
         ],
       },
@@ -599,7 +610,7 @@ export default function ProfileTab() {
             description: "Meals, cuisines & dislikes",
             icon: "silverware-fork-knife",
             onPress: () => router.push("/(app)/(profile)/taste-preferences"),
-            color: Colors.beige[600],
+            color: Colors.lilac[900],
           },
           {
             id: "allergies",
@@ -607,7 +618,7 @@ export default function ProfileTab() {
             description: "Medical restrictions & macros",
             icon: "alert-circle-outline",
             onPress: () => router.push("/(app)/(profile)/allergies-diet"),
-            color: Colors.lilac[400],
+            color: Colors.lilac[900],
           },
           {
             id: "cooking",
@@ -617,7 +628,7 @@ export default function ProfileTab() {
             )}`,
             icon: "chef-hat",
             onPress: () => router.push("/(app)/(profile)/cooking-skill"),
-            color: Colors.green[400],
+            color: Colors.lilac[900],
           },
           {
             id: "support",
@@ -625,7 +636,7 @@ export default function ProfileTab() {
             description: "Chat with us or send an email",
             icon: "message-question-outline",
             onPress: () => router.push("/(app)/(profile)/support-feedback"),
-            color: Colors.gray[500],
+            color: Colors.lilac[900],
           },
         ],
       },
@@ -774,7 +785,7 @@ export default function ProfileTab() {
         style={styles.profileHeader}
       >
         <LinearGradient
-            colors={['#A78BFA', '#7C3AED', '#4ADE80']}
+            colors={[Colors.lilac[900], Colors.lilac[900], Colors.lilac[900]]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.avatarGradientBorder}
@@ -1155,6 +1166,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    maxWidth: "45%",
+    justifyContent: "flex-end",
   },
   menuItemMeta: {
     fontSize: 14,
