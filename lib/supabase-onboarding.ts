@@ -1,9 +1,9 @@
 import {
-    UserBodyMetrics,
-    UserGoals,
-    UserMealTimes,
-    UserOnboardingProfile,
-    UserTastePreferences,
+  UserBodyMetrics,
+  UserGoals,
+  UserMealTimes,
+  UserOnboardingProfile,
+  UserTastePreferences,
 } from "@/features/onboarding/types/onboarding.types";
 import { supabase } from "./supabase";
 

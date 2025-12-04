@@ -179,13 +179,12 @@ Requirements:
 1. Create a realistic, cookable recipe that respects ALL dietary restrictions and allergies
 2. Use the available ingredients when possible, but add necessary staples
 3. Keep cooking time within the specified range
-4. Ensure calories per serving ${
-      calorieRange === "1000+"
+4. Ensure calories per serving ${calorieRange === "1000+"
         ? "are at least 1000 kcal"
         : calorieRange === "flexible"
-        ? "are within a flexible range (200-800 kcal)"
-        : `fall within ${calorieRangeObj.min}-${calorieRangeObj.max} kcal`
-    }
+          ? "are within a flexible range (200-800 kcal)"
+          : `fall within ${calorieRangeObj.min}-${calorieRangeObj.max} kcal`
+      }
 5. Include accurate nutritional information with at least: Calories, Protein, Carbohydrates, Fat, Fiber, Sugar, Sodium
 6. Provide clear, numbered cooking instructions (5-10 steps)
 7. INGREDIENT MEASUREMENTS (VERY IMPORTANT):

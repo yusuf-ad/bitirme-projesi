@@ -13,16 +13,27 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     const fetchSession = async () => {
       setIsLoading(true);
 
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("Error fetching session:", error);
+        if (error) {
+          console.error("Error fetching session:", error);
+          // If refresh token is invalid, sign out and clear session
+          if (error.message?.includes("Refresh Token") || error.name === "AuthApiError") {
+            await supabase.auth.signOut();
+            setSession(null);
+          }
+        } else {
+          setSession(session);
+        }
+      } catch (err) {
+        console.error("Session fetch error:", err);
+        setSession(null);
       }
 
-      setSession(session);
       setIsLoading(false);
     };
 
@@ -30,8 +41,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", { event: _event, session });
+      
+      // Handle token refresh errors
+      if (_event === "TOKEN_REFRESHED" && !session) {
+        await supabase.auth.signOut();
+      }
+      
       setSession(session);
     });
 
