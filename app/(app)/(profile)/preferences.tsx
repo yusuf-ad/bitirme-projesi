@@ -3,12 +3,12 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -131,24 +131,7 @@ export default function PreferencesScreen() {
             </View>
           </Pressable>
 
-          <Pressable style={styles.menuItem}>
-            <View style={styles.preferenceLeft}>
-              <MaterialCommunityIcons
-                name="scale-balance"
-                size={24}
-                color={Colors.text.primary}
-              />
-              <Text style={styles.preferenceLabel}>Units</Text>
-            </View>
-            <View style={styles.menuItemRight}>
-              <Text style={styles.menuItemValue}>Metric</Text>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={24}
-                color={Colors.text.tertiary}
-              />
-            </View>
-          </Pressable>
+
         </View>
       </ScrollView>
     </View>

@@ -7,19 +7,23 @@ import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Alert,
-    Pressable,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Dimensions,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
   Extrapolation,
+  FadeInDown,
+  FadeInRight,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -29,8 +33,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const HEADER_HEIGHT = 56;
-const SCROLL_THRESHOLD = 80;
+const HEADER_HEIGHT = 60;
+const SCROLL_THRESHOLD = 100;
+const { width } = Dimensions.get("window");
 
 interface ProfileData {
   goals: string[];
@@ -55,6 +60,7 @@ interface MenuItem {
   meta?: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   onPress: () => void;
+  color?: string;
 }
 
 interface SettingsSection {
@@ -71,9 +77,86 @@ interface HighlightCard {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   onPress: () => void;
   accentColor: string;
-  backgroundColor: string;
-  iconBackgroundColor: string;
+  gradientColors: [string, string];
+  shadowColor: string;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const MenuItemComponent = ({ item, index, isDark }: { item: MenuItem; index: number; isDark: boolean }) => {
+  const scale = useSharedValue(1);
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View 
+      entering={FadeInDown.delay(index * 50).springify()}
+      style={styles.menuItemWrapper}
+    >
+      <AnimatedPressable
+        onPressIn={() => { scale.value = withSpring(0.98); }}
+        onPressOut={() => { scale.value = withSpring(1); }}
+        style={[
+          styles.menuItem,
+          { backgroundColor: isDark ? "#1F1F1F" : "#FFFFFF" },
+          animatedStyle
+        ]}
+        onPress={() => {
+          Haptics.selectionAsync();
+          item.onPress();
+        }}
+      >
+        <View style={styles.menuItemLeft}>
+          <View
+            style={[
+              styles.menuIconContainer,
+              { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.03)" },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={item.icon}
+              size={20}
+              color={item.color || (isDark ? "#FFFFFF" : "#000000")}
+            />
+          </View>
+          <View style={styles.menuItemCopy}>
+            <Text style={[styles.menuItemText, { color: isDark ? "#FFFFFF" : "#000000" }]}>
+              {item.title}
+            </Text>
+            {item.description && (
+              <Text
+                style={[
+                  styles.menuItemDescription,
+                  { color: isDark ? "#9CA3AF" : "#6B7280" },
+                ]}
+                numberOfLines={2}
+              >
+                {item.description}
+              </Text>
+            )}
+          </View>
+        </View>
+        <View style={styles.metaWrapper}>
+          {item.meta && (
+            <Text 
+              style={[styles.menuItemMeta, { color: isDark ? "#9CA3AF" : "#6B7280" }]}
+              numberOfLines={1}
+            >
+              {item.meta}
+            </Text>
+          )}
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={20}
+            color={isDark ? "#9CA3AF" : "#6B7280"}
+          />
+        </View>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+};
 
 export default function ProfileTab() {
   const { profile, session, isLoading: authLoading } = useAuthContext();
@@ -135,7 +218,17 @@ export default function ProfileTab() {
       [0, 1],
       Extrapolation.CLAMP
     );
-    return { opacity };
+    const borderOpacity = interpolate(
+        scrollY.value,
+        [SCROLL_THRESHOLD * 0.8, SCROLL_THRESHOLD],
+        [0, 1],
+        Extrapolation.CLAMP
+    );
+    return { 
+        opacity,
+        borderBottomWidth: 1,
+        borderBottomColor: isDark ? `rgba(255,255,255,${borderOpacity * 0.1})` : `rgba(0,0,0,${borderOpacity * 0.05})`
+    };
   });
 
   // Profile avatar animation - slides in from left with scale and rotation
@@ -331,7 +424,6 @@ export default function ProfileTab() {
       const date = new Date(session.user.created_at);
       return date.toLocaleDateString("en-US", {
         month: "long",
-        day: "numeric",
         year: "numeric",
       });
     }
@@ -370,9 +462,9 @@ export default function ProfileTab() {
             : "Tap to personalize your plan",
         icon: "target",
         onPress: () => router.push("/(app)/(profile)/goals-metrics"),
-        accentColor: Colors.green[800],
-        backgroundColor: Colors.green[100],
-        iconBackgroundColor: Colors.green[200],
+        accentColor: "#FFFFFF",
+        gradientColors: ["#4ADE80", "#22C55E"], // Vibrant Green
+        shadowColor: "#22C55E",
       },
       {
         id: "schedule",
@@ -384,9 +476,9 @@ export default function ProfileTab() {
         detail: "Keep reminders aligned with your day",
         icon: "clock-time-three-outline",
         onPress: () => router.push("/(app)/(profile)/meal-times"),
-        accentColor: Colors.lilac[800],
-        backgroundColor: Colors.lilac[100],
-        iconBackgroundColor: Colors.lilac[200],
+        accentColor: "#FFFFFF",
+        gradientColors: ["#A78BFA", "#7C3AED"], // Vibrant Violet
+        shadowColor: "#7C3AED",
       },
       {
         id: "taste",
@@ -398,9 +490,9 @@ export default function ProfileTab() {
         detail: `${profileData?.allergies?.length || 0} allergies tracked`,
         icon: "food-apple-outline",
         onPress: () => router.push("/(app)/(profile)/taste-preferences"),
-        accentColor: Colors.purple[700],
-        backgroundColor: Colors.beige[100],
-        iconBackgroundColor: Colors.beige[300],
+        accentColor: "#FFFFFF",
+        gradientColors: ["#F472B6", "#DB2777"], // Vibrant Pink
+        shadowColor: "#DB2777",
       },
     ];
   }, [profileData]);
@@ -417,6 +509,7 @@ export default function ProfileTab() {
             description: "Avatar, name, contact details",
             icon: "account-edit-outline",
             onPress: () => router.push("/(app)/(profile)/account"),
+            color: Colors.lilac[600],
           },
           {
             id: "preferences",
@@ -424,7 +517,8 @@ export default function ProfileTab() {
             description: "Macro targets, measurement system",
             meta: formattedUnitsSummary,
             icon: "tune",
-            onPress: () => router.push("/(app)/(profile)/preferences"),
+            onPress: () => router.push("/(app)/(profile)/units-nutrition"),
+            color: Colors.lilac[900],
           },
           {
             id: "goals-metrics",
@@ -432,6 +526,7 @@ export default function ProfileTab() {
             description: "Weight, activity & progress",
             icon: "chart-line",
             onPress: () => router.push("/(app)/(profile)/goals-metrics"),
+            color: Colors.lilac[900],
           },
           {
             id: "privacy",
@@ -439,6 +534,7 @@ export default function ProfileTab() {
             description: "Manage insights & sharing",
             icon: "shield-check-outline",
             onPress: () => router.push("/(app)/(profile)/privacy"),
+            color: Colors.lilac[900],
           },
           {
             id: "notifications",
@@ -446,6 +542,7 @@ export default function ProfileTab() {
             description: "Meal reminders & summaries",
             icon: "bell-outline",
             onPress: () => router.push("/(app)/(profile)/notifications"),
+            color: Colors.lilac[900],
           },
         ],
       },
@@ -454,11 +551,20 @@ export default function ProfileTab() {
         title: "App Settings",
         items: [
           {
+            id: "preferences-general",
+            title: "Preferences",
+            description: "Language, units & app settings",
+            icon: "cog-outline",
+            onPress: () => router.push("/(app)/(profile)/preferences"),
+            color: Colors.lilac[900],
+          },
+          {
             id: "meal-times",
             title: "Meal Times",
             description: "Breakfast, lunch and dinner windows",
             icon: "calendar-clock",
             onPress: () => router.push("/(app)/(profile)/meal-times"),
+            color: Colors.lilac[900],
           },
           {
             id: "apple-watch",
@@ -470,6 +576,7 @@ export default function ProfileTab() {
                 pathname: "/(app)/(profile)/integrations",
                 params: { focus: "apple" },
               }),
+            color: Colors.lilac[900],
           },
           {
             id: "partner-accounts",
@@ -481,6 +588,7 @@ export default function ProfileTab() {
                 pathname: "/(app)/(profile)/integrations",
                 params: { focus: "partners" },
               }),
+            color: Colors.lilac[900],
           },
           {
             id: "social-sharing",
@@ -488,6 +596,7 @@ export default function ProfileTab() {
             description: "Invite friends & share wins",
             icon: "share-variant-outline",
             onPress: () => handleShareApp(),
+            color: Colors.lilac[900],
           },
         ],
       },
@@ -501,6 +610,7 @@ export default function ProfileTab() {
             description: "Meals, cuisines & dislikes",
             icon: "silverware-fork-knife",
             onPress: () => router.push("/(app)/(profile)/taste-preferences"),
+            color: Colors.lilac[900],
           },
           {
             id: "allergies",
@@ -508,6 +618,7 @@ export default function ProfileTab() {
             description: "Medical restrictions & macros",
             icon: "alert-circle-outline",
             onPress: () => router.push("/(app)/(profile)/allergies-diet"),
+            color: Colors.lilac[900],
           },
           {
             id: "cooking",
@@ -517,6 +628,7 @@ export default function ProfileTab() {
             )}`,
             icon: "chef-hat",
             onPress: () => router.push("/(app)/(profile)/cooking-skill"),
+            color: Colors.lilac[900],
           },
           {
             id: "support",
@@ -524,6 +636,7 @@ export default function ProfileTab() {
             description: "Chat with us or send an email",
             icon: "message-question-outline",
             onPress: () => router.push("/(app)/(profile)/support-feedback"),
+            color: Colors.lilac[900],
           },
         ],
       },
@@ -553,21 +666,6 @@ export default function ProfileTab() {
     }`;
   };
 
-  function getCookingSkillEmoji(skill?: string) {
-    switch (skill) {
-      case "novice":
-        return "🍳";
-      case "basic":
-        return "🥘";
-      case "intermediate":
-        return "👨‍🍳";
-      case "advanced":
-        return "🍰";
-      default:
-        return "🍳";
-    }
-  }
-
   function getCookingSkillLabel(skill?: string) {
     switch (skill) {
       case "novice":
@@ -583,73 +681,7 @@ export default function ProfileTab() {
     }
   }
 
-  const renderMenuItem = (item: MenuItem, index: number, array: MenuItem[]) => (
-    <View key={item.id}>
-      <Pressable
-        style={({ pressed }) => [
-          styles.menuItem,
-          pressed && { backgroundColor: isDark ? "#25222E" : "#F8F8F8" },
-        ]}
-        onPress={() => {
-          Haptics.selectionAsync();
-          item.onPress();
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={item.title}
-        accessibilityHint={item.description}
-      >
-        <View style={styles.menuItemLeft}>
-          <View
-            style={[
-              styles.menuIconContainer,
-              { backgroundColor: isDark ? "#25222E" : "#F4F4F7" },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name={item.icon}
-              size={22}
-              color={Colors.text.primary}
-            />
-          </View>
-          <View style={styles.menuItemCopy}>
-            <Text style={[styles.menuItemText, { color: Colors.text.primary }]}>
-              {item.title}
-            </Text>
-            {item.description && (
-              <Text
-                style={[
-                  styles.menuItemDescription,
-                  { color: Colors.text.secondary },
-                ]}
-              >
-                {item.description}
-              </Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.metaWrapper}>
-          {item.meta && (
-            <Text style={[styles.menuItemMeta, { color: Colors.text.primary }]}>
-              {item.meta}
-            </Text>
-          )}
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={22}
-            color={isDark ? Colors.gray[400] : Colors.gray[400]}
-          />
-        </View>
-      </Pressable>
-      {index < array.length - 1 && (
-        <View
-          style={[
-            styles.separator,
-            { backgroundColor: isDark ? "#2A2730" : "#F0F0F0" },
-          ]}
-        />
-      )}
-    </View>
-  );
+
 
   if (isLoading) {
     return <ProfessionalLoadingScreen />;
@@ -682,11 +714,11 @@ export default function ProfileTab() {
               isDark ? "Switch to light mode" : "Switch to dark mode"
             }
           >
-            <View style={[styles.iconButtonCircle, { backgroundColor: isDark ? "rgba(37, 34, 46, 0.85)" : "rgba(242, 240, 244, 0.85)" }]}>
+            <View style={[styles.iconButtonCircle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
               <Animated.View style={iconRotation}>
                 <MaterialCommunityIcons
                   name={isDark ? "white-balance-sunny" : "moon-waning-crescent"}
-                  size={22}
+                  size={20}
                   color={isDark ? "#FDB022" : Colors.lilac[800]}
                 />
               </Animated.View>
@@ -698,7 +730,7 @@ export default function ProfileTab() {
             {/* SETTINGS title (visible initially, fades out on scroll) */}
             <Animated.View style={[styles.headerSettingsWrapper, inContentTitleStyle]}>
               <Text style={[styles.headerSettingsTitle, { color: Colors.text.primary }]}>
-                Settings
+                SETTINGS
               </Text>
             </Animated.View>
             
@@ -731,8 +763,8 @@ export default function ProfileTab() {
             accessibilityRole="button"
             accessibilityLabel="Sign out"
           >
-            <View style={[styles.iconButtonCircle, { backgroundColor: isDark ? "rgba(37, 34, 46, 0.85)" : "rgba(242, 240, 244, 0.85)" }]}>
-              <MaterialCommunityIcons name="logout" size={22} color="#EF4444" />
+            <View style={[styles.iconButtonCircle, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)" }]}>
+              <MaterialCommunityIcons name="logout" size={20} color="#EF4444" />
             </View>
           </Pressable>
         </View>
@@ -742,37 +774,43 @@ export default function ProfileTab() {
       <Animated.ScrollView
         ref={scrollViewRef}
         style={[styles.scroll, containerAnimation]}
-        contentContainerStyle={[styles.content, { paddingTop: top + HEADER_HEIGHT + 16, paddingBottom: bottom + 64 }]}
+        contentContainerStyle={[styles.content, { paddingTop: top + HEADER_HEIGHT + 20, paddingBottom: bottom + 80 }]}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
       {/* User Profile Header */}
-      <View
-        style={[
-          styles.profileHeader,
-          { backgroundColor: Colors.background.surface },
-        ]}
+      <Animated.View
+        entering={FadeInDown.delay(100).springify()}
+        style={styles.profileHeader}
       >
-        <View
-          style={[
-            styles.avatarContainer,
-            { backgroundColor: profile?.avatar_url ? "transparent" : Colors.text.primary },
-          ]}
+        <LinearGradient
+            colors={[Colors.lilac[900], Colors.lilac[900], Colors.lilac[900]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatarGradientBorder}
         >
-          {profile?.avatar_url ? (
-            <ExpoImage
-              source={{ uri: profile.avatar_url }}
-              style={styles.avatarImage}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <Text style={[styles.avatarText, { color: Colors.text.inverse }]}>
-              {getUserInitials()}
-            </Text>
-          )}
-        </View>
+            <View
+            style={[
+                styles.avatarContainer,
+                { backgroundColor: Colors.background.secondary },
+            ]}
+            >
+            {profile?.avatar_url ? (
+                <ExpoImage
+                source={{ uri: profile.avatar_url }}
+                style={styles.avatarImage}
+                contentFit="cover"
+                transition={200}
+                />
+            ) : (
+                <Text style={[styles.avatarText, { color: Colors.lilac[800] }]}>
+                {getUserInitials()}
+                </Text>
+            )}
+            </View>
+        </LinearGradient>
+        
         <View style={styles.profileInfo}>
           <Text style={[styles.profileName, { color: Colors.text.primary }]}>
             {getUserDisplayName()}
@@ -780,99 +818,106 @@ export default function ProfileTab() {
           <Text
             style={[
               styles.profileMemberSince,
-              { color: Colors.text.secondary },
+              { color: Colors.text.tertiary },
             ]}
           >
             Member since {getMemberSinceDate()}
           </Text>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Highlights - horizontally scrollable */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.highlightsContainer}
+        decelerationRate="fast"
+        snapToInterval={width * 0.75 + 12}
       >
-        {highlightCards.map((card) => (
-          <Pressable
-            key={card.id}
-            onPress={() => {
-              Haptics.selectionAsync();
-              card.onPress();
-            }}
-            style={({ pressed }) => [
-              styles.highlightCard,
-              {
-                backgroundColor: isDark
-                  ? Colors.background.surface
-                  : card.backgroundColor,
-                borderColor: isDark
-                  ? Colors.border.light
-                  : card.iconBackgroundColor,
-              },
-              pressed && styles.highlightCardPressed,
-            ]}
-            accessibilityRole="button"
+        {highlightCards.map((card, index) => (
+          <Animated.View 
+            key={card.id} 
+            entering={FadeInRight.delay(200 + index * 100).springify()}
           >
-            <View
-              style={[
-                styles.highlightIcon,
-                {
-                  backgroundColor: isDark
-                    ? Colors.background.tertiary
-                    : card.iconBackgroundColor,
+            <Pressable
+                onPress={() => {
+                Haptics.selectionAsync();
+                card.onPress();
+                }}
+                style={({ pressed }) => [
+                styles.highlightCard,
+                { 
+                    backgroundColor: card.gradientColors[0],
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                    shadowColor: card.shadowColor,
                 },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={card.icon}
-                size={18}
-                color={card.accentColor}
-              />
-            </View>
-            <Text style={[styles.highlightLabel, { color: card.accentColor }]}>
-              {card.title}
-            </Text>
-            <Text
-              style={[styles.highlightValue, { color: Colors.text.primary }]}
-              numberOfLines={1}
-            >
-              {card.value}
-            </Text>
-            {card.detail && (
-              <Text
-                style={[
-                  styles.highlightDetail,
-                  { color: Colors.text.secondary },
                 ]}
-                numberOfLines={2}
-              >
-                {card.detail}
-              </Text>
-            )}
-          </Pressable>
+            >
+                <LinearGradient
+                    colors={card.gradientColors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                />
+
+                <View style={styles.highlightHeader}>
+                    <Text style={[styles.highlightTitle, { color: "#FFFFFF" }]}>
+                        {card.title}
+                    </Text>
+                    <View
+                        style={[
+                        styles.highlightIcon,
+                        { backgroundColor: "rgba(255,255,255,0.2)" },
+                        ]}
+                    >
+                        <MaterialCommunityIcons
+                        name={card.icon}
+                        size={20}
+                        color="#FFFFFF"
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.highlightContent}>
+                    <Text style={[styles.highlightValue, { color: "#FFFFFF" }]}>
+                        {card.value}
+                    </Text>
+                    {card.detail && (
+                        <Text style={[styles.highlightDetail, { color: "rgba(255,255,255,0.8)" }]}>
+                        {card.detail}
+                        </Text>
+                    )}
+                </View>
+            </Pressable>
+          </Animated.View>
         ))}
       </ScrollView>
 
-      {/* Sections */}
-      {settingsSections.map((section) => (
-        <View key={section.id} style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
-            {section.title}
-          </Text>
-          <View
-            style={[
-              styles.menuContainer,
-              { backgroundColor: Colors.background.surface },
-            ]}
+      {/* Settings Sections */}
+      <View style={styles.settingsContainer}>
+        {settingsSections.map((section, sectionIndex) => (
+          <Animated.View 
+            key={section.id} 
+            style={styles.sectionWrapper}
+            entering={FadeInDown.delay(400 + sectionIndex * 100).springify()}
           >
-            {section.items.map((item, index, array) =>
-              renderMenuItem(item, index, array)
-            )}
-          </View>
-        </View>
-      ))}
+            <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+              {section.title}
+            </Text>
+            <View style={styles.sectionItems}>
+              {section.items.map((item, index) => (
+                <MenuItemComponent key={item.id} item={item} index={index} isDark={isDark} />
+              ))}
+            </View>
+          </Animated.View>
+        ))}
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={[styles.versionText, { color: Colors.text.tertiary }]}>
+          PlannedEat v1.0.0 • Made with ❤️
+        </Text>
+      </View>
       </Animated.ScrollView>
     </View>
   );
@@ -887,24 +932,19 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
+    zIndex: 100,
   },
   headerBackground: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
   },
   headerContent: {
+    height: HEADER_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: HEADER_HEIGHT,
     paddingHorizontal: 16,
   },
   headerIconButton: {
@@ -914,17 +954,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconButtonCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitleContainer: {
     flex: 1,
-    alignItems: "center",
+    height: "100%",
     justifyContent: "center",
-    paddingHorizontal: 8,
+    alignItems: "center",
   },
   headerSettingsWrapper: {
     position: "absolute",
@@ -933,19 +973,18 @@ const styles = StyleSheet.create({
   },
   headerSettingsTitle: {
     fontSize: 16,
-    letterSpacing: 1.1,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 1,
     textTransform: "uppercase",
   },
   headerProfileTouchable: {
-    flexDirection: "row",
+    position: "absolute",
     alignItems: "center",
     justifyContent: "center",
   },
   headerProfileRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
     gap: 10,
   },
   headerAvatar: {
@@ -960,178 +999,186 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   headerProfileName: {
-    fontFamily: "Inter",
     fontSize: 15,
     fontWeight: "600",
-  },
-  fixedHeaderTitle: {
-    fontFamily: "Inter",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
+    maxWidth: 150,
   },
   scroll: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 16,
-  },
-  headerBar: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 16,
-    letterSpacing: 1.1,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    textShadowColor: "rgba(0,0,0,0.10)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  iconButton: {
-    position: "absolute",
-    right: 0,
-    paddingHorizontal: 4,
-    paddingVertical: 6,
-  },
-  iconButtonLeft: {
-    position: "absolute",
-    left: 0,
-    right: "auto",
+    // Padding handled in contentContainerStyle
   },
   profileHeader: {
-    flexDirection: "row",
+    marginHorizontal: 16,
+    paddingVertical: 24,
     alignItems: "center",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    gap: 16,
+    marginBottom: 12,
+  },
+  avatarGradientBorder: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#7C3AED",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: "center",
-    overflow: "hidden",
+    justifyContent: "center",
   },
   avatarImage: {
     width: "100%",
     height: "100%",
+    borderRadius: 44,
   },
   avatarText: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "700",
   },
   profileInfo: {
-    flex: 1,
+    alignItems: "center",
   },
   profileName: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 26,
+    fontWeight: "700",
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   profileMemberSince: {
     fontSize: 14,
-    opacity: 0.8,
+    fontWeight: "500",
+    opacity: 0.6,
   },
   highlightsContainer: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    paddingHorizontal: 4,
-    gap: 12,
-    marginBottom: 28,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    gap: 16,
   },
   highlightCard: {
-    width: 210,
-    borderRadius: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
+    width: width * 0.42,
+    height: 160,
+    borderRadius: 24,
+    padding: 16,
+    justifyContent: "space-between",
+    overflow: "hidden",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  highlightCardPressed: {
-    opacity: 0.8,
+  highlightHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   highlightIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
   },
-  highlightLabel: {
+  highlightContent: {
+    gap: 4,
+  },
+  highlightTitle: {
     fontSize: 11,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 2,
+    letterSpacing: 0.5,
+    opacity: 0.9,
   },
   highlightValue: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 2,
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
   highlightDetail: {
     fontSize: 12,
+    fontWeight: "500",
+    opacity: 0.9,
+    lineHeight: 16,
   },
-  sectionContainer: {
-    marginBottom: 32,
+  settingsContainer: {
+    paddingHorizontal: 16,
+    gap: 24,
+  },
+  sectionWrapper: {
+    gap: 12,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-    paddingHorizontal: 4,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
   },
-  menuContainer: {
-    borderRadius: 16,
-    overflow: "hidden",
+  sectionItems: {
+    gap: 12,
+  },
+  menuItemWrapper: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 18,
-    paddingHorizontal: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 20,
   },
   menuItemLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
     flex: 1,
   },
   menuIconContainer: {
     width: 40,
     height: 40,
-    justifyContent: "center",
+    borderRadius: 20,
     alignItems: "center",
-    borderRadius: 12,
-  },
-  menuItemText: {
-    fontSize: 15,
-    fontWeight: "600",
+    justifyContent: "center",
   },
   menuItemCopy: {
     flex: 1,
+    gap: 2,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   menuItemDescription: {
     fontSize: 13,
-    marginTop: 2,
-  },
-  menuItemMeta: {
-    fontSize: 13,
-    fontWeight: "500",
   },
   metaWrapper: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    maxWidth: "45%",
+    justifyContent: "flex-end",
   },
-  separator: {
-    height: 1,
-    marginLeft: 64,
+  menuItemMeta: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  footer: {
+    alignItems: "center",
+    paddingVertical: 24,
+  },
+  versionText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
