@@ -303,19 +303,23 @@ export default function AiRecipe() {
         typeof proteinRaw === "number" ? Math.round(proteinRaw) : null;
       const fat = typeof fatRaw === "number" ? Math.round(fatRaw) : null;
 
-      // Save meal item
+      // Save meal item with validation
+      if (!mealPlanId) {
+        throw new Error("Failed to create or retrieve meal plan");
+      }
+
       const { error: itemError } = await supabase
         .from("meal_plan_items")
         .insert({
           meal_plan_id: mealPlanId,
           spoonacular_recipe_id: generatedRecipe.id,
-          recipe_name: generatedRecipe.title,
-          recipe_image_url: generatedRecipe.image || "",
+          recipe_name: generatedRecipe.title || "Untitled Recipe",
+          recipe_image_url: generatedRecipe.image ?? "",
           calories_per_serving: calories,
           carbs_per_serving: carbs,
           protein_per_serving: protein,
           fat_per_serving: fat,
-          ready_in_minutes: generatedRecipe.readyInMinutes || null,
+          ready_in_minutes: generatedRecipe.readyInMinutes ?? null,
           meal_date: dateString,
           meal_type: mealType,
         });

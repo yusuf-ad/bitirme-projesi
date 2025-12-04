@@ -2,21 +2,22 @@ import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-// Cooking time mapping for prompt
+// Cooking time mapping for prompt - matches frontend options
 const COOKING_TIME_MAP: Record<string, string> = {
   "<15": "under 15 minutes",
-  "<30": "15-30 minutes",
-  "<45": "30-45 minutes",
-  "<60": "45-60 minutes",
-  ">60": "over 60 minutes",
+  "15-29": "15-29 minutes",
+  "30-60": "30-60 minutes",
+  open: "any duration",
 };
 
-// Calorie range mapping for prompt
+// Calorie range mapping for prompt - matches frontend options
 const CALORIE_RANGE_MAP: Record<string, { min: number; max: number }> = {
   "<200": { min: 100, max: 200 },
-  "<400": { min: 200, max: 400 },
-  "<600": { min: 400, max: 600 },
-  ">600": { min: 600, max: 900 },
+  "200-399": { min: 200, max: 399 },
+  "400-599": { min: 400, max: 599 },
+  "600-1000": { min: 600, max: 1000 },
+  "1000+": { min: 1000, max: 1500 },
+  flexible: { min: 200, max: 800 },
 };
 
 // Recipe schema for AI generation
@@ -51,11 +52,17 @@ const recipeSchema = z.object({
     z.object({
       id: z.number().describe("Unique ingredient ID"),
       name: z.string().describe("Ingredient name"),
-      amount: z.number().describe("Amount needed"),
-      unit: z.string().describe("Unit of measurement"),
+      amount: z.number().describe("Amount needed in grams or milliliters"),
+      unit: z
+        .string()
+        .describe(
+          "Unit of measurement - use 'g' for solids, 'ml' for liquids, 'pieces' only for whole items like eggs"
+        ),
       original: z
         .string()
-        .describe("Original ingredient description as written in recipe"),
+        .describe(
+          "Original ingredient description with precise metric measurements (e.g., '200g chicken breast' not '2 large chicken breasts')"
+        ),
     })
   ),
   instructions: z
@@ -68,8 +75,24 @@ const recipeSchema = z.object({
     .describe("Array of cooking instruction steps"),
 });
 
+// Request validation schema
+const requestSchema = z.object({
+  ingredients: z.array(z.string()).default([]),
+  mealType: z.string().optional(),
+  cookingTime: z.string(),
+  calorieRange: z.string(),
+  allergies: z.array(z.string()).default([]),
+  dietPreferences: z.array(z.string()).default([]),
+  cuisines: z.array(z.string()).default([]),
+  dislikedCuisines: z.array(z.string()).default([]),
+});
+
 export async function POST(req: Request) {
   try {
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validatedData = requestSchema.parse(rawBody);
+
     const {
       ingredients,
       mealType,
@@ -79,7 +102,7 @@ export async function POST(req: Request) {
       dietPreferences,
       cuisines,
       dislikedCuisines,
-    } = await req.json();
+    } = validatedData;
 
     console.log("Generating recipe with preferences:", {
       ingredients,
@@ -90,51 +113,86 @@ export async function POST(req: Request) {
       dietPreferences,
       cuisines,
       dislikedCuisines,
+      timestamp: new Date().toISOString(),
     });
 
-    // Get readable cooking time and calorie range
-    const cookingTimeText = COOKING_TIME_MAP[cookingTime] || "any duration";
-    const calorieRangeObj = CALORIE_RANGE_MAP[calorieRange] || {
-      min: 200,
-      max: 600,
-    };
+    // Get readable cooking time and calorie range with validation
+    const cookingTimeText = COOKING_TIME_MAP[cookingTime];
+    if (!cookingTimeText) {
+      throw new Error(
+        `Invalid cooking time option: ${cookingTime}. Valid options are: ${Object.keys(
+          COOKING_TIME_MAP
+        ).join(", ")}`
+      );
+    }
+
+    const calorieRangeObj = CALORIE_RANGE_MAP[calorieRange];
+    if (!calorieRangeObj) {
+      throw new Error(
+        `Invalid calorie range option: ${calorieRange}. Valid options are: ${Object.keys(
+          CALORIE_RANGE_MAP
+        ).join(", ")}`
+      );
+    }
+
+    // Helper function to format calorie range for prompt
+    function formatCalorieRange(
+      range: string,
+      obj: { min: number; max: number }
+    ): string {
+      if (range === "1000+") return "at least 1000 calories";
+      if (range === "flexible")
+        return "flexible calorie range (200-800 calories)";
+      return `${obj.min}-${obj.max} calories`;
+    }
+
+    const calorieRangeText = formatCalorieRange(calorieRange, calorieRangeObj);
 
     const prompt = `
 Create a complete, detailed recipe based on the following preferences:
 
 **Available Ingredients (prioritize using these):**
-${ingredients?.length > 0 ? ingredients.join(", ") : "Any common ingredients"}
+${ingredients.length > 0 ? ingredients.join(", ") : "Any common ingredients"}
 
 **Meal Type:** ${mealType || "any meal"}
 
 **Cooking Time:** ${cookingTimeText}
 
-**Calorie Target:** ${calorieRangeObj.min}-${
-      calorieRangeObj.max
-    } calories per serving
+**Calorie Target:** ${calorieRangeText} per serving
 
 **Allergies/Intolerances (MUST AVOID):**
-${allergies?.length > 0 ? allergies.join(", ") : "None specified"}
+${allergies.length > 0 ? allergies.join(", ") : "None specified"}
 
 **Diet Preferences:**
-${dietPreferences?.length > 0 ? dietPreferences.join(", ") : "None specified"}
+${dietPreferences.length > 0 ? dietPreferences.join(", ") : "None specified"}
 
 **Preferred Cuisines:**
-${cuisines?.length > 0 ? cuisines.join(", ") : "Any cuisine"}
+${cuisines.length > 0 ? cuisines.join(", ") : "Any cuisine"}
 
 **Cuisines to AVOID (DO NOT use these cuisine styles):**
-${dislikedCuisines?.length > 0 ? dislikedCuisines.join(", ") : "None"}
+${dislikedCuisines.length > 0 ? dislikedCuisines.join(", ") : "None"}
 
 Requirements:
 1. Create a realistic, cookable recipe that respects ALL dietary restrictions and allergies
 2. Use the available ingredients when possible, but add necessary staples
 3. Keep cooking time within the specified range
-4. Ensure calories per serving fall within ${calorieRangeObj.min}-${
-      calorieRangeObj.max
-    } kcal
+4. Ensure calories per serving ${
+      calorieRange === "1000+"
+        ? "are at least 1000 kcal"
+        : calorieRange === "flexible"
+        ? "are within a flexible range (200-800 kcal)"
+        : `fall within ${calorieRangeObj.min}-${calorieRangeObj.max} kcal`
+    }
 5. Include accurate nutritional information with at least: Calories, Protein, Carbohydrates, Fat, Fiber, Sugar, Sodium
 6. Provide clear, numbered cooking instructions (5-10 steps)
-7. List all ingredients with precise measurements
+7. INGREDIENT MEASUREMENTS (VERY IMPORTANT):
+   - ALWAYS use metric units: grams (g) for solids, milliliters (ml) for liquids
+   - NEVER use vague terms like "large", "medium", "small", "a bunch", "a handful"
+   - NEVER use "cups" or "tablespoons" for main ingredients - convert to grams
+   - Examples of CORRECT measurements: "200g chicken breast", "150g onion", "250ml milk", "30g butter"
+   - Examples of INCORRECT measurements: "2 large chicken breasts", "1 medium onion", "1 cup milk"
+   - EXCEPTION: Use "pieces" only for whole countable items like eggs (e.g., "2 eggs"), garlic cloves (e.g., "4 garlic cloves")
+   - For spices and small amounts, you may use teaspoons (tsp) or tablespoons (tbsp)
 8. Make it delicious and practical for home cooking
 9. RECIPE NAMING RULES (VERY IMPORTANT):
    - DO NOT start with adjectives like "Savory", "Delicious", "Hearty", "Classic", "Homestyle", "Quick", "Easy", "Simple", "Perfect", "Ultimate", "Best"
@@ -198,11 +256,37 @@ Never include ingredients that conflict with stated allergies or dietary restric
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error generating recipe:", error);
+    // Enhanced error logging
+    console.error("AI Recipe Generation Error:", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+      requestId: Math.random().toString(36).substring(7),
+    });
+
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid request data",
+          details: error.errors.map((e) => ({
+            field: e.path.join("."),
+            message: e.message,
+          })),
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Handle other errors
     return new Response(
       JSON.stringify({
         error: "Failed to generate recipe",
         details: error instanceof Error ? error.message : "Unknown error",
+        requestId: Math.random().toString(36).substring(7),
       }),
       {
         status: 500,
