@@ -7,7 +7,9 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,6 +36,8 @@ export default function AccountScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
+  const [selectedAvatar, setSelectedAvatar] = useState(profile?.avatar_url || "");
+  const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const getUserInitials = useCallback(() => {
@@ -69,7 +73,10 @@ export default function AccountScreen() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update({
+          full_name: fullName,
+          avatar_url: selectedAvatar,
+        })
         .eq("id", session.user.id);
 
       if (error) throw error;
@@ -462,6 +469,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerGradient: {
+    paddingBottom: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -488,6 +500,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    marginTop: -20,
   },
   content: {
     paddingHorizontal: 16,

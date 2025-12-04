@@ -13,9 +13,10 @@ import Animated, {
 interface HeaderProps {
   firstName: string;
   motivationText?: string;
+  avatarUrl?: string | null;
 }
 
-export default function Header({ firstName, motivationText }: HeaderProps) {
+export default function Header({ firstName, motivationText, avatarUrl }: HeaderProps) {
   const router = useRouter();
   const scale = useSharedValue(1);
 
@@ -63,7 +64,11 @@ export default function Header({ firstName, motivationText }: HeaderProps) {
         >
           <Animated.View style={animatedStyle}>
             <Image
-              source={require("@/assets/images/profile-picture.png")}
+              source={
+                avatarUrl
+                  ? { uri: avatarUrl }
+                  : require("@/assets/images/profile-picture.png")
+              }
               style={styles.profilePicture}
             />
           </Animated.View>
