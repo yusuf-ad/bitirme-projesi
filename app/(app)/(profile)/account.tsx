@@ -1,11 +1,11 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,41 +17,58 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Animated, { FadeInRight } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const AVATARS = [
-  "https://api.dicebear.com/9.x/personas/png?seed=Felix2&skinTone=f5d0c5&mouth=smile",
-  "https://api.dicebear.com/9.x/personas/png?seed=Aneka2&skinTone=f5d0c5&mouth=smile",
-  "https://api.dicebear.com/9.x/personas/png?seed=Jake2&skinTone=f5d0c5&mouth=smirk",
-  "https://api.dicebear.com/9.x/personas/png?seed=Aiden2&skinTone=f5d0c5&mouth=smile",
-  "https://api.dicebear.com/9.x/personas/png?seed=Liliana2&skinTone=f5d0c5&mouth=smile",
-  "https://api.dicebear.com/9.x/personas/png?seed=Sam2&skinTone=f5d0c5&mouth=smirk",
-  "https://api.dicebear.com/9.x/personas/png?seed=Alexander2&skinTone=f5d0c5&mouth=smile",
-  "https://api.dicebear.com/9.x/personas/png?seed=Mason2&skinTone=f5d0c5&mouth=smirk",
-];
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function AccountScreen() {
-  const { profile, session, refreshProfile } = useAuthContext();
-  const { top } = useSafeAreaInsets();
+  const { profile, session } = useAuthContext();
+  const { top, bottom } = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
+
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [selectedAvatar, setSelectedAvatar] = useState(profile?.avatar_url || "");
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getUserInitials = useCallback(() => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    if (session?.user?.email) {
+      return session.user.email.slice(0, 2).toUpperCase();
+    }
+    return "U";
+  }, [profile, session]);
+
+  const getMemberSinceDate = useCallback(() => {
+    if (session?.user?.created_at) {
+      const date = new Date(session.user.created_at);
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    }
+    return "Recently";
+  }, [session]);
 
   const handleSave = async () => {
     if (!session?.user?.id) return;
-
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsSaving(true);
     try {
       const { error } = await supabase
@@ -63,19 +80,18 @@ export default function AccountScreen() {
         .eq("id", session.user.id);
 
       if (error) throw error;
-
-      await refreshProfile();
-      Alert.alert("Success", "Profile updated successfully");
+      Alert.alert("Success", "Your profile has been updated!");
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", `Failed to update profile: ${(error as any).message || "Unknown error"}`);
+      Alert.alert("Error", "Failed to update profile. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleSignOut = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -88,222 +104,370 @@ export default function AccountScreen() {
     ]);
   };
 
-  return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[Colors.lilac[100], Colors.background.secondary]}
-        style={[styles.headerGradient, { paddingTop: top }]}
-      >
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => router.back()}
-            style={styles.backButton}
-            hitSlop={8}
-          >
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={24}
-              color={Colors.text.primary}
-            />
-          </Pressable>
-          <Text style={styles.headerTitle}>Account</Text>
-          <Animated.View entering={FadeInRight.delay(300).springify()}>
-            <Pressable
-              onPress={handleSignOut}
-              style={styles.signOutHeaderButton}
-              hitSlop={8}
-            >
-              <Text style={styles.signOutHeaderText}>Sign Out</Text>
-              <MaterialCommunityIcons
-                name="logout"
-                size={16}
-                color={Colors.semantic.error.main}
-              />
-            </Pressable>
-          </Animated.View>
-        </View>
+  const SettingsItem = ({
+    icon,
+    label,
+    subtitle,
+    onPress,
+    showChevron = true,
+    danger = false,
+    delay = 0,
+  }: {
+    icon: keyof typeof MaterialCommunityIcons.glyphMap;
+    label: string;
+    subtitle?: string;
+    onPress: () => void;
+    showChevron?: boolean;
+    danger?: boolean;
+    delay?: number;
+  }) => {
+    const scale = useSharedValue(1);
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
 
-        <View style={styles.profileHeader}>
-          <Pressable
-            style={styles.avatarContainer}
-            onPress={() => setIsAvatarModalVisible(true)}
-          >
-            <LinearGradient
-              colors={[Colors.lilac[300], Colors.lilac[100]]}
-              style={styles.avatarGradient}
-            >
-              {selectedAvatar ? (
-                <Image
-                  source={{ uri: selectedAvatar }}
-                  style={styles.avatarImage}
-                  contentFit="cover"
-                />
-              ) : (
-                <Text style={styles.avatarText}>
-                  {getInitials(profile?.full_name || "User")}
-                </Text>
-              )}
-            </LinearGradient>
-            <View style={styles.editBadge}>
-              <MaterialCommunityIcons
-                name="pencil"
-                size={14}
-                color={Colors.lilac[900]}
-              />
-            </View>
-          </Pressable>
-          <Text style={styles.profileName}>
-            {profile?.full_name || "User"}
-          </Text>
-          <Text style={styles.profileEmail}>{session?.user?.email}</Text>
-        </View>
-      </LinearGradient>
+    const iconColor = danger ? "#EF4444" : Colors.lilac[700];
+    const textColor = danger ? "#EF4444" : Colors.text.primary;
 
-      <Modal
-        visible={isAvatarModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsAvatarModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Choose an Avatar</Text>
-              <Pressable
-                onPress={() => setIsAvatarModalVisible(false)}
-                style={styles.closeButton}
-              >
-                <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={Colors.text.primary}
-                />
-              </Pressable>
-            </View>
-            <View style={styles.avatarGrid}>
-              {AVATARS.map((avatar, index) => (
-                <Pressable
-                  key={index}
-                  style={[
-                    styles.avatarOption,
-                    selectedAvatar === avatar && styles.selectedAvatarOption,
-                  ]}
-                  onPress={() => {
-                    setSelectedAvatar(avatar);
-                    setIsAvatarModalVisible(false);
-                  }}
-                >
-                  <Image
-                    source={{ uri: avatar }}
-                    style={styles.avatarOptionImage}
-                    contentFit="cover"
-                  />
-                  {selectedAvatar === avatar && (
-                    <View style={styles.checkBadge}>
-                      <MaterialCommunityIcons
-                        name="check"
-                        size={12}
-                        color="#FFF"
-                      />
-                    </View>
-                  )}
-                </Pressable>
-              ))}
-            </View>
+    return (
+      <Animated.View entering={FadeInDown.delay(delay).springify()}>
+        <AnimatedPressable
+          style={[
+            styles.settingsItem,
+            { backgroundColor: Colors.background.surface },
+            animatedStyle,
+          ]}
+          onPressIn={() => {
+            scale.value = withSpring(0.98);
+          }}
+          onPressOut={() => {
+            scale.value = withSpring(1);
+          }}
+          onPress={() => {
+            Haptics.selectionAsync();
+            onPress();
+          }}
+        >
+          <View
+            style={[
+              styles.settingsIconContainer,
+              {
+                backgroundColor: danger
+                  ? "rgba(239, 68, 68, 0.1)"
+                  : isDark
+                  ? Colors.background.tertiary
+                  : Colors.lilac[100],
+              },
+            ]}
+          >
+            <MaterialCommunityIcons name={icon} size={22} color={iconColor} />
           </View>
-        </View>
-      </Modal>
+          <View style={styles.settingsContent}>
+            <Text style={[styles.settingsLabel, { color: textColor }]}>
+              {label}
+            </Text>
+            {subtitle && (
+              <Text
+                style={[styles.settingsSubtitle, { color: Colors.text.tertiary }]}
+              >
+                {subtitle}
+              </Text>
+            )}
+          </View>
+          {showChevron && (
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={22}
+              color={Colors.text.tertiary}
+            />
+          )}
+        </AnimatedPressable>
+      </Animated.View>
+    );
+  };
+
+  return (
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: Colors.background.secondary, paddingTop: top },
+      ]}
+    >
+      {/* Header */}
+      <Animated.View
+        entering={FadeInDown.delay(50)}
+        style={[styles.header, { backgroundColor: Colors.background.surface }]}
+      >
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.back();
+          }}
+          style={styles.backButton}
+          hitSlop={12}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={Colors.text.primary}
+          />
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
+          Account
+        </Text>
+        <View style={styles.headerRight} />
+      </Animated.View>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+        {/* Profile Card */}
+        <Animated.View
+          entering={FadeInUp.delay(100).springify()}
+          style={[
+            styles.profileCard,
+            { backgroundColor: Colors.background.surface },
+          ]}
+        >
+          {/* Avatar */}
+          <View
+            style={[styles.avatarContainer, { backgroundColor: Colors.lilac[600] }]}
+          >
+            <Text style={styles.avatarText}>{getUserInitials()}</Text>
+          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name</Text>
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Enter your name"
-                placeholderTextColor={Colors.text.tertiary}
-                autoFocus
+          {/* Profile Info */}
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileName, { color: Colors.text.primary }]}>
+              {profile?.full_name || session?.user?.email?.split("@")[0] || "User"}
+            </Text>
+            <Text style={[styles.profileEmail, { color: Colors.text.secondary }]}>
+              {session?.user?.email}
+            </Text>
+            <View style={styles.memberBadge}>
+              <MaterialCommunityIcons
+                name="calendar-check"
+                size={14}
+                color={Colors.green[700]}
               />
-            ) : (
-              <View style={styles.readOnlyField}>
-                <Text style={styles.readOnlyText}>
+              <Text style={[styles.memberText, { color: Colors.text.tertiary }]}>
+                Member since {getMemberSinceDate()}
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Edit Profile Section */}
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.section}
+        >
+          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
+            Profile Information
+          </Text>
+
+          <View
+            style={[
+              styles.editCard,
+              { backgroundColor: Colors.background.surface },
+            ]}
+          >
+            {/* Full Name Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldHeader}>
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={20}
+                  color={Colors.lilac[700]}
+                />
+                <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
+                  Full Name
+                </Text>
+              </View>
+              {isEditing ? (
+                <TextInput
+                  style={[
+                    styles.fieldInput,
+                    {
+                      color: Colors.text.primary,
+                      backgroundColor: isDark
+                        ? Colors.background.tertiary
+                        : Colors.gray[100],
+                      borderColor: Colors.lilac[400],
+                    },
+                  ]}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="Enter your name"
+                  placeholderTextColor={Colors.text.tertiary}
+                  autoCapitalize="words"
+                />
+              ) : (
+                <Text style={[styles.fieldValue, { color: Colors.text.primary }]}>
                   {profile?.full_name || "Not set"}
                 </Text>
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={20}
-                  color={Colors.green[500]}
-                />
-              </View>
-            )}
-          </View>
+              )}
+            </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <View style={[styles.readOnlyField, styles.disabledField]}>
-              <Text style={[styles.readOnlyText, { color: Colors.text.secondary }]}>
+            <View
+              style={[styles.divider, { backgroundColor: Colors.border.light }]}
+            />
+
+            {/* Email Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldHeader}>
+                <MaterialCommunityIcons
+                  name="email-outline"
+                  size={20}
+                  color={Colors.lilac[700]}
+                />
+                <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
+                  Email Address
+                </Text>
+              </View>
+              <Text style={[styles.fieldValue, { color: Colors.text.primary }]}>
                 {session?.user?.email}
               </Text>
-              <MaterialCommunityIcons
-                name="lock"
-                size={18}
-                color={Colors.text.tertiary}
-              />
+            </View>
+
+            {/* Edit/Save Buttons */}
+            <View style={styles.editButtonsRow}>
+              {isEditing ? (
+                <>
+                  <Pressable
+                    style={[
+                      styles.cancelBtn,
+                      { backgroundColor: Colors.gray[isDark ? 700 : 200] },
+                    ]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setIsEditing(false);
+                      setFullName(profile?.full_name || "");
+                    }}
+                  >
+                    <Text
+                      style={[styles.cancelBtnText, { color: Colors.text.primary }]}
+                    >
+                      Cancel
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.saveBtn, { backgroundColor: Colors.lilac[700] }]}
+                    onPress={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Text style={styles.saveBtnText}>Saving...</Text>
+                    ) : (
+                      <>
+                        <MaterialCommunityIcons
+                          name="check"
+                          size={18}
+                          color="#FFFFFF"
+                        />
+                        <Text style={styles.saveBtnText}>Save</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </>
+              ) : (
+                <Pressable
+                  style={[
+                    styles.editBtn,
+                    {
+                      backgroundColor: isDark
+                        ? Colors.lilac[800]
+                        : Colors.lilac[100],
+                    },
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setIsEditing(true);
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name="pencil-outline"
+                    size={18}
+                    color={isDark ? Colors.lilac[200] : Colors.lilac[800]}
+                  />
+                  <Text
+                    style={[
+                      styles.editBtnText,
+                      { color: isDark ? Colors.lilac[200] : Colors.lilac[800] },
+                    ]}
+                  >
+                    Edit Profile
+                  </Text>
+                </Pressable>
+              )}
             </View>
           </View>
+        </Animated.View>
 
-          {isEditing ? (
-            <View style={styles.actionButtons}>
-              <Pressable
-                style={[styles.button, styles.cancelButton]}
-                onPress={() => {
-                  setIsEditing(false);
-                  setFullName(profile?.full_name || "");
-                  setSelectedAvatar(profile?.avatar_url || "");
-                }}
-                disabled={isSaving}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button, styles.saveButton]}
-                onPress={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <ActivityIndicator color="#FFF" size="small" />
-                ) : (
-                  <Text style={styles.saveButtonText}>Save Changes</Text>
-                )}
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              style={styles.editButton}
-              onPress={() => setIsEditing(true)}
-            >
-              <Text style={styles.editButtonText}>Edit Profile</Text>
-            </Pressable>
-          )}
+        {/* Settings Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
+            Settings
+          </Text>
+          <SettingsItem
+            icon="shield-lock-outline"
+            label="Privacy & Security"
+            subtitle="Manage your data and permissions"
+            onPress={() => router.push("/(app)/(profile)/privacy")}
+            delay={300}
+          />
+          <SettingsItem
+            icon="bell-outline"
+            label="Notifications"
+            subtitle="Meal reminders and updates"
+            onPress={() => router.push("/(app)/(profile)/notifications")}
+            delay={350}
+          />
+          <SettingsItem
+            icon="help-circle-outline"
+            label="Help & Support"
+            subtitle="FAQs and contact us"
+            onPress={() => router.push("/(app)/(profile)/support-feedback")}
+            delay={400}
+          />
         </View>
+
+        {/* Danger Zone */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
+            Session
+          </Text>
+          <SettingsItem
+            icon="logout"
+            label="Sign Out"
+            subtitle="You can sign back in anytime"
+            onPress={handleSignOut}
+            showChevron={false}
+            danger
+            delay={450}
+          />
+        </View>
+
+        {/* Version */}
+        <Animated.View
+          entering={FadeInDown.delay(500)}
+          style={styles.versionContainer}
+        >
+          <Text style={[styles.versionText, { color: Colors.text.tertiary }]}>
+            PlannedEat v1.0.0
+          </Text>
+        </Animated.View>
       </ScrollView>
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   headerGradient: {
     paddingBottom: 24,
@@ -314,274 +478,221 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 24,
-    height: 44,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
-  },
-  signOutHeaderButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    zIndex: 10,
-  },
-  signOutHeaderText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.semantic.error.main,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: Colors.text.primary,
-    position: "absolute",
-    left: 0,
-    right: 0,
-    textAlign: "center",
-  },
-  profileHeader: {
-    alignItems: "center",
-  },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: 16,
-    shadowColor: Colors.lilac[900],
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  avatarGradient: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 4,
-    borderColor: Colors.lilac[900],
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarText: {
-    fontSize: 36,
     fontWeight: "700",
-    color: Colors.lilac[900],
+    letterSpacing: 0.3,
   },
-  editBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    marginBottom: 4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: Colors.text.secondary,
+  headerRight: {
+    width: 40,
   },
   scrollView: {
     flex: 1,
     marginTop: -20,
   },
   content: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
-  section: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
+  profileCard: {
+    borderRadius: 20,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 24,
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
+  },
+  avatarContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#7849B6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  avatarText: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  profileInfo: {
+    alignItems: "center",
+  },
+  profileName: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  memberBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "rgba(84, 138, 106, 0.1)",
+  },
+  memberText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  section: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
     fontSize: 13,
     fontWeight: "600",
-    color: Colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  editCard: {
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  fieldContainer: {
+    paddingVertical: 12,
+  },
+  fieldHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 8,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  input: {
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  fieldValue: {
     fontSize: 16,
-    color: Colors.text.primary,
-    borderWidth: 1,
-    borderColor: Colors.lilac[300],
+    fontWeight: "600",
+    paddingLeft: 28,
   },
-  readOnlyField: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  disabledField: {
-    opacity: 0.7,
-  },
-  readOnlyText: {
+  fieldInput: {
     fontSize: 16,
-    color: Colors.text.primary,
-    fontWeight: "500",
+    fontWeight: "600",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginLeft: 28,
   },
-  actionButtons: {
+  divider: {
+    height: 1,
+    marginVertical: 4,
+  },
+  editButtonsRow: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 8,
+    marginTop: 16,
   },
-  button: {
+  editBtn: {
     flex: 1,
-    height: 48,
-    borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
-  cancelButton: {
-    backgroundColor: Colors.gray[100],
-  },
-  cancelButtonText: {
-    fontSize: 16,
+  editBtnText: {
+    fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.secondary,
   },
-  saveButton: {
-    backgroundColor: Colors.lilac[900],
-    shadowColor: Colors.lilac[900],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+  cancelBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 14,
   },
-  saveButtonText: {
-    fontSize: 16,
+  cancelBtnText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  saveBtn: {
+    flex: 1.5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  saveBtnText: {
+    fontSize: 15,
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  editButton: {
-    backgroundColor: Colors.lilac[900],
-    height: 48,
+  settingsItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  settingsIconContainer: {
+    width: 42,
+    height: 42,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
+    marginRight: 14,
   },
-  editButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  modalOverlay: {
+  settingsContent: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
   },
-  modalContent: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
+  settingsLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
   },
-  modalHeader: {
-    flexDirection: "row",
+  settingsSubtitle: {
+    fontSize: 13,
+  },
+  versionContainer: {
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
+    paddingVertical: 20,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.text.primary,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  avatarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-    justifyContent: "center",
-  },
-  avatarOption: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 2,
-    borderColor: "transparent",
-    padding: 2,
-  },
-  selectedAvatarOption: {
-    borderColor: Colors.lilac[600],
-  },
-  avatarOptionImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 35,
-    backgroundColor: Colors.lilac[100],
-  },
-  checkBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: Colors.lilac[600],
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+  versionText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

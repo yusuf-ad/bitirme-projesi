@@ -6,11 +6,20 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { forwardRef, useCallback, useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  FadeOut,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 interface MealActionModalProps {
   mealType: string;
@@ -20,6 +29,13 @@ interface MealActionModalProps {
   onReplace?: () => void;
   onDelete?: () => void;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const TIMING_CONFIG = {
+  duration: 170,
+  easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+};
 
 export const MealActionModal = forwardRef<
   BottomSheetModal,
@@ -36,11 +52,12 @@ export const MealActionModal = forwardRef<
     },
     ref
   ) => {
-    const [eaten, setEaten] = useState(isEaten);
+    const progress = useSharedValue(isEaten ? 1 : 0);
 
-    // Sync internal state with prop when it changes
+
+    // Sync with prop
     useEffect(() => {
-      setEaten(isEaten);
+      progress.value = withTiming(isEaten ? 1 : 0, TIMING_CONFIG);
     }, [isEaten]);
 
     const handleSheetChanges = useCallback((index: number) => {
@@ -60,8 +77,8 @@ export const MealActionModal = forwardRef<
 
     const handleToggleEaten = async () => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const newValue = !eaten;
-      setEaten(newValue);
+      const newValue = progress.value < 0.5;
+      progress.value = withTiming(newValue ? 1 : 0, TIMING_CONFIG);
       onToggleEaten?.(newValue);
     };
 
@@ -87,6 +104,40 @@ export const MealActionModal = forwardRef<
         ref.current.dismiss();
       }
     };
+
+    // Animated styles for the container
+    const animatedContainerStyle = useAnimatedStyle(() => {
+      const backgroundColor = interpolateColor(
+        progress.value,
+        [0, 1],
+        [Colors.gray[100], "rgba(34, 197, 94, 0.08)"]
+      );
+      const borderColor = interpolateColor(
+        progress.value,
+        [0, 1],
+        [Colors.gray[200], Colors.semantic.success.light]
+      );
+      return { backgroundColor, borderColor };
+    });
+
+    // Animated styles for toggle track
+    const animatedTrackStyle = useAnimatedStyle(() => {
+      const backgroundColor = interpolateColor(
+        progress.value,
+        [0, 1],
+        [Colors.gray[300], Colors.semantic.success.main]
+      );
+      return { backgroundColor };
+    });
+
+    // Animated styles for toggle thumb
+    const animatedThumbStyle = useAnimatedStyle(() => ({
+      transform: [{ translateX: withTiming(progress.value * 20, TIMING_CONFIG) }],
+    }));
+
+    // Check if eaten for conditional rendering
+    const isCurrentlyEaten = progress.value >= 0.5;
+
 
     return (
       <BottomSheetModal
@@ -135,26 +186,15 @@ export const MealActionModal = forwardRef<
           <View style={styles.actionsContainer}>
             {/* Toggle Eaten */}
             <Animated.View entering={FadeInUp.delay(150).springify()}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionItem,
-                  eaten && styles.actionItemActive,
-                  pressed && styles.actionItemPressed,
-                ]}
+              <AnimatedPressable
+                style={[styles.actionItem, animatedContainerStyle]}
                 onPress={handleToggleEaten}
               >
-                <View
-                  style={[
-                    styles.actionIconWrapper,
-                    eaten && styles.actionIconWrapperActive,
-                  ]}
-                >
-                  {eaten ? (
-                    <LinearGradient
-                      colors={[
-                        Colors.semantic.success.main,
-                        Colors.semantic.success.dark,
-                      ]}
+                <View style={styles.iconContainer}>
+                  {isEaten ? (
+                    <Animated.View
+                      entering={FadeIn.duration(200)}
+                      exiting={FadeOut.duration(200)}
                       style={styles.actionIconGradient}
                     >
                       <Ionicons
@@ -162,51 +202,70 @@ export const MealActionModal = forwardRef<
                         size={24}
                         color="white"
                       />
-                    </LinearGradient>
+                    </Animated.View>
                   ) : (
-                    <MaterialCommunityIcons
-                      name="checkbox-blank-circle-outline"
-                      size={24}
-                      color={Colors.gray[400]}
-                    />
+                    <Animated.View
+                      entering={FadeIn.duration(200)}
+                      exiting={FadeOut.duration(200)}
+                      style={styles.actionIconWrapperInactive}
+                    >
+                      <MaterialCommunityIcons
+                        name="checkbox-blank-circle-outline"
+                        size={24}
+                        color={Colors.gray[400]}
+                      />
+                    </Animated.View>
                   )}
                 </View>
                 <View style={styles.actionTextContainer}>
-                  <Text
-                    style={[
-                      styles.actionTitle,
-                      eaten && styles.actionTitleActive,
-                    ]}
-                  >
-                    {eaten ? "Eaten" : "Not eaten"}
-                  </Text>
-                  <Text style={styles.actionDescription}>
-                    {eaten
-                      ? "You marked this meal as eaten"
-                      : "Mark this meal as eaten"}
-                  </Text>
+                  {isEaten ? (
+                    <Animated.Text
+                      entering={FadeIn.duration(200)}
+                      exiting={FadeOut.duration(200)}
+                      style={[styles.actionTitle, styles.actionTitleActive]}
+                    >
+                      Eaten
+                    </Animated.Text>
+                  ) : (
+                    <Animated.Text
+                      entering={FadeIn.duration(200)}
+                      exiting={FadeOut.duration(200)}
+                      style={styles.actionTitle}
+                    >
+                      Not eaten
+                    </Animated.Text>
+                  )}
+                  {isEaten ? (
+                    <Animated.Text
+                      entering={FadeIn.duration(200)}
+                      exiting={FadeOut.duration(200)}
+                      style={styles.actionDescription}
+                    >
+                      You marked this meal as eaten
+                    </Animated.Text>
+                  ) : (
+                    <Animated.Text
+                      entering={FadeIn.duration(200)}
+                      exiting={FadeOut.duration(200)}
+                      style={styles.actionDescription}
+                    >
+                      Mark this meal as eaten
+                    </Animated.Text>
+                  )}
                 </View>
-                <View
-                  style={[
-                    styles.toggleSwitch,
-                    eaten && styles.toggleSwitchActive,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.toggleThumb,
-                      eaten && styles.toggleThumbActive,
-                    ]}
-                  />
-                </View>
-              </Pressable>
+                <Animated.View style={[styles.toggleSwitch, animatedTrackStyle]}>
+                  <Animated.View style={[styles.toggleThumb, animatedThumbStyle]} />
+                </Animated.View>
+              </AnimatedPressable>
             </Animated.View>
+
 
             {/* Replace */}
             <Animated.View entering={FadeInUp.delay(200).springify()}>
               <Pressable
                 style={({ pressed }) => [
                   styles.actionItem,
+                  styles.actionItemDefault,
                   pressed && styles.actionItemPressed,
                 ]}
                 onPress={handleReplace}
@@ -272,6 +331,7 @@ export const MealActionModal = forwardRef<
 );
 
 MealActionModal.displayName = "MealActionModal";
+
 
 const styles = StyleSheet.create({
   handleIndicator: {
@@ -344,15 +404,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    backgroundColor: Colors.gray[100],
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.gray[200],
     gap: 12,
   },
-  actionItemActive: {
-    backgroundColor: "rgba(34, 197, 94, 0.08)",
-    borderColor: Colors.semantic.success.light,
+  actionItemDefault: {
+    backgroundColor: Colors.gray[100],
+    borderColor: Colors.gray[200],
   },
   actionItemDanger: {
     backgroundColor: "rgba(239, 68, 68, 0.04)",
@@ -362,6 +420,12 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   actionIconWrapper: {
     width: 44,
     height: 44,
@@ -370,8 +434,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  actionIconWrapperActive: {
-    backgroundColor: "transparent",
+  actionIconWrapperInactive: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.lilac[100],
+    justifyContent: "center",
+    alignItems: "center",
   },
   actionIconWrapperDanger: {
     backgroundColor: "rgba(239, 68, 68, 0.1)",
@@ -382,6 +451,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: Colors.semantic.success.main,
   },
   actionTextContainer: {
     flex: 1,
@@ -409,12 +479,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.gray[300],
-    padding: 2,
+    paddingHorizontal: 2,
     justifyContent: "center",
-  },
-  toggleSwitchActive: {
-    backgroundColor: Colors.semantic.success.main,
   },
   toggleThumb: {
     width: 24,
@@ -426,9 +492,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 3,
-  },
-  toggleThumbActive: {
-    alignSelf: "flex-end",
   },
 });
 
