@@ -120,3 +120,49 @@ CREATE TABLE public.user_taste_preferences (
   CONSTRAINT user_taste_preferences_pkey PRIMARY KEY (id),
   CONSTRAINT user_taste_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.ai_generated_recipes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  recipe_id integer NOT NULL,
+  title text NOT NULL,
+  summary text,
+  image_url text,
+  ready_in_minutes integer,
+  servings integer,
+  cuisines text[] DEFAULT '{}',
+  dish_types text[] DEFAULT '{}',
+  diets text[] DEFAULT '{}',
+  ingredients jsonb NOT NULL DEFAULT '[]',
+  instructions jsonb NOT NULL DEFAULT '[]',
+  nutrition jsonb NOT NULL DEFAULT '{}',
+  calories_per_serving numeric,
+  protein_per_serving numeric,
+  carbs_per_serving numeric,
+  fat_per_serving numeric,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ai_generated_recipes_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_generated_recipes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  CONSTRAINT ai_generated_recipes_user_id_recipe_id_key UNIQUE (user_id, recipe_id)
+);
+
+-- Enable Row Level Security for ai_generated_recipes
+ALTER TABLE public.ai_generated_recipes ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for ai_generated_recipes
+CREATE POLICY "Users can view their own AI recipes"
+  ON public.ai_generated_recipes FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own AI recipes"
+  ON public.ai_generated_recipes FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own AI recipes"
+  ON public.ai_generated_recipes FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own AI recipes"
+  ON public.ai_generated_recipes FOR DELETE
+  USING (auth.uid() = user_id);

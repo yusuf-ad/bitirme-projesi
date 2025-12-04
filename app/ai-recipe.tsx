@@ -21,6 +21,7 @@ import {
 } from "@/lib/allergies-diet-helpers";
 import { Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
+import { saveAiRecipe } from "@/lib/supabase-ai-recipes";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -253,6 +254,11 @@ export default function AiRecipe() {
         params.selectedDate || new Date().toISOString().split("T")[0];
       const mealType = selectedMealType;
 
+      console.log("handleSaveRecipe - params:", params);
+      console.log("handleSaveRecipe - selectedMealType:", selectedMealType);
+      console.log("handleSaveRecipe - mealType being saved:", mealType);
+      console.log("handleSaveRecipe - dateString:", dateString);
+
       // Get or create meal plan for the date
       const { data: plans } = await supabase
         .from("meal_plans")
@@ -308,7 +314,22 @@ export default function AiRecipe() {
         throw new Error("Failed to create or retrieve meal plan");
       }
 
-      const { error: itemError } = await supabase
+      // Save full AI recipe to ai_generated_recipes table first
+      const saveResult = await saveAiRecipe(userId, generatedRecipe);
+      if (!saveResult.success) {
+        console.error("Failed to save AI recipe:", saveResult.error);
+        // Continue anyway - meal plan item can still be saved
+      }
+
+      console.log("Saving meal plan item:", {
+        meal_plan_id: mealPlanId,
+        spoonacular_recipe_id: generatedRecipe.id,
+        recipe_name: generatedRecipe.title,
+        meal_date: dateString,
+        meal_type: mealType,
+      });
+
+      const { data: insertedItem, error: itemError } = await supabase
         .from("meal_plan_items")
         .insert({
           meal_plan_id: mealPlanId,
@@ -322,9 +343,16 @@ export default function AiRecipe() {
           ready_in_minutes: generatedRecipe.readyInMinutes ?? null,
           meal_date: dateString,
           meal_type: mealType,
-        });
+        })
+        .select()
+        .single();
 
-      if (itemError) throw itemError;
+      if (itemError) {
+        console.error("Error inserting meal plan item:", itemError);
+        throw itemError;
+      }
+
+      console.log("Successfully inserted meal plan item:", insertedItem);
 
       // Invalidate queries to refresh the list
       await queryClient.invalidateQueries({ queryKey: ["meal-plans"] });
@@ -349,14 +377,7 @@ export default function AiRecipe() {
     } finally {
       setIsSaving(false);
     }
-  }, [
-    generatedRecipe,
-    userId,
-    params.selectedDate,
-    selectedMealType,
-    queryClient,
-    router,
-  ]);
+  }, [generatedRecipe, userId, params, selectedMealType, queryClient, router]);
 
   const handleBackFromPreview = useCallback(() => {
     setViewState("form");

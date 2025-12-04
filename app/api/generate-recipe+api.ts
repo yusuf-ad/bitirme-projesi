@@ -61,7 +61,7 @@ const recipeSchema = z.object({
       original: z
         .string()
         .describe(
-          "Original ingredient description with precise metric measurements (e.g., '200g chicken breast' not '2 large chicken breasts')"
+          "Original ingredient description with precise metric measurements. NEVER use size adjectives like 'large', 'medium', 'small'. Examples: '200g chicken breast', '2 eggs' (NOT '2 large eggs'), '150g onion' (NOT '1 medium onion')"
         ),
     })
   ),
@@ -188,9 +188,10 @@ Requirements:
 7. INGREDIENT MEASUREMENTS (VERY IMPORTANT):
    - ALWAYS use metric units: grams (g) for solids, milliliters (ml) for liquids
    - NEVER use vague terms like "large", "medium", "small", "a bunch", "a handful"
+   - NEVER use size adjectives for ANY ingredient, including eggs
    - NEVER use "cups" or "tablespoons" for main ingredients - convert to grams
-   - Examples of CORRECT measurements: "200g chicken breast", "150g onion", "250ml milk", "30g butter"
-   - Examples of INCORRECT measurements: "2 large chicken breasts", "1 medium onion", "1 cup milk"
+   - Examples of CORRECT measurements: "200g chicken breast", "150g onion", "250ml milk", "30g butter", "2 eggs"
+   - Examples of INCORRECT measurements: "2 large eggs", "2 large chicken breasts", "1 medium onion", "1 cup milk"
    - EXCEPTION: Use "pieces" only for whole countable items like eggs (e.g., "2 eggs"), garlic cloves (e.g., "4 garlic cloves")
    - For spices and small amounts, you may use teaspoons (tsp) or tablespoons (tbsp)
 8. Make it delicious and practical for home cooking
