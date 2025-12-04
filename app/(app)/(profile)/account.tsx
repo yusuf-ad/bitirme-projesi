@@ -4,11 +4,13 @@ import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
+import { Image as ExpoImage } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
+  Dimensions,
   Modal,
   Pressable,
   ScrollView,
@@ -22,14 +24,26 @@ import Animated, {
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withSpring
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const { width } = Dimensions.get("window");
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const AVATARS = [
+  "https://api.dicebear.com/9.x/personas/png?seed=Felix2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Aneka2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Jake2&skinTone=f5d0c5&mouth=smirk",
+  "https://api.dicebear.com/9.x/personas/png?seed=Aiden2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Liliana2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Sam2&skinTone=f5d0c5&mouth=smirk",
+  "https://api.dicebear.com/9.x/personas/png?seed=Alexander2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Mason2&skinTone=f5d0c5&mouth=smirk",
+];
+
 export default function AccountScreen() {
-  const { profile, session } = useAuthContext();
+  const { profile, session, refreshProfile } = useAuthContext();
   const { top, bottom } = useSafeAreaInsets();
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark);
@@ -39,6 +53,13 @@ export default function AccountScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState(profile?.avatar_url || "");
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setSelectedAvatar(profile.avatar_url || "");
+    }
+  }, [profile]);
 
   const getUserInitials = useCallback(() => {
     if (profile?.full_name) {
@@ -80,6 +101,8 @@ export default function AccountScreen() {
         .eq("id", session.user.id);
 
       if (error) throw error;
+      
+      await refreshProfile();
       Alert.alert("Success", "Your profile has been updated!");
       setIsEditing(false);
     } catch (error) {
@@ -87,6 +110,33 @@ export default function AccountScreen() {
       Alert.alert("Error", "Failed to update profile. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleUpdateAvatar = async (newAvatar: string) => {
+    if (!session?.user?.id) return;
+    Haptics.selectionAsync();
+    setSelectedAvatar(newAvatar);
+    setIsAvatarModalVisible(false);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: newAvatar,
+        })
+        .eq("id", session.user.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+      Alert.alert("Error", "Failed to update avatar. Please try again.");
+      // Revert to profile avatar if failed
+      if (profile?.avatar_url) {
+        setSelectedAvatar(profile.avatar_url);
+      }
     }
   };
 
@@ -126,11 +176,11 @@ export default function AccountScreen() {
       transform: [{ scale: scale.value }],
     }));
 
-    const iconColor = danger ? "#EF4444" : Colors.lilac[700];
+    const iconColor = danger ? "#EF4444" : Colors.lilac[900];
     const textColor = danger ? "#EF4444" : Colors.text.primary;
 
     return (
-      <Animated.View entering={FadeInDown.delay(delay).springify()}>
+      <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.menuItemWrapper}>
         <AnimatedPressable
           style={[
             styles.settingsItem,
@@ -155,12 +205,12 @@ export default function AccountScreen() {
                 backgroundColor: danger
                   ? "rgba(239, 68, 68, 0.1)"
                   : isDark
-                  ? Colors.background.tertiary
-                  : Colors.lilac[100],
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.03)",
               },
             ]}
           >
-            <MaterialCommunityIcons name={icon} size={22} color={iconColor} />
+            <MaterialCommunityIcons name={icon} size={20} color={iconColor} />
           </View>
           <View style={styles.settingsContent}>
             <Text style={[styles.settingsLabel, { color: textColor }]}>
@@ -177,7 +227,7 @@ export default function AccountScreen() {
           {showChevron && (
             <MaterialCommunityIcons
               name="chevron-right"
-              size={22}
+              size={20}
               color={Colors.text.tertiary}
             />
           )}
@@ -213,7 +263,7 @@ export default function AccountScreen() {
           />
         </Pressable>
         <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
-          Account
+          Edit Profile
         </Text>
         <View style={styles.headerRight} />
       </Animated.View>
@@ -226,17 +276,42 @@ export default function AccountScreen() {
         {/* Profile Card */}
         <Animated.View
           entering={FadeInUp.delay(100).springify()}
-          style={[
-            styles.profileCard,
-            { backgroundColor: Colors.background.surface },
-          ]}
+          style={styles.profileCard}
         >
           {/* Avatar */}
-          <View
-            style={[styles.avatarContainer, { backgroundColor: Colors.lilac[600] }]}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setIsAvatarModalVisible(true);
+            }}
           >
-            <Text style={styles.avatarText}>{getUserInitials()}</Text>
-          </View>
+            <LinearGradient
+                colors={[Colors.lilac[900], Colors.lilac[900], Colors.lilac[900]]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.avatarGradientBorder}
+            >
+                <View style={[styles.avatarContainer, { backgroundColor: Colors.background.secondary }]}>
+                    {selectedAvatar ? (
+                    <ExpoImage
+                        source={{ uri: selectedAvatar }}
+                        style={styles.avatarImage}
+                        contentFit="cover"
+                        transition={200}
+                    />
+                    ) : (
+                    <Text style={[styles.avatarText, { color: Colors.lilac[800] }]}>{getUserInitials()}</Text>
+                    )}
+                </View>
+            </LinearGradient>
+            <View style={[styles.editBadge, { backgroundColor: Colors.background.surface }]}>
+              <MaterialCommunityIcons
+                name="camera-outline"
+                size={14}
+                color={Colors.text.primary}
+              />
+            </View>
+          </Pressable>
 
           {/* Profile Info */}
           <View style={styles.profileInfo}>
@@ -246,11 +321,11 @@ export default function AccountScreen() {
             <Text style={[styles.profileEmail, { color: Colors.text.secondary }]}>
               {session?.user?.email}
             </Text>
-            <View style={styles.memberBadge}>
+            <View style={[styles.memberBadge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)" }]}>
               <MaterialCommunityIcons
                 name="calendar-check"
                 size={14}
-                color={Colors.green[700]}
+                color={Colors.lilac[900]}
               />
               <Text style={[styles.memberText, { color: Colors.text.tertiary }]}>
                 Member since {getMemberSinceDate()}
@@ -264,8 +339,8 @@ export default function AccountScreen() {
           entering={FadeInDown.delay(200).springify()}
           style={styles.section}
         >
-          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
-            Profile Information
+          <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+            Personal Information
           </Text>
 
           <View
@@ -280,7 +355,7 @@ export default function AccountScreen() {
                 <MaterialCommunityIcons
                   name="account-outline"
                   size={20}
-                  color={Colors.lilac[700]}
+                  color={Colors.lilac[900]}
                 />
                 <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
                   Full Name
@@ -312,7 +387,7 @@ export default function AccountScreen() {
             </View>
 
             <View
-              style={[styles.divider, { backgroundColor: Colors.border.light }]}
+              style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }]}
             />
 
             {/* Email Field */}
@@ -321,7 +396,7 @@ export default function AccountScreen() {
                 <MaterialCommunityIcons
                   name="email-outline"
                   size={20}
-                  color={Colors.lilac[700]}
+                  color={Colors.lilac[900]}
                 />
                 <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
                   Email Address
@@ -339,7 +414,7 @@ export default function AccountScreen() {
                   <Pressable
                     style={[
                       styles.cancelBtn,
-                      { backgroundColor: Colors.gray[isDark ? 700 : 200] },
+                      { backgroundColor: isDark ? Colors.gray[700] : Colors.gray[200] },
                     ]}
                     onPress={() => {
                       Haptics.selectionAsync();
@@ -354,7 +429,7 @@ export default function AccountScreen() {
                     </Text>
                   </Pressable>
                   <Pressable
-                    style={[styles.saveBtn, { backgroundColor: Colors.lilac[700] }]}
+                    style={[styles.saveBtn, { backgroundColor: Colors.lilac[900] }]}
                     onPress={handleSave}
                     disabled={isSaving}
                   >
@@ -367,7 +442,7 @@ export default function AccountScreen() {
                           size={18}
                           color="#FFFFFF"
                         />
-                        <Text style={styles.saveBtnText}>Save</Text>
+                        <Text style={styles.saveBtnText}>Save Changes</Text>
                       </>
                     )}
                   </Pressable>
@@ -378,8 +453,8 @@ export default function AccountScreen() {
                     styles.editBtn,
                     {
                       backgroundColor: isDark
-                        ? Colors.lilac[800]
-                        : Colors.lilac[100],
+                        ? "rgba(255,255,255,0.05)"
+                        : "rgba(0,0,0,0.03)",
                     },
                   ]}
                   onPress={() => {
@@ -390,15 +465,15 @@ export default function AccountScreen() {
                   <MaterialCommunityIcons
                     name="pencil-outline"
                     size={18}
-                    color={isDark ? Colors.lilac[200] : Colors.lilac[800]}
+                    color={Colors.lilac[900]}
                   />
                   <Text
                     style={[
                       styles.editBtnText,
-                      { color: isDark ? Colors.lilac[200] : Colors.lilac[800] },
+                      { color: Colors.text.primary },
                     ]}
                   >
-                    Edit Profile
+                    Edit Information
                   </Text>
                 </Pressable>
               )}
@@ -408,46 +483,50 @@ export default function AccountScreen() {
 
         {/* Settings Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
-            Settings
+          <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+            Account Settings
           </Text>
-          <SettingsItem
-            icon="shield-lock-outline"
-            label="Privacy & Security"
-            subtitle="Manage your data and permissions"
-            onPress={() => router.push("/(app)/(profile)/privacy")}
-            delay={300}
-          />
-          <SettingsItem
-            icon="bell-outline"
-            label="Notifications"
-            subtitle="Meal reminders and updates"
-            onPress={() => router.push("/(app)/(profile)/notifications")}
-            delay={350}
-          />
-          <SettingsItem
-            icon="help-circle-outline"
-            label="Help & Support"
-            subtitle="FAQs and contact us"
-            onPress={() => router.push("/(app)/(profile)/support-feedback")}
-            delay={400}
-          />
+          <View style={styles.settingsGroup}>
+            <SettingsItem
+                icon="shield-lock-outline"
+                label="Privacy & Security"
+                subtitle="Manage your data and permissions"
+                onPress={() => router.push("/(app)/(profile)/privacy")}
+                delay={300}
+            />
+            <SettingsItem
+                icon="bell-outline"
+                label="Notifications"
+                subtitle="Meal reminders and updates"
+                onPress={() => router.push("/(app)/(profile)/notifications")}
+                delay={350}
+            />
+            <SettingsItem
+                icon="help-circle-outline"
+                label="Help & Support"
+                subtitle="FAQs and contact us"
+                onPress={() => router.push("/(app)/(profile)/support-feedback")}
+                delay={400}
+            />
+          </View>
         </View>
 
         {/* Danger Zone */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors.text.secondary }]}>
+          <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
             Session
           </Text>
-          <SettingsItem
-            icon="logout"
-            label="Sign Out"
-            subtitle="You can sign back in anytime"
-            onPress={handleSignOut}
-            showChevron={false}
-            danger
-            delay={450}
-          />
+          <View style={styles.settingsGroup}>
+            <SettingsItem
+                icon="logout"
+                label="Sign Out"
+                subtitle="You can sign back in anytime"
+                onPress={handleSignOut}
+                showChevron={false}
+                danger
+                delay={450}
+            />
+          </View>
         </View>
 
         {/* Version */}
@@ -460,6 +539,80 @@ export default function AccountScreen() {
           </Text>
         </Animated.View>
       </ScrollView>
+      {/* Avatar Selection Modal */}
+      <Modal
+        visible={isAvatarModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsAvatarModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: Colors.background.surface },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
+                Choose an Avatar
+              </Text>
+              <Pressable
+                onPress={() => setIsAvatarModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={Colors.text.secondary}
+                />
+              </Pressable>
+            </View>
+
+            <View style={styles.avatarGrid}>
+              {AVATARS.map((avatar, index) => (
+                <Pressable
+                  key={index}
+                  style={[
+                    styles.avatarOption,
+                    selectedAvatar === avatar && styles.selectedAvatarOption,
+                    {
+                      borderColor:
+                        selectedAvatar === avatar
+                          ? Colors.lilac[600]
+                          : "transparent",
+                    },
+                  ]}
+                  onPress={() => {
+                    handleUpdateAvatar(avatar);
+                  }}
+                >
+                  <ExpoImage
+                    source={{ uri: avatar }}
+                    style={styles.avatarOptionImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  {selectedAvatar === avatar && (
+                    <View
+                      style={[
+                        styles.checkBadge,
+                        { backgroundColor: Colors.lilac[600] },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="check"
+                        size={12}
+                        color="#FFF"
+                      />
+                    </View>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -468,11 +621,6 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerGradient: {
-    paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
   },
   header: {
     flexDirection: "row",
@@ -491,49 +639,47 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+    fontSize: 17,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   headerRight: {
     width: 40,
   },
   scrollView: {
     flex: 1,
-    marginTop: -20,
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 24,
   },
   profileCard: {
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: 24,
   },
-  avatarContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+  avatarGradientBorder: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-    shadowColor: "#7849B6",
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: "#7C3AED",
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "700",
-    color: "#FFFFFF",
   },
   profileInfo: {
     alignItems: "center",
@@ -542,6 +688,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   profileEmail: {
     fontSize: 14,
@@ -554,7 +701,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: "rgba(84, 138, 106, 0.1)",
   },
   memberText: {
     fontSize: 12,
@@ -564,20 +710,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+    fontSize: 18,
+    fontWeight: "700",
     marginBottom: 12,
-    paddingHorizontal: 4,
   },
   editCard: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
     elevation: 2,
   },
   fieldContainer: {
@@ -656,31 +799,35 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
+  settingsGroup: {
+    gap: 12,
+  },
+  menuItemWrapper: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
   settingsItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    padding: 16,
+    borderRadius: 20,
   },
   settingsIconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
+    marginRight: 16,
   },
   settingsContent: {
     flex: 1,
   },
   settingsLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     marginBottom: 2,
   },
@@ -692,7 +839,85 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   versionText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "500",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 50,
+  },
+  editBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  avatarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+    justifyContent: "center",
+  },
+  avatarOption: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    padding: 2,
+    position: "relative",
+  },
+  selectedAvatarOption: {
+    // Border color handled inline
+  },
+  avatarOptionImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 36,
+  },
+  checkBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
   },
 });

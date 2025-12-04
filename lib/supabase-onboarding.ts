@@ -51,7 +51,7 @@ export async function updateUserGoals(
     .upsert({
       user_id: userId,
       goal_ids: goalIds,
-    })
+    }, { onConflict: 'user_id' })
     .select()
     .single();
 
@@ -93,7 +93,7 @@ export async function updateUserBodyMetrics(
     .upsert({
       user_id: userId,
       ...metrics,
-    })
+    }, { onConflict: 'user_id' })
     .select()
     .single();
 
@@ -163,7 +163,7 @@ export async function updateUserMealTimes(
 
   const { data, error } = await supabase
     .from("user_meal_times")
-    .upsert(updates)
+    .upsert(updates, { onConflict: 'user_id' })
     .select()
     .single();
 
@@ -206,7 +206,7 @@ export async function updateUserTastePreferences(
     .upsert({
       user_id: userId,
       ...preferences,
-    })
+    }, { onConflict: 'user_id' })
     .select()
     .single();
 
