@@ -8,7 +8,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Alert,
     Pressable,
@@ -19,11 +19,18 @@ import {
     View,
 } from "react-native";
 import Animated, {
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const HEADER_HEIGHT = 56;
+const SCROLL_THRESHOLD = 80;
 
 interface ProfileData {
   goals: string[];
@@ -76,6 +83,126 @@ export default function ProfileTab() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const Colors = getThemeColors(isDark);
+  const scrollY = useSharedValue(0);
+  const scrollViewRef = useRef<Animated.ScrollView>(null);
+
+  // Scroll to top animation values
+  const scrollToTopScale = useSharedValue(1);
+  const scrollToTopRotation = useSharedValue(0);
+
+  // Scroll to top with smooth animation and visual feedback
+  const scrollToTop = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Trigger bounce animation on avatar
+    scrollToTopScale.value = withSpring(0.85, { damping: 8, stiffness: 400 }, () => {
+      scrollToTopScale.value = withSpring(1.1, { damping: 6, stiffness: 300 }, () => {
+        scrollToTopScale.value = withSpring(1, { damping: 10, stiffness: 200 });
+      });
+    });
+    
+    // Trigger rotation animation
+    scrollToTopRotation.value = withSpring(-15, { damping: 8, stiffness: 400 }, () => {
+      scrollToTopRotation.value = withSpring(0, { damping: 10, stiffness: 200 });
+    });
+    
+    // Smooth scroll to top
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  // Animated style for scroll to top button
+  const scrollToTopAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: scrollToTopScale.value },
+        { rotate: `${scrollToTopRotation.value}deg` },
+      ],
+    };
+  });
+
+  // Scroll handler for header animation
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  // Header background fade in animation (synced with scroll)
+  const headerBackgroundStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.5, SCROLL_THRESHOLD],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    return { opacity };
+  });
+
+  // Profile avatar animation - slides in from left with scale and rotation
+  const profileAvatarStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.6, SCROLL_THRESHOLD * 1.1],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    const translateX = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.6, SCROLL_THRESHOLD * 1.1],
+      [-20, 0],
+      Extrapolation.CLAMP
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.6, SCROLL_THRESHOLD * 1.1],
+      [0.5, 1],
+      Extrapolation.CLAMP
+    );
+    return {
+      opacity,
+      transform: [{ translateX }, { scale }],
+    };
+  });
+
+  // Profile name animation - slides in from right with slight delay
+  const profileNameStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.8, SCROLL_THRESHOLD * 1.2],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    const translateX = interpolate(
+      scrollY.value,
+      [SCROLL_THRESHOLD * 0.8, SCROLL_THRESHOLD * 1.2],
+      [15, 0],
+      Extrapolation.CLAMP
+    );
+    return {
+      opacity,
+      transform: [{ translateX }],
+    };
+  });
+
+  // SETTINGS title fade out animation (in header)
+  const inContentTitleStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, SCROLL_THRESHOLD * 0.6],
+      [1, 0],
+      Extrapolation.CLAMP
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [0, SCROLL_THRESHOLD * 0.6],
+      [1, 0.9],
+      Extrapolation.CLAMP
+    );
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
 
   // Animation for theme toggle icon
   const iconRotation = useAnimatedStyle(() => {
@@ -529,50 +656,97 @@ export default function ProfileTab() {
   }
 
   return (
-    <Animated.ScrollView
-      style={[
-        styles.container,
-        containerAnimation,
-        { paddingTop: top, backgroundColor: Colors.background.secondary },
-      ]}
-      contentContainerStyle={[styles.content, { paddingBottom: bottom + 64 }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.headerBar}>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            toggleTheme();
-          }}
-          hitSlop={12}
-          style={[styles.iconButton, styles.iconButtonLeft]}
-          accessibilityRole="button"
-          accessibilityLabel={
-            isDark ? "Switch to light mode" : "Switch to dark mode"
-          }
-        >
-          <Animated.View style={iconRotation}>
-            <MaterialCommunityIcons
-              name={isDark ? "white-balance-sunny" : "moon-waning-crescent"}
-              size={22}
-              color={isDark ? "#FDB022" : Colors.lilac[800]}
-            />
-          </Animated.View>
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
-          Settings
-        </Text>
-        <Pressable
-          onPress={handleSignOut}
-          hitSlop={12}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="Sign out"
-        >
-          <MaterialCommunityIcons name="logout" size={22} color="#EF4444" />
-        </Pressable>
+    <View style={[styles.container, { backgroundColor: Colors.background.secondary }]}>
+      {/* Fixed Header */}
+      <View style={[styles.fixedHeader, { paddingTop: top }]}>
+        {/* Header Background (fades in on scroll) */}
+        <Animated.View
+          style={[
+            styles.headerBackground,
+            { height: HEADER_HEIGHT + top, backgroundColor: Colors.background.surface },
+            headerBackgroundStyle,
+          ]}
+        />
+
+        {/* Header Content */}
+        <View style={styles.headerContent}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              toggleTheme();
+            }}
+            hitSlop={12}
+            style={styles.headerIconButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isDark ? "Switch to light mode" : "Switch to dark mode"
+            }
+          >
+            <View style={[styles.iconButtonCircle, { backgroundColor: isDark ? "rgba(37, 34, 46, 0.85)" : "rgba(242, 240, 244, 0.85)" }]}>
+              <Animated.View style={iconRotation}>
+                <MaterialCommunityIcons
+                  name={isDark ? "white-balance-sunny" : "moon-waning-crescent"}
+                  size={22}
+                  color={isDark ? "#FDB022" : Colors.lilac[800]}
+                />
+              </Animated.View>
+            </View>
+          </Pressable>
+
+          {/* Header Center - SETTINGS title or Profile Avatar & Name */}
+          <View style={styles.headerTitleContainer}>
+            {/* SETTINGS title (visible initially, fades out on scroll) */}
+            <Animated.View style={[styles.headerSettingsWrapper, inContentTitleStyle]}>
+              <Text style={[styles.headerSettingsTitle, { color: Colors.text.primary }]}>
+                Settings
+              </Text>
+            </Animated.View>
+            
+            {/* Profile Avatar & Name (slides in on scroll) - Tappable to scroll to top */}
+            <Pressable onPress={scrollToTop} style={styles.headerProfileTouchable}>
+              <Animated.View style={[styles.headerProfileRow, profileAvatarStyle]}>
+                <View
+                  style={[
+                    styles.headerAvatar,
+                    { backgroundColor: Colors.text.primary },
+                  ]}
+                >
+                  <Text style={[styles.headerAvatarText, { color: Colors.text.inverse }]}>
+                    {getUserInitials()}
+                  </Text>
+                </View>
+                <Animated.View style={profileNameStyle}>
+                  <Text style={[styles.headerProfileName, { color: Colors.text.primary }]} numberOfLines={1}>
+                    {getUserDisplayName()}
+                  </Text>
+                </Animated.View>
+              </Animated.View>
+            </Pressable>
+          </View>
+
+          <Pressable
+            onPress={handleSignOut}
+            hitSlop={12}
+            style={styles.headerIconButton}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+          >
+            <View style={[styles.iconButtonCircle, { backgroundColor: isDark ? "rgba(37, 34, 46, 0.85)" : "rgba(242, 240, 244, 0.85)" }]}>
+              <MaterialCommunityIcons name="logout" size={22} color="#EF4444" />
+            </View>
+          </Pressable>
+        </View>
       </View>
 
+      {/* Scrollable Content */}
+      <Animated.ScrollView
+        ref={scrollViewRef}
+        style={[styles.scroll, containerAnimation]}
+        contentContainerStyle={[styles.content, { paddingTop: top + HEADER_HEIGHT + 16, paddingBottom: bottom + 64 }]}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
       {/* User Profile Header */}
       <View
         style={[
@@ -699,12 +873,104 @@ export default function ProfileTab() {
           </View>
         </View>
       ))}
-    </Animated.ScrollView>
+      </Animated.ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  fixedHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: HEADER_HEIGHT,
+    paddingHorizontal: 16,
+  },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  headerSettingsWrapper: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSettingsTitle: {
+    fontSize: 16,
+    letterSpacing: 1.1,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  headerProfileTouchable: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerProfileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  headerAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerAvatarText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  headerProfileName: {
+    fontFamily: "Inter",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  fixedHeaderTitle: {
+    fontFamily: "Inter",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  scroll: {
     flex: 1,
   },
   content: {

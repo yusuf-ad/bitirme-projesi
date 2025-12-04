@@ -1,9 +1,9 @@
 import { Colors } from "@/constants/theme";
 import {
-  BottomSheetBackdrop,
-  BottomSheetFlatList,
-  BottomSheetModal,
-  BottomSheetView,
+    BottomSheetBackdrop,
+    BottomSheetFlatList,
+    BottomSheetModal,
+    BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import { Dimensions, Platform, StyleSheet, View } from "react-native";
@@ -218,6 +218,7 @@ export const IngredientModal = forwardRef<
         visible={showAllergies}
         onClose={() => setShowAllergies(false)}
         allergies={userAllergies}
+        onNavigateToSettings={handleClose}
       />
     </BottomSheetModal>
   );

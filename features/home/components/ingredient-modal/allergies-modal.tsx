@@ -2,21 +2,24 @@ import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import React from "react";
 import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOut,
-  FadeOutDown,
+    FadeIn,
+    FadeInDown,
+    FadeInUp,
+    FadeOut,
+    FadeOutDown,
 } from "react-native-reanimated";
 import { AllergiesModalProps } from "./types";
 
@@ -24,7 +27,17 @@ export const AllergiesModal = ({
   visible,
   onClose,
   allergies,
+  onNavigateToSettings,
 }: AllergiesModalProps) => {
+  const handleGoToSettings = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onClose();
+    onNavigateToSettings?.();
+    setTimeout(() => {
+      router.push("/(app)/(profile)/allergies-diet");
+    }, 100);
+  };
+
   if (!visible) return null;
 
   return (
@@ -35,50 +48,55 @@ export const AllergiesModal = ({
     >
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       <Animated.View
-        entering={FadeInDown.springify()}
+        entering={FadeInUp.delay(50).duration(250)}
         exiting={FadeOutDown.duration(200)}
         style={styles.allergiesContainer}
       >
         {/* Allergy Modal Header */}
-        <LinearGradient
-          colors={["#FEF2F2", "#FFFFFF"]}
-          style={styles.allergiesHeaderGradient}
-        >
-          <View style={styles.allergiesHeader}>
-            <View style={styles.allergiesTitleContainer}>
-              <View style={styles.allergiesIconWrapper}>
-                <LinearGradient
-                  colors={["#FCA5A5", "#EF4444"]}
-                  style={styles.allergiesIconGradient}
-                >
-                  <MaterialCommunityIcons
-                    name="shield-alert"
-                    size={24}
-                    color="white"
-                  />
-                </LinearGradient>
+        <Animated.View entering={FadeInDown.delay(100).duration(200)}>
+          <LinearGradient
+            colors={["#FEF2F2", "#FFFFFF"]}
+            style={styles.allergiesHeaderGradient}
+          >
+            <View style={styles.allergiesHeader}>
+              <View style={styles.allergiesTitleContainer}>
+                <View style={styles.allergiesIconWrapper}>
+                  <LinearGradient
+                    colors={["#FCA5A5", "#EF4444"]}
+                    style={styles.allergiesIconGradient}
+                  >
+                    <MaterialCommunityIcons
+                      name="shield-alert"
+                      size={24}
+                      color="white"
+                    />
+                  </LinearGradient>
+                </View>
+                <View>
+                  <Text style={styles.allergiesTitle}>Allergen Protection</Text>
+                  <Text style={styles.allergiesSubtitleSmall}>
+                    Active filters
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.allergiesTitle}>Allergen Protection</Text>
-                <Text style={styles.allergiesSubtitleSmall}>
-                  Active filters
-                </Text>
-              </View>
+              <Pressable
+                onPress={onClose}
+                style={({ pressed }) => [
+                  styles.modalCloseButton,
+                  pressed && styles.modalCloseButtonPressed,
+                ]}
+              >
+                <AntDesign name="close" size={18} color="#9CA3AF" />
+              </Pressable>
             </View>
-            <Pressable
-              onPress={onClose}
-              style={({ pressed }) => [
-                styles.modalCloseButton,
-                pressed && styles.modalCloseButtonPressed,
-              ]}
-            >
-              <AntDesign name="close" size={18} color="#9CA3AF" />
-            </Pressable>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Allergy Count Badge */}
-        <View style={styles.allergyCountContainer}>
+        <Animated.View
+          entering={FadeInDown.delay(150).duration(200)}
+          style={styles.allergyCountContainer}
+        >
           <View style={styles.allergyCountBadge}>
             <Text style={styles.allergyCountBadgeText}>
               {allergies.length} allergen{allergies.length !== 1 ? "s" : ""}
@@ -87,15 +105,19 @@ export const AllergiesModal = ({
           <Text style={styles.allergiesSubtitle}>
             automatically filtered from search results
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Allergy List */}
         <ScrollView
           style={styles.allergiesList}
           showsVerticalScrollIndicator={false}
         >
-          {allergies.map((allergy) => (
-            <View key={allergy.id} style={styles.allergyItem}>
+          {allergies.map((allergy, index) => (
+            <Animated.View
+              key={allergy.id}
+              entering={FadeInDown.delay(200 + index * 40).duration(200)}
+              style={styles.allergyItem}
+            >
               <LinearGradient
                 colors={["#FFF5F5", "#FEFEFE"]}
                 style={styles.allergyItemGradient}
@@ -125,29 +147,44 @@ export const AllergiesModal = ({
                   <Ionicons name="shield-checkmark" size={20} color="#10B981" />
                 </View>
               </LinearGradient>
-            </View>
+            </Animated.View>
           ))}
         </ScrollView>
 
-        {/* Footer Info */}
-        <View style={styles.allergiesFooter}>
-          <LinearGradient
-            colors={["#F9FAFB", "#F3F4F6"]}
-            style={styles.allergiesFooterGradient}
+        {/* Footer with Settings Link */}
+        <Animated.View
+          entering={FadeInDown.delay(300).duration(200)}
+          style={styles.allergiesFooter}
+        >
+          <Pressable
+            onPress={handleGoToSettings}
+            style={({ pressed }) => [
+              styles.footerButton,
+              pressed && styles.footerButtonPressed,
+            ]}
           >
-            <View style={styles.allergiesFooterIcon}>
-              <Ionicons
-                name="information-circle"
-                size={20}
-                color={Colors.lilac[500]}
+            <LinearGradient
+              colors={["#F9FAFB", "#F3F4F6"]}
+              style={styles.allergiesFooterGradient}
+            >
+              <View style={styles.allergiesFooterIcon}>
+                <MaterialCommunityIcons
+                  name="cog"
+                  size={18}
+                  color={Colors.lilac[500]}
+                />
+              </View>
+              <Text style={styles.allergiesNote}>
+                Go to settings to manage your allergens
+              </Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={Colors.lilac[400]}
               />
-            </View>
-            <Text style={styles.allergiesNote}>
-              Ingredients containing these allergens are automatically hidden to
-              keep you safe.
-            </Text>
-          </LinearGradient>
-        </View>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
       </Animated.View>
     </Animated.View>
   );
@@ -324,6 +361,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 16,
     overflow: "hidden",
+  },
+  footerButton: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  footerButtonPressed: {
+    opacity: 0.8,
   },
   allergiesFooterGradient: {
     flexDirection: "row",
