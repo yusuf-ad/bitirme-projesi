@@ -105,11 +105,17 @@ export function EmptyMealSlot({
 
   const handleOpenAiRecipe = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Format date as YYYY-MM-DD without UTC conversion
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(selectedDate.getDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`;
+
     router.push({
       pathname: "/ai-recipe",
       params: {
         mealSlot,
-        selectedDate: selectedDate.toISOString().split("T")[0],
+        selectedDate: formattedDate,
         mealType: mealSlot,
       },
     });

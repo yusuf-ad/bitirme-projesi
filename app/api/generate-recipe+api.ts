@@ -163,6 +163,9 @@ ${ingredients.length > 0 ? ingredients.join(", ") : "Any common ingredients"}
 **Allergies/Intolerances (MUST AVOID):**
 ${allergies.length > 0 ? allergies.join(", ") : "None specified"}
 
+**STRICTLY FORBIDDEN INGREDIENTS (NEVER USE):**
+Pork, bacon, ham, prosciutto, pancetta, salami, pepperoni, chorizo, lard, pork belly, pork chops, pork loin, pork ribs, sausage (unless specified as beef/chicken/turkey), and any pork-derived products or by-products.
+
 **Diet Preferences:**
 ${dietPreferences.length > 0 ? dietPreferences.join(", ") : "None specified"}
 
