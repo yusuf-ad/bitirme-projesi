@@ -5,10 +5,7 @@ import { useDeleteMealItem } from "@/hooks/use-delete-meal-item";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ImageSourcePropType, StyleSheet, View } from "react-native";
-import Animated, {
-    FadeInDown,
-    SharedValue,
-} from "react-native-reanimated";
+import Animated, { FadeInDown, SharedValue } from "react-native-reanimated";
 import { EmptyMealSlot } from "./empty-meal-slot";
 
 interface DailyMealsListProps {
@@ -51,7 +48,11 @@ const DEFAULT_MEAL_DETAILS: Record<
   },
 };
 
-export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListProps) {
+export function DailyMealsList({
+  items,
+  selectedDate,
+  scrollY,
+}: DailyMealsListProps) {
   const deleteMutation = useDeleteMealItem();
   const [eatenMeals, setEatenMeals] = useState<Set<number>>(new Set());
   const [shouldAnimate, setShouldAnimate] = useState(true);
@@ -61,7 +62,7 @@ export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListP
     setShouldAnimate(true);
     const timer = setTimeout(() => setShouldAnimate(false), 1000);
     return () => clearTimeout(timer);
-  }, [selectedDate.toISOString()]);
+  }, []);
 
   // Group meals by type
   const mealsByType = new Map<MealSlot, MealPlanItemRecord>();
@@ -100,7 +101,11 @@ export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListP
             return (
               <Animated.View
                 key={mealType}
-                entering={shouldAnimate ? FadeInDown.delay(staggerDelay).duration(400).springify() : undefined}
+                entering={
+                  shouldAnimate
+                    ? FadeInDown.delay(staggerDelay).duration(400).springify()
+                    : undefined
+                }
               >
                 <EmptyMealSlot
                   mealType={details.label}
@@ -140,7 +145,11 @@ export function DailyMealsList({ items, selectedDate, scrollY }: DailyMealsListP
           return (
             <Animated.View
               key={item.id}
-              entering={shouldAnimate ? FadeInDown.delay(staggerDelay).duration(400).springify() : undefined}
+              entering={
+                shouldAnimate
+                  ? FadeInDown.delay(staggerDelay).duration(400).springify()
+                  : undefined
+              }
             >
               <MealCard
                 mealType={mealLabel}
