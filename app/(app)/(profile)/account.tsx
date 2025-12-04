@@ -4,10 +4,10 @@ import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
+import { Image as ExpoImage } from "expo-image";
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -28,8 +28,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const AVATARS = [
+  "https://api.dicebear.com/9.x/personas/png?seed=Felix2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Aneka2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Jake2&skinTone=f5d0c5&mouth=smirk",
+  "https://api.dicebear.com/9.x/personas/png?seed=Aiden2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Liliana2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Sam2&skinTone=f5d0c5&mouth=smirk",
+  "https://api.dicebear.com/9.x/personas/png?seed=Alexander2&skinTone=f5d0c5&mouth=smile",
+  "https://api.dicebear.com/9.x/personas/png?seed=Mason2&skinTone=f5d0c5&mouth=smirk",
+];
+
 export default function AccountScreen() {
-  const { profile, session } = useAuthContext();
+  const { profile, session, refreshProfile } = useAuthContext();
   const { top, bottom } = useSafeAreaInsets();
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark);
@@ -80,6 +91,8 @@ export default function AccountScreen() {
         .eq("id", session.user.id);
 
       if (error) throw error;
+      
+      await refreshProfile();
       Alert.alert("Success", "Your profile has been updated!");
       setIsEditing(false);
     } catch (error) {
@@ -232,11 +245,31 @@ export default function AccountScreen() {
           ]}
         >
           {/* Avatar */}
-          <View
+          <Pressable
             style={[styles.avatarContainer, { backgroundColor: Colors.lilac[600] }]}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setIsAvatarModalVisible(true);
+            }}
           >
-            <Text style={styles.avatarText}>{getUserInitials()}</Text>
-          </View>
+            {selectedAvatar ? (
+              <ExpoImage
+                source={{ uri: selectedAvatar }}
+                style={styles.avatarImage}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <Text style={styles.avatarText}>{getUserInitials()}</Text>
+            )}
+            <View style={styles.editBadge}>
+              <MaterialCommunityIcons
+                name="pencil"
+                size={14}
+                color={Colors.lilac[900]}
+              />
+            </View>
+          </Pressable>
 
           {/* Profile Info */}
           <View style={styles.profileInfo}>
@@ -460,6 +493,82 @@ export default function AccountScreen() {
           </Text>
         </Animated.View>
       </ScrollView>
+      {/* Avatar Selection Modal */}
+      <Modal
+        visible={isAvatarModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsAvatarModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: Colors.background.surface },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
+                Choose an Avatar
+              </Text>
+              <Pressable
+                onPress={() => setIsAvatarModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={Colors.text.secondary}
+                />
+              </Pressable>
+            </View>
+
+            <View style={styles.avatarGrid}>
+              {AVATARS.map((avatar, index) => (
+                <Pressable
+                  key={index}
+                  style={[
+                    styles.avatarOption,
+                    selectedAvatar === avatar && styles.selectedAvatarOption,
+                    {
+                      borderColor:
+                        selectedAvatar === avatar
+                          ? Colors.lilac[600]
+                          : "transparent",
+                    },
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedAvatar(avatar);
+                    setIsAvatarModalVisible(false);
+                  }}
+                >
+                  <ExpoImage
+                    source={{ uri: avatar }}
+                    style={styles.avatarOptionImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  {selectedAvatar === avatar && (
+                    <View
+                      style={[
+                        styles.checkBadge,
+                        { backgroundColor: Colors.lilac[600] },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="check"
+                        size={12}
+                        color="#FFF"
+                      />
+                    </View>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -694,5 +803,84 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 45,
+  },
+  editBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  avatarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+    justifyContent: "center",
+  },
+  avatarOption: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    padding: 2,
+    position: "relative",
+  },
+  selectedAvatarOption: {
+    // Border color handled inline
+  },
+  avatarOptionImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 36,
+  },
+  checkBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
   },
 });
