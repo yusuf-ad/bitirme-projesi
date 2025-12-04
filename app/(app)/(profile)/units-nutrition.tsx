@@ -26,7 +26,6 @@ export default function UnitsNutritionScreen() {
   const [gender, setGender] = useState(onboarding.selectedGender || "");
 
   // Nutrition State
-  // Nutrition State
   const selectedDietId = onboarding.selectedDietPreferences?.[0];
   
   // Default values (matching daily-overview.tsx)
@@ -39,19 +38,19 @@ export default function UnitsNutritionScreen() {
     const customTarget = onboarding.dietNutritionTargets?.[selectedDietId];
     
     if (customTarget) {
-        // User has custom targets
-        targetCalories = customTarget.calories;
-        targetCarbs = customTarget.carbs;
-        targetProtein = customTarget.protein;
-        targetFat = customTarget.fat;
+        // User has custom targets - use defaults if values are undefined
+        targetCalories = customTarget.calories ?? 2200;
+        targetCarbs = customTarget.carbs ?? 275;
+        targetProtein = customTarget.protein ?? 138;
+        targetFat = customTarget.fat ?? 61;
     } else {
         // Fallback to diet option defaults
         const dietOption = DIET_OPTIONS.find(d => d.id === selectedDietId);
         if (dietOption) {
-            targetCalories = dietOption.targetCalories;
-            targetCarbs = Math.round((targetCalories * dietOption.defaultMacros.carbohydrates) / 4);
-            targetProtein = Math.round((targetCalories * dietOption.defaultMacros.protein) / 4);
-            targetFat = Math.round((targetCalories * dietOption.defaultMacros.fat) / 9);
+            targetCalories = dietOption.targetCalories ?? 2200;
+            targetCarbs = Math.round((targetCalories * (dietOption.defaultMacros?.carbohydrates ?? 0.5)) / 4);
+            targetProtein = Math.round((targetCalories * (dietOption.defaultMacros?.protein ?? 0.25)) / 4);
+            targetFat = Math.round((targetCalories * (dietOption.defaultMacros?.fat ?? 0.25)) / 9);
         }
     }
   }
