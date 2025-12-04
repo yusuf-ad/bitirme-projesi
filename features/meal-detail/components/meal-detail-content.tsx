@@ -2,10 +2,10 @@ import { Colors } from "@/constants/theme";
 import { Recipe } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
 import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LayoutAnimation,
   Platform,
@@ -28,7 +28,8 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
+  withDelay,
+  withTiming
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -65,14 +66,75 @@ interface MacroData {
   amountLabel: string;
   percentLabel: string;
   color: string;
+  bgColor: string;
+  iconBgColor: string;
   percentValue: number;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
 }
 
-const MACRO_COLOR_MAP: Record<string, string> = {
-  protein: "#41D5B7",
-  fat: "#FCB205",
-  carbs: "#CB8395",
+const MACRO_CONFIG: Record<string, { color: string; bgColor: string; iconBgColor: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = {
+  protein: {
+    color: "#41D5B7",
+    bgColor: "#E8FAF6",
+    iconBgColor: "#C5F2E9",
+    icon: "heart-pulse"
+  },
+  fat: {
+    color: "#FCB205",
+    bgColor: "#FFF8E5",
+    iconBgColor: "#FFEDB8",
+    icon: "water"
+  },
+  carbs: {
+    color: "#CB8395",
+    bgColor: "#F9F0F2",
+    iconBgColor: "#F0D9DF",
+    icon: "silverware-fork-knife"
+  },
 };
+
+// Animated Nutrition Card Component
+function NutritionCard({ macro, index }: { macro: MacroData; index: number }) {
+  const progressWidth = useSharedValue(0);
+  const cardScale = useSharedValue(0.95);
+  const cardOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    // Smooth, subtle entrance animation
+    cardOpacity.value = withDelay(index * 60, withTiming(1, { duration: 200 }));
+    cardScale.value = withDelay(index * 60, withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }));
+    // Progress bar animation - smooth timing instead of spring
+    progressWidth.value = withDelay(
+      150 + index * 80,
+      withTiming(macro.percentValue, { duration: 400, easing: Easing.out(Easing.cubic) })
+    );
+  }, [macro.percentValue, index]);
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: cardOpacity.value,
+    transform: [{ scale: cardScale.value }],
+  }));
+
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
+  return (
+    <Animated.View style={[styles.nutritionCard, { backgroundColor: macro.bgColor }, cardAnimatedStyle]}>
+      <View style={[styles.nutritionIconContainer, { backgroundColor: macro.iconBgColor }]}>
+        <MaterialCommunityIcons name={macro.icon} size={22} color={macro.color} />
+      </View>
+      <Text style={[styles.nutritionAmount, { color: macro.color }]}>{macro.amountLabel}</Text>
+      <Text style={styles.nutritionLabel}>{macro.label}</Text>
+      <View style={styles.nutritionProgressTrack}>
+        <Animated.View
+          style={[styles.nutritionProgressFill, { backgroundColor: macro.color }, progressAnimatedStyle]}
+        />
+      </View>
+      <Text style={[styles.nutritionPercent, { color: macro.color }]}>{macro.percentLabel}</Text>
+    </Animated.View>
+  );
+}
 
 export function MealDetailContent({
   meal,
@@ -148,6 +210,8 @@ export function MealDetailContent({
   const readyInMinutes = meal.readyInMinutes
     ? `${meal.readyInMinutes} min`
     : "N/A";
+  const servingsCount = meal.servings ?? 1;
+  const servingsText = `${servingsCount} ${servingsCount === 1 ? "serving" : "servings"}`;
   const calories = findNutrientValue("Calories", nutrients);
   const caloriesAmount =
     typeof calories?.amount === "number" ? Math.round(calories.amount) : null;
@@ -161,25 +225,26 @@ export function MealDetailContent({
     const macroList = [
       {
         label: "Protein",
+        key: "protein",
         amount: protein.amount,
         unit: protein.unit,
-        color: MACRO_COLOR_MAP.protein,
       },
       {
         label: "Fat",
+        key: "fat",
         amount: fat.amount,
         unit: fat.unit,
-        color: MACRO_COLOR_MAP.fat,
       },
       {
         label: "Carbs",
+        key: "carbs",
         amount: carbs.amount,
         unit: carbs.unit,
-        color: MACRO_COLOR_MAP.carbs,
       },
     ];
 
     return macroList.map((macro) => {
+      const config = MACRO_CONFIG[macro.key];
       const percentValue = Math.round((macro.amount / totalGrams) * 100);
       const normalizedUnit = macro.unit
         ? macro.unit.toLowerCase() === "g"
@@ -191,7 +256,10 @@ export function MealDetailContent({
         amountLabel: `${Math.round(macro.amount)}${normalizedUnit}`,
         percentLabel: `${percentValue}%`,
         percentValue,
-        color: macro.color,
+        color: config.color,
+        bgColor: config.bgColor,
+        iconBgColor: config.iconBgColor,
+        icon: config.icon,
       };
     });
   }, [nutrients]);
@@ -407,6 +475,11 @@ export function MealDetailContent({
                 {caloriesAmount !== null ? `${caloriesAmount} kcal` : "—"}
               </Text>
             </View>
+            <Text style={styles.metaSeparator}>|</Text>
+            <View style={styles.metaItem}>
+              <Ionicons name="people-outline" size={18} color={Colors.gray[600]} />
+              <Text style={styles.metaText}>{servingsText}</Text>
+            </View>
           </View>
 
           {/* Cuisine and Diet Tags */}
@@ -431,36 +504,12 @@ export function MealDetailContent({
           ) : null}
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nutritions</Text>
+            <Text style={styles.sectionTitle}>Nutrition</Text>
           </View>
 
-          <View style={styles.macrosWrapper}>
-            {macros.map((macro) => (
-              <View key={macro.label} style={styles.macroColumn}>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        height: `${Math.min(macro.percentValue, 100)}%`,
-                        backgroundColor: macro.color,
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.macroInfo}>
-                  <Text style={styles.macroPercent}>{macro.percentLabel}</Text>
-                  <View style={styles.macroLabelContainer}>
-                    <Text
-                      style={[styles.macroAmount, { color: macro.color }]}
-                      accessibilityLabel={`${macro.label} amount`}
-                    >
-                      {macro.amountLabel}
-                    </Text>
-                    <Text style={styles.macroLabel}>{macro.label}</Text>
-                  </View>
-                </View>
-              </View>
+          <View style={styles.nutritionCardsWrapper}>
+            {macros.map((macro, index) => (
+              <NutritionCard key={macro.label} macro={macro} index={index} />
             ))}
           </View>
 
@@ -474,13 +523,13 @@ export function MealDetailContent({
                 accessibilityRole="tab"
               >
                 <Animated.View style={[styles.tabInner, ingredientsTabStyle]}>
-                  <Ionicons 
-                    name="leaf" 
-                    size={18} 
-                    color={activeTab === "ingredients" ? Colors.lilac[800] : Colors.gray[400]} 
+                  <Ionicons
+                    name="leaf"
+                    size={18}
+                    color={activeTab === "ingredients" ? Colors.lilac[800] : Colors.gray[400]}
                   />
                   <Text style={[
-                    styles.tabLabel, 
+                    styles.tabLabel,
                     activeTab === "ingredients" ? styles.tabLabelActive : styles.tabLabelInactive
                   ]}>
                     Ingredients
@@ -494,13 +543,13 @@ export function MealDetailContent({
                 accessibilityRole="tab"
               >
                 <Animated.View style={[styles.tabInner, instructionsTabStyle]}>
-                  <Ionicons 
-                    name="reader-outline" 
-                    size={18} 
-                    color={activeTab === "instructions" ? Colors.lilac[800] : Colors.gray[400]} 
+                  <Ionicons
+                    name="reader-outline"
+                    size={18}
+                    color={activeTab === "instructions" ? Colors.lilac[800] : Colors.gray[400]}
                   />
                   <Text style={[
-                    styles.tabLabel, 
+                    styles.tabLabel,
                     activeTab === "instructions" ? styles.tabLabelActive : styles.tabLabelInactive
                   ]}>
                     Instructions
@@ -813,66 +862,60 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: "Inter",
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 18,
+    fontWeight: "700",
     color: Colors.text.primary,
+    lineHeight: 22,
+  },
+  nutritionCardsWrapper: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  nutritionCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 2,
+  },
+  nutritionIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  nutritionAmount: {
+    fontFamily: "Inter",
+    fontSize: 20,
+    fontWeight: "700",
+    lineHeight: 24,
+  },
+  nutritionLabel: {
+    fontFamily: "Inter",
+    fontSize: 13,
+    fontWeight: "500",
+    color: Colors.gray[600],
     lineHeight: 16,
   },
-  macrosWrapper: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 0,
-    height: 81,
-  },
-  macroColumn: {
-    flex: 1,
-    flexDirection: "row",
-    alignSelf: "stretch",
-    gap: 10,
-    paddingHorizontal: 10,
-  },
-  progressTrack: {
-    width: 8,
-    alignSelf: "stretch",
-    borderRadius: 4,
-    backgroundColor: "#F5F2F5",
+  nutritionProgressTrack: {
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
+    marginTop: 6,
     overflow: "hidden",
-    justifyContent: "flex-end",
   },
-  progressFill: {
-    width: "100%",
-    borderRadius: 4,
+  nutritionProgressFill: {
+    height: "100%",
+    borderRadius: 2.5,
   },
-  macroInfo: {
-    flex: 1,
-    flexDirection: "column",
-    justifyContent: "center",
-    gap: 10,
-  },
-  macroPercent: {
+  nutritionPercent: {
     fontFamily: "Inter",
     fontSize: 12,
     fontWeight: "600",
-    color: Colors.text.primary,
-    lineHeight: 16,
-  },
-  macroLabelContainer: {
-    height: 34,
-  },
-  macroAmount: {
-    fontFamily: "Inter",
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: 16,
-  },
-  macroLabel: {
-    fontFamily: "Inter",
-    fontSize: 12,
-    fontWeight: "500",
-    color: Colors.text.primary,
-    lineHeight: 16,
+    textAlign: "right",
+    marginTop: 2,
   },
   tabsOuterContainer: {
     marginTop: 20,
