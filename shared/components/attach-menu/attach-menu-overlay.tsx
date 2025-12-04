@@ -84,6 +84,13 @@ export function AttachMenuOverlay() {
     }, ANIMATION_DURATION);
   };
 
+  const handleAIChat = () => {
+    closeMenu();
+    setTimeout(() => {
+      router.push("/ai-chat");
+    }, ANIMATION_DURATION);
+  };
+
   const getMenuConfig = (): MenuConfig => {
     switch (currentRoute) {
       case "index":
@@ -99,6 +106,11 @@ export function AttachMenuOverlay() {
               icon: "sparkles-outline",
               label: "AI Meal Plan",
               onPress: handleAIPlan,
+            },
+            {
+              icon: "chatbubble-ellipses-outline",
+              label: "AI Chat",
+              onPress: handleAIChat,
             },
           ],
         };

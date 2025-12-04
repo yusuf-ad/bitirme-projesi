@@ -120,7 +120,7 @@ export function RulerPickerModal({
             // Let's stick to the user's request: "solda tuttukça o hızda azaltsın"
             // So speed is proportional to distance.
             
-            const delta = (magnitude - 10) * 0.05 * direction; // 0.05 factor
+            const delta = (magnitude - 10) * 0.0015 * direction; // 0.0015 factor
             
             const newValue = committedValue.current + delta;
             const clamped = Math.max(min, Math.min(max, newValue));

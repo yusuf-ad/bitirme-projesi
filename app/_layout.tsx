@@ -4,8 +4,8 @@ import AuthProvider from "@/providers/auth-provider";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
 import { ThemeProvider, useTheme } from "@/providers/theme-provider";
 import {
-  AttachMenuOverlay,
-  AttachMenuProvider,
+    AttachMenuOverlay,
+    AttachMenuProvider,
 } from "@/shared/components/attach-menu";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -40,6 +40,7 @@ function RootNavigator() {
           <Stack.Screen name="(add)" options={{ headerShown: false }} />
           <Stack.Screen name="shopping-list" options={{ headerShown: false }} />
           <Stack.Screen name="ai-recipe" options={{ headerShown: false }} />
+          <Stack.Screen name="ai-chat" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={!isLoggedIn}>
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
