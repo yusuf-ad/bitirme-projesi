@@ -164,7 +164,13 @@ export function DailyMealsList({
                 fat={fat}
                 isEaten={eatenMeals.has(item.id)}
                 onPress={() =>
-                  router.push(`/(meal)/${item.spoonacular_recipe_id}`)
+                  router.push({
+                    pathname: "/(meal)/[id]",
+                    params: {
+                      id: item.spoonacular_recipe_id,
+                      isAiGenerated: item.is_ai_generated ? "true" : "false",
+                    },
+                  })
                 }
                 onDelete={() => handleDelete(item.id)}
                 onToggleEaten={(eaten) => handleToggleEaten(item.id, eaten)}

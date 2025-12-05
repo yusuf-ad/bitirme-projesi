@@ -19,14 +19,20 @@ import { MealDetailContent } from "./meal-detail-content";
 interface MealDetailScreenProps {
   mealId: number | null;
   mealSlot?: string;
+  isAiGenerated?: boolean;
 }
 
-export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
+export function MealDetailScreen({
+  mealId,
+  mealSlot,
+  isAiGenerated,
+}: MealDetailScreenProps) {
   const router = useRouter();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
   const { data, isPending, isRefetching, refetch, error } = useMealDetail(
-    canLoadMeal ? mealId : null
+    canLoadMeal ? mealId : null,
+    isAiGenerated
   );
 
   const { favoriteIds, toggleFavorite } = useFavoriteRecipes();
@@ -80,7 +86,7 @@ export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
     const params: any = {
       recipe: JSON.stringify(payload),
     };
-    
+
     if (mealSlot) {
       params.mealSlot = mealSlot;
     }

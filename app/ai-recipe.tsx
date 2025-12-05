@@ -343,6 +343,7 @@ export default function AiRecipe() {
           ready_in_minutes: generatedRecipe.readyInMinutes ?? null,
           meal_date: dateString,
           meal_type: mealType,
+          is_ai_generated: true,
         })
         .select()
         .single();

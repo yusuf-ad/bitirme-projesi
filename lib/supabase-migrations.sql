@@ -28,6 +28,7 @@ CREATE TABLE public.meal_plan_items (
   carbs_per_serving numeric,
   protein_per_serving numeric,
   fat_per_serving numeric,
+  is_ai_generated boolean NOT NULL DEFAULT false,
   CONSTRAINT meal_plan_items_pkey PRIMARY KEY (id),
   CONSTRAINT meal_plan_items_meal_plan_id_fkey FOREIGN KEY (meal_plan_id) REFERENCES public.meal_plans(id)
 );

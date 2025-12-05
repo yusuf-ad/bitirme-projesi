@@ -59,4 +59,5 @@ export interface MealPlanItemRecord {
   ready_in_minutes: number | null;
   meal_date: string;
   meal_type: MealSlot;
+  is_ai_generated: boolean;
 }
