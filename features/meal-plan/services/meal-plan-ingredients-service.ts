@@ -13,6 +13,7 @@ import {
   getRecipesInformationBulk,
   Recipe,
 } from "@/lib/spoonacular";
+import { getAiRecipeById, isAiRecipeId } from "@/lib/supabase-ai-recipes";
 import { MealPlanItemRecord } from "../types";
 
 /**
@@ -41,21 +42,68 @@ export function getRecipeIds(mealPlanItems: MealPlanItemRecord[]): number[] {
 }
 
 /**
+ * Separate meal plan items into AI-generated and Spoonacular recipes
+ * Uses the is_ai_generated flag from database for reliable detection
+ */
+export function separateMealPlanItems(mealPlanItems: MealPlanItemRecord[]): {
+  aiRecipeIds: number[];
+  spoonacularRecipeIds: number[];
+} {
+  const aiRecipeIds = new Set<number>();
+  const spoonacularRecipeIds = new Set<number>();
+
+  for (const item of mealPlanItems) {
+    // Use is_ai_generated flag from database, fall back to ID-based detection
+    const isAi =
+      item.is_ai_generated ?? isAiRecipeId(item.spoonacular_recipe_id);
+
+    if (isAi) {
+      aiRecipeIds.add(item.spoonacular_recipe_id);
+    } else {
+      spoonacularRecipeIds.add(item.spoonacular_recipe_id);
+    }
+  }
+
+  return {
+    aiRecipeIds: Array.from(aiRecipeIds),
+    spoonacularRecipeIds: Array.from(spoonacularRecipeIds),
+  };
+}
+
+/**
  * Fetch full recipe details with ingredients for multiple recipes
+ * Handles both AI-generated recipes and Spoonacular recipes
  */
 export async function fetchRecipesWithIngredients(
-  recipeIds: number[]
+  mealPlanItems: MealPlanItemRecord[]
 ): Promise<Recipe[]> {
-  if (recipeIds.length === 0) return [];
+  if (mealPlanItems.length === 0) return [];
 
-  // Spoonacular bulk endpoint can handle up to 100 IDs at once
-  const BATCH_SIZE = 100;
+  // Separate AI and Spoonacular recipe IDs using database flag
+  const { aiRecipeIds, spoonacularRecipeIds } =
+    separateMealPlanItems(mealPlanItems);
+
   const allRecipes: Recipe[] = [];
 
-  for (let i = 0; i < recipeIds.length; i += BATCH_SIZE) {
-    const batch = recipeIds.slice(i, i + BATCH_SIZE);
-    const recipes = await getRecipesInformationBulk(batch);
-    allRecipes.push(...recipes);
+  // Fetch AI-generated recipes from Supabase
+  if (aiRecipeIds.length > 0) {
+    const aiRecipePromises = aiRecipeIds.map((id) => getAiRecipeById(id));
+    const aiRecipes = await Promise.all(aiRecipePromises);
+    // Filter out null results (recipes that weren't found)
+    const validAiRecipes = aiRecipes.filter((r): r is Recipe => r !== null);
+    allRecipes.push(...validAiRecipes);
+  }
+
+  // Fetch Spoonacular recipes in batches
+  if (spoonacularRecipeIds.length > 0) {
+    // Spoonacular bulk endpoint can handle up to 100 IDs at once
+    const BATCH_SIZE = 100;
+
+    for (let i = 0; i < spoonacularRecipeIds.length; i += BATCH_SIZE) {
+      const batch = spoonacularRecipeIds.slice(i, i + BATCH_SIZE);
+      const recipes = await getRecipesInformationBulk(batch);
+      allRecipes.push(...recipes);
+    }
   }
 
   return allRecipes;
@@ -93,13 +141,10 @@ export async function getMissingIngredients(
   comparison: IngredientComparisonResult;
   mergedMissingIngredients: RecipeIngredient[];
 }> {
-  // 1. Get unique recipe IDs
-  const recipeIds = getRecipeIds(mealPlanItems);
+  // 1. Fetch full recipe details (handles AI vs Spoonacular separation internally)
+  const recipes = await fetchRecipesWithIngredients(mealPlanItems);
 
-  // 2. Fetch full recipe details
-  const recipes = await fetchRecipesWithIngredients(recipeIds);
-
-  // 3. Extract all ingredients
+  // 2. Extract all ingredients
   const allIngredients = extractIngredients(recipes);
 
   // 4. Merge duplicate ingredients
@@ -194,6 +239,7 @@ export async function previewMissingIngredients(
 
 export const mealPlanIngredientsService = {
   getRecipeIds,
+  separateMealPlanItems,
   fetchRecipesWithIngredients,
   extractIngredients,
   getMissingIngredients,
