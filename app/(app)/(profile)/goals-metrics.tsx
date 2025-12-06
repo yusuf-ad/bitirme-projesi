@@ -172,7 +172,10 @@ export default function GoalsMetricsScreen() {
                   onPress={isEditing ? () => handleToggleGoal(option.id) : undefined}
                   disabled={!isEditing}
                 >
-                  <View style={[styles.goalIconContainer, isSelected && styles.goalIconContainerSelected]}>
+                  <View style={[
+                    styles.goalIconCircle,
+                    isSelected && styles.goalIconCircleSelected
+                  ]}>
                     <Image
                       source={option.icon}
                       style={styles.goalIcon}
@@ -182,7 +185,7 @@ export default function GoalsMetricsScreen() {
                       <View style={styles.checkmarkBadge}>
                         <MaterialCommunityIcons
                           name="check-circle"
-                          size={16}
+                          size={18}
                           color={Colors.green[900]}
                         />
                       </View>
@@ -193,6 +196,7 @@ export default function GoalsMetricsScreen() {
                       styles.goalTitle,
                       isSelected && styles.goalTitleSelected,
                     ]}
+                    numberOfLines={2}
                   >
                     {option.title.replace("\n", " ")}
                   </Text>
@@ -217,14 +221,14 @@ export default function GoalsMetricsScreen() {
           </View>
 
           <View style={styles.hologramContainer}>
-            {/* Hologram Image */}
+            {/* Hologram Image - Full Background */}
             <Image
               source={bodyImageSource}
               style={[
                 styles.hologramImage,
                 { transform: [{ scaleY: scaleY }] }
               ]}
-              contentFit="contain"
+              contentFit="cover"
             />
 
             {/* Scanning Line Animation */}
@@ -235,7 +239,7 @@ export default function GoalsMetricsScreen() {
                   transform: [{
                     translateY: scanAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0, 300] // Adjust based on container height
+                      outputRange: [0, 340]
                     })
                   }]
                 }
@@ -246,46 +250,46 @@ export default function GoalsMetricsScreen() {
             <View style={styles.metricsOverlay}>
                {/* Left Side Metrics */}
                <View style={styles.metricLeft}>
-                  <View style={styles.metricItem}>
+                  <View style={styles.metricCard}>
                     <Text style={styles.metricLabelHolo}>HEIGHT</Text>
-                    <Text style={styles.metricValueHolo}>{onboarding.height || "--"} <Text style={styles.unit}>cm</Text></Text>
-                    <View style={styles.connectorLeft} />
+                    <Text style={styles.metricValueHolo}>{onboarding.height || "--"}<Text style={styles.unit}> cm</Text></Text>
                   </View>
-                  <View style={[styles.metricItem, { marginTop: 40 }]}>
+                  <View style={styles.metricCard}>
                     <Text style={styles.metricLabelHolo}>WEIGHT</Text>
-                    <Text style={styles.metricValueHolo}>{onboarding.weight || "--"} <Text style={styles.unit}>kg</Text></Text>
-                    <View style={styles.connectorLeft} />
+                    <Text style={styles.metricValueHolo}>{onboarding.weight || "--"}<Text style={styles.unit}> kg</Text></Text>
                   </View>
-                  <View style={[styles.metricItem, { marginTop: 40 }]}>
+                  <View style={styles.metricCard}>
                     <Text style={styles.metricLabelHolo}>BODY FAT</Text>
-                    <Text style={styles.metricValueHolo}>{bodyFat > 0 ? bodyFat.toFixed(1) : "--"} <Text style={styles.unit}>%</Text></Text>
-                    <View style={styles.connectorLeft} />
+                    <Text style={styles.metricValueHolo}>{bodyFat > 0 ? bodyFat.toFixed(1) : "--"}<Text style={styles.unit}> %</Text></Text>
                   </View>
                </View>
 
                {/* Right Side Metrics */}
                <View style={styles.metricRight}>
-                  <View style={styles.metricItem}>
+                  <View style={[styles.metricCard, styles.metricCardRight]}>
                     <Text style={styles.metricLabelHolo}>AGE</Text>
-                    <Text style={styles.metricValueHolo}>{onboarding.age || "--"} <Text style={styles.unit}>yo</Text></Text>
-                    <View style={styles.connectorRight} />
+                    <Text style={styles.metricValueHolo}>{onboarding.age || "--"}<Text style={styles.unit}> yo</Text></Text>
                   </View>
-                  <View style={[styles.metricItem, { marginTop: 40 }]}>
+                  <View style={[styles.metricCard, styles.metricCardRight]}>
                     <Text style={styles.metricLabelHolo}>GENDER</Text>
                     <Text style={styles.metricValueHolo}>
-                      {onboarding.selectedGender === "male" ? "MALE" : 
-                       onboarding.selectedGender === "female" ? "FEMALE" : "--"}
+                      {onboarding.selectedGender === "male" ? "M" : 
+                       onboarding.selectedGender === "female" ? "F" : "--"}
                     </Text>
-                    <View style={styles.connectorRight} />
                   </View>
-                   <View style={[styles.metricItem, { marginTop: 40 }]}>
+                  <View style={[styles.metricCard, styles.metricCardRight]}>
                     <Text style={styles.metricLabelHolo}>IDEAL</Text>
                     <Text style={styles.metricValueHolo}>
-                      {idealWeightMin.toFixed(0)}-{idealWeightMax.toFixed(0)} <Text style={styles.unit}>kg</Text>
+                      {idealWeightMin.toFixed(0)}-{idealWeightMax.toFixed(0)}<Text style={styles.unit}> kg</Text>
                     </Text>
-                    <View style={styles.connectorRight} />
                   </View>
                </View>
+            </View>
+
+            {/* BMI Badge */}
+            <View style={styles.bmiBadge}>
+              <Text style={styles.bmiLabel}>BMI</Text>
+              <Text style={styles.bmiValue}>{bmi.toFixed(1)}</Text>
             </View>
           </View>
         </View>
@@ -352,56 +356,55 @@ const styles = StyleSheet.create({
   goalsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 16,
-    justifyContent: "space-between", // Better spacing for 2 columns
+    justifyContent: "space-between",
+    rowGap: 20,
   },
   goalItem: {
+    width: (width - 72) / 4,
     alignItems: "center",
-    width: (width - 48 - 16) / 2, // 2 columns: (screen width - padding - gap) / 2
-    gap: 12,
-    marginBottom: 16,
   },
   goalItemUnselected: {
     opacity: 0.4,
   },
-  goalIconContainer: {
-    width: 100, // Significantly larger
-    height: 100,
+  goalIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#F5F5F5",
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 8,
     position: "relative",
-    backgroundColor: "#F8F9FA", // Light background to frame the icon slightly without heavy borders
-    borderRadius: 50, // Circular
+    borderWidth: 2,
+    borderColor: "transparent",
+    overflow: "hidden",
   },
-  goalIconContainerSelected: {
-    backgroundColor: Colors.lilac[100], // Highlight selected background
+  goalIconCircleSelected: {
+    backgroundColor: "#F0EDFF",
+    borderColor: Colors.lilac[400],
   },
   goalIcon: {
-    width: "70%", // Icon takes up most of the container
-    height: "70%",
+    width: 56,
+    height: 56,
   },
   checkmarkBadge: {
     position: "absolute",
-    top: 0,
-    right: 0,
+    top: -4,
+    right: -4,
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 10,
+    zIndex: 10,
   },
   goalTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "500",
     color: Colors.text.secondary,
     textAlign: "center",
+    lineHeight: 16,
   },
   goalTitleSelected: {
     color: Colors.lilac[900],
-    fontWeight: "700",
+    fontWeight: "600",
   },
   emptyText: {
     fontSize: 16,
@@ -425,19 +428,15 @@ const styles = StyleSheet.create({
   },
   hologramContainer: {
     height: 400,
-    backgroundColor: "#050510", // Deep dark blue/black
     borderRadius: 16,
     position: "relative",
     overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#1A1A30",
   },
   hologramImage: {
-    width: "80%",
-    height: "90%",
-    opacity: 0.9,
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    zIndex: 1,
   },
   scanLine: {
     position: "absolute",
@@ -445,11 +444,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: "#00FFFF", // Cyan scan line
+    backgroundColor: "#00FFFF",
     shadowColor: "#00FFFF",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
     elevation: 5,
     zIndex: 10,
   },
@@ -457,57 +456,79 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 40,
+    paddingHorizontal: 12,
+    paddingVertical: 35,
+    zIndex: 5,
   },
   metricLeft: {
-    alignItems: "flex-start",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
   metricRight: {
+    justifyContent: "space-between",
     alignItems: "flex-end",
-    justifyContent: "center",
   },
-  metricItem: {
-    marginBottom: 20,
-    position: "relative",
+  metricCard: {
+    backgroundColor: "rgba(0, 20, 40, 0.7)",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: "#00FFFF",
+  },
+  metricCardRight: {
+    borderLeftWidth: 0,
+    borderRightWidth: 2,
+    borderRightColor: "#00FFFF",
+    alignItems: "flex-end",
   },
   metricLabelHolo: {
-    color: "#4A90E2", // Tech blue
-    fontSize: 10,
+    color: "#00FFFF",
+    fontSize: 9,
     fontWeight: "700",
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     marginBottom: 2,
+    opacity: 0.8,
   },
   metricValueHolo: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    textShadowColor: "rgba(74, 144, 226, 0.5)",
+    textShadowColor: "rgba(0, 255, 255, 0.5)",
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    textShadowRadius: 8,
   },
   unit: {
-    fontSize: 12,
-    color: "#8899A6",
+    fontSize: 11,
+    color: "#66CCCC",
     fontWeight: "500",
   },
-  connectorLeft: {
+  bmiBadge: {
     position: "absolute",
-    right: -15,
-    top: "50%",
-    width: 10,
-    height: 1,
-    backgroundColor: "#4A90E2",
-    opacity: 0.5,
+    bottom: 12,
+    alignSelf: "center",
+    backgroundColor: "rgba(0, 255, 255, 0.15)",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 255, 255, 0.3)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    zIndex: 5,
   },
-  connectorRight: {
-    position: "absolute",
-    left: -15,
-    top: "50%",
-    width: 10,
-    height: 1,
-    backgroundColor: "#4A90E2",
-    opacity: 0.5,
+  bmiLabel: {
+    color: "#00FFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  bmiValue: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    textShadowColor: "rgba(0, 255, 255, 0.5)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
   },
 });
