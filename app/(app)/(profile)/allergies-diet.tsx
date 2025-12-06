@@ -1,17 +1,20 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { TasteAllergies } from "@/features/onboarding/sections/taste";
+import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
     resolveAllergiesFast,
     resolveDietPreferences,
     type DisplayAllergy,
-    type DisplayDietPreference
+    type DisplayDietPreference,
 } from "@/lib/allergies-diet-helpers";
 import { supabase } from "@/lib/supabase";
+import { updateUserTastePreferences } from "@/lib/supabase-onboarding";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -22,14 +25,18 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    View
+    View,
 } from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AllergiesDietScreen() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
+  const { selection } = useHaptics();
   const [dietItems, setDietItems] = useState<DisplayDietPreference[]>([]);
   const [allergyItems, setAllergyItems] = useState<DisplayAllergy[]>([]);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -41,13 +48,9 @@ export default function AllergiesDietScreen() {
   }, []);
 
   useEffect(() => {
-    // Resolve IDs to display data when onboarding data loads
     if (!onboarding.isLoading) {
-      // Resolve diet preferences
       const diets = resolveDietPreferences(onboarding.selectedDietPreferences);
       setDietItems(diets);
-      
-      // Resolve allergies (fast version without API calls)
       const allergies = resolveAllergiesFast(onboarding.selectedAllergies);
       setAllergyItems(allergies);
     }
@@ -57,122 +60,59 @@ export default function AllergiesDietScreen() {
     return <ProfessionalLoadingScreen />;
   }
 
-  const renderDietItem = ({ item }: { item: DisplayDietPreference }) => (
-    <View style={styles.gridItem}>
-      <View style={styles.imageContainer}>
-        <Image source={item.image} style={styles.dietImage} />
-      </View>
-      <Text style={styles.gridItemLabel} numberOfLines={2}>
+  const renderDietChip = ({ item }: { item: DisplayDietPreference }) => (
+    <View style={[styles.chip, { backgroundColor: Colors.background.surface }]}>
+      <Image source={item.image} style={styles.chipImage} />
+      <Text style={[styles.chipLabel, { color: Colors.text.primary }]} numberOfLines={1}>
         {item.label}
       </Text>
     </View>
   );
 
-  const renderAllergyItem = ({ item }: { item: DisplayAllergy }) => (
-    <View style={[styles.gridItem, styles.allergyGridItem]}>
-      <View style={[styles.imageContainer, styles.allergyImageContainer]}>
-        {item.imageUrl ? (
-          <Image
-            source={{ uri: item.imageUrl }}
-            style={styles.allergyImage}
-            defaultSource={require("@/assets/images/empty-pantry.png")}
-          />
-        ) : (
-          <View style={styles.allergyImagePlaceholder}>
-            <MaterialCommunityIcons name="food-off" size={24} color="#EF4444" />
-          </View>
-        )}
-      </View>
-      <Text style={[styles.gridItemLabel, styles.allergyLabel]} numberOfLines={2}>
+  const renderAllergyChip = ({ item }: { item: DisplayAllergy }) => (
+    <View style={[styles.chip, styles.allergyChip]}>
+      {item.imageUrl ? (
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={styles.chipImage}
+          defaultSource={require("@/assets/images/empty-pantry.png")}
+        />
+      ) : (
+        <View style={styles.allergyChipIcon}>
+          <MaterialCommunityIcons name="food-off" size={16} color="#EF4444" />
+        </View>
+      )}
+      <Text style={[styles.chipLabel, styles.allergyChipLabel]} numberOfLines={1}>
         {item.name}
       </Text>
     </View>
   );
 
   const handleEditAllergies = () => {
+    selection();
     setTempSelectedAllergies(onboarding.selectedAllergies);
     setIsEditModalVisible(true);
   };
 
   const handleSaveAllergies = async () => {
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         console.error("No user logged in");
-        alert("Error: You must be logged in to save allergies");
         return;
       }
 
-      console.log("Saving allergies for user:", user.id);
-      console.log("New allergies list:", tempSelectedAllergies);
-
-      // Update local state first
+      // Update local state
       onboarding.setSelectedAllergies(tempSelectedAllergies);
       
-      // Prepare complete taste preferences data
-      const tasteData = {
-        meal_types: onboarding.selectedMeals,
-        cuisines: onboarding.selectedCuisines,
-        allergies_dislikes: tempSelectedAllergies, // NEW allergies list
-        diet_preferences: onboarding.selectedDietPreferences,
-        cooking_skill_level: onboarding.selectedCookingSkill || null,
-        diet_nutrition_targets: onboarding.dietNutritionTargets,
-        cuisine_dislikes: onboarding.dislikedCuisines,
-      };
+      // Save directly to Supabase
+      await updateUserTastePreferences(user.id, {
+        allergies_dislikes: tempSelectedAllergies,
+      });
 
-      // First check if user taste preferences exist
-      const { data: existingPrefs, error: fetchError } = await supabase
-        .from('user_taste_preferences')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error("Error fetching taste preferences:", fetchError);
-        throw fetchError;
-      }
-
-      let result;
-      if (!existingPrefs) {
-        // Create new taste preferences if they don't exist
-        console.log("Creating new user taste preferences");
-        result = await supabase
-          .from('user_taste_preferences')
-          .insert({
-            user_id: user.id,
-            ...tasteData
-          });
-      } else {
-        // Update existing taste preferences
-        console.log("Updating existing user taste preferences");
-        result = await supabase
-          .from('user_taste_preferences')
-          .update(tasteData)
-          .eq('user_id', user.id);
-      }
-
-      if (result.error) {
-        console.error("Supabase error:", result.error);
-        alert(`Database error: ${result.error.message}`);
-        throw result.error;
-      }
-
-      console.log("Successfully saved to Supabase");
-
-      // Also update AsyncStorage for consistency
-      await AsyncStorage.setItem(
-        "onboarding_taste",
-        JSON.stringify(tasteData)
-      );
-
-      console.log("Successfully saved allergies to Supabase:", tempSelectedAllergies);
       setIsEditModalVisible(false);
     } catch (error) {
       console.error("Error saving allergies:", error);
-      alert(`Error saving allergies: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      // Revert on error
       setTempSelectedAllergies(onboarding.selectedAllergies);
     }
   };
@@ -183,138 +123,177 @@ export default function AllergiesDietScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
+    <View style={[styles.container, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color={Colors.text.primary}
-          />
+      <View style={[styles.header, { backgroundColor: Colors.background.surface }]}>
+        <Pressable
+          onPress={() => {
+            selection();
+            router.back();
+          }}
+          style={styles.backButton}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.text.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("allergiesDiet.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
+          {t("allergiesDiet.title")}
+        </Text>
         <View style={styles.headerRight} />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingBottom: bottom + 20 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: bottom + 100 }]}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Diet Preferences Section */}
-        {dietItems.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.iconContainer}>
-                <MaterialCommunityIcons
-                  name="leaf"
-                  size={20}
-                  color="#FFFFFF"
-                />
-              </View>
-              <View>
-                <Text style={styles.sectionTitle}>{t("allergiesDiet.dietPreferences")}</Text>
-                <Text style={styles.sectionSubtitle}>
-                  {dietItems.length} {dietItems.length !== 1 ? t("allergiesDiet.preferencesSelectedPlural") : t("allergiesDiet.preferencesSelected")} {t("allergiesDiet.selected")}
+        {/* Hero Section */}
+        <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.heroSection}>
+          <LinearGradient
+            colors={[Colors.lilac[100], Colors.lilac[200]]}
+            style={styles.heroGradient}
+          >
+            <View style={styles.heroContent}>
+              <Text style={styles.heroEmoji}>🥗</Text>
+              <View style={styles.heroTextContainer}>
+                <Text style={[styles.heroTitle, { color: Colors.lilac[900] }]}>
+                  {t("allergiesDiet.heroTitle") || "Your Diet Profile"}
+                </Text>
+                <Text style={[styles.heroSubtitle, { color: Colors.text.secondary }]}>
+                  {t("allergiesDiet.heroSubtitle") || "Manage your dietary preferences and restrictions"}
                 </Text>
               </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Stats Row */}
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.statsContainer}>
+          <View style={[styles.statChip, { backgroundColor: `${Colors.lilac[900]}12` }]}>
+            <MaterialCommunityIcons name="leaf" size={14} color={Colors.lilac[900]} />
+            <Text style={[styles.statChipValue, { color: Colors.lilac[900] }]}>{dietItems.length}</Text>
+            <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>
+              {t("allergiesDiet.diets") || "Diets"}
+            </Text>
+          </View>
+          
+          <View style={[styles.statChip, { backgroundColor: "#EF444410" }]}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={14} color="#EF4444" />
+            <Text style={[styles.statChipValue, { color: "#EF4444" }]}>{allergyItems.length}</Text>
+            <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>
+              {t("allergiesDiet.allergies") || "Allergies"}
+            </Text>
+          </View>
+        </Animated.View>
+
+        {/* Diet Preferences Section */}
+        {dietItems.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: `${Colors.lilac[900]}15` }]}>
+                <MaterialCommunityIcons name="leaf" size={18} color={Colors.lilac[900]} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+                {t("allergiesDiet.dietPreferences")}
+              </Text>
             </View>
             
             <FlatList
               data={dietItems}
-              renderItem={renderDietItem}
-              numColumns={3}
+              renderItem={renderDietChip}
               keyExtractor={(item) => `diet-${item.id}`}
-              scrollEnabled={false}
-              contentContainerStyle={styles.gridContainer}
-              columnWrapperStyle={styles.gridRow}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipList}
             />
-          </View>
+          </Animated.View>
         )}
 
-        {/* Allergies & Dislikes Section */}
-        {allergyItems.length > 0 && (
-          <View style={[styles.section, styles.allergySection]}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.iconContainer, styles.allergyIconContainer]}>
-                <MaterialCommunityIcons
-                  name="alert-circle-outline"
-                  size={20}
-                  color="#FFFFFF"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>{t("allergiesDiet.allergiesTitle")}</Text>
-                <Text style={styles.sectionSubtitle}>
-                  {allergyItems.length} {allergyItems.length !== 1 ? t("allergiesDiet.itemsAvoidedPlural") : t("allergiesDiet.itemsAvoided")} {t("allergiesDiet.avoided")}
-                </Text>
-              </View>
-              <Pressable onPress={handleEditAllergies} style={styles.editButton}>
-                <MaterialCommunityIcons name="pencil" size={20} color="#EF4444" />
-              </Pressable>
+        {/* Allergies Section */}
+        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIcon, { backgroundColor: "#EF444415" }]}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={18} color="#EF4444" />
             </View>
-            
+            <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+              {t("allergiesDiet.allergiesTitle")}
+            </Text>
+            <Pressable
+              onPress={handleEditAllergies}
+              style={[styles.editButton, { backgroundColor: "#EF444410" }]}
+            >
+              <MaterialCommunityIcons name="pencil" size={16} color="#EF4444" />
+              <Text style={styles.editButtonText}>{t("common.edit") || "Edit"}</Text>
+            </Pressable>
+          </View>
+          
+          {allergyItems.length > 0 ? (
             <FlatList
               data={allergyItems}
-              renderItem={renderAllergyItem}
-              numColumns={3}
+              renderItem={renderAllergyChip}
               keyExtractor={(item) => `allergy-${item.id}`}
-              scrollEnabled={false}
-              contentContainerStyle={styles.gridContainer}
-              columnWrapperStyle={styles.gridRow}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipList}
             />
-          </View>
-        )}
+          ) : (
+            <Pressable
+              onPress={handleEditAllergies}
+              style={[styles.emptyChipList, { borderColor: Colors.gray[300] }]}
+            >
+              <MaterialCommunityIcons name="plus-circle-outline" size={20} color={Colors.text.secondary} />
+              <Text style={[styles.emptyChipText, { color: Colors.text.secondary }]}>
+                {t("allergiesDiet.addAllergies") || "Add allergies or dislikes"}
+              </Text>
+            </Pressable>
+          )}
+        </Animated.View>
+
+        {/* Info Card */}
+        <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.infoCard}>
+          <LinearGradient colors={["#FEF3C7", "#FDE68A"]} style={styles.infoGradient}>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoEmoji}>💡</Text>
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoTitle}>{t("allergiesDiet.infoTitle") || "Why this matters"}</Text>
+                <Text style={styles.infoText}>
+                  {t("allergiesDiet.infoText") || "Your dietary preferences help us filter recipes and create personalized meal plans that work for you."}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Empty State */}
         {dietItems.length === 0 && allergyItems.length === 0 && (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyStateIconContainer}>
-              <MaterialCommunityIcons
-                name="information-outline"
-                size={48}
-                color={Colors.lilac[500]}
-              />
+          <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.emptyState}>
+            <View style={[styles.emptyStateIcon, { backgroundColor: Colors.lilac[100] }]}>
+              <MaterialCommunityIcons name="food-variant" size={40} color={Colors.lilac[900]} />
             </View>
-            <Text style={styles.emptyStateTitle}>{t("allergiesDiet.noRestrictions")}</Text>
-            <Text style={styles.emptyStateText}>
+            <Text style={[styles.emptyStateTitle, { color: Colors.text.primary }]}>
+              {t("allergiesDiet.noRestrictions")}
+            </Text>
+            <Text style={[styles.emptyStateText, { color: Colors.text.secondary }]}>
               {t("allergiesDiet.noRestrictionsDesc")}
             </Text>
             <Pressable
-              style={styles.emptyStateButton}
+              style={[styles.emptyStateButton, { backgroundColor: Colors.lilac[900] }]}
               onPress={() => router.push("/(onboarding)/flow")}
             >
               <Text style={styles.emptyStateButtonText}>{t("allergiesDiet.setPreferences")}</Text>
             </Pressable>
-          </View>
-        )}
-
-        {/* Add Allergies Button (when no allergies but has diets) */}
-        {allergyItems.length === 0 && dietItems.length > 0 && (
-          <Pressable
-            style={styles.addAllergiesButton}
-            onPress={handleEditAllergies}
-          >
-            <View style={styles.addAllergiesIcon}>
-              <MaterialCommunityIcons name="plus" size={24} color="#EF4444" />
-            </View>
-            <Text style={styles.addAllergiesText}>{t("allergiesDiet.addAllergies")}</Text>
-          </Pressable>
+          </Animated.View>
         )}
       </ScrollView>
 
-      {/* Edit Allergies Modal */}
-      <Modal
-        visible={isEditModalVisible}
-        animationType="slide"
-        onRequestClose={handleCloseModal}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+      {/* Edit Modal */}
+      <Modal visible={isEditModalVisible} animationType="slide" onRequestClose={handleCloseModal}>
+        <View style={[styles.modalContainer, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
+          <View style={[styles.modalHeader, { backgroundColor: Colors.background.surface }]}>
             <Pressable onPress={handleCloseModal} style={styles.modalCloseButton}>
-              <MaterialCommunityIcons name="close" size={24} color="#000000" />
+              <MaterialCommunityIcons name="close" size={24} color={Colors.text.primary} />
             </Pressable>
-            <Text style={styles.modalTitle}>{t("allergiesDiet.editAllergies")}</Text>
+            <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
+              {t("allergiesDiet.editAllergies")}
+            </Text>
             <View style={styles.modalHeaderRight} />
           </View>
           <View style={styles.modalContent}>
@@ -325,10 +304,10 @@ export default function AllergiesDietScreen() {
               initialSelection={tempSelectedAllergies}
             />
           </View>
-          <View style={styles.modalFooter}>
+          <View style={[styles.modalFooter, { paddingBottom: bottom + 16 }]}>
             <Pressable
               onPress={handleSaveAllergies}
-              style={styles.saveButton}
+              style={[styles.saveButton, { backgroundColor: Colors.lilac[900] }]}
             >
               <Text style={styles.saveButtonText}>{t("allergiesDiet.saveChanges")}</Text>
             </Pressable>
@@ -342,302 +321,291 @@ export default function AllergiesDietScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#E8E3ED",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.lilac[100],
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    fontFamily: "Inter",
+    fontSize: 17,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   headerRight: {
     width: 40,
   },
-  scrollView: {
+  content: {
+    paddingVertical: 16,
+    gap: 16,
+  },
+  // Hero
+  heroSection: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  heroGradient: {
+    padding: 14,
+  },
+  heroContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  heroEmoji: {
+    fontSize: 28,
+  },
+  heroTextContainer: {
     flex: 1,
   },
-  content: {
-    padding: 16,
+  heroTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 2,
   },
+  heroSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  // Stats
+  statsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  statChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    gap: 4,
+  },
+  statChipValue: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  statChipLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  // Section
   section: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E8E3ED",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  allergySection: {
-    borderColor: "#FEE2E2",
-    backgroundColor: "#FFF5F5",
+    paddingHorizontal: 16,
+    gap: 12,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
+    gap: 8,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.lilac[500],
+  sectionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  allergyIconContainer: {
-    backgroundColor: "#EF4444",
-  },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    fontFamily: "Inter",
-    marginBottom: 2,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: Colors.text.tertiary,
-    fontFamily: "Inter",
-    fontWeight: "500",
-  },
-  gridContainer: {
-    gap: 12,
-  },
-  gridRow: {
-    gap: 12,
-  },
-  gridItem: {
     flex: 1,
-    maxWidth: "31%",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  editButton: {
+    flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E8E3ED",
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#EF4444",
+  },
+  chipList: {
+    gap: 8,
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
   },
-  allergyGridItem: {
-    backgroundColor: "#FFFFFF",
+  allergyChip: {
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
     borderColor: "#FECACA",
   },
-  imageContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.lilac[100],
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-    overflow: "hidden",
+  chipImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
-  allergyImageContainer: {
-    backgroundColor: "#FEE2E2",
-  },
-  dietImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    resizeMode: "cover",
-  },
-  allergyImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    resizeMode: "cover",
-  },
-  allergyImagePlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  allergyChipIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "#FEE2E2",
     alignItems: "center",
     justifyContent: "center",
   },
-  gridItemLabel: {
+  chipLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: Colors.text.primary,
-    fontFamily: "Inter",
-    textAlign: "center",
-    lineHeight: 16,
   },
-  allergyLabel: {
+  allergyChipLabel: {
     color: "#DC2626",
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
+  emptyChipList: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 80,
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    gap: 8,
+  },
+  emptyChipText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  // Info Card
+  infoCard: {
+    marginHorizontal: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  infoGradient: {
+    padding: 14,
+  },
+  infoContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  infoEmoji: {
+    fontSize: 20,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#92400E",
+    marginBottom: 2,
+  },
+  infoText: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: "#78350F",
+  },
+  // Empty State
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 40,
     paddingHorizontal: 32,
   },
-  emptyStateIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.lilac[100],
+  emptyStateIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   emptyStateTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    color: Colors.text.primary,
-    fontFamily: "Inter",
     marginBottom: 8,
     textAlign: "center",
   },
   emptyStateText: {
-    fontSize: 16,
-    color: Colors.text.tertiary,
-    fontFamily: "Inter",
+    fontSize: 14,
     textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 24,
+    lineHeight: 20,
+    marginBottom: 20,
   },
   emptyStateButton: {
-    backgroundColor: Colors.lilac[500],
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   emptyStateButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Inter",
   },
-  editButton: {
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: "#FEE2E2",
-    marginLeft: 8,
-  },
-  addAllergiesButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: "#FECACA",
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginTop: 8,
-  },
-  addAllergiesIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FEE2E2",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  addAllergiesText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#DC2626",
-    fontFamily: "Inter",
-  },
+  // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#E8E3ED",
-    backgroundColor: "#FFFFFF",
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   modalCloseButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    fontFamily: "Inter",
+    fontSize: 17,
+    fontWeight: "600",
   },
   modalHeaderRight: {
     width: 40,
   },
   modalContent: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
   },
   modalFooter: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 32,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E8E3ED",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 5,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   saveButton: {
-    backgroundColor: Colors.lilac[900],
-    paddingVertical: 18,
-    borderRadius: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
   },
   saveButtonText: {
     color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "700",
-    fontFamily: "Inter",
-    letterSpacing: 0.5,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

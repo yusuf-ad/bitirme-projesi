@@ -10,27 +10,22 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from "react-native";
 import Animated, {
-    FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring
+  FadeInDown,
+  FadeInUp
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width } = Dimensions.get("window");
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 
 const AVATARS = [
   "https://api.dicebear.com/9.x/personas/png?seed=Felix2&skinTone=f5d0c5&mouth=smile",
@@ -55,6 +50,7 @@ export default function AccountScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState(profile?.avatar_url || "");
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -116,10 +112,12 @@ export default function AccountScreen() {
   };
 
   const handleUpdateAvatar = async (newAvatar: string) => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || isUpdatingAvatar) return;
+    
     Haptics.selectionAsync();
     setSelectedAvatar(newAvatar);
     setIsAvatarModalVisible(false);
+    setIsUpdatingAvatar(true);
 
     try {
       const { error } = await supabase
@@ -131,6 +129,8 @@ export default function AccountScreen() {
 
       if (error) throw error;
 
+      // Small delay to prevent rapid refreshes
+      await new Promise(resolve => setTimeout(resolve, 300));
       await refreshProfile();
     } catch (error) {
       console.error("Error updating avatar:", error);
@@ -139,103 +139,9 @@ export default function AccountScreen() {
       if (profile?.avatar_url) {
         setSelectedAvatar(profile.avatar_url);
       }
+    } finally {
+      setIsUpdatingAvatar(false);
     }
-  };
-
-  const handleSignOut = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    Alert.alert(t("profile.signOut"), t("profile.signOutConfirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("profile.signOut"),
-        style: "destructive",
-        onPress: async () => {
-          await supabase.auth.signOut();
-        },
-      },
-    ]);
-  };
-
-  const SettingsItem = ({
-    icon,
-    label,
-    subtitle,
-    onPress,
-    showChevron = true,
-    danger = false,
-    delay = 0,
-  }: {
-    icon: keyof typeof MaterialCommunityIcons.glyphMap;
-    label: string;
-    subtitle?: string;
-    onPress: () => void;
-    showChevron?: boolean;
-    danger?: boolean;
-    delay?: number;
-  }) => {
-    const scale = useSharedValue(1);
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-    }));
-
-    const iconColor = danger ? "#EF4444" : Colors.lilac[900];
-    const textColor = danger ? "#EF4444" : Colors.text.primary;
-
-    return (
-      <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.menuItemWrapper}>
-        <AnimatedPressable
-          style={[
-            styles.settingsItem,
-            { backgroundColor: Colors.background.surface },
-            animatedStyle,
-          ]}
-          onPressIn={() => {
-            scale.value = withSpring(0.98);
-          }}
-          onPressOut={() => {
-            scale.value = withSpring(1);
-          }}
-          onPress={() => {
-            Haptics.selectionAsync();
-            onPress();
-          }}
-        >
-          <View
-            style={[
-              styles.settingsIconContainer,
-              {
-                backgroundColor: danger
-                  ? "rgba(239, 68, 68, 0.1)"
-                  : isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.03)",
-              },
-            ]}
-          >
-            <MaterialCommunityIcons name={icon} size={20} color={iconColor} />
-          </View>
-          <View style={styles.settingsContent}>
-            <Text style={[styles.settingsLabel, { color: textColor }]}>
-              {label}
-            </Text>
-            {subtitle && (
-              <Text
-                style={[styles.settingsSubtitle, { color: Colors.text.tertiary }]}
-              >
-                {subtitle}
-              </Text>
-            )}
-          </View>
-          {showChevron && (
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={20}
-              color={Colors.text.tertiary}
-            />
-          )}
-        </AnimatedPressable>
-      </Animated.View>
-    );
   };
 
   return (
@@ -483,63 +389,7 @@ export default function AccountScreen() {
           </View>
         </Animated.View>
 
-        {/* Settings Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-            {t("account.accountSettings")}
-          </Text>
-          <View style={styles.settingsGroup}>
-            <SettingsItem
-                icon="shield-lock-outline"
-                label={t("account.privacySecurity")}
-                subtitle={t("account.privacySecurityDesc")}
-                onPress={() => router.push("/(app)/(profile)/privacy")}
-                delay={300}
-            />
-            <SettingsItem
-                icon="bell-outline"
-                label={t("profile.notifications")}
-                subtitle={t("account.notificationsDesc")}
-                onPress={() => router.push("/(app)/(profile)/notifications")}
-                delay={350}
-            />
-            <SettingsItem
-                icon="help-circle-outline"
-                label={t("account.helpSupport")}
-                subtitle={t("account.helpSupportDesc")}
-                onPress={() => router.push("/(app)/(profile)/support-feedback")}
-                delay={400}
-            />
-          </View>
-        </View>
 
-        {/* Danger Zone */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-            {t("account.session")}
-          </Text>
-          <View style={styles.settingsGroup}>
-            <SettingsItem
-                icon="logout"
-                label={t("profile.signOut")}
-                subtitle={t("account.signOutDesc")}
-                onPress={handleSignOut}
-                showChevron={false}
-                danger
-                delay={450}
-            />
-          </View>
-        </View>
-
-        {/* Version */}
-        <Animated.View
-          entering={FadeInDown.delay(500)}
-          style={styles.versionContainer}
-        >
-          <Text style={[styles.versionText, { color: Colors.text.tertiary }]}>
-            {t("account.version")}
-          </Text>
-        </Animated.View>
       </ScrollView>
       {/* Avatar Selection Modal */}
       <Modal
@@ -575,6 +425,7 @@ export default function AccountScreen() {
               {AVATARS.map((avatar, index) => (
                 <Pressable
                   key={index}
+                  disabled={isUpdatingAvatar}
                   style={[
                     styles.avatarOption,
                     selectedAvatar === avatar && styles.selectedAvatarOption,
@@ -583,6 +434,7 @@ export default function AccountScreen() {
                         selectedAvatar === avatar
                           ? Colors.lilac[600]
                           : "transparent",
+                      opacity: isUpdatingAvatar ? 0.6 : 1,
                     },
                   ]}
                   onPress={() => {
@@ -800,49 +652,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#FFFFFF",
-  },
-  settingsGroup: {
-    gap: 12,
-  },
-  menuItemWrapper: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  settingsItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 20,
-  },
-  settingsIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  settingsContent: {
-    flex: 1,
-  },
-  settingsLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  settingsSubtitle: {
-    fontSize: 13,
-  },
-  versionContainer: {
-    alignItems: "center",
-    paddingVertical: 20,
-  },
-  versionText: {
-    fontSize: 12,
-    fontWeight: "500",
   },
   avatarImage: {
     width: "100%",

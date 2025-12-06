@@ -3,18 +3,20 @@ import { Colors } from "@/constants/theme";
 import { TimePicker } from "@/features/onboarding/sections/meal-time/components/time-picker";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
+import { supabase } from "@/lib/supabase";
+import { updateUserMealTimes } from "@/lib/supabase-onboarding";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Animated,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -115,6 +117,7 @@ export default function MealTimesScreen() {
     setIsSaving(true);
 
     try {
+      // Update local state
       switch (editingMeal) {
         case "breakfast":
           onboarding.setBreakfastTime(tempTime);
@@ -127,7 +130,17 @@ export default function MealTimesScreen() {
           break;
       }
 
-      await onboarding.saveMealTimes();
+      // Save directly to Supabase with the new time value
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const mealData = {
+          breakfast: editingMeal === "breakfast" ? tempTime : onboarding.breakfastTime,
+          lunch: editingMeal === "lunch" ? tempTime : onboarding.lunchTime,
+          dinner: editingMeal === "dinner" ? tempTime : onboarding.dinnerTime,
+        };
+        await updateUserMealTimes(user.id, mealData);
+      }
+
       setEditingMeal(null);
       setTempTime(null);
     } catch (error) {
