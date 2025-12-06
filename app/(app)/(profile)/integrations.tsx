@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";

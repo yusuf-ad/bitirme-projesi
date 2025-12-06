@@ -113,7 +113,7 @@ CREATE TABLE public.user_taste_preferences (
   cuisines ARRAY DEFAULT '{}'::text[],
   allergies_dislikes ARRAY DEFAULT '{}'::text[],
   diet_preferences ARRAY DEFAULT '{}'::text[],
-  cooking_skill_level text CHECK (cooking_skill_level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text])),
+  cooking_skill_level text CHECK (cooking_skill_level = ANY (ARRAY['beginner'::text, 'basic'::text, 'intermediate'::text, 'advanced'::text])),
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   diet_nutrition_targets jsonb DEFAULT '{}'::jsonb,
@@ -167,3 +167,18 @@ CREATE POLICY "Users can update their own AI recipes"
 CREATE POLICY "Users can delete their own AI recipes"
   ON public.ai_generated_recipes FOR DELETE
   USING (auth.uid() = user_id);
+
+
+-- ============================================
+-- Migration: Add 'basic' to cooking_skill_level constraint
+-- Date: 2024-12-06
+-- ============================================
+
+-- Drop the existing constraint (correct name: cooking_skill_valid)
+ALTER TABLE public.user_taste_preferences 
+DROP CONSTRAINT IF EXISTS cooking_skill_valid;
+
+-- Add new constraint with 'basic' included
+ALTER TABLE public.user_taste_preferences 
+ADD CONSTRAINT cooking_skill_valid 
+CHECK (cooking_skill_level = ANY (ARRAY['beginner'::text, 'basic'::text, 'intermediate'::text, 'advanced'::text]));

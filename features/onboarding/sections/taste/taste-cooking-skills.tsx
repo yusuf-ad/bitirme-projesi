@@ -11,7 +11,7 @@ interface TasteCookingSkillsProps {
 
 const cookingSkillOptions = [
   {
-    id: "novice",
+    id: "beginner",
     level: 1,
     label: "Novice",
     emoji: "🍳",
@@ -150,7 +150,7 @@ export function TasteCookingSkills({
               style={{ marginRight: 8 }}
             />
             <Text style={styles.tipsText}>
-              {selectedSkill === "novice" &&
+              {selectedSkill === "beginner" &&
                 "Let's find simple, delicious recipes to build your confidence!"}
               {selectedSkill === "basic" &&
                 "Great! We'll recommend easy-to-follow recipes with clear instructions."}
