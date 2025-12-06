@@ -29,6 +29,8 @@ const en = {
     notSet: "Not Set",
     unknown: "Unknown",
     saving: "Saving...",
+    liked: "Liked",
+    disliked: "Disliked",
   },
   // Home
   home: {
@@ -303,6 +305,13 @@ const en = {
     favoriteCuisinesDesc: "Select the cuisines you enjoy the most. We'll prioritize recipes from these categories.",
     dislikesExclusions: "Dislikes & Exclusions",
     dislikesExclusionsDesc: "Ingredients you want to avoid. We'll do our best to exclude recipes containing these.",
+    heroTitle: "Your Taste Profile",
+    heroSubtitle: "Help us personalize your meal recommendations",
+    progress: "Progress",
+    remaining: "Remaining",
+    swipeHint: "Swipe to explore",
+    tipTitle: "Pro Tip",
+    tipText: "The more cuisines you rate, the better we can personalize your meal suggestions!",
   },
   // Units & Nutrition
   unitsNutrition: {
@@ -411,6 +420,8 @@ const tr = {
     notSet: "Ayarlanmadı",
     unknown: "Bilinmiyor",
     saving: "Kaydediliyor...",
+    liked: "Beğenilen",
+    disliked: "Beğenilmeyen",
   },
   // Home
   home: {
@@ -685,6 +696,13 @@ const tr = {
     favoriteCuisinesDesc: "En çok sevdiğiniz mutfakları seçin. Bu kategorilerden tariflere öncelik vereceğiz.",
     dislikesExclusions: "Beğenmediklerim & Hariç Tutulanlar",
     dislikesExclusionsDesc: "Kaçınmak istediğiniz malzemeler. Bunları içeren tarifleri hariç tutmak için elimizden geleni yapacağız.",
+    heroTitle: "Tat Profiliniz",
+    heroSubtitle: "Yemek önerilerinizi kişiselleştirmemize yardımcı olun",
+    progress: "İlerleme",
+    remaining: "Kalan",
+    swipeHint: "Keşfetmek için kaydırın",
+    tipTitle: "İpucu",
+    tipText: "Ne kadar çok mutfak değerlendirirseniz, yemek önerilerinizi o kadar iyi kişiselleştirebiliriz!",
   },
   // Units & Nutrition
   unitsNutrition: {
