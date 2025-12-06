@@ -11,7 +11,14 @@ import {
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useCallback, useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Placeholder image for AI-generated recipes
@@ -25,6 +32,7 @@ interface AIRecipePreviewProps {
   onBack: () => void;
   mealSlot?: string;
   isRegenerating?: boolean;
+  isSaving?: boolean;
 }
 
 interface MacroData {
@@ -48,6 +56,7 @@ export function AIRecipePreview({
   onBack,
   mealSlot,
   isRegenerating = false,
+  isSaving = false,
 }: AIRecipePreviewProps) {
   const insets = useSafeAreaInsets();
   const { impact } = useHaptics();
@@ -308,9 +317,16 @@ export function AIRecipePreview({
         <CustomButton
           containerStyle={styles.confirmButton}
           onPress={handleConfirm}
+          disabled={isSaving || isRegenerating}
         >
-          <MaterialIcons name="check" size={20} color="#fff" />
-          <Text style={styles.confirmButtonText}>Add to Meal Plan</Text>
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <MaterialIcons name="check" size={20} color="#fff" />
+              <Text style={styles.confirmButtonText}>Add to Meal Plan</Text>
+            </>
+          )}
         </CustomButton>
       </View>
     </View>

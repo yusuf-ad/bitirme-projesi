@@ -1,3 +1,4 @@
+import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors } from "@/constants/theme";
 import { CategorySection, PantryItem } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
@@ -21,7 +22,10 @@ export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMovingToPantry, setIsMovingToPantry] = useState(false);
   const hasCheckedItems = useRef(false);
+
+  console.log(items);
 
   const fetchItems = async () => {
     try {
@@ -102,9 +106,11 @@ export default function ShoppingListScreen() {
   const handleBackPress = async () => {
     // Geri gitmeden önce tiklenen öğeleri pantry'e taşı
     if (checkedItems.length > 0) {
+      setIsMovingToPantry(true);
       try {
         const { movedCount } = await pantryService.moveCheckedItemsToPantry();
         if (movedCount > 0) {
+          setIsMovingToPantry(false);
           Alert.alert(
             "Pantry Updated",
             `${movedCount} item${
@@ -116,6 +122,7 @@ export default function ShoppingListScreen() {
         }
       } catch (error) {
         console.error("Failed to move items:", error);
+        setIsMovingToPantry(false);
       }
     }
     router.back();
@@ -129,6 +136,38 @@ export default function ShoppingListScreen() {
     console.log("Edit item:", id);
   };
 
+  const handleMarkAll = async () => {
+    if (items.length === 0) return;
+
+    // Optimistic update
+    const previousItems = [...items];
+    setItems((prev) =>
+      prev.map((i) =>
+        i.status === "shopping_list" ? { ...i, checked: true } : i
+      )
+    );
+
+    hasCheckedItems.current = true;
+
+    try {
+      await pantryService.markAllAsChecked();
+    } catch (error) {
+      console.error("Failed to mark all as checked", error);
+      // Revert on error
+      setItems(previousItems);
+      hasCheckedItems.current = previousItems.some((item) => item.checked);
+    }
+  };
+
+  if (isMovingToPantry) {
+    return (
+      <ProfessionalLoadingScreen
+        title="Updating Pantry"
+        subtitle="Moving checked items to your pantry..."
+      />
+    );
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -136,7 +175,20 @@ export default function ShoppingListScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
         </Pressable>
         <Text style={styles.title}>Groceries</Text>
-        <View style={{ width: 24 }} />
+        {items.length !== 0 ? (
+          <Pressable hitSlop={24} onPress={handleMarkAll}>
+            <Text
+              style={{
+                color: Colors.lilac[900],
+                fontWeight: "bold",
+              }}
+            >
+              Mark all
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={{ width: 24 }} />
+        )}
       </View>
 
       {/* Summary bar */}

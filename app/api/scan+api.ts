@@ -21,7 +21,7 @@ export async function POST(req: Request) {
             quantity: z
               .string()
               .describe(
-                "Approximate quantity in grams (g) or pieces. Examples: '200g', '3 pieces', '500g', '1 piece'"
+                "Approximate quantity in grams (g) for solids, milliliters (ml) for liquids, or pieces. Examples: '200g', '250ml', '3 pieces'"
               ),
           })
         )
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
           content: [
             {
               type: "text",
-              text: "Extract visible food ingredients from this image with their approximate quantities. For each ingredient provide: 1) name in lowercase, singular English, 2) estimated quantity in grams (g) for measurable items or pieces (pieces) for countable items. Examples: {name: 'tomato', quantity: '3 pieces'}, {name: 'rice', quantity: '500g'}. Return JSON only.",
+              text: "Extract visible food ingredients from this image with their approximate quantities. For each ingredient provide: 1) name in lowercase, singular English, 2) estimated quantity in grams (g) for solids, milliliters (ml) for liquids, or pieces (pieces) for countable items. Examples: {name: 'tomato', quantity: '3 pieces'}, {name: 'rice', quantity: '500g'}, {name: 'milk', quantity: '200ml'}. Return JSON only.",
             },
             { type: "image", image },
           ],

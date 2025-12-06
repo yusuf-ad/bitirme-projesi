@@ -4,19 +4,14 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import {
-    ImageSourcePropType,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
-import Animated, {
-    Extrapolation,
-    interpolate,
-    SharedValue,
-    useAnimatedStyle,
-} from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 interface EmptyMealSlotProps {
   mealType: string;
@@ -25,7 +20,6 @@ interface EmptyMealSlotProps {
   mealSlot: "breakfast" | "lunch" | "dinner";
   selectedDate: Date;
   onMealAdded?: () => void;
-  scrollY: SharedValue<number>;
 }
 
 export function EmptyMealSlot({
@@ -35,66 +29,8 @@ export function EmptyMealSlot({
   mealSlot,
   selectedDate,
   onMealAdded,
-  scrollY,
 }: EmptyMealSlotProps) {
   const { impact } = useHaptics();
-  // Animated styles for collapsible content - optimized for UI thread
-  // Using only GPU-accelerated properties (opacity, transform) for 60fps animations
-  const contentAnimatedStyle = useAnimatedStyle(() => {
-    "worklet";
-
-    const progress = interpolate(
-      scrollY.value,
-      [0, 150],
-      [0, 1],
-      Extrapolation.CLAMP
-    );
-
-    // Smooth fade and slide animation
-    const opacity = interpolate(progress, [0, 0.3, 1], [0, 0, 1]);
-    const translateY = interpolate(progress, [0, 1], [-40, 0]);
-    const scale = interpolate(progress, [0, 1], [0.95, 1]);
-
-    return {
-      opacity,
-      transform: [{ translateY }, { scale }],
-    };
-  });
-
-  // Wrapper style for height animation using max-height approach
-  const wrapperAnimatedStyle = useAnimatedStyle(() => {
-    "worklet";
-
-    const progress = interpolate(
-      scrollY.value,
-      [0, 150],
-      [0, 1],
-      Extrapolation.CLAMP
-    );
-
-    // Animate max height for smooth expand/collapse
-    const maxHeight = interpolate(progress, [0, 1], [0, 160]);
-
-    return {
-      maxHeight,
-      overflow: "hidden" as const,
-    };
-  });
-
-  const containerAnimatedStyle = useAnimatedStyle(() => {
-    "worklet";
-
-    const progress = interpolate(
-      scrollY.value,
-      [0, 150],
-      [0, 1],
-      Extrapolation.CLAMP
-    );
-
-    return {
-      marginBottom: interpolate(progress, [0, 1], [0, 16]),
-    };
-  });
 
   const handlePress = async () => {
     impact();
@@ -123,7 +59,7 @@ export function EmptyMealSlot({
   };
 
   return (
-    <Animated.View style={containerAnimatedStyle}>
+    <Animated.View entering={FadeInDown.duration(300).springify()}>
       <Pressable
         style={({ pressed }) => [
           styles.container,
@@ -153,22 +89,18 @@ export function EmptyMealSlot({
           </Pressable>
         </View>
 
-        {/* Empty State Content - Animated */}
-        <Animated.View style={wrapperAnimatedStyle}>
-          <Animated.View
-            style={[styles.emptyContentWrapper, contentAnimatedStyle]}
-          >
-            <View style={styles.emptyContent}>
-              <View style={styles.emptyIconContainer}>
-                <Text style={styles.emptyIcon}>🍽️</Text>
-              </View>
-              <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
-              <Text style={styles.emptyDescription}>
-                Tap to add a meal from the recipes page
-              </Text>
+        {/* Empty State Content - Static */}
+        <View style={styles.emptyContentWrapper}>
+          <View style={styles.emptyContent}>
+            <View style={styles.emptyIconContainer}>
+              <Text style={styles.emptyIcon}>🍽️</Text>
             </View>
-          </Animated.View>
-        </Animated.View>
+            <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
+            <Text style={styles.emptyDescription}>
+              Tap to add a meal from the recipes page
+            </Text>
+          </View>
+        </View>
       </Pressable>
     </Animated.View>
   );

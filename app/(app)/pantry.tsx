@@ -40,6 +40,8 @@ export default function PantryTab() {
 
   const { data: items = [], isLoading, refetch } = usePantryQuery();
 
+  console.log(items);
+
   useFocusEffect(
     useCallback(() => {
       console.log("Pantry screen focused");

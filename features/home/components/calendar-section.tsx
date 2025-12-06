@@ -2,7 +2,6 @@ import CalendarDay from "@/features/home/components/calendar-day";
 import { generateCalendarDays } from "@/features/home/data/mock-data";
 import { useEffect, useMemo, useRef } from "react";
 import { FlatList, StyleSheet } from "react-native";
-import Animated, { FadeInRight } from "react-native-reanimated";
 
 const ITEM_WIDTH = 52 + 12; // width + gap
 
@@ -32,7 +31,10 @@ export default function CalendarSection({
     return d;
   }, []);
 
-  const calendarDays = useMemo(() => generateCalendarDays(userRegistrationDate), [userRegistrationDate]);
+  const calendarDays = useMemo(
+    () => generateCalendarDays(userRegistrationDate),
+    [userRegistrationDate]
+  );
 
   const computedIndex = calendarDays.findIndex((day) =>
     isSameDay(day.date, selectedDate)
@@ -61,41 +63,39 @@ export default function CalendarSection({
   }, [selectedIndex]);
 
   return (
-    <Animated.View entering={FadeInRight.duration(400).delay(100)}>
-      <FlatList
-        ref={ref}
-        getItemLayout={getItemLayout}
-        onScrollToIndexFailed={(info) => {
-          const wait = new Promise((resolve) => setTimeout(resolve, 500));
-          wait.then(() => {
-            ref.current?.scrollToIndex({
-              index: info.index,
-              animated: true,
-              viewPosition: 0.5,
-            });
+    <FlatList
+      ref={ref}
+      getItemLayout={getItemLayout}
+      onScrollToIndexFailed={(info) => {
+        const wait = new Promise((resolve) => setTimeout(resolve, 500));
+        wait.then(() => {
+          ref.current?.scrollToIndex({
+            index: info.index,
+            animated: true,
+            viewPosition: 0.5,
           });
-        }}
-        data={calendarDays}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.calendarScrollView}
-        contentContainerStyle={styles.calendarContent}
-        keyExtractor={(item) => item.date.toISOString()}
-        renderItem={({ item, index: itemIndex }) => (
-          <CalendarDay
-            day={item.day}
-            dayOfWeek={item.dayOfWeek}
-            isSelected={selectedIndex === itemIndex}
-            isToday={isSameDay(item.date, today)}
-            onPress={() => {
-              const normalizedDate = new Date(item.date);
-              normalizedDate.setHours(0, 0, 0, 0);
-              onDateSelect(normalizedDate);
-            }}
-          />
-        )}
-      />
-    </Animated.View>
+        });
+      }}
+      data={calendarDays}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.calendarScrollView}
+      contentContainerStyle={styles.calendarContent}
+      keyExtractor={(item) => item.date.toISOString()}
+      renderItem={({ item, index: itemIndex }) => (
+        <CalendarDay
+          day={item.day}
+          dayOfWeek={item.dayOfWeek}
+          isSelected={selectedIndex === itemIndex}
+          isToday={isSameDay(item.date, today)}
+          onPress={() => {
+            const normalizedDate = new Date(item.date);
+            normalizedDate.setHours(0, 0, 0, 0);
+            onDateSelect(normalizedDate);
+          }}
+        />
+      )}
+    />
   );
 }
 

@@ -95,6 +95,23 @@ export const pantryService = {
     return data as PantryItem;
   },
 
+  async markAllAsChecked() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
+    const { data, error } = await supabase
+      .from("pantry_items")
+      .update({ checked: true })
+      .eq("user_id", user.id)
+      .eq("status", "shopping_list")
+      .select();
+
+    if (error) throw error;
+    return data as PantryItem[];
+  },
+
   async deleteItem(id: string) {
     const { error } = await supabase.from("pantry_items").delete().eq("id", id);
 
@@ -159,24 +176,29 @@ export const pantryService = {
         if (item.spoonacular_id) {
           const { data } = await supabase
             .from("pantry_items")
-            .select("id, amount")
+            .select("id, amount, unit")
             .eq("user_id", user.id)
             .eq("status", "pantry")
-            .eq("spoonacular_id", item.spoonacular_id)
-            .maybeSingle();
-          existingPantryItem = data;
+            .eq("spoonacular_id", item.spoonacular_id);
+
+          // Unit eşleşen var mı?
+          if (data) {
+            existingPantryItem = data.find((i) => i.unit === item.unit);
+          }
         }
 
         // spoonacular_id ile bulunamadıysa isim ile dene
         if (!existingPantryItem) {
           const { data } = await supabase
             .from("pantry_items")
-            .select("id, amount")
+            .select("id, amount, unit")
             .eq("user_id", user.id)
             .eq("status", "pantry")
-            .ilike("name", item.name)
-            .maybeSingle();
-          existingPantryItem = data;
+            .ilike("name", item.name);
+
+          if (data) {
+            existingPantryItem = data.find((i) => i.unit === item.unit);
+          }
         }
 
         if (existingPantryItem) {

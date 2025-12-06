@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import CustomButton from "@/shared/components/custom-button";
+import { StyleSheet, Text, View } from "react-native";
 
 // Types
 export type MealTypeOption =
@@ -59,15 +60,15 @@ export function SelectableChip<T extends string>({
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      style={[styles.chip, isSelected && styles.chipSelected]}
+    <CustomButton
+      containerStyle={[styles.chip, isSelected && styles.chipSelected]}
       onPress={onPress}
     >
       <Text style={styles.chipEmoji}>{option.emoji}</Text>
       <Text style={[styles.chipLabel, isSelected && styles.chipLabelSelected]}>
         {option.label}
       </Text>
-    </Pressable>
+    </CustomButton>
   );
 }
 
@@ -151,6 +152,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 99,
     borderWidth: 1,
+    width: "auto",
     borderColor: Colors.gray[200],
     backgroundColor: Colors.background.surface,
   },

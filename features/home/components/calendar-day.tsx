@@ -1,9 +1,5 @@
 import { Colors } from "@/constants/theme";
 import { Pressable, PressableProps, StyleSheet, Text } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
 
 interface CalendarDayProps extends PressableProps {
   day: string;
@@ -13,8 +9,6 @@ interface CalendarDayProps extends PressableProps {
   onPress?: () => void;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export default function CalendarDay({
   day,
   dayOfWeek,
@@ -23,36 +17,23 @@ export default function CalendarDay({
   onPress,
   ...props
 }: CalendarDayProps) {
-  const animatedStyle = useAnimatedStyle(() => {
-    const isTodayButNotSelected = isToday && !isSelected;
-    return {
-      backgroundColor: withTiming(
-        isSelected
-          ? Colors.lilac[900]
-          : isTodayButNotSelected
-          ? Colors.lilac[100]
-          : Colors.background.surface,
-        { duration: 100 }
-      ),
-      opacity: withTiming(isSelected || isTodayButNotSelected ? 1 : 0.5, {
-        duration: 300,
-      }),
-      borderWidth: isTodayButNotSelected ? 1 : 0,
-      borderColor: isToday ? Colors.lilac[500] : "transparent",
-    };
-  });
+  const isTodayButNotSelected = isToday && !isSelected;
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={onPress}
-      style={[styles.container, animatedStyle]}
+      style={[
+        styles.container,
+        isSelected && styles.selectedContainer,
+        isTodayButNotSelected && styles.todayContainer,
+      ]}
       {...props}
     >
       <Text style={[styles.day, isSelected && styles.selectedText]}>{day}</Text>
       <Text style={[styles.dayOfWeek, isSelected && styles.selectedText]}>
         {dayOfWeek}
       </Text>
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
@@ -66,6 +47,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 52,
     height: 64,
+    backgroundColor: Colors.background.surface,
+    opacity: 0.5,
+  },
+  selectedContainer: {
+    backgroundColor: Colors.lilac[900],
+    opacity: 1,
+  },
+  todayContainer: {
+    backgroundColor: Colors.lilac[100],
+    opacity: 1,
+    borderWidth: 1,
+    borderColor: Colors.lilac[500],
   },
   day: {
     fontFamily: "Inter",

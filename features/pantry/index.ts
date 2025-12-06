@@ -8,5 +8,4 @@ export { PantryScreenHeader } from "./components/pantry-screen-header";
 export { PantrySkeleton } from "./components/pantry-skeleton";
 export { RecipeIdeasView } from "./components/recipe-ideas-view";
 export { SearchPantryHeader } from "./components/search-pantry-header";
-export { TabSwitcher } from "./components/tab-switcher";
 export * from "./types";

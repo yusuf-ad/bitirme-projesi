@@ -9,18 +9,16 @@ import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Platform,
-    RefreshControl,
-    StyleSheet,
-    View
+  ActivityIndicator,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  View,
 } from "react-native";
 import Animated, {
-    FadeInDown,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  FadeInDown,
+  useAnimatedStyle,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -94,34 +92,38 @@ export default function MealplanTab() {
   const isPastDate = selectedDate < today;
 
   // Calculate total calories from meal plan items
-  const totalCalories =
-    data?.items?.reduce((total, item) => {
-      return total + (item.calories_per_serving || 0);
-    }, 0) ?? 0;
+  const totalCalories = useMemo(() => {
+    return (
+      data?.items?.reduce((total, item) => {
+        return total + (item.calories_per_serving || 0);
+      }, 0) ?? 0
+    );
+  }, [data?.items]);
 
   // Calculate total macros from meal plan items
-  const totalCarbs =
-    data?.items?.reduce((total, item) => {
-      return total + (item.carbs_per_serving || 0);
-    }, 0) ?? 0;
+  const totalCarbs = useMemo(() => {
+    return (
+      data?.items?.reduce((total, item) => {
+        return total + (item.carbs_per_serving || 0);
+      }, 0) ?? 0
+    );
+  }, [data?.items]);
 
-  const totalProtein =
-    data?.items?.reduce((total, item) => {
-      return total + (item.protein_per_serving || 0);
-    }, 0) ?? 0;
+  const totalProtein = useMemo(() => {
+    return (
+      data?.items?.reduce((total, item) => {
+        return total + (item.protein_per_serving || 0);
+      }, 0) ?? 0
+    );
+  }, [data?.items]);
 
-  const totalFat =
-    data?.items?.reduce((total, item) => {
-      return total + (item.fat_per_serving || 0);
-    }, 0) ?? 0;
-
-  // Scroll handling for animations
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
+  const totalFat = useMemo(() => {
+    return (
+      data?.items?.reduce((total, item) => {
+        return total + (item.fat_per_serving || 0);
+      }, 0) ?? 0
+    );
+  }, [data?.items]);
 
   return (
     <Animated.ScrollView
@@ -132,8 +134,7 @@ export default function MealplanTab() {
         paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
       }}
       bounces={false}
-      onScroll={scrollHandler}
-      scrollEventThrottle={16}
+      scrollEventThrottle={32}
       refreshControl={
         <RefreshControl
           refreshing={isRefetching && !isLoading}
@@ -187,18 +188,10 @@ export default function MealplanTab() {
             )}
 
             {hasMeals ? (
-              <DailyMealsList
-                items={data!.items}
-                selectedDate={selectedDate}
-                scrollY={scrollY}
-              />
+              <DailyMealsList items={data!.items} selectedDate={selectedDate} />
             ) : isPastDate ? (
               // Show empty meal slots for past dates
-              <DailyMealsList
-                items={[]}
-                selectedDate={selectedDate}
-                scrollY={scrollY}
-              />
+              <DailyMealsList items={[]} selectedDate={selectedDate} />
             ) : (
               // Show create meal plan prompt for today and future dates
               <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />

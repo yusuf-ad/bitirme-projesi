@@ -2,7 +2,7 @@ import { Octicons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FabButton } from "./fab-button";
@@ -17,7 +17,12 @@ export function CustomTabBar({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.tabBar, { bottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.tabBar,
+        { bottom: insets.bottom + (Platform.OS === "ios" ? 0 : 12) },
+      ]}
+    >
       <View style={styles.tabBarInner}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];

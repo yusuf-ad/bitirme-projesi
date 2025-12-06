@@ -5,13 +5,11 @@ import { useDeleteMealItem } from "@/hooks/use-delete-meal-item";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ImageSourcePropType, StyleSheet, View } from "react-native";
-import Animated, { FadeInDown, SharedValue } from "react-native-reanimated";
 import { EmptyMealSlot } from "./empty-meal-slot";
 
 interface DailyMealsListProps {
   items: MealPlanItemRecord[];
   selectedDate: Date;
-  scrollY: SharedValue<number>;
 }
 
 const MEAL_ORDER: ("breakfast" | "lunch" | "dinner")[] = [
@@ -48,11 +46,7 @@ const DEFAULT_MEAL_DETAILS: Record<
   },
 };
 
-export function DailyMealsList({
-  items,
-  selectedDate,
-  scrollY,
-}: DailyMealsListProps) {
+export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
   const deleteMutation = useDeleteMealItem();
   const [eatenMeals, setEatenMeals] = useState<Set<number>>(new Set());
   const [shouldAnimate, setShouldAnimate] = useState(true);
@@ -99,23 +93,14 @@ export function DailyMealsList({
           if (!item) {
             // Show empty slot for missing meals
             return (
-              <Animated.View
+              <EmptyMealSlot
                 key={mealType}
-                entering={
-                  shouldAnimate
-                    ? FadeInDown.delay(staggerDelay).duration(400).springify()
-                    : undefined
-                }
-              >
-                <EmptyMealSlot
-                  mealType={details.label}
-                  mealTime={details.time}
-                  mealIcon={details.icon}
-                  mealSlot={mealType}
-                  selectedDate={selectedDate}
-                  scrollY={scrollY}
-                />
-              </Animated.View>
+                mealType={details.label}
+                mealTime={details.time}
+                mealIcon={details.icon}
+                mealSlot={mealType}
+                selectedDate={selectedDate}
+              />
             );
           }
 
@@ -143,39 +128,31 @@ export function DailyMealsList({
             : undefined;
 
           return (
-            <Animated.View
+            <MealCard
               key={item.id}
-              entering={
-                shouldAnimate
-                  ? FadeInDown.delay(staggerDelay).duration(400).springify()
-                  : undefined
+              mealType={mealLabel}
+              mealTime={mealTime}
+              mealIcon={mealIcon}
+              recipeName={item.recipe_name}
+              recipeImage={recipeImage}
+              prepTime={prepTime}
+              calories={calories}
+              carbs={carbs}
+              protein={protein}
+              fat={fat}
+              isEaten={eatenMeals.has(item.id)}
+              onPress={() =>
+                router.push({
+                  pathname: "/(meal)/[id]",
+                  params: {
+                    id: item.spoonacular_recipe_id,
+                    isAiGenerated: item.is_ai_generated ? "true" : "false",
+                  },
+                })
               }
-            >
-              <MealCard
-                mealType={mealLabel}
-                mealTime={mealTime}
-                mealIcon={mealIcon}
-                recipeName={item.recipe_name}
-                recipeImage={recipeImage}
-                prepTime={prepTime}
-                calories={calories}
-                carbs={carbs}
-                protein={protein}
-                fat={fat}
-                isEaten={eatenMeals.has(item.id)}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(meal)/[id]",
-                    params: {
-                      id: item.spoonacular_recipe_id,
-                      isAiGenerated: item.is_ai_generated ? "true" : "false",
-                    },
-                  })
-                }
-                onDelete={() => handleDelete(item.id)}
-                onToggleEaten={(eaten) => handleToggleEaten(item.id, eaten)}
-              />
-            </Animated.View>
+              onDelete={() => handleDelete(item.id)}
+              onToggleEaten={(eaten) => handleToggleEaten(item.id, eaten)}
+            />
           );
         })}
       </View>
