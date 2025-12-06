@@ -11,6 +11,8 @@ import {
   IngredientSelectionModal,
   IngredientSelectionModalHandle,
   MEAL_TYPE_OPTIONS,
+  mealPlanIngredientsService,
+  MealPlanItemRecord,
   SelectedIngredient,
   UserPreferencesSection,
 } from "@/features/meal-plan";
@@ -19,7 +21,7 @@ import {
   resolveAllergiesFast,
   resolveDietPreferences,
 } from "@/lib/allergies-diet-helpers";
-import { Recipe } from "@/lib/spoonacular";
+import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { saveAiRecipe } from "@/lib/supabase-ai-recipes";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
@@ -249,6 +251,49 @@ export default function AiRecipe() {
     setIsSaving(true);
 
     try {
+      // Create a copy of the recipe to modify
+      let recipeToSave = { ...generatedRecipe };
+
+      // Enrich ingredients with Spoonacular IDs
+      if (
+        recipeToSave.extendedIngredients &&
+        recipeToSave.extendedIngredients.length > 0
+      ) {
+        try {
+          const ingredientStrings = recipeToSave.extendedIngredients.map(
+            (ing) => ing.original || `${ing.amount} ${ing.unit} ${ing.name}`
+          );
+
+          console.log("Parsing ingredients for AI recipe:", ingredientStrings);
+          const parsedIngredients = await parseIngredients(ingredientStrings);
+
+          recipeToSave.extendedIngredients =
+            recipeToSave.extendedIngredients.map((ing, index) => {
+              const parsed = parsedIngredients[index];
+              // Only update if we got a valid ID
+              if (parsed && parsed.id) {
+                return {
+                  ...ing,
+                  id: parsed.id,
+                  name: parsed.name,
+                  image: parsed.image,
+                  aisle: parsed.aisle,
+                  // Use parsed values to ensure consistency with Spoonacular DB
+                  amount: parsed.amount,
+                  unit: parsed.unit,
+                  original: parsed.original,
+                };
+              }
+              return ing;
+            });
+        } catch (err) {
+          console.warn(
+            "Failed to parse ingredients, using AI generated ones:",
+            err
+          );
+        }
+      }
+
       // Get date from params or use today
       const dateString =
         params.selectedDate || new Date().toISOString().split("T")[0];
@@ -288,7 +333,7 @@ export default function AiRecipe() {
       }
 
       // Extract nutrition values
-      const nutrients = generatedRecipe.nutrition?.nutrients || [];
+      const nutrients = recipeToSave.nutrition?.nutrients || [];
       const caloriesRaw = nutrients.find(
         (n) => n.name.toLowerCase() === "calories"
       )?.amount;
@@ -315,7 +360,7 @@ export default function AiRecipe() {
       }
 
       // Save full AI recipe to ai_generated_recipes table first
-      const saveResult = await saveAiRecipe(userId, generatedRecipe);
+      const saveResult = await saveAiRecipe(userId, recipeToSave);
       if (!saveResult.success) {
         console.error("Failed to save AI recipe:", saveResult.error);
         // Continue anyway - meal plan item can still be saved
@@ -323,8 +368,8 @@ export default function AiRecipe() {
 
       console.log("Saving meal plan item:", {
         meal_plan_id: mealPlanId,
-        spoonacular_recipe_id: generatedRecipe.id,
-        recipe_name: generatedRecipe.title,
+        spoonacular_recipe_id: recipeToSave.id,
+        recipe_name: recipeToSave.title,
         meal_date: dateString,
         meal_type: mealType,
       });
@@ -333,14 +378,14 @@ export default function AiRecipe() {
         .from("meal_plan_items")
         .insert({
           meal_plan_id: mealPlanId,
-          spoonacular_recipe_id: generatedRecipe.id,
-          recipe_name: generatedRecipe.title || "Untitled Recipe",
-          recipe_image_url: generatedRecipe.image ?? "",
+          spoonacular_recipe_id: recipeToSave.id,
+          recipe_name: recipeToSave.title || "Untitled Recipe",
+          recipe_image_url: recipeToSave.image ?? "",
           calories_per_serving: calories,
           carbs_per_serving: carbs,
           protein_per_serving: protein,
           fat_per_serving: fat,
-          ready_in_minutes: generatedRecipe.readyInMinutes ?? null,
+          ready_in_minutes: recipeToSave.readyInMinutes ?? null,
           meal_date: dateString,
           meal_type: mealType,
           is_ai_generated: true,
@@ -355,12 +400,47 @@ export default function AiRecipe() {
 
       console.log("Successfully inserted meal plan item:", insertedItem);
 
+      // Add missing ingredients to shopping list
+      let shoppingListResult;
+      try {
+        const savedMealPlanItem: MealPlanItemRecord = {
+          id: insertedItem.id,
+          meal_plan_id: mealPlanId,
+          spoonacular_recipe_id: recipeToSave.id,
+          recipe_name: recipeToSave.title || "Untitled Recipe",
+          recipe_image_url: recipeToSave.image ?? "",
+          calories_per_serving: calories,
+          carbs_per_serving: carbs,
+          protein_per_serving: protein,
+          fat_per_serving: fat,
+          ready_in_minutes: recipeToSave.readyInMinutes ?? null,
+          meal_date: dateString,
+          meal_type: (mealType === "snacks" ? "snack" : mealType) as any,
+          is_ai_generated: true,
+        };
+
+        shoppingListResult =
+          await mealPlanIngredientsService.addMissingIngredientsToShoppingList([
+            savedMealPlanItem,
+          ]);
+
+        // Invalidate pantry to refresh shopping list counts elsewhere
+        await queryClient.invalidateQueries({ queryKey: ["pantry"] });
+      } catch (err) {
+        console.error("Failed to add ingredients to shopping list:", err);
+        // Don't block success if this fails, just log it
+      }
+
       // Invalidate queries to refresh the list
       await queryClient.invalidateQueries({ queryKey: ["meal-plans"] });
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      Alert.alert("Success!", "Recipe added to your meal plan.", [
+      const alertMessage = shoppingListResult?.addedCount
+        ? `Recipe added! ${shoppingListResult.addedCount} missing ingredients added to your shopping list.`
+        : "Recipe added to your meal plan.";
+
+      Alert.alert("Success!", alertMessage, [
         {
           text: "OK",
           onPress: () => {
@@ -409,7 +489,8 @@ export default function AiRecipe() {
         onRegenerate={handleRegenerate}
         onBack={handleBackFromPreview}
         mealSlot={params.mealSlot}
-        isRegenerating={isRegenerating || isSaving}
+        isRegenerating={isRegenerating}
+        isSaving={isSaving}
       />
     );
   }
