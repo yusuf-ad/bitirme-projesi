@@ -129,6 +129,29 @@ export default function ShoppingListScreen() {
     console.log("Edit item:", id);
   };
 
+  const handleMarkAll = async () => {
+    if (items.length === 0) return;
+
+    // Optimistic update
+    const previousItems = [...items];
+    setItems((prev) =>
+      prev.map((i) =>
+        i.status === "shopping_list" ? { ...i, checked: true } : i
+      )
+    );
+
+    hasCheckedItems.current = true;
+
+    try {
+      await pantryService.markAllAsChecked();
+    } catch (error) {
+      console.error("Failed to mark all as checked", error);
+      // Revert on error
+      setItems(previousItems);
+      hasCheckedItems.current = previousItems.some((item) => item.checked);
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -136,7 +159,20 @@ export default function ShoppingListScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
         </Pressable>
         <Text style={styles.title}>Groceries</Text>
-        <View style={{ width: 24 }} />
+        {items.length !== 0 ? (
+          <Pressable hitSlop={24} onPress={handleMarkAll}>
+            <Text
+              style={{
+                color: Colors.lilac[900],
+                fontWeight: "bold",
+              }}
+            >
+              Mark all
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={{ width: 24 }} />
+        )}
       </View>
 
       {/* Summary bar */}
