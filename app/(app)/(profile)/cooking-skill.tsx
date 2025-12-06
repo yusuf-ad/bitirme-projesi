@@ -5,44 +5,45 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect } from "react";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const COOKING_SKILLS = [
-  {
-    id: "novice",
-    emoji: "🍳",
-    label: "Novice",
-    description: "Just starting out in the kitchen",
-  },
-  {
-    id: "basic",
-    emoji: "🥘",
-    label: "Basic",
-    description: "Can make simple meals",
-  },
-  {
-    id: "intermediate",
-    emoji: "👨‍🍳",
-    label: "Intermediate",
-    description: "Comfortable with various techniques",
-  },
-  {
-    id: "advanced",
-    emoji: "🍰",
-    label: "Advanced",
-    description: "Experienced home chef",
-  },
-];
 
 export default function CookingSkillScreen() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
+  const { t } = useLanguage();
+
+  const COOKING_SKILLS = [
+    {
+      id: "novice",
+      emoji: "🍳",
+      label: t("cookingSkills.novice"),
+      description: t("cookingSkillPage.noviceDesc"),
+    },
+    {
+      id: "basic",
+      emoji: "🥘",
+      label: t("cookingSkills.basic"),
+      description: t("cookingSkillPage.basicDesc"),
+    },
+    {
+      id: "intermediate",
+      emoji: "👨‍🍳",
+      label: t("cookingSkills.intermediate"),
+      description: t("cookingSkillPage.intermediateDesc"),
+    },
+    {
+      id: "advanced",
+      emoji: "🍰",
+      label: t("cookingSkills.advanced"),
+      description: t("cookingSkillPage.advancedDesc"),
+    },
+  ];
 
   useEffect(() => {
     onboarding.loadOnboardingData();
@@ -64,7 +65,7 @@ export default function CookingSkillScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Cooking Skill</Text>
+        <Text style={styles.headerTitle}>{t("cookingSkillPage.title")}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -74,7 +75,7 @@ export default function CookingSkillScreen() {
       >
         <View style={styles.section}>
           <Text style={styles.sectionDescription}>
-            Your current cooking skill level
+            {t("cookingSkillPage.description")}
           </Text>
 
           {COOKING_SKILLS.map((skill) => {

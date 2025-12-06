@@ -1,18 +1,18 @@
 import { getThemeColors } from "@/constants/theme";
 import {
-  EmptyState,
-  EndMessage,
-  ErrorState,
-  FavoritesEmptyState,
-  FavoritesHeroCard,
-  FilterChips,
-  HomeHeader,
-  LoadingState,
-  READY_TIME_OPTIONS,
-  RecipeGrid,
-  SearchBar,
-  TimeFilterModal,
-  type ReadyTimeOption,
+    EmptyState,
+    EndMessage,
+    ErrorState,
+    FavoritesEmptyState,
+    FavoritesHeroCard,
+    FilterChips,
+    HomeHeader,
+    LoadingState,
+    READY_TIME_OPTIONS,
+    RecipeGrid,
+    SearchBar,
+    TimeFilterModal,
+    type ReadyTimeOption,
 } from "@/features/home";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
@@ -26,13 +26,13 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Platform,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
+    Animated,
+    Dimensions,
+    Platform,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "use-debounce";
@@ -360,12 +360,11 @@ export default function HomeTab() {
               <FavoritesHeroCard favoriteCount={favoritesCount} />
 
               {isLoadingFavorites && (
-                <LoadingState message="Favoriler yükleniyor..." />
+                <LoadingState />
               )}
 
               {!isLoadingFavorites && hasFavoritesError && (
                 <ErrorState
-                  message="Favoriler yüklenirken bir sorun oluştu."
                   onRetry={() => refetchFavorites()}
                 />
               )}

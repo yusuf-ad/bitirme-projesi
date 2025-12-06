@@ -4,6 +4,7 @@ import {
   conflictingGoals,
   goalOptions,
 } from "@/features/onboarding/sections/goals/goals-content";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "expo-image";
@@ -25,6 +26,7 @@ const { width } = Dimensions.get("window");
 export default function GoalsMetricsScreen() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [localGoals, setLocalGoals] = useState<string[]>([]);
   
@@ -127,7 +129,7 @@ export default function GoalsMetricsScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Goals & Metrics</Text>
+        <Text style={styles.headerTitle}>{t("goals.title")}</Text>
         <Pressable
           onPress={isEditing ? handleSave : () => setIsEditing(true)}
           style={styles.editButton}
@@ -153,7 +155,7 @@ export default function GoalsMetricsScreen() {
               size={20}
               color={Colors.lilac[900]}
             />
-            <Text style={styles.sectionTitle}>Your Goals</Text>
+            <Text style={styles.sectionTitle}>{t("goals.yourGoals")}</Text>
           </View>
 
           <View style={styles.goalsGrid}>
@@ -204,7 +206,7 @@ export default function GoalsMetricsScreen() {
               );
             })}
             {!isEditing && localGoals.length === 0 && (
-               <Text style={styles.emptyText}>No goals selected.</Text>
+               <Text style={styles.emptyText}>{t("goals.noGoalsSelected")}</Text>
             )}
           </View>
         </View>
@@ -217,7 +219,7 @@ export default function GoalsMetricsScreen() {
               size={20}
               color={Colors.lilac[900]}
             />
-            <Text style={styles.sectionTitle}>Body Metrics</Text>
+            <Text style={styles.sectionTitle}>{t("goals.bodyMetrics")}</Text>
           </View>
 
           <View style={styles.hologramContainer}>
@@ -251,15 +253,15 @@ export default function GoalsMetricsScreen() {
                {/* Left Side Metrics */}
                <View style={styles.metricLeft}>
                   <View style={styles.metricCard}>
-                    <Text style={styles.metricLabelHolo}>HEIGHT</Text>
+                    <Text style={styles.metricLabelHolo}>{t("goals.height")}</Text>
                     <Text style={styles.metricValueHolo}>{onboarding.height || "--"}<Text style={styles.unit}> cm</Text></Text>
                   </View>
                   <View style={styles.metricCard}>
-                    <Text style={styles.metricLabelHolo}>WEIGHT</Text>
+                    <Text style={styles.metricLabelHolo}>{t("goals.weight")}</Text>
                     <Text style={styles.metricValueHolo}>{onboarding.weight || "--"}<Text style={styles.unit}> kg</Text></Text>
                   </View>
                   <View style={styles.metricCard}>
-                    <Text style={styles.metricLabelHolo}>BODY FAT</Text>
+                    <Text style={styles.metricLabelHolo}>{t("goals.bodyFat")}</Text>
                     <Text style={styles.metricValueHolo}>{bodyFat > 0 ? bodyFat.toFixed(1) : "--"}<Text style={styles.unit}> %</Text></Text>
                   </View>
                </View>
@@ -267,18 +269,18 @@ export default function GoalsMetricsScreen() {
                {/* Right Side Metrics */}
                <View style={styles.metricRight}>
                   <View style={[styles.metricCard, styles.metricCardRight]}>
-                    <Text style={styles.metricLabelHolo}>AGE</Text>
+                    <Text style={styles.metricLabelHolo}>{t("goals.age")}</Text>
                     <Text style={styles.metricValueHolo}>{onboarding.age || "--"}<Text style={styles.unit}> yo</Text></Text>
                   </View>
                   <View style={[styles.metricCard, styles.metricCardRight]}>
-                    <Text style={styles.metricLabelHolo}>GENDER</Text>
+                    <Text style={styles.metricLabelHolo}>{t("goals.gender")}</Text>
                     <Text style={styles.metricValueHolo}>
                       {onboarding.selectedGender === "male" ? "M" : 
                        onboarding.selectedGender === "female" ? "F" : "--"}
                     </Text>
                   </View>
                   <View style={[styles.metricCard, styles.metricCardRight]}>
-                    <Text style={styles.metricLabelHolo}>IDEAL</Text>
+                    <Text style={styles.metricLabelHolo}>{t("goals.ideal")}</Text>
                     <Text style={styles.metricValueHolo}>
                       {idealWeightMin.toFixed(0)}-{idealWeightMax.toFixed(0)}<Text style={styles.unit}> kg</Text>
                     </Text>
@@ -288,7 +290,7 @@ export default function GoalsMetricsScreen() {
 
             {/* BMI Badge */}
             <View style={styles.bmiBadge}>
-              <Text style={styles.bmiLabel}>BMI</Text>
+              <Text style={styles.bmiLabel}>{t("goals.bmi")}</Text>
               <Text style={styles.bmiValue}>{bmi.toFixed(1)}</Text>
             </View>
           </View>

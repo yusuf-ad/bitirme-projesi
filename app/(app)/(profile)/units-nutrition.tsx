@@ -2,6 +2,7 @@ import { NumericInputModal } from "@/components/NumericInputModal";
 import { RulerPickerModal } from "@/components/RulerPickerModal";
 import { getThemeColors } from "@/constants/theme";
 import { DIET_OPTIONS } from "@/features/onboarding/sections/taste/diet-options";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/lib/supabase";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import { useTheme } from "@/providers/theme-provider";
@@ -19,6 +20,7 @@ export default function UnitsNutritionScreen() {
   const Colors = getThemeColors(isDark);
   const onboarding = useOnboarding();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [weight, setWeight] = useState(onboarding.weight?.toString() || "");
   const [height, setHeight] = useState(onboarding.height?.toString() || "");
@@ -205,24 +207,24 @@ export default function UnitsNutritionScreen() {
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.text.primary} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>Units & Nutrition</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("unitsNutrition.title")}</Text>
         <View style={styles.headerRight} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + 40 }]}>
         
         {/* Body Measurements */}
-        <Section title="Body Measurements">
+        <Section title={t("unitsNutrition.bodyMeasurements")}>
           <SettingRow 
             icon="weight-kilogram" 
-            label="Weight" 
+            label={t("unitsNutrition.weight")} 
             value={weight} 
             unit="kg" 
             onEdit={() => setActiveModal('weight')}
           />
           <SettingRow 
             icon="human-male-height" 
-            label="Height" 
+            label={t("unitsNutrition.height")} 
             value={height} 
             unit="cm" 
             onEdit={() => setActiveModal('height')}
@@ -231,10 +233,10 @@ export default function UnitsNutritionScreen() {
         </Section>
 
         {/* Daily Targets */}
-        <Section title="Daily Targets">
+        <Section title={t("unitsNutrition.dailyTargets")}>
           <SettingRow 
             icon="fire" 
-            label="Calorie Goal" 
+            label={t("unitsNutrition.calorieGoal")} 
             value={calories} 
             unit="kcal" 
             last
@@ -242,22 +244,22 @@ export default function UnitsNutritionScreen() {
         </Section>
 
         {/* Macros */}
-        <Section title="Macro Distribution">
+        <Section title={t("unitsNutrition.macroDistribution")}>
           <SettingRow 
             icon="food-steak" 
-            label="Protein" 
+            label={t("unitsNutrition.protein")} 
             value={protein} 
             unit="g" 
           />
           <SettingRow 
             icon="barley" 
-            label="Carbs" 
+            label={t("unitsNutrition.carbs")} 
             value={carbs} 
             unit="g" 
           />
           <SettingRow 
             icon="oil" 
-            label="Fat" 
+            label={t("unitsNutrition.fat")} 
             value={fat} 
             unit="g" 
             last
@@ -265,12 +267,12 @@ export default function UnitsNutritionScreen() {
         </Section>
 
         {/* Personal Details */}
-        <Section title="Personal Details">
+        <Section title={t("unitsNutrition.personalDetails")}>
           <SettingRow 
             icon="calendar-account" 
-            label="Age" 
+            label={t("unitsNutrition.age")} 
             value={age} 
-            unit="years" 
+            unit={t("goals.age") === "YAŞ" ? "yıl" : "years"} 
             onEdit={() => setActiveModal('age')}
             last
           />
@@ -287,7 +289,7 @@ export default function UnitsNutritionScreen() {
             await handleSaveBodyMetrics({ weight: newVal });
             setActiveModal(null);
         }}
-        title="Edit Weight"
+        title={t("unitsNutrition.editWeight")}
         initialValue={parseFloat(weight) || 75}
         unit="kg"
         min={30}
@@ -303,7 +305,7 @@ export default function UnitsNutritionScreen() {
             await handleSaveBodyMetrics({ height: newVal });
             setActiveModal(null);
         }}
-        title="Edit Height"
+        title={t("unitsNutrition.editHeight")}
         initialValue={parseFloat(height) || 175}
         unit="cm"
         min={100}
@@ -319,9 +321,9 @@ export default function UnitsNutritionScreen() {
             await handleSaveBodyMetrics({ age: newVal });
             setActiveModal(null);
         }}
-        title="Edit Age"
+        title={t("unitsNutrition.editAge")}
         initialValue={age}
-        unit="years"
+        unit={t("goals.age") === "YAŞ" ? "yıl" : "years"}
       />
 
     </View>

@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -15,19 +16,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SupportFeedbackScreen() {
   const { top, bottom } = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   const contactOptions = useMemo(
     () => [
       {
         id: "chat",
-        title: "Live chat",
-        description: "Weekdays 09:00 - 18:00 GMT+3",
+        title: t("support.liveChat"),
+        description: t("support.liveChatDesc"),
         icon: "message-text-outline",
         action: () => Linking.openURL("https://plannedeat.app/support"),
       },
       {
         id: "email",
-        title: "Email support",
+        title: t("support.emailSupport"),
         description: "support@plannedeat.app",
         icon: "email-outline",
         action: () =>
@@ -35,13 +37,13 @@ export default function SupportFeedbackScreen() {
       },
       {
         id: "feedback",
-        title: "Product feedback",
-        description: "Share an idea or request a feature.",
+        title: t("support.productFeedback"),
+        description: t("support.productFeedbackDesc"),
         icon: "lightbulb-on-outline",
         action: () => Linking.openURL("https://plannedeat.app/feedback"),
       },
     ],
-    []
+    [t]
   );
 
   return (
@@ -54,7 +56,7 @@ export default function SupportFeedbackScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Support & Feedback</Text>
+        <Text style={styles.headerTitle}>{t("support.title")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -64,13 +66,13 @@ export default function SupportFeedbackScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroCard}>
-          <Text style={styles.heroTitle}>Need a hand?</Text>
+          <Text style={styles.heroTitle}>{t("support.needHelp")}</Text>
           <Text style={styles.heroDescription}>
-            Our meal planning specialists respond in under 2 hours during the day.
+            {t("support.responseTime")}
           </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Contact us</Text>
+        <Text style={styles.sectionLabel}>{t("support.contactUs")}</Text>
         <View style={styles.card}>
           {contactOptions.map((option, index) => (
             <View key={option.id}>
@@ -103,7 +105,7 @@ export default function SupportFeedbackScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>Resources</Text>
+        <Text style={styles.sectionLabel}>{t("support.resources")}</Text>
         <View style={styles.card}>
           <Pressable
             style={styles.listRow}
@@ -117,9 +119,9 @@ export default function SupportFeedbackScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>Help center</Text>
+              <Text style={styles.rowTitle}>{t("support.helpCenter")}</Text>
               <Text style={styles.rowDescription}>
-                Troubleshooting, billing and feature guides.
+                {t("support.helpCenterDesc")}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -141,9 +143,9 @@ export default function SupportFeedbackScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>Service status</Text>
+              <Text style={styles.rowTitle}>{t("support.serviceStatus")}</Text>
               <Text style={styles.rowDescription}>
-                Live uptime for recipes, auth and AI meal plans.
+                {t("support.serviceStatusDesc")}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -186,7 +188,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   heroCard: {
-    backgroundColor: Colors.lilac[50],
+    backgroundColor: Colors.lilac[100],
     borderRadius: 16,
     padding: 20,
     gap: 6,

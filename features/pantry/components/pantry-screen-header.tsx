@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { TabType } from "@/features/pantry";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
@@ -35,12 +36,13 @@ export function PantryScreenHeader({
 }: PantryScreenHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useLanguage();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Top Row: Title & Actions */}
       <View style={styles.topRow}>
-        <Text style={styles.title}>My Pantry</Text>
+        <Text style={styles.title}>{t("pantry.title")}</Text>
 
         <View style={styles.actionsContainer}>
           <View style={styles.clearButtonSpacer}>
@@ -83,8 +85,8 @@ export function PantryScreenHeader({
           style={styles.searchInput}
           placeholder={
             activeTab === "my-ingredients"
-              ? "Search ingredients..."
-              : "Search recipes..."
+              ? `${t("common.search")}...`
+              : `${t("common.search")}...`
           }
           placeholderTextColor={Colors.gray[400]}
           value={
@@ -114,7 +116,7 @@ export function PantryScreenHeader({
                 activeTab === "my-ingredients" && styles.activeTabText,
               ]}
             >
-              My Ingredients
+              {t("pantry.myIngredients")}
             </Text>
             {ingredientsCount > 0 && (
               <View
@@ -146,7 +148,7 @@ export function PantryScreenHeader({
                 activeTab === "recipe-ideas" && styles.activeTabText,
               ]}
             >
-              Recipe Ideas
+              {t("pantry.recipeIdeas")}
             </Text>
             {recipeIdeasCount >= 0 && (
               <View

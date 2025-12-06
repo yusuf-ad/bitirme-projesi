@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 
 type TabType = "discover" | "favorites";
@@ -18,6 +19,7 @@ export function HomeHeader({
   indicatorTranslateX,
   tabWidth,
 }: HomeHeaderProps) {
+  const { t } = useLanguage();
   const formattedFavoriteCount =
     favoriteCount > 99 ? "99+" : favoriteCount.toString();
 
@@ -36,7 +38,7 @@ export function HomeHeader({
                 : styles.inactiveTabText,
             ]}
           >
-            Discover
+            {t("recipes.discover")}
           </Text>
         </Pressable>
         <Pressable
@@ -52,7 +54,7 @@ export function HomeHeader({
                   : styles.inactiveTabText,
               ]}
             >
-              Favorites
+              {t("recipes.favorites")}
             </Text>
 
             {favoriteCount > 0 && (

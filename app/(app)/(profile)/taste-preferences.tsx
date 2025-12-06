@@ -1,5 +1,5 @@
 import { getThemeColors } from "@/constants/theme";
-import { useAuthContext } from "@/hooks/use-auth-context";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
@@ -15,29 +15,49 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const CUISINES = [
-  "Italian", "Mexican", "Chinese", "Japanese", "Indian", "Thai", "French", "Greek", "Spanish", "Mediterranean", "American", "Korean"
-];
-
-const DISLIKES = [
-  "Mushrooms", "Olives", "Cilantro", "Onions", "Garlic", "Spicy Food", "Seafood", "Dairy", "Gluten", "Nuts"
-];
-
 export default function TastePreferencesScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark);
-  const { profile } = useAuthContext();
+  const { t } = useLanguage();
 
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>(["Italian", "Japanese", "Mexican"]);
-  const [selectedDislikes, setSelectedDislikes] = useState<string[]>(["Mushrooms"]);
+  const CUISINES = [
+    { id: "italian", label: t("cuisines.italian") },
+    { id: "mexican", label: t("cuisines.mexican") },
+    { id: "chinese", label: t("cuisines.chinese") },
+    { id: "japanese", label: t("cuisines.japanese") },
+    { id: "indian", label: t("cuisines.indian") },
+    { id: "thai", label: t("cuisines.thai") },
+    { id: "french", label: t("cuisines.french") },
+    { id: "greek", label: t("cuisines.greek") },
+    { id: "spanish", label: t("cuisines.spanish") },
+    { id: "mediterranean", label: t("cuisines.mediterranean") },
+    { id: "american", label: t("cuisines.american") },
+    { id: "korean", label: t("cuisines.korean") },
+  ];
 
-  const toggleSelection = (item: string, list: string[], setList: (l: string[]) => void) => {
+  const DISLIKES = [
+    { id: "mushrooms", label: t("dislikes.mushrooms") },
+    { id: "olives", label: t("dislikes.olives") },
+    { id: "cilantro", label: t("dislikes.cilantro") },
+    { id: "onions", label: t("dislikes.onions") },
+    { id: "garlic", label: t("dislikes.garlic") },
+    { id: "spicyFood", label: t("dislikes.spicyFood") },
+    { id: "seafood", label: t("dislikes.seafood") },
+    { id: "dairy", label: t("dislikes.dairy") },
+    { id: "gluten", label: t("dislikes.gluten") },
+    { id: "nuts", label: t("dislikes.nuts") },
+  ];
+
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>(["italian", "japanese", "mexican"]);
+  const [selectedDislikes, setSelectedDislikes] = useState<string[]>(["mushrooms"]);
+
+  const toggleSelection = (id: string, list: string[], setList: (l: string[]) => void) => {
     Haptics.selectionAsync();
-    if (list.includes(item)) {
-      setList(list.filter((i) => i !== item));
+    if (list.includes(id)) {
+      setList(list.filter((i) => i !== id));
     } else {
-      setList([...list, item]);
+      setList([...list, id]);
     }
   };
 
@@ -50,14 +70,14 @@ export default function TastePreferencesScreen() {
     </Animated.View>
   );
 
-  const ChipGrid = ({ items, selected, onToggle }: { items: string[]; selected: string[]; onToggle: (item: string) => void }) => (
+  const ChipGrid = ({ items, selected, onToggle }: { items: { id: string; label: string }[]; selected: string[]; onToggle: (id: string) => void }) => (
     <View style={styles.chipGrid}>
       {items.map((item) => {
-        const isSelected = selected.includes(item);
+        const isSelected = selected.includes(item.id);
         return (
           <Pressable
-            key={item}
-            onPress={() => onToggle(item)}
+            key={item.id}
+            onPress={() => onToggle(item.id)}
             style={[
               styles.chip,
               { 
@@ -67,7 +87,7 @@ export default function TastePreferencesScreen() {
             ]}
           >
             <Text style={[styles.chipText, { color: isSelected ? "#FFFFFF" : Colors.text.primary }]}>
-              {item}
+              {item.label}
             </Text>
             {isSelected && (
               <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
@@ -91,36 +111,36 @@ export default function TastePreferencesScreen() {
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.text.primary} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>Taste Preferences</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("tastePreferencesPage.title")}</Text>
         <View style={styles.headerRight} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + 40 }]}>
         
         {/* Cuisines */}
-        <Section title="Favorite Cuisines" delay={100}>
+        <Section title={t("tastePreferencesPage.favoriteCuisines")} delay={100}>
           <View style={styles.sectionContent}>
             <Text style={[styles.description, { color: Colors.text.secondary }]}>
-              Select the cuisines you enjoy the most. We'll prioritize recipes from these categories.
+              {t("tastePreferencesPage.favoriteCuisinesDesc")}
             </Text>
             <ChipGrid 
               items={CUISINES} 
               selected={selectedCuisines} 
-              onToggle={(item) => toggleSelection(item, selectedCuisines, setSelectedCuisines)} 
+              onToggle={(id) => toggleSelection(id, selectedCuisines, setSelectedCuisines)} 
             />
           </View>
         </Section>
 
         {/* Dislikes */}
-        <Section title="Dislikes & Exclusions" delay={200}>
+        <Section title={t("tastePreferencesPage.dislikesExclusions")} delay={200}>
           <View style={styles.sectionContent}>
             <Text style={[styles.description, { color: Colors.text.secondary }]}>
-              Ingredients you want to avoid. We'll do our best to exclude recipes containing these.
+              {t("tastePreferencesPage.dislikesExclusionsDesc")}
             </Text>
             <ChipGrid 
               items={DISLIKES} 
               selected={selectedDislikes} 
-              onToggle={(item) => toggleSelection(item, selectedDislikes, setSelectedDislikes)} 
+              onToggle={(id) => toggleSelection(id, selectedDislikes, setSelectedDislikes)} 
             />
           </View>
         </Section>

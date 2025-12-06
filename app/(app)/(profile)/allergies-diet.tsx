@@ -1,11 +1,12 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors } from "@/constants/theme";
 import { TasteAllergies } from "@/features/onboarding/sections/taste";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
-  resolveAllergiesFast,
-  resolveDietPreferences,
-  type DisplayAllergy,
-  type DisplayDietPreference
+    resolveAllergiesFast,
+    resolveDietPreferences,
+    type DisplayAllergy,
+    type DisplayDietPreference
 } from "@/lib/allergies-diet-helpers";
 import { supabase } from "@/lib/supabase";
 import { useOnboarding } from "@/providers/onboarding-provider";
@@ -14,20 +15,21 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AllergiesDietScreen() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
+  const { t } = useLanguage();
   const [dietItems, setDietItems] = useState<DisplayDietPreference[]>([]);
   const [allergyItems, setAllergyItems] = useState<DisplayAllergy[]>([]);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -191,7 +193,7 @@ export default function AllergiesDietScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Allergies & Diet</Text>
+        <Text style={styles.headerTitle}>{t("allergiesDiet.title")}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -211,9 +213,9 @@ export default function AllergiesDietScreen() {
                 />
               </View>
               <View>
-                <Text style={styles.sectionTitle}>Diet Preferences</Text>
+                <Text style={styles.sectionTitle}>{t("allergiesDiet.dietPreferences")}</Text>
                 <Text style={styles.sectionSubtitle}>
-                  {dietItems.length} preference{dietItems.length !== 1 ? "s" : ""} selected
+                  {dietItems.length} {dietItems.length !== 1 ? t("allergiesDiet.preferencesSelectedPlural") : t("allergiesDiet.preferencesSelected")} {t("allergiesDiet.selected")}
                 </Text>
               </View>
             </View>
@@ -242,9 +244,9 @@ export default function AllergiesDietScreen() {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>Allergies & Dislikes</Text>
+                <Text style={styles.sectionTitle}>{t("allergiesDiet.allergiesTitle")}</Text>
                 <Text style={styles.sectionSubtitle}>
-                  {allergyItems.length} item{allergyItems.length !== 1 ? "s" : ""} avoided
+                  {allergyItems.length} {allergyItems.length !== 1 ? t("allergiesDiet.itemsAvoidedPlural") : t("allergiesDiet.itemsAvoided")} {t("allergiesDiet.avoided")}
                 </Text>
               </View>
               <Pressable onPress={handleEditAllergies} style={styles.editButton}>
@@ -274,15 +276,15 @@ export default function AllergiesDietScreen() {
                 color={Colors.lilac[500]}
               />
             </View>
-            <Text style={styles.emptyStateTitle}>No restrictions set</Text>
+            <Text style={styles.emptyStateTitle}>{t("allergiesDiet.noRestrictions")}</Text>
             <Text style={styles.emptyStateText}>
-              You haven't set any dietary preferences or allergies yet.
+              {t("allergiesDiet.noRestrictionsDesc")}
             </Text>
             <Pressable
               style={styles.emptyStateButton}
               onPress={() => router.push("/(onboarding)/flow")}
             >
-              <Text style={styles.emptyStateButtonText}>Set Preferences</Text>
+              <Text style={styles.emptyStateButtonText}>{t("allergiesDiet.setPreferences")}</Text>
             </Pressable>
           </View>
         )}
@@ -296,7 +298,7 @@ export default function AllergiesDietScreen() {
             <View style={styles.addAllergiesIcon}>
               <MaterialCommunityIcons name="plus" size={24} color="#EF4444" />
             </View>
-            <Text style={styles.addAllergiesText}>Add Allergies & Dislikes</Text>
+            <Text style={styles.addAllergiesText}>{t("allergiesDiet.addAllergies")}</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -312,7 +314,7 @@ export default function AllergiesDietScreen() {
             <Pressable onPress={handleCloseModal} style={styles.modalCloseButton}>
               <MaterialCommunityIcons name="close" size={24} color="#000000" />
             </Pressable>
-            <Text style={styles.modalTitle}>Edit Allergies & Dislikes</Text>
+            <Text style={styles.modalTitle}>{t("allergiesDiet.editAllergies")}</Text>
             <View style={styles.modalHeaderRight} />
           </View>
           <View style={styles.modalContent}>
@@ -328,7 +330,7 @@ export default function AllergiesDietScreen() {
               onPress={handleSaveAllergies}
               style={styles.saveButton}
             >
-              <Text style={styles.saveButtonText}>Save Changes</Text>
+              <Text style={styles.saveButtonText}>{t("allergiesDiet.saveChanges")}</Text>
             </Pressable>
           </View>
         </View>

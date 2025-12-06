@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -78,6 +79,7 @@ const SUB_OPTIONS_HEIGHT = 220; // Approximate height of sub-options
 export default function NotificationsScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { selection } = useHaptics();
+  const { t } = useLanguage();
   const onboarding = useOnboarding();
   const [prefs, setPrefs] = useState<NotificationPreferences>(defaultNotifications);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -151,7 +153,7 @@ export default function NotificationsScreen() {
 
   const requestPermission = async () => {
     if (!Device.isDevice) {
-      Alert.alert("Physical Device Required", "Push notifications only work on physical devices.");
+      Alert.alert(t("notifications.physicalDeviceRequired"), t("notifications.physicalDeviceRequiredDesc"));
       return;
     }
 
@@ -169,11 +171,11 @@ export default function NotificationsScreen() {
 
       if (finalStatus !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "Please enable notifications in your device settings to receive meal reminders.",
+          t("notifications.permissionRequired"),
+          t("notifications.permissionRequiredDesc"),
           [
-            { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => Linking.openSettings() },
+            { text: t("common.cancel"), style: "cancel" },
+            { text: t("notifications.openSettings"), onPress: () => Linking.openSettings() },
           ]
         );
       }
@@ -470,13 +472,13 @@ export default function NotificationsScreen() {
   const getPermissionStatusText = () => {
     switch (permissionStatus) {
       case "granted":
-        return "Enabled";
+        return t("common.enabled");
       case "denied":
-        return "Disabled";
+        return t("common.disabled");
       case "undetermined":
-        return "Not Set";
+        return t("common.notSet");
       default:
-        return "Unknown";
+        return t("common.unknown");
     }
   };
 
@@ -498,7 +500,7 @@ export default function NotificationsScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{t("notifications.title")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -531,13 +533,13 @@ export default function NotificationsScreen() {
           <View style={styles.permissionTextContainer}>
             <Text style={styles.permissionTitle}>
               {permissionStatus === "granted" 
-                ? "Notifications are enabled" 
-                : "Enable notifications"}
+                ? t("notifications.enabled")
+                : t("notifications.enable")}
             </Text>
             <Text style={styles.permissionDescription}>
               {permissionStatus === "granted"
-                ? "You'll receive reminders and updates."
-                : "Tap to allow notifications on your device."}
+                ? t("notifications.enabledDesc")
+                : t("notifications.enableDesc")}
             </Text>
           </View>
           <View style={[styles.permissionStatus, { backgroundColor: getPermissionStatusColor() + "20" }]}>
@@ -547,7 +549,7 @@ export default function NotificationsScreen() {
           </View>
         </Pressable>
 
-        <Text style={styles.sectionLabel}>Notification Types</Text>
+        <Text style={styles.sectionLabel}>{t("notifications.notificationTypes")}</Text>
         <View style={styles.card}>
           {/* Meal Reminders with expandable sub-options */}
           <View>
@@ -560,9 +562,9 @@ export default function NotificationsScreen() {
                 />
               </View>
               <View style={styles.optionCopy}>
-                <Text style={styles.optionTitle}>Meal reminders</Text>
+                <Text style={styles.optionTitle}>{t("notifications.mealReminders")}</Text>
                 <Text style={styles.optionDescription}>
-                  Get notified at your scheduled meal times
+                  {t("notifications.mealRemindersDesc")}
                 </Text>
               </View>
               <Switch
@@ -607,7 +609,7 @@ export default function NotificationsScreen() {
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🍳</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>Breakfast</Text>
+                    <Text style={styles.subOptionTitle}>{t("mealTimes.breakfast")}</Text>
                     <Text style={styles.subOptionTime}>{breakfastTimeStr}</Text>
                   </View>
                 </View>
@@ -639,7 +641,7 @@ export default function NotificationsScreen() {
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🥗</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>Lunch</Text>
+                    <Text style={styles.subOptionTitle}>{t("mealTimes.lunch")}</Text>
                     <Text style={styles.subOptionTime}>{lunchTimeStr}</Text>
                   </View>
                 </View>
@@ -671,7 +673,7 @@ export default function NotificationsScreen() {
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🍽️</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>Dinner</Text>
+                    <Text style={styles.subOptionTitle}>{t("mealTimes.dinner")}</Text>
                     <Text style={styles.subOptionTime}>{dinnerTimeStr}</Text>
                   </View>
                 </View>
@@ -692,7 +694,7 @@ export default function NotificationsScreen() {
                 onPress={() => router.push("/(app)/(profile)/meal-times")}
               >
                 <MaterialCommunityIcons name="clock-edit-outline" size={16} color={Colors.lilac[900]} />
-                <Text style={styles.editTimesText}>Edit meal times</Text>
+                <Text style={styles.editTimesText}>{t("notifications.editMealTimes")}</Text>
               </Pressable>
             </Animated.View>
           </View>
@@ -709,11 +711,11 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>Shopping reminders</Text>
+              <Text style={styles.optionTitle}>{t("notifications.shoppingReminders")}</Text>
               <Text style={styles.optionDescription}>
                 {prefs.shoppingReminders 
-                  ? "Every Saturday at 10:00 AM" 
-                  : "Remind me to check my shopping list"}
+                  ? t("notifications.shoppingRemindersEnabled")
+                  : t("notifications.shoppingRemindersDesc")}
               </Text>
             </View>
             <Switch
@@ -739,11 +741,11 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>Weekly recap</Text>
+              <Text style={styles.optionTitle}>{t("notifications.weeklyRecap")}</Text>
               <Text style={styles.optionDescription}>
                 {prefs.weeklyRecap 
-                  ? "Every Sunday at 6:00 PM" 
-                  : "Sunday digest with your cooking stats"}
+                  ? t("notifications.weeklyRecapEnabled")
+                  : t("notifications.weeklyRecapDesc")}
               </Text>
             </View>
             <Switch
@@ -758,7 +760,7 @@ export default function NotificationsScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Actions</Text>
+        <Text style={styles.sectionLabel}>{t("notifications.actions")}</Text>
         <View style={styles.card}>
           <Pressable style={styles.listRow} onPress={handleTestNotification}>
             <View style={styles.rowIconContainer}>
@@ -769,9 +771,9 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>Send test notification</Text>
+              <Text style={styles.rowTitle}>{t("notifications.testNotification")}</Text>
               <Text style={styles.rowDescription}>
-                Check if notifications are working.
+                {t("notifications.testNotificationDesc")}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -793,9 +795,9 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>System settings</Text>
+              <Text style={styles.rowTitle}>{t("notifications.systemSettings")}</Text>
               <Text style={styles.rowDescription}>
-                Manage notifications in device settings.
+                {t("notifications.systemSettingsDesc")}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -807,8 +809,7 @@ export default function NotificationsScreen() {
         </View>
 
         <Text style={styles.footerText}>
-          Notifications help you stay on track with your meal plans.{"\n"}
-          You can change these settings anytime.
+          {t("notifications.footerText")}
         </Text>
       </ScrollView>
     </View>
