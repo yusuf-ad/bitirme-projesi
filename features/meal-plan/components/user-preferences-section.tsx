@@ -15,7 +15,7 @@ function AllergyCard({ allergy }: { allergy: DisplayAllergy }) {
         <Image
           source={{ uri: allergy.imageUrl }}
           style={styles.allergyImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       ) : (
         <View style={[styles.allergyImage, styles.allergyImagePlaceholder]}>
@@ -159,13 +159,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   horizontalCardsContainer: {
-    gap: 12,
-    paddingRight: 16,
+    gap: 8,
   },
   allergyCard: {
     alignItems: "center",
     gap: 8,
-    width: 80,
+    width: 64,
   },
   allergyImage: {
     width: 60,

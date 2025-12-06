@@ -1,8 +1,8 @@
+// generate-recipe+api.ts
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-// Cooking time mapping for prompt - matches frontend options
 const COOKING_TIME_MAP: Record<string, string> = {
   "<15": "under 15 minutes",
   "15-29": "15-29 minutes",
@@ -10,7 +10,6 @@ const COOKING_TIME_MAP: Record<string, string> = {
   open: "any duration",
 };
 
-// Calorie range mapping for prompt - matches frontend options
 const CALORIE_RANGE_MAP: Record<string, { min: number; max: number }> = {
   "<200": { min: 100, max: 200 },
   "200-399": { min: 200, max: 399 },
@@ -20,7 +19,6 @@ const CALORIE_RANGE_MAP: Record<string, { min: number; max: number }> = {
   flexible: { min: 200, max: 800 },
 };
 
-// Recipe schema for AI generation
 const recipeSchema = z.object({
   title: z.string().describe("A creative and appetizing name for the recipe"),
   summary: z.string().describe("A brief 2-3 sentence description of the dish"),
@@ -55,13 +53,11 @@ const recipeSchema = z.object({
       amount: z.number().describe("Amount needed in grams or milliliters"),
       unit: z
         .string()
-        .describe(
-          "Unit of measurement - use 'g' for solids, 'ml' for liquids, 'pieces' only for whole items like eggs"
-        ),
+        .describe("Unit of measurement - use 'g' for solids, 'ml' for liquids"),
       original: z
         .string()
         .describe(
-          "Original ingredient description with precise metric measurements. NEVER use size adjectives like 'large', 'medium', 'small'. Examples: '200g chicken breast', '2 eggs' (NOT '2 large eggs'), '150g onion' (NOT '1 medium onion')"
+          "Original ingredient description with precise metric measurements. NEVER use size adjectives like 'large', 'medium', 'small'"
         ),
     })
   ),
@@ -75,7 +71,6 @@ const recipeSchema = z.object({
     .describe("Array of cooking instruction steps"),
 });
 
-// Request validation schema
 const requestSchema = z.object({
   ingredients: z.array(z.string()).default([]),
   mealType: z.string().optional(),
@@ -89,7 +84,6 @@ const requestSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    // Parse and validate request body
     const rawBody = await req.json();
     const validatedData = requestSchema.parse(rawBody);
 
@@ -104,19 +98,6 @@ export async function POST(req: Request) {
       dislikedCuisines,
     } = validatedData;
 
-    console.log("Generating recipe with preferences:", {
-      ingredients,
-      mealType,
-      cookingTime,
-      calorieRange,
-      allergies,
-      dietPreferences,
-      cuisines,
-      dislikedCuisines,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Get readable cooking time and calorie range with validation
     const cookingTimeText = COOKING_TIME_MAP[cookingTime];
     if (!cookingTimeText) {
       throw new Error(
@@ -135,7 +116,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Helper function to format calorie range for prompt
     function formatCalorieRange(
       range: string,
       obj: { min: number; max: number }
@@ -149,77 +129,93 @@ export async function POST(req: Request) {
     const calorieRangeText = formatCalorieRange(calorieRange, calorieRangeObj);
 
     const prompt = `
-Create a complete, detailed recipe based on the following preferences:
+CREATE A REALISTIC RECIPE - STRICT NAMING & FORMAT RULES
 
-**Available Ingredients (prioritize using these):**
-${ingredients.length > 0 ? ingredients.join(", ") : "Any common ingredients"}
+**User Preferences:**
+- Ingredients: ${
+      ingredients.length > 0 ? ingredients.join(", ") : "Any available"
+    }
+- Meal Type: ${mealType || "Flexible"}
+- Cooking Time: ${cookingTimeText}
+- Calories: ${calorieRangeText} per serving
+- Allergies: ${allergies.length > 0 ? allergies.join(", ") : "None"}
+- Diet: ${dietPreferences.length > 0 ? dietPreferences.join(", ") : "None"}
+- Preferred Cuisines: ${cuisines.length > 0 ? cuisines.join(", ") : "Any"}
+- Avoid Cuisines: ${
+      dislikedCuisines.length > 0 ? dislikedCuisines.join(", ") : "None"
+    }
 
-**Meal Type:** ${mealType || "any meal"}
+---
 
-**Cooking Time:** ${cookingTimeText}
+RECIPE NAMING - STRICT RULES:
+ALLOWED FORMATS:
+1. [Main Ingredient] + [Style/Method] → "Chicken Stir-Fry", "Salmon Teriyaki"
+2. [Cooking Verb] + [Main Ingredient] → "Grilled Salmon", "Roasted Vegetables"
+3. [Ingredient A] + [Ingredient B] + [Dish Type] → "Tomato Basil Pasta"
 
-**Calorie Target:** ${calorieRangeText} per serving
+FORBIDDEN ELEMENTS (NEVER USE):
+- Kitchen tools: skillet, pot, pan, bowl, plate, baking dish, crockpot, instant pot, wok, griddle
+- Size adjectives: large, medium, small, big, mini, jumbo
+- Subjective adjectives: delicious, tasty, savory, hearty, perfect, ultimate, best, quick, easy
+- Cuisine names at start: Mediterranean, Italian, Asian, Mexican, Greek
+- Container words: bowl, plate, dish, pot, casserole
 
-**Allergies/Intolerances (MUST AVOID):**
-${allergies.length > 0 ? allergies.join(", ") : "None specified"}
+CORRECT EXAMPLES:
+- "Garlic Butter Salmon"
+- "Spicy Chicken Pasta"
+- "Beef and Broccoli Stir-Fry"
+- "Lemon Herb Roasted Potatoes"
+- "Creamy Mushroom Risotto"
 
-**STRICTLY FORBIDDEN INGREDIENTS (NEVER USE):**
-Pork, bacon, ham, prosciutto, pancetta, salami, pepperoni, chorizo, lard, pork belly, pork chops, pork loin, pork ribs, sausage (unless specified as beef/chicken/turkey), and any pork-derived products or by-products.
+INCORRECT EXAMPLES (NEVER DO THIS):
+- "Savory Tomato Skillet" (adjective + tool)
+- "Chicken Bowl" (tool)
+- "Hearty Beef Pot" (adjective + tool)
 
-**Diet Preferences:**
-${dietPreferences.length > 0 ? dietPreferences.join(", ") : "None specified"}
+---
 
-**Preferred Cuisines:**
-${cuisines.length > 0 ? cuisines.join(", ") : "Any cuisine"}
+NUTRITIONAL REQUIREMENTS:
+- Must include per serving: Calories, Protein, Carbs, Fat, Fiber, Sugar, Sodium
+- Use accurate gram/mg values
+- Match specified calorie range exactly
 
-**Cuisines to AVOID (DO NOT use these cuisine styles):**
-${dislikedCuisines.length > 0 ? dislikedCuisines.join(", ") : "None"}
+INGREDIENT MEASUREMENTS:
+- SOLIDS: Always grams (g) - "200g chicken breast"
+- LIQUIDS: Milliliters (ml) - "250ml milk"
+- EXCEPTIONS: Whole eggs ("2 eggs"), garlic cloves ("3 garlic cloves")
+- SPICES: tsp/tbsp allowed for <10g amounts
+- NEVER: cups, tablespoons for main items, size adjectives
 
-Requirements:
-1. Create a realistic, cookable recipe that respects ALL dietary restrictions and allergies
-2. Use the available ingredients when possible, but add necessary staples
-3. Keep cooking time within the specified range
-4. Ensure calories per serving ${calorieRange === "1000+"
-        ? "are at least 1000 kcal"
+INSTRUCTIONS:
+- 5-10 clear, numbered steps
+- Include temperatures (°C) and times
+
+TIME & CALORIES:
+- Total time: ${cookingTimeText}
+- Calories: ${
+      calorieRange === "1000+"
+        ? "≥1000"
         : calorieRange === "flexible"
-          ? "are within a flexible range (200-800 kcal)"
-          : `fall within ${calorieRangeObj.min}-${calorieRangeObj.max} kcal`
-      }
-5. Include accurate nutritional information with at least: Calories, Protein, Carbohydrates, Fat, Fiber, Sugar, Sodium
-6. Provide clear, numbered cooking instructions (5-10 steps)
-7. INGREDIENT MEASUREMENTS (VERY IMPORTANT):
-   - ALWAYS use metric units: grams (g) for solids, milliliters (ml) for liquids
-   - NEVER use vague terms like "large", "medium", "small", "a bunch", "a handful"
-   - NEVER use size adjectives for ANY ingredient, including eggs
-   - NEVER use "cups" or "tablespoons" for main ingredients - convert to grams
-   - Examples of CORRECT measurements: "200g chicken breast", "150g onion", "250ml milk", "30g butter", "2 eggs"
-   - Examples of INCORRECT measurements: "2 large eggs", "2 large chicken breasts", "1 medium onion", "1 cup milk"
-   - EXCEPTION: Use "pieces" only for whole countable items like eggs (e.g., "2 eggs"), garlic cloves (e.g., "4 garlic cloves")
-   - For spices and small amounts, you may use teaspoons (tsp) or tablespoons (tbsp)
-8. Make it delicious and practical for home cooking
-9. RECIPE NAMING RULES (VERY IMPORTANT):
-   - DO NOT start with adjectives like "Savory", "Delicious", "Hearty", "Classic", "Homestyle", "Quick", "Easy", "Simple", "Perfect", "Ultimate", "Best"
-   - DO NOT start with cuisine names like "Mediterranean", "Asian", "Italian", "Mexican"
-   - START directly with the main ingredient or cooking method
-   - Good examples: "Tomato Butter Eggs", "Garlic Herb Chicken", "Beef Stir-Fry", "Lemon Pasta", "Mushroom Risotto"
-   - Bad examples: "Savory Tomato Bowl", "Delicious Chicken Dish", "Hearty Beef Stew", "Classic Italian Pasta"
-10. If preferred cuisines are specified, incorporate those flavors. If cuisines to avoid are specified, DO NOT use any ingredients or techniques from those cuisines.
+        ? "200-800"
+        : `${calorieRangeObj.min}-${calorieRangeObj.max}`
+    } kcal/serving
 
-IMPORTANT: The recipe name MUST start with a NOUN (ingredient, food item) or a cooking verb (Grilled, Roasted, Pan-Fried), NEVER with a descriptive adjective.
-Random seed for variety: ${Math.random().toString(36).substring(7)}
+ALLERGY & DIET ENFORCEMENT:
+- DOUBLE-CHECK all ingredients against allergy list
+- VERIFY diet compliance
+- NO PORK or pork-derived products
+
+Critical: Violating naming rules will reject the recipe. Use simple, direct names.
 `;
 
     const result = await generateObject({
       model: openai("gpt-4o"),
       schema: recipeSchema,
-      temperature: 0.8,
+      temperature: 0.6,
       messages: [
         {
           role: "system",
-          content: `You are a professional chef and nutritionist who creates delicious, healthy recipes. 
-You always provide accurate nutritional information and clear cooking instructions.
-You are creative but practical - recipes should be achievable for home cooks.
-Never include ingredients that conflict with stated allergies or dietary restrictions.`,
+          content: `You are a professional chef creating STRICTLY FORMATTED recipes. You ALWAYS follow naming conventions precisely. You NEVER add kitchen tools, adjectives, or subjective terms to recipe names. You are meticulous about measurements and dietary restrictions.`,
         },
         {
           role: "user",
@@ -228,14 +224,12 @@ Never include ingredients that conflict with stated allergies or dietary restric
       ],
     });
 
-    // Generate a unique AI recipe ID (900000-999999 range)
     const aiRecipeId = Math.floor(Math.random() * 100000) + 900000;
 
-    // Construct the final recipe object matching the Recipe interface
     const recipe = {
       id: aiRecipeId,
       title: result.object.title,
-      image: "", // Will use placeholder in UI
+      image: "",
       summary: result.object.summary,
       cuisines: result.object.cuisines,
       dishTypes: result.object.dishTypes,
@@ -244,7 +238,6 @@ Never include ingredients that conflict with stated allergies or dietary restric
       servings: result.object.servings,
       nutrition: result.object.nutrition,
       extendedIngredients: result.object.extendedIngredients,
-      // Convert flat instructions array to analyzedInstructions format
       analyzedInstructions: [
         {
           name: "",
@@ -259,15 +252,6 @@ Never include ingredients that conflict with stated allergies or dietary restric
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    // Enhanced error logging
-    console.error("AI Recipe Generation Error:", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString(),
-      requestId: Math.random().toString(36).substring(7),
-    });
-
-    // Handle Zod validation errors
     if (error instanceof z.ZodError) {
       return new Response(
         JSON.stringify({
@@ -284,7 +268,6 @@ Never include ingredients that conflict with stated allergies or dietary restric
       );
     }
 
-    // Handle other errors
     return new Response(
       JSON.stringify({
         error: "Failed to generate recipe",
