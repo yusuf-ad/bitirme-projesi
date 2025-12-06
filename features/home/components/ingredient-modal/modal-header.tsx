@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useHaptics } from "@/hooks/useHaptics";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -20,6 +21,8 @@ export const ModalHeader = ({
   onShowAllergies,
   onClose,
 }: ModalHeaderProps) => {
+  const { impact } = useHaptics();
+  
   return (
     <Animated.View
       entering={FadeInDown.delay(100).springify()}
@@ -42,7 +45,7 @@ export const ModalHeader = ({
           <Pressable
             hitSlop={24}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              impact(Haptics.ImpactFeedbackStyle.Medium);
               onShowAllergies();
             }}
             style={styles.allergyBadge}
@@ -67,7 +70,7 @@ export const ModalHeader = ({
         <Pressable
           hitSlop={24}
           onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            impact(Haptics.ImpactFeedbackStyle.Light);
             onClose();
           }}
           style={({ pressed }) => [

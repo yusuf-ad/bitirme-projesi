@@ -1,12 +1,13 @@
 import { Colors } from "@/constants/theme";
+import { useHaptics } from "@/hooks/useHaptics";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 
 interface BodyAgeProps {
@@ -25,12 +26,13 @@ export function BodyAge({
   onValueChange,
   initialValue = 30,
 }: BodyAgeProps) {
+  const { impact } = useHaptics();
   const [age, setAge] = useState<number>(initialValue);
   const scale = useSharedValue(1);
 
   function handleIncrement() {
     if (age < MAX_AGE) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      impact(Haptics.ImpactFeedbackStyle.Light);
       const newAge = age + 1;
       setAge(newAge);
       onValueChange?.(newAge);
@@ -40,7 +42,7 @@ export function BodyAge({
 
   function handleDecrement() {
     if (age > MIN_AGE) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      impact(Haptics.ImpactFeedbackStyle.Light);
       const newAge = age - 1;
       setAge(newAge);
       onValueChange?.(newAge);
