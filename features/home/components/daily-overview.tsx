@@ -69,6 +69,8 @@ export default function DailyOverview({
     return targets;
   }, [selectedDietPreferences, dietNutritionTargets]);
 
+  const roundedCalories = Math.round(totalCalories);
+
   return (
     <View style={styles.card}>
       {/* Header */}
@@ -83,7 +85,7 @@ export default function DailyOverview({
 
       {/* Calories */}
       <View style={styles.calorieContainer}>
-        <Text style={styles.currentCalories}>{Math.round(totalCalories)}</Text>
+        <Text style={styles.currentCalories}>{roundedCalories}</Text>
         <Text style={styles.goalCalories}>/{goalCalories} cal goal</Text>
       </View>
 
