@@ -94,6 +94,15 @@ export const PantryItemDetailSheet = forwardRef<
     setInputValue("");
   }, [item?.id]);
 
+  // Determine if we should show weight input based on is_weight OR unit
+  const showAsWeight = useMemo(() => {
+    if (!item) return false;
+    const u = (item.unit || "").toLowerCase();
+    return (
+      item.is_weight || ["g", "gram", "kg", "ml", "l", "milliliter"].includes(u)
+    );
+  }, [item]);
+
   // Format amount for badge display (convert grams to kg, ml to l)
   const formatBadgeAmount = (amount: number, unit: string): string => {
     const unitLower = (unit || "").toLowerCase();
@@ -107,7 +116,7 @@ export const PantryItemDetailSheet = forwardRef<
       unitLower === "milliliters"
     ) {
       const l = amount / 1000;
-      return `${l.toFixed(1)}l`;
+      return `${l.toFixed(2)}l`;
     }
     return String(Math.round(amount));
   };
@@ -131,6 +140,28 @@ export const PantryItemDetailSheet = forwardRef<
       onUpdateItem(item.id, { amount: newAmount });
       setInputValue("");
     }
+  };
+
+  const handleUnitCycle = () => {
+    if (!item || !onUpdateItem) return;
+
+    const u = (item.unit || "").toLowerCase();
+    let newUnit = "pcs";
+    let newIsWeight = false;
+
+    // Cycle: pcs -> g -> ml -> pcs
+    if (u === "g" || u === "gram" || u === "kg") {
+      newUnit = "ml";
+      newIsWeight = true;
+    } else if (u === "ml" || u === "l" || u === "milliliter") {
+      newUnit = "pcs";
+      newIsWeight = false;
+    } else {
+      newUnit = "g";
+      newIsWeight = true;
+    }
+
+    onUpdateItem(item.id, { unit: newUnit, is_weight: newIsWeight });
   };
 
   return (
@@ -195,7 +226,7 @@ export const PantryItemDetailSheet = forwardRef<
               </View>
 
               <View style={styles.statItem}>
-                {item.is_weight ? (
+                {showAsWeight ? (
                   // Weight-based items: show text input
                   <View style={styles.quantityInputContainer}>
                     <TextInput
@@ -208,7 +239,9 @@ export const PantryItemDetailSheet = forwardRef<
                       placeholder={String(item.amount)}
                       returnKeyType="done"
                     />
-                    <Text style={styles.unitText}>{item.unit}</Text>
+                    <TouchableOpacity onPress={handleUnitCycle}>
+                      <Text style={styles.unitText}>{item.unit}</Text>
+                    </TouchableOpacity>
                   </View>
                 ) : (
                   // Count-based items: show +/- buttons
@@ -238,7 +271,17 @@ export const PantryItemDetailSheet = forwardRef<
                     </TouchableOpacity>
                   </View>
                 )}
-                <Text style={styles.statLabel}>QUANTITY</Text>
+                <TouchableOpacity
+                  onPress={handleUnitCycle}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Text style={styles.statLabel}>QUANTITY</Text>
+                  <Ionicons name="pencil" size={12} color={Colors.gray[500]} />
+                </TouchableOpacity>
               </View>
             </View>
 

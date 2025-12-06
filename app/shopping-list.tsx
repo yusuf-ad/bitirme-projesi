@@ -25,6 +25,8 @@ export default function ShoppingListScreen() {
   const [isMovingToPantry, setIsMovingToPantry] = useState(false);
   const hasCheckedItems = useRef(false);
 
+  console.log(items);
+
   const fetchItems = async () => {
     try {
       const data = await pantryService.getItems("shopping_list");

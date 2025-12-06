@@ -27,10 +27,40 @@ export function PantryCategoryPreview({
   if (items.length === 0) return null;
 
   const getBadgeContent = (item: PantryItem) => {
-    if (item.unit === "g" || item.unit === "gram" || item.unit === "grams") {
-      const inKg = item.amount / 1000;
-      return `${parseFloat(inKg.toFixed(2))}kg`;
+    const unitLower = (item.unit || "").toLowerCase();
+
+    if (unitLower === "g" || unitLower === "gram" || unitLower === "grams") {
+      if (item.amount >= 1000) {
+        const inKg = item.amount / 1000;
+        return `${parseFloat(inKg.toFixed(2))}kg`;
+      }
+      return `${Math.round(item.amount)}g`;
     }
+
+    if (
+      unitLower === "ml" ||
+      unitLower === "milliliter" ||
+      unitLower === "milliliters"
+    ) {
+      if (item.amount >= 1000) {
+        const l = item.amount / 1000;
+        return `${parseFloat(l.toFixed(2))}l`;
+      }
+      return `${Math.round(item.amount)}ml`;
+    }
+
+    if (unitLower === "l" || unitLower === "liter" || unitLower === "liters") {
+      return `${parseFloat(item.amount.toFixed(2))}l`;
+    }
+
+    if (
+      unitLower === "kg" ||
+      unitLower === "kilogram" ||
+      unitLower === "kilograms"
+    ) {
+      return `${parseFloat(item.amount.toFixed(2))}kg`;
+    }
+
     return Math.round(item.amount).toString();
   };
 
