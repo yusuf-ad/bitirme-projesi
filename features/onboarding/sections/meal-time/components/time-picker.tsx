@@ -1,12 +1,13 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 interface TimePickerProps {
@@ -25,6 +26,7 @@ export function TimePicker({
   initialMinute = 0,
   initialPeriod = "AM",
 }: TimePickerProps) {
+  const { impact } = useHaptics();
   const [selectedHour, setSelectedHour] = useState(initialHour);
   const [selectedMinute, setSelectedMinute] = useState(initialMinute);
   const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">(
@@ -78,7 +80,7 @@ export function TimePicker({
       const clampedIndex = Math.max(0, Math.min(items.length - 1, index));
       const value = items[clampedIndex];
 
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      impact(Haptics.ImpactFeedbackStyle.Light);
 
       if (type === "hour") {
         const hourNum = parseInt(value, 10);

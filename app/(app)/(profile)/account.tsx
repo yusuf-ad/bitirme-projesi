@@ -1,5 +1,6 @@
 import { getThemeColors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -9,22 +10,22 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
-  Dimensions,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Dimensions,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
+    FadeInDown,
+    FadeInUp,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -47,6 +48,7 @@ export default function AccountScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark);
+  const { t, locale } = useLanguage();
 
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -79,13 +81,13 @@ export default function AccountScreen() {
   const getMemberSinceDate = useCallback(() => {
     if (session?.user?.created_at) {
       const date = new Date(session.user.created_at);
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString(locale === "tr" ? "tr-TR" : "en-US", {
         month: "long",
         year: "numeric",
       });
     }
-    return "Recently";
-  }, [session]);
+    return locale === "tr" ? "Yakın zamanda" : "Recently";
+  }, [session, locale]);
 
   const handleSave = async () => {
     if (!session?.user?.id) return;
@@ -103,11 +105,11 @@ export default function AccountScreen() {
       if (error) throw error;
       
       await refreshProfile();
-      Alert.alert("Success", "Your profile has been updated!");
+      Alert.alert(t("account.success"), t("account.profileUpdated"));
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", "Failed to update profile. Please try again.");
+      Alert.alert(t("account.error"), t("account.updateFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -132,7 +134,7 @@ export default function AccountScreen() {
       await refreshProfile();
     } catch (error) {
       console.error("Error updating avatar:", error);
-      Alert.alert("Error", "Failed to update avatar. Please try again.");
+      Alert.alert(t("account.error"), t("account.avatarFailed"));
       // Revert to profile avatar if failed
       if (profile?.avatar_url) {
         setSelectedAvatar(profile.avatar_url);
@@ -142,10 +144,10 @@ export default function AccountScreen() {
 
   const handleSignOut = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("profile.signOut"), t("profile.signOutConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Sign Out",
+        text: t("profile.signOut"),
         style: "destructive",
         onPress: async () => {
           await supabase.auth.signOut();
@@ -263,7 +265,7 @@ export default function AccountScreen() {
           />
         </Pressable>
         <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
-          Edit Profile
+          {t("account.title")}
         </Text>
         <View style={styles.headerRight} />
       </Animated.View>
@@ -328,7 +330,7 @@ export default function AccountScreen() {
                 color={Colors.lilac[900]}
               />
               <Text style={[styles.memberText, { color: Colors.text.tertiary }]}>
-                Member since {getMemberSinceDate()}
+                {t("profile.memberSince")} {getMemberSinceDate()}
               </Text>
             </View>
           </View>
@@ -340,7 +342,7 @@ export default function AccountScreen() {
           style={styles.section}
         >
           <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-            Personal Information
+            {t("account.personalInfo")}
           </Text>
 
           <View
@@ -358,7 +360,7 @@ export default function AccountScreen() {
                   color={Colors.lilac[900]}
                 />
                 <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
-                  Full Name
+                  {t("account.fullName")}
                 </Text>
               </View>
               {isEditing ? (
@@ -375,13 +377,13 @@ export default function AccountScreen() {
                   ]}
                   value={fullName}
                   onChangeText={setFullName}
-                  placeholder="Enter your name"
+                  placeholder={locale === "tr" ? "Adınızı girin" : "Enter your name"}
                   placeholderTextColor={Colors.text.tertiary}
                   autoCapitalize="words"
                 />
               ) : (
                 <Text style={[styles.fieldValue, { color: Colors.text.primary }]}>
-                  {profile?.full_name || "Not set"}
+                  {profile?.full_name || t("account.notSet")}
                 </Text>
               )}
             </View>
@@ -399,7 +401,7 @@ export default function AccountScreen() {
                   color={Colors.lilac[900]}
                 />
                 <Text style={[styles.fieldLabel, { color: Colors.text.secondary }]}>
-                  Email Address
+                  {t("account.emailAddress")}
                 </Text>
               </View>
               <Text style={[styles.fieldValue, { color: Colors.text.primary }]}>
@@ -425,7 +427,7 @@ export default function AccountScreen() {
                     <Text
                       style={[styles.cancelBtnText, { color: Colors.text.primary }]}
                     >
-                      Cancel
+                      {t("account.cancel")}
                     </Text>
                   </Pressable>
                   <Pressable
@@ -434,7 +436,7 @@ export default function AccountScreen() {
                     disabled={isSaving}
                   >
                     {isSaving ? (
-                      <Text style={styles.saveBtnText}>Saving...</Text>
+                      <Text style={styles.saveBtnText}>{t("account.saving")}</Text>
                     ) : (
                       <>
                         <MaterialCommunityIcons
@@ -442,7 +444,7 @@ export default function AccountScreen() {
                           size={18}
                           color="#FFFFFF"
                         />
-                        <Text style={styles.saveBtnText}>Save Changes</Text>
+                        <Text style={styles.saveBtnText}>{t("account.saveChanges")}</Text>
                       </>
                     )}
                   </Pressable>
@@ -473,7 +475,7 @@ export default function AccountScreen() {
                       { color: Colors.text.primary },
                     ]}
                   >
-                    Edit Information
+                    {t("account.editInfo")}
                   </Text>
                 </Pressable>
               )}
@@ -484,27 +486,27 @@ export default function AccountScreen() {
         {/* Settings Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-            Account Settings
+            {t("account.accountSettings")}
           </Text>
           <View style={styles.settingsGroup}>
             <SettingsItem
                 icon="shield-lock-outline"
-                label="Privacy & Security"
-                subtitle="Manage your data and permissions"
+                label={t("account.privacySecurity")}
+                subtitle={t("account.privacySecurityDesc")}
                 onPress={() => router.push("/(app)/(profile)/privacy")}
                 delay={300}
             />
             <SettingsItem
                 icon="bell-outline"
-                label="Notifications"
-                subtitle="Meal reminders and updates"
+                label={t("profile.notifications")}
+                subtitle={t("account.notificationsDesc")}
                 onPress={() => router.push("/(app)/(profile)/notifications")}
                 delay={350}
             />
             <SettingsItem
                 icon="help-circle-outline"
-                label="Help & Support"
-                subtitle="FAQs and contact us"
+                label={t("account.helpSupport")}
+                subtitle={t("account.helpSupportDesc")}
                 onPress={() => router.push("/(app)/(profile)/support-feedback")}
                 delay={400}
             />
@@ -514,13 +516,13 @@ export default function AccountScreen() {
         {/* Danger Zone */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-            Session
+            {t("account.session")}
           </Text>
           <View style={styles.settingsGroup}>
             <SettingsItem
                 icon="logout"
-                label="Sign Out"
-                subtitle="You can sign back in anytime"
+                label={t("profile.signOut")}
+                subtitle={t("account.signOutDesc")}
                 onPress={handleSignOut}
                 showChevron={false}
                 danger
@@ -535,7 +537,7 @@ export default function AccountScreen() {
           style={styles.versionContainer}
         >
           <Text style={[styles.versionText, { color: Colors.text.tertiary }]}>
-            PlannedEat v1.0.0
+            {t("account.version")}
           </Text>
         </Animated.View>
       </ScrollView>
@@ -555,7 +557,7 @@ export default function AccountScreen() {
           >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
-                Choose an Avatar
+                {t("account.chooseAvatar")}
               </Text>
               <Pressable
                 onPress={() => setIsAvatarModalVisible(false)}

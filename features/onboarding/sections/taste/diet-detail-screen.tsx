@@ -1,6 +1,6 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
@@ -36,6 +36,7 @@ const MACRO_CALORIES = {
 
 export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
   const router = useRouter();
+  const { selection } = useHaptics();
   const insets = useSafeAreaInsets();
   const onboarding = useOnboarding();
 
@@ -145,7 +146,7 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
   }, [data, dietOption, savedTarget]);
 
   const handleBack = async () => {
-    await Haptics.selectionAsync();
+    selection();
     router.back();
   };
 
@@ -154,7 +155,7 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
       return;
     }
 
-    await Haptics.selectionAsync();
+    selection();
 
     const alreadySelected = onboarding.selectedDietPreferences.includes(
       dietOption.id
@@ -230,7 +231,7 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
           <Pressable
             style={styles.retryBanner}
             onPress={async () => {
-              await Haptics.selectionAsync();
+              selection();
               refetch();
             }}
           >
@@ -246,7 +247,7 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
         <Pressable
           style={styles.adjustButton}
           onPress={async () => {
-            await Haptics.selectionAsync();
+            selection();
             router.push({
               pathname: "/(onboarding)/diet/adjust",
               params: { dietId: dietOption.id },

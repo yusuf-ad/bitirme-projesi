@@ -1,16 +1,17 @@
 import { Colors } from "@/constants/theme";
 import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
+import { useHaptics } from "@/hooks/useHaptics";
 import { getMacroSummary } from "@/shared/utils/nutrition";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
 import {
-  AccessibilityInfo,
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    AccessibilityInfo,
+    ActivityIndicator,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMealDetail } from "../hooks/use-meal-detail";
@@ -28,6 +29,7 @@ export function MealDetailScreen({
   isAiGenerated,
 }: MealDetailScreenProps) {
   const router = useRouter();
+  const { selection, impact } = useHaptics();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
   const { data, isPending, isRefetching, refetch, error } = useMealDetail(
@@ -55,26 +57,26 @@ export function MealDetailScreen({
   }, [data?.title]);
 
   const handleRefresh = useCallback(async () => {
-    await Haptics.selectionAsync();
+    selection();
     await refetch();
-  }, [refetch]);
+  }, [refetch, selection]);
 
   const handleBack = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact(Haptics.ImpactFeedbackStyle.Light);
     router.back();
-  }, [router]);
+  }, [router, impact]);
 
   const handleToggleFavorite = useCallback(async () => {
     if (!data) return;
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    impact(Haptics.ImpactFeedbackStyle.Medium);
     toggleFavorite(data);
-  }, [data, toggleFavorite]);
+  }, [data, toggleFavorite, impact]);
 
   const handlePlanMeal = useCallback(async () => {
     if (!data) {
       return;
     }
-    await Haptics.selectionAsync();
+    selection();
     const payload = {
       id: data.id,
       title: data.title,

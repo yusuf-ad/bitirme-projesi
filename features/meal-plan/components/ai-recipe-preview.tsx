@@ -1,11 +1,12 @@
 import { Colors } from "@/constants/theme";
+import { useHaptics } from "@/hooks/useHaptics";
 import { Recipe } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
 import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
 import {
-  Ionicons,
-  MaterialCommunityIcons,
-  MaterialIcons,
+    Ionicons,
+    MaterialCommunityIcons,
+    MaterialIcons,
 } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -58,6 +59,7 @@ export function AIRecipePreview({
   isSaving = false,
 }: AIRecipePreviewProps) {
   const insets = useSafeAreaInsets();
+  const { impact } = useHaptics();
 
   const nutrients = useMemo(
     () => recipe.nutrition?.nutrients ?? [],
@@ -129,19 +131,19 @@ export function AIRecipePreview({
   }, [recipe.analyzedInstructions]);
 
   const handleConfirm = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    impact(Haptics.ImpactFeedbackStyle.Medium);
     onConfirm();
-  }, [onConfirm]);
+  }, [onConfirm, impact]);
 
   const handleRegenerate = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact(Haptics.ImpactFeedbackStyle.Light);
     onRegenerate();
-  }, [onRegenerate]);
+  }, [onRegenerate, impact]);
 
   const handleBack = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact(Haptics.ImpactFeedbackStyle.Light);
     onBack();
-  }, [onBack]);
+  }, [onBack, impact]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

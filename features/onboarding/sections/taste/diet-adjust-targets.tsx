@@ -1,6 +1,6 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -33,6 +33,7 @@ export function DietAdjustTargetsScreen({
 }: DietAdjustTargetsProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { selection } = useHaptics();
   const onboarding = useOnboarding();
 
   const diet = useMemo(
@@ -95,7 +96,7 @@ export function DietAdjustTargetsScreen({
   const handleSave = async (useDefaults = false) => {
     if (!diet || !dietId) return;
 
-    await Haptics.selectionAsync();
+    selection();
 
     let payload;
     if (useDefaults) {
@@ -198,8 +199,9 @@ export function DietAdjustTargetsScreen({
 }
 
 function MacroRow({ label, value, onChange }: MacroRowProps) {
+  const { selection } = useHaptics();
   const handlePress = async (next: number) => {
-    await Haptics.selectionAsync();
+    selection();
     onChange(next);
   };
 

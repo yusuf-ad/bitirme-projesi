@@ -1,5 +1,5 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -28,6 +28,7 @@ export function TasteDietPreferences({
   onSelectionChange,
   initialSelection = [],
 }: TasteDietPreferencesProps) {
+  const { selection } = useHaptics();
   const [selectedDiets, setSelectedDiets] =
     useState<string[]>(initialSelection);
 
@@ -45,7 +46,7 @@ export function TasteDietPreferences({
   };
 
   const handleViewDiet = async (diet: DietOption) => {
-    await Haptics.selectionAsync();
+    selection();
     router.push({
       pathname: "/(onboarding)/diet/[dietId]",
       params: { dietId: diet.id },

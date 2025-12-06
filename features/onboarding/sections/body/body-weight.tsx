@@ -1,13 +1,14 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 
 type WeightUnit = "kg" | "lbs";
@@ -27,6 +28,7 @@ export function BodyWeight({
   initialValue = 70,
   initialUnit = "kg",
 }: BodyWeightProps) {
+  const { impact } = useHaptics();
   const [weight, setWeight] = useState<number>(initialValue);
   const [unit, setUnit] = useState<WeightUnit>(initialUnit);
   const [isEditing, setIsEditing] = useState(false);
@@ -41,7 +43,7 @@ export function BodyWeight({
     const clampedWeight = Math.max(30, Math.min(300, newWeight));
     setWeight(clampedWeight);
     onValueChange?.(clampedWeight, unit);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact(Haptics.ImpactFeedbackStyle.Light);
   }
 
   const panGesture = Gesture.Pan()

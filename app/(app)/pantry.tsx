@@ -1,17 +1,18 @@
 import { Colors, getThemeColors } from "@/constants/theme";
 import {
-  EmptyPantryState,
-  PantryCategory,
-  PantryCategoryPreview,
-  PantryItem,
-  PantryItemDetailSheet,
-  PantryScreenHeader,
-  PantrySkeleton,
-  RecipeIdeasView,
-  TabType,
+    EmptyPantryState,
+    PantryCategory,
+    PantryCategoryPreview,
+    PantryItem,
+    PantryItemDetailSheet,
+    PantryScreenHeader,
+    PantrySkeleton,
+    RecipeIdeasView,
+    TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
+import { useLanguage } from "@/hooks/useLanguage";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
 import { useTheme } from "@/providers/theme-provider";
@@ -24,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function PantryTab() {
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
   const [recipeSearchQuery, setRecipeSearchQuery] = useState("");
@@ -179,15 +181,15 @@ export default function PantryTab() {
 
   const handleClearAll = () => {
     Alert.alert(
-      "Clear Pantry",
-      "Are you sure you want to remove all items from your pantry? This action cannot be undone.",
+      t("pantry.clearPantry"),
+      t("pantry.clearPantryConfirm"),
       [
         {
-          text: "Cancel",
+          text: t("common.cancel"),
           style: "cancel",
         },
         {
-          text: "Clear All",
+          text: t("common.clearAll"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -195,7 +197,7 @@ export default function PantryTab() {
               refetch(); // Refresh data after clearing
             } catch (error) {
               console.error("Failed to clear pantry:", error);
-              Alert.alert("Error", "Failed to clear pantry items");
+              Alert.alert(t("common.error"), t("pantry.clearPantryConfirm"));
               refetch(); // Revert on error
             }
           },

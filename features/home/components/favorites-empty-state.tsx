@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -8,6 +9,8 @@ interface FavoritesEmptyStateProps {
 }
 
 export function FavoritesEmptyState({ onExplore }: FavoritesEmptyStateProps) {
+  const { t } = useLanguage();
+  
   const handleExplorePress = async () => {
     await Haptics.selectionAsync();
     onExplore();
@@ -19,10 +22,9 @@ export function FavoritesEmptyState({ onExplore }: FavoritesEmptyStateProps) {
         <Ionicons name="heart-outline" size={32} color={Colors.lilac[900]} />
       </View>
 
-      <Text style={styles.title}>No favorite recipes yet</Text>
+      <Text style={styles.title}>{t("recipes.noFavorites")}</Text>
       <Text style={styles.subtitle}>
-        All recipes you like in the Discover section will be collected here. Start
-        searching to choose your daily inspiration.
+        {t("recipes.noFavoritesDesc")}
       </Text>
 
       <Pressable
@@ -30,9 +32,9 @@ export function FavoritesEmptyState({ onExplore }: FavoritesEmptyStateProps) {
         style={styles.ctaButton}
         android_ripple={{ color: Colors.lilac[700] }}
         accessibilityRole="button"
-        accessibilityLabel="Return to Discover tab"
+        accessibilityLabel={t("recipes.returnToDiscover")}
       >
-        <Text style={styles.ctaText}>Return to Discover</Text>
+        <Text style={styles.ctaText}>{t("recipes.returnToDiscover")}</Text>
       </Pressable>
     </View>
   );
