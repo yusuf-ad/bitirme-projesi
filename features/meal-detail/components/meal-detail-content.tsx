@@ -1,35 +1,35 @@
 import { Colors } from "@/constants/theme";
+import { useHaptics } from "@/hooks/useHaptics";
 import { Recipe } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
 import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  LayoutAnimation,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  UIManager,
-  View,
+    LayoutAnimation,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    UIManager,
+    View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  Easing,
-  Extrapolation,
-  FadeInDown,
-  FadeOutUp,
-  interpolate,
-  runOnJS,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming
+    Easing,
+    Extrapolation,
+    FadeInDown,
+    FadeOutUp,
+    interpolate,
+    runOnJS,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withTiming
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -147,6 +147,7 @@ export function MealDetailContent({
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
   const insets = useSafeAreaInsets();
+  const { selection } = useHaptics();
   const scrollY = useSharedValue(0);
   const tabProgress = useSharedValue(0);
 
@@ -291,7 +292,7 @@ export function MealDetailContent({
     (tabKey: TabKey) => {
       if (tabKey === activeTab) return;
 
-      Haptics.selectionAsync();
+      selection();
 
       // Animate layout change - faster duration
       LayoutAnimation.configureNext({

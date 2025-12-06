@@ -1,13 +1,13 @@
 import { Colors } from "@/constants/theme";
-import * as Haptics from "expo-haptics";
+import { useHaptics } from "@/hooks/useHaptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-    FadeIn,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 
 interface HeaderProps {
@@ -18,6 +18,7 @@ interface HeaderProps {
 
 export default function Header({ firstName, motivationText, avatarUrl }: HeaderProps) {
   const router = useRouter();
+  const { impact } = useHaptics();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -26,7 +27,7 @@ export default function Header({ firstName, motivationText, avatarUrl }: HeaderP
 
   function handleProfilePress() {
     // Haptic feedback for touch interaction
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact();
 
     // Navigate to profile tab
     router.push("/(profile)");

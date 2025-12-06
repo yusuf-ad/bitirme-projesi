@@ -1,21 +1,21 @@
 import { Colors } from "@/constants/theme";
+import { useHaptics } from "@/hooks/useHaptics";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import {
-  ImageSourcePropType,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ImageSourcePropType,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 import Animated, {
-  Extrapolation,
-  interpolate,
-  SharedValue,
-  useAnimatedStyle,
+    Extrapolation,
+    interpolate,
+    SharedValue,
+    useAnimatedStyle,
 } from "react-native-reanimated";
 
 interface EmptyMealSlotProps {
@@ -37,6 +37,7 @@ export function EmptyMealSlot({
   onMealAdded,
   scrollY,
 }: EmptyMealSlotProps) {
+  const { impact } = useHaptics();
   // Animated styles for collapsible content - optimized for UI thread
   // Using only GPU-accelerated properties (opacity, transform) for 60fps animations
   const contentAnimatedStyle = useAnimatedStyle(() => {
@@ -96,7 +97,7 @@ export function EmptyMealSlot({
   });
 
   const handlePress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact();
     router.push({
       pathname: "/(app)/recipes",
       params: { mealSlot },
@@ -104,7 +105,7 @@ export function EmptyMealSlot({
   };
 
   const handleOpenAiRecipe = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact();
     // Format date as YYYY-MM-DD without UTC conversion
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, "0");

@@ -1,13 +1,14 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 
 type HeightUnit = "cm" | "ft";
@@ -27,6 +28,7 @@ export function BodyHeight({
   initialValue = 170,
   initialUnit = "cm",
 }: BodyHeightProps) {
+  const { impact } = useHaptics();
   const [height, setHeight] = useState<number>(initialValue);
   const [unit, setUnit] = useState<HeightUnit>(initialUnit);
   const [isEditing, setIsEditing] = useState(false);
@@ -41,7 +43,7 @@ export function BodyHeight({
     const clampedHeight = Math.max(100, Math.min(250, newHeight));
     setHeight(clampedHeight);
     onValueChange?.(clampedHeight, unit);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact(Haptics.ImpactFeedbackStyle.Light);
   }
 
   const panGesture = Gesture.Pan()

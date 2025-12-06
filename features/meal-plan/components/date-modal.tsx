@@ -1,10 +1,10 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetView,
+    BottomSheetBackdrop,
+    BottomSheetModal,
+    BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import WheelPicker from "@quidone/react-native-wheel-picker";
-import * as Haptics from "expo-haptics";
 import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
 
@@ -78,6 +78,7 @@ export const DateModal = forwardRef<BottomSheetModal, DateModalProps>(
       currentDate,
       onDateSelect,
     } = props;
+    const { selection } = useHaptics();
 
     // Generate date options based on dateType
     const dateOptions = useMemo((): DateOption[] => {
@@ -131,13 +132,9 @@ export const DateModal = forwardRef<BottomSheetModal, DateModalProps>(
         setSelectedIndex(index);
         onDateSelect?.(item.value);
         // Subtle haptic feedback on each step, similar to iOS picker "taps"
-        try {
-          await Haptics.selectionAsync();
-        } catch {
-          // Haptics might not be available on all platforms; fail silently
-        }
+        selection();
       },
-      [dateOptions, onDateSelect]
+      [dateOptions, onDateSelect, selection]
     );
 
     // Callbacks

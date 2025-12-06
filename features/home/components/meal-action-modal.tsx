@@ -1,24 +1,25 @@
 import { Colors } from "@/constants/theme";
+import { useHaptics } from "@/hooks/useHaptics";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetView,
+    BottomSheetBackdrop,
+    BottomSheetModal,
+    BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { forwardRef, useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  Easing,
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  FadeOut,
-  interpolateColor,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    Easing,
+    FadeIn,
+    FadeInDown,
+    FadeInUp,
+    FadeOut,
+    interpolateColor,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 
 interface MealActionModalProps {
@@ -53,7 +54,7 @@ export const MealActionModal = forwardRef<
     ref
   ) => {
     const progress = useSharedValue(isEaten ? 1 : 0);
-
+    const { impact, notification } = useHaptics();
 
     // Sync with prop
     useEffect(() => {
@@ -76,14 +77,14 @@ export const MealActionModal = forwardRef<
     );
 
     const handleToggleEaten = async () => {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      impact(Haptics.ImpactFeedbackStyle.Light);
       const newValue = progress.value < 0.5;
       progress.value = withTiming(newValue ? 1 : 0, TIMING_CONFIG);
       onToggleEaten?.(newValue);
     };
 
     const handleReplace = async () => {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      impact(Haptics.ImpactFeedbackStyle.Medium);
       if (typeof ref !== "function" && ref?.current?.dismiss) {
         ref.current.dismiss();
       }
@@ -92,7 +93,7 @@ export const MealActionModal = forwardRef<
     };
 
     const handleDelete = async () => {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      notification(Haptics.NotificationFeedbackType.Warning);
       if (typeof ref !== "function" && ref?.current?.dismiss) {
         ref.current.dismiss();
       }

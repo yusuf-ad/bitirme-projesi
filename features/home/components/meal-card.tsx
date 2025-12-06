@@ -1,10 +1,10 @@
 import { Colors } from "@/constants/theme";
+import { useHaptics } from "@/hooks/useHaptics";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRef } from "react";
@@ -55,14 +55,15 @@ export default function MealCard({
   onReplace,
 }: MealCardProps) {
   const mealActionModalRef = useRef<BottomSheetModal>(null);
+  const { impact, notification } = useHaptics();
 
   const handleEditPress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    impact();
     mealActionModalRef.current?.present();
   };
 
   const handleDelete = async () => {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    notification();
     onDelete?.();
   };
 

@@ -1,5 +1,7 @@
 import { SplashScreenController } from "@/features/splash-screen/splash-screen-controller";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { initHaptics } from "@/hooks/useHaptics";
+import { loadSavedLanguage } from "@/lib/i18n";
 import AuthProvider from "@/providers/auth-provider";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
 import { ThemeProvider, useTheme } from "@/providers/theme-provider";
@@ -11,7 +13,16 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+// Initialize app preferences
+const initializeApp = async () => {
+  await Promise.all([
+    initHaptics(),
+    loadSavedLanguage(),
+  ]);
+};
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -51,6 +62,10 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    initializeApp();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
