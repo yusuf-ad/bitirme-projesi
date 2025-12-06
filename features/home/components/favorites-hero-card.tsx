@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View } from "react-native";
@@ -8,6 +9,8 @@ interface FavoritesHeroCardProps {
 }
 
 export function FavoritesHeroCard({ favoriteCount }: FavoritesHeroCardProps) {
+  const { t } = useLanguage();
+  
   return (
     <LinearGradient
       colors={[Colors.lilac[900], Colors.lilac[700]]}
@@ -18,15 +21,14 @@ export function FavoritesHeroCard({ favoriteCount }: FavoritesHeroCardProps) {
       </View>
 
       <View style={styles.textWrapper}>
-        <Text style={styles.eyebrow}>Your Inspiration Board</Text>
+        <Text style={styles.eyebrow}>{t("recipes.inspirationBoard")}</Text>
         <Text style={styles.title}>
           {favoriteCount > 0
-            ? `${favoriteCount} recipes always at hand`
-            : "Save recipes you love"}
+            ? `${favoriteCount} ${t("recipes.recipesAtHand")}`
+            : t("recipes.saveRecipesYouLove")}
         </Text>
         <Text style={styles.subtitle}>
-          Recipes are collected here when you tap the heart icon. Adding
-          favorites to your plans is now easier.
+          {t("recipes.heroSubtitle")}
         </Text>
       </View>
     </LinearGradient>

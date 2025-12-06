@@ -3,6 +3,7 @@ import { useAuthContext } from "@/hooks/use-auth-context";
 import { initHaptics } from "@/hooks/useHaptics";
 import { loadSavedLanguage } from "@/lib/i18n";
 import AuthProvider from "@/providers/auth-provider";
+import { LanguageProvider } from "@/providers/language-provider";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
 import { ThemeProvider, useTheme } from "@/providers/theme-provider";
 import {
@@ -69,19 +70,21 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <OnboardingProvider>
-            <AttachMenuProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <BottomSheetModalProvider>
-                  <SplashScreenController />
-                  <RootNavigator />
-                  <AttachMenuOverlay />
-                </BottomSheetModalProvider>
-              </GestureHandlerRootView>
-            </AttachMenuProvider>
-          </OnboardingProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <OnboardingProvider>
+              <AttachMenuProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <BottomSheetModalProvider>
+                    <SplashScreenController />
+                    <RootNavigator />
+                    <AttachMenuOverlay />
+                  </BottomSheetModalProvider>
+                </GestureHandlerRootView>
+              </AttachMenuProvider>
+            </OnboardingProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

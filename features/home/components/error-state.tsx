@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface ErrorStateProps {
@@ -7,14 +8,16 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  message = "Error loading recipes. Please try again.",
+  message,
   onRetry,
 }: ErrorStateProps) {
+  const { t } = useLanguage();
+  
   return (
     <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>{message}</Text>
+      <Text style={styles.errorText}>{message || t("recipes.tryDifferentSearch")}</Text>
       <Pressable style={styles.retryButton} onPress={onRetry}>
-        <Text style={styles.retryButtonText}>Retry</Text>
+        <Text style={styles.retryButtonText}>{t("recipes.retry")}</Text>
       </Pressable>
     </View>
   );

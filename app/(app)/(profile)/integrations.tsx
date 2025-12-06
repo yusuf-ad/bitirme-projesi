@@ -5,12 +5,12 @@ import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,6 +35,7 @@ export default function IntegrationsScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { focus } = params;
+  const { t, locale } = useLanguage();
 
   const [state, setState] = useState<IntegrationState>(defaultIntegrations);
   const [isReady, setIsReady] = useState(false);
@@ -85,21 +86,21 @@ export default function IntegrationsScreen() {
     () => [
       {
         id: "strava",
-        title: "Strava",
-        description: "Pull in workouts to adjust calorie targets.",
+        title: t("integrations.strava"),
+        description: t("integrations.stravaDesc"),
       },
       {
         id: "fitbit",
-        title: "Fitbit",
-        description: "Sync steps, sleep and readiness scores.",
+        title: t("integrations.fitbit"),
+        description: t("integrations.fitbitDesc"),
       },
       {
         id: "healthKit",
-        title: "Apple Health",
-        description: "Mirror mindfulness minutes and water intake.",
+        title: t("integrations.appleHealth"),
+        description: t("integrations.appleHealthDesc"),
       },
     ],
-    []
+    [t]
   );
 
   return (
@@ -112,7 +113,7 @@ export default function IntegrationsScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Integrations</Text>
+        <Text style={styles.headerTitle}>{t("integrations.title")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -135,9 +136,9 @@ export default function IntegrationsScreen() {
                 color={Colors.lilac[900]}
               />
               <View>
-                <Text style={styles.cardTitle}>Apple Watch</Text>
+                <Text style={styles.cardTitle}>{t("integrations.appleWatch")}</Text>
                 <Text style={styles.cardSubtitle}>
-                  Sync rings, activity calories and mindfulness minutes.
+                  {t("integrations.appleWatchDesc")}
                 </Text>
               </View>
             </View>
@@ -161,10 +162,10 @@ export default function IntegrationsScreen() {
                 color="#22C55E"
               />
               <Text style={styles.syncText}>
-                Last synced{" "}
+                {t("integrations.lastSynced")}{" "}
                 {state.appleWatchLastSync
-                  ? new Date(state.appleWatchLastSync).toLocaleString()
-                  : "just now"}
+                  ? new Date(state.appleWatchLastSync).toLocaleString(locale === "tr" ? "tr-TR" : "en-US")
+                  : t("integrations.justNow")}
               </Text>
             </View>
           )}
@@ -176,7 +177,7 @@ export default function IntegrationsScreen() {
             focus === "partners" && styles.integrationCardFocused,
           ]}
         >
-          <Text style={styles.cardTitle}>Partner accounts</Text>
+          <Text style={styles.cardTitle}>{t("integrations.partnerAccounts")}</Text>
           {partnerOptions.map((partner, index) => (
             <View key={partner.id}>
               <View style={styles.partnerRow}>

@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, View } from "react-native";
@@ -8,6 +9,8 @@ interface EmptyPantryStateProps {
 }
 
 export function EmptyPantryState({ onPrefill }: EmptyPantryStateProps) {
+  const { t } = useLanguage();
+  
   return (
     <View style={styles.container}>
       <Image
@@ -16,10 +19,9 @@ export function EmptyPantryState({ onPrefill }: EmptyPantryStateProps) {
         style={styles.image}
         resizeMode="contain"
       />
-      <Text style={styles.title}>Your Pantry is empty.</Text>
+      <Text style={styles.title}>{t("pantry.emptyTitle")}</Text>
       <Text style={styles.description}>
-        Add your first items or get a quick start by adding the most common
-        pantry staples.
+        {t("pantry.emptyDesc")}
       </Text>
       <CustomButton onPress={onPrefill} containerStyle={styles.button}>
         <View style={styles.buttonContent}>
@@ -29,7 +31,7 @@ export function EmptyPantryState({ onPrefill }: EmptyPantryStateProps) {
             color={Colors.text.primary}
             style={styles.icon}
           />
-          <Text style={styles.buttonText}>PRE-FILL MY PANTRY</Text>
+          <Text style={styles.buttonText}>{t("pantry.prefill").toUpperCase()}</Text>
         </View>
       </CustomButton>
     </View>

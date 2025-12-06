@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -19,6 +20,7 @@ interface HeaderProps {
 export default function Header({ firstName, motivationText, avatarUrl }: HeaderProps) {
   const router = useRouter();
   const { impact } = useHaptics();
+  const { t } = useLanguage();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -51,8 +53,8 @@ export default function Header({ firstName, motivationText, avatarUrl }: HeaderP
     <Animated.View style={styles.header} entering={FadeIn.duration(500)}>
       <View style={styles.headerLeft}>
         <View>
-          <Text style={styles.greeting}>Hello, {firstName}!</Text>
-          <Text style={styles.date}>{motivationText}</Text>
+          <Text style={styles.greeting}>{t("home.hello")}, {firstName}!</Text>
+          <Text style={styles.date}>{motivationText || t("home.letsplan")}</Text>
         </View>
       </View>
       <View style={styles.headerRight}>

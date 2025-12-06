@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useLanguage } from "@/hooks/useLanguage";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -30,6 +31,7 @@ const defaultPreferences: PrivacyPreferences = {
 export default function PrivacyScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { selection } = useHaptics();
+  const { t } = useLanguage();
   const [prefs, setPrefs] = useState<PrivacyPreferences>(defaultPreferences);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -62,12 +64,12 @@ export default function PrivacyScreen() {
 
   const handleReset = async () => {
     Alert.alert(
-      "Reset privacy settings?",
-      "We'll restore default privacy choices. You can undo this anytime.",
+      t("privacy.resetConfirm"),
+      t("privacy.resetConfirmDesc"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Reset",
+          text: t("common.reset"),
           style: "destructive",
           onPress: async () => {
             setPrefs(defaultPreferences);
@@ -84,8 +86,8 @@ export default function PrivacyScreen() {
   const handleExport = () => {
     selection();
     Alert.alert(
-      "Request sent",
-      "We'll compile your data export and email it to you within 48 hours."
+      t("privacy.requestSent"),
+      t("privacy.requestSentDesc")
     );
   };
 
@@ -93,8 +95,8 @@ export default function PrivacyScreen() {
     {
       id: "insights",
       icon: "lightbulb-on-outline" as const,
-      title: "Personalized insights",
-      description: "Enable AI-powered meal suggestions and tips based on your preferences and goals.",
+      title: t("privacy.personalizedInsights"),
+      description: t("privacy.personalizedDesc"),
       value: prefs.personalizedInsights,
       onToggle: (value: boolean) =>
         updatePreference("personalizedInsights", value),
@@ -123,7 +125,7 @@ export default function PrivacyScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>Privacy & Data</Text>
+        <Text style={styles.headerTitle}>{t("privacy.title")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -140,11 +142,11 @@ export default function PrivacyScreen() {
             color={Colors.lilac[900]}
           />
           <Text style={styles.infoBannerText}>
-            Your data is encrypted and never sold to third parties.
+            {t("privacy.dataEncrypted")}
           </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Privacy Controls</Text>
+        <Text style={styles.sectionLabel}>{t("privacy.privacyControls")}</Text>
         <View style={styles.card}>
           {privacyOptions.map((option, index) => (
             <View key={option.id}>
@@ -177,7 +179,7 @@ export default function PrivacyScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>Data Management</Text>
+        <Text style={styles.sectionLabel}>{t("privacy.dataManagement")}</Text>
         <View style={styles.card}>
           <Pressable
             style={styles.listRow}
@@ -192,9 +194,9 @@ export default function PrivacyScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>Export my data</Text>
+              <Text style={styles.rowTitle}>{t("privacy.exportData")}</Text>
               <Text style={styles.rowDescription}>
-                Download a copy of all your data.
+                {t("privacy.exportDataDesc")}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -208,12 +210,12 @@ export default function PrivacyScreen() {
             style={styles.listRow}
             onPress={() =>
               Alert.alert(
-                "Delete Account",
-                "This will permanently delete all your data including meal plans, preferences, and history. This action cannot be undone.",
+                t("privacy.deleteAccount"),
+                t("privacy.deleteAccountConfirm"),
                 [
-                  { text: "Cancel", style: "cancel" },
+                  { text: t("common.cancel"), style: "cancel" },
                   {
-                    text: "Delete",
+                    text: t("common.delete"),
                     style: "destructive",
                     onPress: () => Linking.openURL("mailto:privacy@plannedeat.app?subject=Delete my data"),
                   },
@@ -229,9 +231,9 @@ export default function PrivacyScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={[styles.rowTitle, styles.dangerText]}>Delete my account</Text>
+              <Text style={[styles.rowTitle, styles.dangerText]}>{t("privacy.deleteAccount")}</Text>
               <Text style={styles.rowDescription}>
-                Permanently remove all your data.
+                {t("privacy.deleteAccountDesc")}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -248,12 +250,12 @@ export default function PrivacyScreen() {
             size={18}
             color={Colors.text.primary}
           />
-          <Text style={styles.resetText}>Reset to defaults</Text>
+          <Text style={styles.resetText}>{t("privacy.resetToDefaults")}</Text>
         </Pressable>
 
         <Text style={styles.footerText}>
-          Last updated: December 2025{"\n"}
-          Questions? Contact privacy@plannedeat.app
+          {t("privacy.lastUpdated")}{"\n"}
+          {t("privacy.contactPrivacy")}
         </Text>
       </ScrollView>
     </View>

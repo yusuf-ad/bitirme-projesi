@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useLanguage } from "@/hooks/useLanguage";
 import CustomButton from "@/shared/components/custom-button";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { SvgXml } from "react-native-svg";
@@ -21,6 +22,8 @@ interface MealPlanEmptyStateProps {
 }
 
 export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
+  const { t } = useLanguage();
+  
   return (
     <>
       {/* Hero Image */}
@@ -41,7 +44,7 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
           <SvgXml xml={silverwareIcon} width={24} height={24} />
           <View style={styles.featureTextContainer}>
             <Text style={styles.featureText}>
-              Meals for breakfast, lunch, and dinner
+              {t("mealPlan.feature1")}
             </Text>
           </View>
         </View>
@@ -51,7 +54,7 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
           <SvgXml xml={preferencesIcon} width={24} height={24} />
           <View style={styles.featureTextContainer}>
             <Text style={styles.featureText}>
-              Tailored to your goals and preferences
+              {t("mealPlan.feature2")}
             </Text>
           </View>
         </View>
@@ -61,7 +64,7 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
           <SvgXml xml={chartPieIcon} width={24} height={24} />
           <View style={styles.featureTextContainer}>
             <Text style={styles.featureText}>
-              Balanced proteins, fats, carbs and fiber
+              {t("mealPlan.feature3")}
             </Text>
           </View>
         </View>
@@ -73,7 +76,7 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
           containerStyle={[styles.createButton]}
           onPress={onCreatePress}
         >
-          <Text style={styles.buttonText}>+ Create meal plan</Text>
+          <Text style={styles.buttonText}>{t("mealPlan.createMealPlan")}</Text>
         </CustomButton>
       </View>
     </>

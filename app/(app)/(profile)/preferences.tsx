@@ -3,9 +3,10 @@ import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Animated,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -20,11 +21,53 @@ const LANGUAGES = [
   { code: "tr" as const, name: "Türkçe", flag: "🇹🇷" },
 ];
 
+const LANGUAGE_OPTIONS_HEIGHT = 120; // Approximate height of language options
+
 export default function PreferencesScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { locale, isLoaded, changeLanguage, t } = useLanguage();
   const { isEnabled: hapticEnabled, setHapticEnabled, selection } = useHaptics();
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  
+  // Animation values
+  const expandAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  // Animate language picker when showLanguagePicker changes
+  useEffect(() => {
+    if (showLanguagePicker) {
+      // Expand animation
+      Animated.parallel([
+        Animated.spring(expandAnim, {
+          toValue: 1,
+          useNativeDriver: false,
+          tension: 50,
+          friction: 8,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 200,
+          delay: 100,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else {
+      // Collapse animation
+      Animated.parallel([
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: false,
+        }),
+        Animated.spring(expandAnim, {
+          toValue: 0,
+          useNativeDriver: false,
+          tension: 50,
+          friction: 8,
+        }),
+      ]).start();
+    }
+  }, [showLanguagePicker, expandAnim, opacityAnim]);
 
   const getCurrentLang = () => {
     return LANGUAGES.find((l) => l.code === locale) || LANGUAGES[0];
@@ -96,12 +139,33 @@ export default function PreferencesScreen() {
             </View>
           </Pressable>
 
-          {/* Language Picker */}
-          {showLanguagePicker && (
-            <View style={styles.pickerContainer}>
-              {LANGUAGES.map((lang) => (
+          {/* Language Picker - Animated */}
+          <Animated.View 
+            style={[
+              styles.pickerContainer,
+              {
+                maxHeight: expandAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, LANGUAGE_OPTIONS_HEIGHT],
+                }),
+                opacity: opacityAnim,
+                overflow: "hidden",
+              }
+            ]}
+          >
+            {LANGUAGES.map((lang, index) => (
+              <Animated.View
+                key={lang.code}
+                style={{
+                  transform: [{
+                    translateX: expandAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-20, 0],
+                    }),
+                  }],
+                }}
+              >
                 <Pressable
-                  key={lang.code}
                   style={[
                     styles.pickerOption,
                     locale === lang.code && styles.pickerOptionSelected,
@@ -129,9 +193,9 @@ export default function PreferencesScreen() {
                     />
                   )}
                 </Pressable>
-              ))}
-            </View>
-          )}
+              </Animated.View>
+            ))}
+          </Animated.View>
 
           <View style={styles.divider} />
 

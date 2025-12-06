@@ -1,6 +1,7 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/lib/supabase";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import { useTheme } from "@/providers/theme-provider";
@@ -11,25 +12,25 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
-  Dimensions,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Dimensions,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  Extrapolation,
-  FadeInDown,
-  FadeInRight,
-  interpolate,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
+    Extrapolation,
+    FadeInDown,
+    FadeInRight,
+    interpolate,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -163,6 +164,7 @@ export default function ProfileTab() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
   const { theme, toggleTheme, isDark } = useTheme();
+  const { t } = useLanguage();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const Colors = getThemeColors(isDark);
@@ -376,19 +378,19 @@ export default function ProfileTab() {
 
   function handleSignOut() {
     Alert.alert(
-      "Sign out",
-      "Are you sure you want to sign out? Your saved preferences will stay on this device.",
+      t("profile.signOut"),
+      t("profile.signOutConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Sign out",
+          text: t("profile.signOut"),
           style: "destructive",
           onPress: async () => {
             try {
               await supabase.auth.signOut();
             } catch (error) {
               Alert.alert(
-                "Error",
+                t("common.error"),
                 "We couldn't sign you out. Please try again."
               );
             }
@@ -452,14 +454,14 @@ export default function ProfileTab() {
     return [
       {
         id: "goals",
-        title: "Goals",
+        title: t("profile.goals"),
         value: profileData?.goals?.length
-          ? `${profileData.goals.length} active`
-          : "Set your goals",
+          ? `${profileData.goals.length} ${t("profile.activeGoals")}`
+          : t("profile.setYourGoals"),
         detail:
           profileData?.goals?.length && profileData.goals.length > 0
             ? profileData.goals.slice(0, 2).join(", ")
-            : "Tap to personalize your plan",
+            : t("profile.tapToPersonalize"),
         icon: "target",
         onPress: () => router.push("/(app)/(profile)/goals-metrics"),
         accentColor: "#FFFFFF",
@@ -468,12 +470,12 @@ export default function ProfileTab() {
       },
       {
         id: "schedule",
-        title: "Meal schedule",
+        title: t("profile.mealSchedule"),
         value:
           profileData?.breakfastTime && profileData?.dinnerTime
             ? `${profileData.breakfastTime} • ${profileData.dinnerTime}`
-            : "Pick meal times",
-        detail: "Keep reminders aligned with your day",
+            : t("profile.pickMealTimes"),
+        detail: t("profile.keepRemindersAligned"),
         icon: "clock-time-three-outline",
         onPress: () => router.push("/(app)/(profile)/meal-times"),
         accentColor: "#FFFFFF",
@@ -482,12 +484,12 @@ export default function ProfileTab() {
       },
       {
         id: "taste",
-        title: "Taste profile",
+        title: t("profile.tasteProfile"),
         value:
           cuisineLabel || dietLabel
             ? [cuisineLabel, dietLabel].filter(Boolean).join(" • ")
-            : "Add cuisines & diets",
-        detail: `${profileData?.allergies?.length || 0} allergies tracked`,
+            : t("profile.addCuisinesDiets"),
+        detail: `${profileData?.allergies?.length || 0} ${t("profile.allergiesTracked")}`,
         icon: "food-apple-outline",
         onPress: () => router.push("/(app)/(profile)/taste-preferences"),
         accentColor: "#FFFFFF",
@@ -495,26 +497,26 @@ export default function ProfileTab() {
         shadowColor: "#DB2777",
       },
     ];
-  }, [profileData]);
+  }, [profileData, t]);
 
   const settingsSections: SettingsSection[] = useMemo(
     () => [
       {
         id: "personal",
-        title: "Personal Settings",
+        title: t("profile.personalSettings"),
         items: [
           {
             id: "edit-profile",
-            title: "Edit Profile",
-            description: "Avatar, name, contact details",
+            title: t("profile.editProfile"),
+            description: t("profile.editProfileDesc"),
             icon: "account-edit-outline",
             onPress: () => router.push("/(app)/(profile)/account"),
             color: Colors.lilac[600],
           },
           {
             id: "preferences",
-            title: "Units & Nutrition Defaults",
-            description: "Macro targets, measurement system",
+            title: t("profile.unitsNutrition"),
+            description: t("profile.unitsNutritionDesc"),
             meta: formattedUnitsSummary,
             icon: "tune",
             onPress: () => router.push("/(app)/(profile)/units-nutrition"),
@@ -522,24 +524,24 @@ export default function ProfileTab() {
           },
           {
             id: "goals-metrics",
-            title: "Goals & Metrics",
-            description: "Weight, activity & progress",
+            title: t("profile.goalsMetrics"),
+            description: t("profile.goalsMetricsDesc"),
             icon: "chart-line",
             onPress: () => router.push("/(app)/(profile)/goals-metrics"),
             color: Colors.lilac[900],
           },
           {
             id: "privacy",
-            title: "Privacy & Data",
-            description: "Manage insights & sharing",
+            title: t("privacy.title"),
+            description: t("profile.privacyDesc"),
             icon: "shield-check-outline",
             onPress: () => router.push("/(app)/(profile)/privacy"),
             color: Colors.lilac[900],
           },
           {
             id: "notifications",
-            title: "Notifications",
-            description: "Meal reminders & summaries",
+            title: t("notifications.title"),
+            description: t("profile.notificationsDesc"),
             icon: "bell-outline",
             onPress: () => router.push("/(app)/(profile)/notifications"),
             color: Colors.lilac[900],
@@ -548,28 +550,28 @@ export default function ProfileTab() {
       },
       {
         id: "app",
-        title: "App Settings",
+        title: t("profile.appSettings"),
         items: [
           {
             id: "preferences-general",
-            title: "Preferences",
-            description: "Language, units & app settings",
+            title: t("profile.preferences"),
+            description: t("profile.preferencesDesc"),
             icon: "cog-outline",
             onPress: () => router.push("/(app)/(profile)/preferences"),
             color: Colors.lilac[900],
           },
           {
             id: "meal-times",
-            title: "Meal Times",
-            description: "Breakfast, lunch and dinner windows",
+            title: t("profile.mealTimes"),
+            description: t("profile.mealTimesDesc"),
             icon: "calendar-clock",
             onPress: () => router.push("/(app)/(profile)/meal-times"),
             color: Colors.lilac[900],
           },
           {
             id: "apple-watch",
-            title: "Apple Watch",
-            description: "Sync rings & activity calories",
+            title: t("profile.appleWatch"),
+            description: t("profile.appleWatchDesc"),
             icon: "watch-variant",
             onPress: () =>
               router.push({
@@ -580,8 +582,8 @@ export default function ProfileTab() {
           },
           {
             id: "partner-accounts",
-            title: "Partner Accounts",
-            description: "Strava, Fitbit & more",
+            title: t("profile.partnerAccounts"),
+            description: t("profile.partnerAccountsDesc"),
             icon: "handshake-outline",
             onPress: () =>
               router.push({
@@ -592,8 +594,8 @@ export default function ProfileTab() {
           },
           {
             id: "social-sharing",
-            title: "Social Sharing",
-            description: "Invite friends & share wins",
+            title: t("profile.socialSharing"),
+            description: t("profile.socialSharingDesc"),
             icon: "share-variant-outline",
             onPress: () => handleShareApp(),
             color: Colors.lilac[900],
@@ -602,28 +604,28 @@ export default function ProfileTab() {
       },
       {
         id: "more",
-        title: "More",
+        title: t("profile.more"),
         items: [
           {
             id: "taste",
-            title: "Taste Preferences",
-            description: "Meals, cuisines & dislikes",
+            title: t("profile.tastePreferences"),
+            description: t("profile.tastePreferencesDesc"),
             icon: "silverware-fork-knife",
             onPress: () => router.push("/(app)/(profile)/taste-preferences"),
             color: Colors.lilac[900],
           },
           {
             id: "allergies",
-            title: "Allergies & Diet",
-            description: "Medical restrictions & macros",
+            title: t("profile.allergiesDiet"),
+            description: t("profile.allergiesDietDesc"),
             icon: "alert-circle-outline",
             onPress: () => router.push("/(app)/(profile)/allergies-diet"),
             color: Colors.lilac[900],
           },
           {
             id: "cooking",
-            title: "Cooking Skill",
-            description: `Currently ${getCookingSkillLabel(
+            title: t("profile.cookingSkill"),
+            description: `${t("profile.cookingSkillDesc")} ${getCookingSkillLabel(
               profileData?.cookingSkill
             )}`,
             icon: "chef-hat",
@@ -632,8 +634,8 @@ export default function ProfileTab() {
           },
           {
             id: "support",
-            title: "Support & Feedback",
-            description: "Chat with us or send an email",
+            title: t("profile.support"),
+            description: t("profile.supportDesc"),
             icon: "message-question-outline",
             onPress: () => router.push("/(app)/(profile)/support-feedback"),
             color: Colors.lilac[900],
@@ -641,7 +643,7 @@ export default function ProfileTab() {
         ],
       },
     ],
-    [formattedUnitsSummary, profileData?.cookingSkill]
+    [formattedUnitsSummary, profileData?.cookingSkill, t]
   );
 
   async function handleShareApp() {
@@ -669,15 +671,15 @@ export default function ProfileTab() {
   function getCookingSkillLabel(skill?: string) {
     switch (skill) {
       case "novice":
-        return "Novice";
+        return t("cookingSkills.novice");
       case "basic":
-        return "Basic";
+        return t("cookingSkills.basic");
       case "intermediate":
-        return "Intermediate";
+        return t("cookingSkills.intermediate");
       case "advanced":
-        return "Advanced";
+        return t("cookingSkills.advanced");
       default:
-        return "Not set";
+        return t("cookingSkills.notSet");
     }
   }
 
@@ -730,7 +732,7 @@ export default function ProfileTab() {
             {/* SETTINGS title (visible initially, fades out on scroll) */}
             <Animated.View style={[styles.headerSettingsWrapper, inContentTitleStyle]}>
               <Text style={[styles.headerSettingsTitle, { color: Colors.text.primary }]}>
-                SETTINGS
+                {t("profile.settings")}
               </Text>
             </Animated.View>
             
@@ -821,7 +823,7 @@ export default function ProfileTab() {
               { color: Colors.text.tertiary },
             ]}
           >
-            Member since {getMemberSinceDate()}
+            {t("profile.memberSince")} {getMemberSinceDate()}
           </Text>
         </View>
       </Animated.View>
