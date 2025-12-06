@@ -11,7 +11,7 @@ interface GoalsContentProps {
   initialSelection?: string[];
 }
 
-const goalOptions = [
+export const goalOptions = [
   {
     id: "healthy-eating",
     title: "Eat healthy",
@@ -55,7 +55,7 @@ const goalOptions = [
 ];
 
 // Define conflicting goals that cannot be selected together
-const conflictingGoals: Record<string, string[]> = {
+export const conflictingGoals: Record<string, string[]> = {
   "lose-weight": ["gain-weight"],
   "gain-weight": ["lose-weight"],
 };
