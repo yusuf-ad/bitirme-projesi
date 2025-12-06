@@ -8,7 +8,6 @@ export default function ProfileLayout() {
       <Stack.Screen name="allergies-diet" options={{ headerShown: false }} />
       <Stack.Screen name="cooking-skill" options={{ headerShown: false }} />
       <Stack.Screen name="goals-metrics" options={{ headerShown: false }} />
-      <Stack.Screen name="integrations" options={{ headerShown: false }} />
       <Stack.Screen name="meal-times" options={{ headerShown: false }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="preferences" options={{ headerShown: false }} />

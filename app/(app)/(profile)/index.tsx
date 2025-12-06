@@ -12,25 +12,25 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Pressable,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Dimensions,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    Extrapolation,
-    FadeInDown,
-    FadeInRight,
-    interpolate,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  Extrapolation,
+  FadeInDown,
+  FadeInRight,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -442,58 +442,93 @@ export default function ProfileTab() {
   }, [profileData]);
 
   const highlightCards: HighlightCard[] = useMemo(() => {
-    const cuisineLabel =
-      profileData?.cuisines && profileData.cuisines.length > 0
-        ? profileData.cuisines.slice(0, 1).join(", ")
-        : undefined;
-    const dietLabel =
-      profileData?.dietPreferences && profileData.dietPreferences.length > 0
-        ? profileData.dietPreferences.slice(0, 1).join(", ")
-        : undefined;
+    // Body metrics card - weight, height, BMI
+    const hasWeight = profileData?.weight;
+    const hasHeight = profileData?.height;
+    const hasBothMetrics = hasWeight && hasHeight;
+    const bmi = hasBothMetrics 
+      ? (profileData.weight! / Math.pow(profileData.height! / 100, 2)).toFixed(1)
+      : null;
+    const bmiCategory = bmi 
+      ? parseFloat(bmi) < 18.5 ? t("profile.bmiUnderweight")
+        : parseFloat(bmi) < 25 ? t("profile.bmiNormal")
+        : parseFloat(bmi) < 30 ? t("profile.bmiOverweight")
+        : t("profile.bmiObese")
+      : null;
+
+    // Goals card
+    const goalsCount = profileData?.goals?.length || 0;
+    const goalsPreview = profileData?.goals?.slice(0, 2).join(", ");
+
+    // Meal schedule preview
+    const hasMealTimes = profileData?.breakfastTime && profileData?.dinnerTime;
+    
+    // Taste profile - cuisines and diet
+    const cuisineCount = profileData?.cuisines?.length || 0;
+    const dietCount = profileData?.dietPreferences?.length || 0;
+    const allergyCount = profileData?.allergies?.length || 0;
 
     return [
       {
-        id: "goals",
-        title: t("profile.goals"),
-        value: profileData?.goals?.length
-          ? `${profileData.goals.length} ${t("profile.activeGoals")}`
-          : t("profile.setYourGoals"),
-        detail:
-          profileData?.goals?.length && profileData.goals.length > 0
-            ? profileData.goals.slice(0, 2).join(", ")
-            : t("profile.tapToPersonalize"),
-        icon: "target",
-        onPress: () => router.push("/(app)/(profile)/goals-metrics"),
+        id: "metrics",
+        title: t("profile.myMetrics"),
+        value: hasBothMetrics
+          ? `${profileData.weight} kg • ${profileData.height} cm`
+          : hasWeight 
+            ? `${profileData.weight} kg`
+            : hasHeight
+              ? `${profileData.height} cm`
+              : t("profile.addMetrics"),
+        detail: bmi 
+          ? `BMI ${bmi} • ${bmiCategory}`
+          : profileData?.age 
+            ? `${profileData.age} ${t("profile.yearsOld")}`
+            : t("profile.trackYourProgress"),
+        icon: "scale-bathroom",
+        onPress: () => router.push("/(app)/(profile)/units-nutrition"),
         accentColor: "#FFFFFF",
-        gradientColors: ["#4ADE80", "#22C55E"], // Vibrant Green
-        shadowColor: "#22C55E",
+        gradientColors: ["#60A5FA", "#3B82F6"],
+        shadowColor: "#3B82F6",
       },
       {
         id: "schedule",
         title: t("profile.mealSchedule"),
-        value:
-          profileData?.breakfastTime && profileData?.dinnerTime
-            ? `${profileData.breakfastTime} • ${profileData.dinnerTime}`
-            : t("profile.pickMealTimes"),
+        value: hasMealTimes
+          ? `${profileData.breakfastTime} - ${profileData.dinnerTime}`
+          : t("profile.pickMealTimes"),
         detail: t("profile.keepRemindersAligned"),
         icon: "clock-time-three-outline",
         onPress: () => router.push("/(app)/(profile)/meal-times"),
         accentColor: "#FFFFFF",
-        gradientColors: ["#A78BFA", "#7C3AED"], // Vibrant Violet
+        gradientColors: ["#A78BFA", "#7C3AED"],
         shadowColor: "#7C3AED",
+      },
+      {
+        id: "goals",
+        title: t("profile.goals"),
+        value: goalsCount > 0 
+          ? `${goalsCount} ${t("profile.activeGoals")}`
+          : t("profile.setYourGoals"),
+        detail: goalsPreview || t("profile.tapToPersonalize"),
+        icon: "target",
+        onPress: () => router.push("/(app)/(profile)/goals-metrics"),
+        accentColor: "#FFFFFF",
+        gradientColors: ["#4ADE80", "#22C55E"],
+        shadowColor: "#22C55E",
       },
       {
         id: "taste",
         title: t("profile.tasteProfile"),
-        value:
-          cuisineLabel || dietLabel
-            ? [cuisineLabel, dietLabel].filter(Boolean).join(" • ")
-            : t("profile.addCuisinesDiets"),
-        detail: `${profileData?.allergies?.length || 0} ${t("profile.allergiesTracked")}`,
+        value: cuisineCount > 0 || dietCount > 0
+          ? `${cuisineCount} ${t("profile.cuisinesLabel")} • ${dietCount} ${t("profile.dietsLabel")}`
+          : t("profile.addCuisinesDiets"),
+        detail: allergyCount > 0 
+          ? `${allergyCount} ${t("profile.allergiesTracked")}`
+          : t("profile.tapToCustomize"),
         icon: "food-apple-outline",
         onPress: () => router.push("/(app)/(profile)/taste-preferences"),
         accentColor: "#FFFFFF",
-        gradientColors: ["#F472B6", "#DB2777"], // Vibrant Pink
+        gradientColors: ["#F472B6", "#DB2777"],
         shadowColor: "#DB2777",
       },
     ];
@@ -569,30 +604,6 @@ export default function ProfileTab() {
             color: Colors.lilac[900],
           },
           {
-            id: "apple-watch",
-            title: t("profile.appleWatch"),
-            description: t("profile.appleWatchDesc"),
-            icon: "watch-variant",
-            onPress: () =>
-              router.push({
-                pathname: "/(app)/(profile)/integrations",
-                params: { focus: "apple" },
-              }),
-            color: Colors.lilac[900],
-          },
-          {
-            id: "partner-accounts",
-            title: t("profile.partnerAccounts"),
-            description: t("profile.partnerAccountsDesc"),
-            icon: "handshake-outline",
-            onPress: () =>
-              router.push({
-                pathname: "/(app)/(profile)/integrations",
-                params: { focus: "partners" },
-              }),
-            color: Colors.lilac[900],
-          },
-          {
             id: "social-sharing",
             title: t("profile.socialSharing"),
             description: t("profile.socialSharingDesc"),
@@ -625,9 +636,7 @@ export default function ProfileTab() {
           {
             id: "cooking",
             title: t("profile.cookingSkill"),
-            description: `${t("profile.cookingSkillDesc")} ${getCookingSkillLabel(
-              profileData?.cookingSkill
-            )}`,
+            description: t("profile.cookingSkillDesc"),
             icon: "chef-hat",
             onPress: () => router.push("/(app)/(profile)/cooking-skill"),
             color: Colors.lilac[900],
@@ -667,23 +676,6 @@ export default function ProfileTab() {
       time.period
     }`;
   };
-
-  function getCookingSkillLabel(skill?: string) {
-    switch (skill) {
-      case "novice":
-        return t("cookingSkills.novice");
-      case "basic":
-        return t("cookingSkills.basic");
-      case "intermediate":
-        return t("cookingSkills.intermediate");
-      case "advanced":
-        return t("cookingSkills.advanced");
-      default:
-        return t("cookingSkills.notSet");
-    }
-  }
-
-
 
   if (isLoading) {
     return <ProfessionalLoadingScreen />;
@@ -863,9 +855,6 @@ export default function ProfileTab() {
                 />
 
                 <View style={styles.highlightHeader}>
-                    <Text style={[styles.highlightTitle, { color: "#FFFFFF" }]}>
-                        {card.title}
-                    </Text>
                     <View
                         style={[
                         styles.highlightIcon,
@@ -878,6 +867,9 @@ export default function ProfileTab() {
                         color="#FFFFFF"
                         />
                     </View>
+                    <Text style={[styles.highlightTitle, { color: "#FFFFFF" }]}>
+                        {card.title}
+                    </Text>
                 </View>
 
                 <View style={styles.highlightContent}>
@@ -1070,7 +1062,8 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 24,
     padding: 16,
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    alignItems: "center",
     overflow: "hidden",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
@@ -1078,18 +1071,21 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   highlightHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
+    marginBottom: 12,
   },
   highlightIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 6,
   },
   highlightContent: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
     gap: 4,
   },
   highlightTitle: {
@@ -1098,17 +1094,20 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     opacity: 0.9,
+    textAlign: "center",
   },
   highlightValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
+    textAlign: "center",
   },
   highlightDetail: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "500",
-    opacity: 0.9,
-    lineHeight: 16,
+    opacity: 0.85,
+    lineHeight: 14,
+    textAlign: "center",
   },
   settingsContainer: {
     paddingHorizontal: 16,

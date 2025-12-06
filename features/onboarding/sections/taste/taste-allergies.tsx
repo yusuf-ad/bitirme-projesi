@@ -1,17 +1,19 @@
+import { getThemeColors } from "@/constants/theme";
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
 import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
 interface TasteAllergiesProps {
@@ -26,20 +28,22 @@ type AllergyItem =
   | (typeof POPULAR_INGREDIENTS)[number]
   | { name: string; image?: string };
 
-const INGREDIENT_IMAGE_BASE_URL =
-  "https://spoonacular.com/cdn/ingredients_100x100";
+const INGREDIENT_IMAGE_BASE_URL = "https://spoonacular.com/cdn/ingredients_100x100";
 
-const createFallbackAllergyItem = (key: string): AllergyItem => {
+const createFallbackAllergyItem = (key: string): AllergyItem & { _originalKey?: string } => {
   if (key.startsWith("name-")) {
     const formatted = key
       .replace("name-", "")
       .split("-")
       .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
       .join(" ");
-    return { name: formatted };
+    return { name: formatted, _originalKey: key };
   }
-
-  return { name: key };
+  // For numeric IDs, show as "Item #ID" - will be replaced when found in search
+  if (/^\d+$/.test(key)) {
+    return { name: `Item #${key}`, _originalKey: key };
+  }
+  return { name: key, _originalKey: key };
 };
 
 export function TasteAllergies({
@@ -48,25 +52,37 @@ export function TasteAllergies({
   onSelectionChange,
   initialSelection = [],
 }: TasteAllergiesProps) {
-  const [selectedAllergies, setSelectedAllergies] =
-    useState<string[]>(initialSelection);
-  const [selectedAllergiesMap, setSelectedAllergiesMap] = useState<
-    Map<string, AllergyItem>
-  >(new Map());
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
+
+  const [selectedAllergiesMap, setSelectedAllergiesMap] = useState<Map<string, AllergyItem>>(new Map());
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const getIngredientKey = useCallback((item: AllergyItem) => {
+    // Check for _originalKey first (for fallback items)
+    if ("_originalKey" in item && (item as any)._originalKey) {
+      return (item as any)._originalKey;
+    }
+    if ("id" in item && typeof item.id === "number") {
+      return `${item.id}`;
+    }
+    const spoonacularId = (item as (typeof POPULAR_INGREDIENTS)[number]).spoonacularId;
+    if (typeof spoonacularId === "number") {
+      return `${spoonacularId}`;
+    }
+    return `name-${(item as any).name?.toLowerCase?.() ?? "unknown"}`;
+  }, []);
+
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
-
     if (query.trim().length === 0) {
       setSearchResults([]);
       setHasSearched(false);
       return;
     }
-
     try {
       setIsSearching(true);
       const { ingredients } = await searchIngredients(query, 0, 20);
@@ -80,77 +96,75 @@ export function TasteAllergies({
     }
   }, []);
 
-  const getIngredientKey = (item: AllergyItem) => {
-    if ("id" in item && typeof item.id === "number") {
-      return `${item.id}`;
-    }
-
-    const spoonacularId = (item as (typeof POPULAR_INGREDIENTS)[number])
-      .spoonacularId;
-    if (typeof spoonacularId === "number") {
-      return `${spoonacularId}`;
-    }
-
-    return `name-${(item as any).name?.toLowerCase?.() ?? "unknown"}`;
-  };
-
   useEffect(() => {
-    setSelectedAllergies(initialSelection);
-    setSelectedAllergiesMap((previousMap) => {
+    const loadInitialSelection = async () => {
       if (initialSelection.length === 0) {
-        return new Map();
+        setSelectedAllergiesMap(new Map());
+        return;
       }
 
       const restoredMap = new Map<string, AllergyItem>();
+      const unknownIds: string[] = [];
 
+      // First pass: restore from previous map or popular ingredients
       initialSelection.forEach((key) => {
-        if (previousMap.has(key)) {
-          restoredMap.set(key, previousMap.get(key)!);
-          return;
-        }
-
         const fromPopular = POPULAR_INGREDIENTS.find(
           (ingredient) => getIngredientKey(ingredient) === key
         );
-
         if (fromPopular) {
           restoredMap.set(key, fromPopular);
-          return;
+        } else if (/^\d+$/.test(key)) {
+          // Numeric ID - need to look up
+          unknownIds.push(key);
+          restoredMap.set(key, createFallbackAllergyItem(key));
+        } else {
+          restoredMap.set(key, createFallbackAllergyItem(key));
         }
-
-        restoredMap.set(key, createFallbackAllergyItem(key));
       });
 
-      return restoredMap;
-    });
-  }, [initialSelection]);
+      setSelectedAllergiesMap(restoredMap);
+
+      // Try to fetch names for unknown numeric IDs
+      if (unknownIds.length > 0) {
+        try {
+          // Search for each unknown ID to get its name
+          for (const id of unknownIds) {
+            const { ingredients } = await searchIngredients(id, 0, 5);
+            const found = ingredients.find((ing) => `${ing.id}` === id);
+            if (found) {
+              setSelectedAllergiesMap((prev) => {
+                const newMap = new Map(prev);
+                newMap.set(id, found);
+                return newMap;
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching ingredient names:", error);
+        }
+      }
+    };
+
+    loadInitialSelection();
+  }, [initialSelection, getIngredientKey]);
 
   const toggleAllergy = (item: AllergyItem) => {
     const key = getIngredientKey(item);
     const isCurrentlySelected = selectedAllergiesMap.has(key);
-
+    const newMap = new Map(selectedAllergiesMap);
+    
     if (isCurrentlySelected) {
-      const newMap = new Map(selectedAllergiesMap);
       newMap.delete(key);
-      setSelectedAllergiesMap(newMap);
-      setSelectedAllergies(Array.from(newMap.keys()));
-      onSelectionChange?.(Array.from(newMap.keys()));
     } else {
-      const newMap = new Map(selectedAllergiesMap);
       newMap.set(key, item);
-      setSelectedAllergiesMap(newMap);
-      setSelectedAllergies(Array.from(newMap.keys()));
-      onSelectionChange?.(Array.from(newMap.keys()));
     }
+    
+    setSelectedAllergiesMap(newMap);
+    onSelectionChange?.(Array.from(newMap.keys()));
   };
 
-  // Display items - either search results or popular ingredients
   const displayItems = hasSearched ? searchResults : POPULAR_INGREDIENTS;
-
-  // Selected items to display in the selected section
   const selectedItems = Array.from(selectedAllergiesMap.values());
-
-  // Unselected items from display - filter out already selected
   const unselectedItems = displayItems.filter(
     (item) => !selectedAllergiesMap.has(getIngredientKey(item))
   );
@@ -160,220 +174,256 @@ export function TasteAllergies({
     const ingredientImage = (item as any).image;
 
     return (
-      <Pressable onPress={() => toggleAllergy(item)} style={styles.allergyItem}>
-        {ingredientImage ? (
-          <Image
-            source={{
-              uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}`,
-            }}
-            style={styles.allergyIcon}
-          />
-        ) : (
-          <View style={styles.allergyIconPlaceholder} />
-        )}
-        <Text style={styles.allergyLabel} numberOfLines={1}>
-          {ingredientName}
-        </Text>
-      </Pressable>
-    );
-  };
-
-  const renderSelectedItem = (
-    item: AllergyItem
-  ) => {
-    const ingredientName = (item as any).name;
-    const ingredientImage = (item as any).image;
-
-    return (
       <Pressable
         onPress={() => toggleAllergy(item)}
-        style={[styles.allergyItem, styles.allergyItemSelected]}
+        style={[styles.allergyItem, { backgroundColor: Colors.background.surface }]}
       >
-        {ingredientImage ? (
-          <Image
-            source={{
-              uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}`,
-            }}
-            style={styles.allergyIcon}
-          />
-        ) : (
-          <View style={styles.allergyIconPlaceholder} />
-        )}
-        <Text
-          style={[styles.allergyLabel, styles.allergyLabelSelected]}
-          numberOfLines={1}
-        >
+        <View style={[styles.imageContainer, { backgroundColor: Colors.gray[100] }]}>
+          {ingredientImage ? (
+            <Image
+              source={{ uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}` }}
+              style={styles.allergyIcon}
+            />
+          ) : (
+            <MaterialCommunityIcons name="food-apple-outline" size={24} color={Colors.gray[400]} />
+          )}
+        </View>
+        <Text style={[styles.allergyLabel, { color: Colors.text.primary }]} numberOfLines={2}>
           {ingredientName}
         </Text>
-        <View style={styles.checkmark}>
-          <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" />
-        </View>
       </Pressable>
     );
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        {description && <Text style={styles.description}>{description}</Text>}
+    <ScrollView
+      contentContainerStyle={[styles.content, { backgroundColor: Colors.background.secondary }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.headerSection}>
+        <Text style={[styles.title, { color: Colors.text.primary }]}>{title}</Text>
+        {description && (
+          <Text style={[styles.description, { color: Colors.text.secondary }]}>{description}</Text>
+        )}
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <MaterialCommunityIcons
-          name="magnify"
-          size={20}
-          color="#737780"
-          style={styles.searchIcon}
-        />
+      <View style={[styles.searchContainer, { backgroundColor: Colors.background.surface }]}>
+        <MaterialCommunityIcons name="magnify" size={20} color={Colors.text.secondary} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: Colors.text.primary }]}
           placeholder="Search ingredients..."
-          placeholderTextColor="#737780"
+          placeholderTextColor={Colors.text.secondary}
           value={searchQuery}
           onChangeText={handleSearch}
         />
-        {isSearching && (
-          <ActivityIndicator
-            size="small"
-            color="#548A6A"
-            style={styles.searchLoader}
+        {isSearching && <ActivityIndicator size="small" color={Colors.lilac[900]} />}
+        {searchQuery.length > 0 && !isSearching && (
+          <Pressable onPress={() => handleSearch("")}>
+            <MaterialCommunityIcons name="close-circle" size={20} color={Colors.text.secondary} />
+          </Pressable>
+        )}
+      </View>
+
+      {/* Selected Items */}
+      {selectedItems.length > 0 && (
+        <View style={styles.selectedSection}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconContainer, { backgroundColor: "#EF444415" }]}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#EF4444" />
+            </View>
+            <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+              Avoiding ({selectedItems.length})
+            </Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.selectedChipsContainer}
+          >
+            {selectedItems.map((item, index) => {
+              const ingredientName = (item as any).name;
+              const ingredientImage = (item as any).image;
+              return (
+                <Pressable
+                  key={`selected-${index}`}
+                  onPress={() => toggleAllergy(item)}
+                  style={styles.selectedChip}
+                >
+                  {ingredientImage ? (
+                    <Image
+                      source={{ uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}` }}
+                      style={styles.selectedChipImage}
+                    />
+                  ) : (
+                    <View style={styles.selectedChipImagePlaceholder}>
+                      <MaterialCommunityIcons name="food-off" size={14} color="#EF4444" />
+                    </View>
+                  )}
+                  <Text style={styles.selectedChipLabel} numberOfLines={1}>
+                    {ingredientName}
+                  </Text>
+                  <View style={styles.removeIcon}>
+                    <MaterialCommunityIcons name="close" size={12} color="#FFFFFF" />
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Available Items */}
+      <View style={styles.availableSection}>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionIconContainer, { backgroundColor: `${Colors.lilac[900]}15` }]}>
+            <MaterialCommunityIcons name="food-variant" size={16} color={Colors.lilac[900]} />
+          </View>
+          <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+            {hasSearched ? "Search Results" : "Common Ingredients"}
+          </Text>
+        </View>
+
+        {isSearching ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.lilac[900]} />
+            <Text style={[styles.loadingText, { color: Colors.text.secondary }]}>Searching...</Text>
+          </View>
+        ) : hasSearched && displayItems.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="magnify-close" size={48} color={Colors.gray[300]} />
+            <Text style={[styles.emptyText, { color: Colors.text.secondary }]}>No ingredients found</Text>
+            <Text style={[styles.emptySubtext, { color: Colors.text.tertiary }]}>Try a different search term</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={unselectedItems}
+            renderItem={renderAllergyItem}
+            keyExtractor={(item, index) => `item-${index}-${getIngredientKey(item)}`}
+            numColumns={3}
+            scrollEnabled={false}
+            contentContainerStyle={styles.gridContent}
+            columnWrapperStyle={styles.gridRow}
           />
         )}
       </View>
 
-      {/* Selected Items Section */}
-      {selectedItems.length > 0 && (
-        <View
-          style={{
-            marginBottom: 12,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <Text style={styles.sectionLabel}>Selected</Text>
-
-            {/* Counter */}
-            <Text style={styles.counterText}>
-              {selectedAllergies.length} selected
-            </Text>
-          </View>
-          <FlatList
-            data={selectedItems}
-            renderItem={({ item }) => renderSelectedItem(item)}
-            keyExtractor={(item) => `selected-${getIngredientKey(item)}`}
-            numColumns={3}
-            scrollEnabled={false}
-            contentContainerStyle={styles.gridContent}
-            columnWrapperStyle={styles.gridRow}
-          />
-        </View>
-      )}
-
-      {/* Section Label */}
-      {!isSearching && (
-        <Text
-          style={[
-            styles.sectionLabel,
-            {
-              marginBottom: 12,
-            },
-          ]}
-        >
-          {hasSearched ? "Search Results" : "Common products"}
-        </Text>
-      )}
-
-      {/* Loading State */}
-      {isSearching ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#548A6A" />
-        </View>
-      ) : hasSearched && displayItems.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No ingredients found</Text>
-        </View>
-      ) : (
-        <>
-          {/* Allergies Grid */}
-          <FlatList
-            data={unselectedItems}
-            renderItem={renderAllergyItem}
-            keyExtractor={(item) => getIngredientKey(item)}
-            numColumns={3}
-            scrollEnabled={false}
-            contentContainerStyle={styles.gridContent}
-            columnWrapperStyle={styles.gridRow}
-          />
-        </>
-      )}
+      {/* Bottom Padding for Save Button */}
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 12,
-    paddingTop: 20,
+    paddingTop: 16,
     paddingBottom: 20,
+    minHeight: "100%",
   },
-  textContainer: {
+  headerSection: {
+    paddingHorizontal: 20,
     marginBottom: 16,
-    paddingHorizontal: 15,
   },
   title: {
-    fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 24,
-    lineHeight: 29,
-    color: "#22252B",
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 6,
   },
   description: {
-    fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 16,
-    lineHeight: 19,
-    color: "#444955",
+    fontSize: 14,
+    lineHeight: 20,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 14,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E8E3ED",
-  },
-  searchIcon: {
-    marginRight: 8,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   searchInput: {
     flex: 1,
-    fontFamily: "Inter",
+    fontSize: 15,
     fontWeight: "500",
-    fontSize: 16,
-    color: "#22252B",
   },
-  sectionLabel: {
-    fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 16,
-    color: "#000000",
-    marginLeft: 15,
+  selectedSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  sectionIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  selectedChipsContainer: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  selectedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    paddingVertical: 6,
+    paddingLeft: 6,
+    paddingRight: 10,
+    borderRadius: 20,
+    gap: 6,
+    marginRight: 8,
+  },
+  selectedChipImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  selectedChipImagePlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedChipLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#DC2626",
+    maxWidth: 100,
+  },
+  removeIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  availableSection: {
+    flex: 1,
   },
   gridContent: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     gap: 10,
   },
   gridRow: {
@@ -382,83 +432,55 @@ const styles = StyleSheet.create({
   allergyItem: {
     flex: 1,
     maxWidth: "31%",
+    paddingVertical: 12,
     paddingHorizontal: 8,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E8E3ED",
+    borderRadius: 14,
+    alignItems: "center",
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  imageContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 100,
-  },
-  allergyItemSelected: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#548A6A",
-    borderWidth: 2,
+    overflow: "hidden",
   },
   allergyIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 6,
+    width: 48,
+    height: 48,
     resizeMode: "contain",
   },
-  allergyIconPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 6,
-    backgroundColor: "#E8E3ED",
-  },
   allergyLabel: {
-    fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 14,
-    color: "#000000",
-    textAlign: "center",
-  },
-  allergyLabelSelected: {
-    color: "#548A6A",
+    fontSize: 12,
     fontWeight: "600",
-  },
-  checkmark: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#548A6A",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  counterText: {
-    fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 14,
-    color: "#548A6A",
-  },
-  searchLoader: {
-    marginLeft: 8,
+    textAlign: "center",
+    lineHeight: 15,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     paddingVertical: 40,
+    alignItems: "center",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     paddingVertical: 40,
+    alignItems: "center",
+    gap: 8,
   },
   emptyText: {
-    fontFamily: "Inter",
-    fontWeight: "500",
     fontSize: 16,
-    color: "#737780",
+    fontWeight: "600",
+  },
+  emptySubtext: {
+    fontSize: 13,
   },
 });
