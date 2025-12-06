@@ -2,7 +2,14 @@ import { Colors } from "@/constants/theme";
 import { TabType } from "@/features/pantry";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -72,7 +79,12 @@ export function PantryScreenHeader({
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      <View
+        style={[
+          styles.searchContainer,
+          Platform.OS === "android" ? { paddingVertical: 0 } : null,
+        ]}
+      >
         <Feather
           name="search"
           size={20}
@@ -80,7 +92,7 @@ export function PantryScreenHeader({
           style={styles.searchIcon}
         />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput]}
           placeholder={
             activeTab === "my-ingredients"
               ? "Search ingredients..."

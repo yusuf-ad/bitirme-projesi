@@ -75,8 +75,7 @@ export async function makeRateLimitedRequest(
   }
 }
 
-// Test constant - API pahalı olduğu için test için 1 olarak ayarlandı
-const TEST_NUMBER_OF_RESULTS = 1;
+const TEST_NUMBER_OF_RESULTS = 10;
 
 // Common pantry staples for pre-filling
 const COMMON_PANTRY_STAPLES = [

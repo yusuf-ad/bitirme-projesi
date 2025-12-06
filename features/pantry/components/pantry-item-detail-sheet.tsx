@@ -94,12 +94,20 @@ export const PantryItemDetailSheet = forwardRef<
     setInputValue("");
   }, [item?.id]);
 
-  // Format amount for badge display (convert grams to kg)
+  // Format amount for badge display (convert grams to kg, ml to l)
   const formatBadgeAmount = (amount: number, unit: string): string => {
-    const unitLower = unit.toLowerCase();
+    const unitLower = (unit || "").toLowerCase();
     if (unitLower === "g" || unitLower === "gram" || unitLower === "grams") {
       const kg = amount / 1000;
       return `${kg.toFixed(1)}kg`;
+    }
+    if (
+      unitLower === "ml" ||
+      unitLower === "milliliter" ||
+      unitLower === "milliliters"
+    ) {
+      const l = amount / 1000;
+      return `${l.toFixed(1)}l`;
     }
     return String(Math.round(amount));
   };
