@@ -1,5 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { DateModal } from "@/features/meal-plan/components/date-modal";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
 
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -18,6 +20,13 @@ export default function CreateMealPlan() {
   today.setHours(0, 0, 0, 0);
 
   const [startDate, setStartDate] = useState<Date>(new Date(today));
+
+  const { session } = useAuthContext();
+  const { data: mealPlanData } = useMealPlansQuery(
+    session?.user?.id,
+    startDate
+  );
+  const hasExistingPlan = !!mealPlanData?.plan;
 
   const formatDateDisplay = (date: Date): { day: string; date: string } => {
     const daysOfWeek = [
@@ -112,6 +121,19 @@ export default function CreateMealPlan() {
               </CustomButton>
             </View>
           </View>
+
+          {hasExistingPlan && (
+            <View style={styles.warningContainer}>
+              <MaterialIcons
+                name="info-outline"
+                size={24}
+                color={Colors.semantic.warning.dark}
+              />
+              <Text style={styles.warningText}>
+                A meal plan already exists for this date.
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -219,5 +241,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.background.primary,
+  },
+  warningContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.semantic.warning.light,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 24,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: Colors.semantic.warning.main,
+  },
+  warningText: {
+    fontSize: 15,
+    color: Colors.semantic.warning.dark,
+    flex: 1,
+    fontWeight: "500",
+    lineHeight: 20,
   },
 });

@@ -1,18 +1,21 @@
 import { Colors } from "@/constants/theme";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useEffect, useRef } from "react";
-import {
-    Animated,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
+import { Animated, StyleSheet, Text, View } from "react-native";
+
+export interface ProfessionalLoadingScreenProps {
+  title?: string;
+  subtitle?: string;
+}
 
 /**
  * Professional Loading Screen Component with smooth animations
  * Reusable across all profile screens
  */
-export function ProfessionalLoadingScreen() {
+export function ProfessionalLoadingScreen({
+  title = "Loading Your Preferences",
+  subtitle = "Fetching your dietary information...",
+}: ProfessionalLoadingScreenProps) {
   const spinValue = useRef(new Animated.Value(0)).current;
   const pulseValue = useRef(new Animated.Value(1)).current;
 
@@ -65,10 +68,8 @@ export function ProfessionalLoadingScreen() {
             color={Colors.lilac[500]}
           />
         </Animated.View>
-        <Text style={styles.loadingTitle}>Loading Your Preferences</Text>
-        <Text style={styles.loadingSubtitle}>
-          Fetching your dietary information...
-        </Text>
+        <Text style={styles.loadingTitle}>{title}</Text>
+        <Text style={styles.loadingSubtitle}>{subtitle}</Text>
         <View style={styles.loadingDotsContainer}>
           <Animated.View
             style={[

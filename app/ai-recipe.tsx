@@ -260,8 +260,10 @@ export default function AiRecipe() {
         recipeToSave.extendedIngredients.length > 0
       ) {
         try {
+          // Construct ingredient strings using amount and unit to ensure accurate parsing
+          // We ignore the 'original' field from AI here because it might not match the structured amount/unit
           const ingredientStrings = recipeToSave.extendedIngredients.map(
-            (ing) => ing.original || `${ing.amount} ${ing.unit} ${ing.name}`
+            (ing) => `${ing.amount} ${ing.unit || ""} ${ing.name}`
           );
 
           console.log("Parsing ingredients for AI recipe:", ingredientStrings);
@@ -281,7 +283,8 @@ export default function AiRecipe() {
                   // Use parsed values to ensure consistency with Spoonacular DB
                   amount: parsed.amount,
                   unit: parsed.unit,
-                  original: parsed.original,
+                  // Keep the constructed string as original to match the parsed values
+                  original: ingredientStrings[index],
                 };
               }
               return ing;

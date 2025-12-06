@@ -1,3 +1,4 @@
+import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors } from "@/constants/theme";
 import { CategorySection, PantryItem } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
@@ -21,6 +22,7 @@ export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMovingToPantry, setIsMovingToPantry] = useState(false);
   const hasCheckedItems = useRef(false);
 
   const fetchItems = async () => {
@@ -102,9 +104,11 @@ export default function ShoppingListScreen() {
   const handleBackPress = async () => {
     // Geri gitmeden önce tiklenen öğeleri pantry'e taşı
     if (checkedItems.length > 0) {
+      setIsMovingToPantry(true);
       try {
         const { movedCount } = await pantryService.moveCheckedItemsToPantry();
         if (movedCount > 0) {
+          setIsMovingToPantry(false);
           Alert.alert(
             "Pantry Updated",
             `${movedCount} item${
@@ -116,6 +120,7 @@ export default function ShoppingListScreen() {
         }
       } catch (error) {
         console.error("Failed to move items:", error);
+        setIsMovingToPantry(false);
       }
     }
     router.back();
@@ -151,6 +156,15 @@ export default function ShoppingListScreen() {
       hasCheckedItems.current = previousItems.some((item) => item.checked);
     }
   };
+
+  if (isMovingToPantry) {
+    return (
+      <ProfessionalLoadingScreen
+        title="Updating Pantry"
+        subtitle="Moving checked items to your pantry..."
+      />
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

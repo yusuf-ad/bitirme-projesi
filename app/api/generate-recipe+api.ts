@@ -53,7 +53,9 @@ const recipeSchema = z.object({
       amount: z.number().describe("Amount needed in grams or milliliters"),
       unit: z
         .string()
-        .describe("Unit of measurement - use 'g' for solids, 'ml' for liquids"),
+        .describe(
+          "Unit of measurement. CRITICAL: Use 'ml' for liquids (oil, water, milk, sauce) and 'g' for solids (meat, veg, flour, pasta). For countable items (eggs, fruits), use 'whole' or leave empty. DO NOT use 'cup', 'tbsp', 'tsp' - convert to ml/g."
+        ),
       original: z
         .string()
         .describe(
@@ -185,6 +187,13 @@ INGREDIENT MEASUREMENTS:
 - EXCEPTIONS: Whole eggs ("2 eggs"), garlic cloves ("3 garlic cloves")
 - SPICES: tsp/tbsp allowed for <10g amounts
 - NEVER: cups, tablespoons for main items, size adjectives
+
+CRITICAL FOR UNITS:
+- Ensure the 'unit' field in the JSON response matches the measurement type.
+- Liquids (oil, sauce, milk, water, juice) MUST have unit: 'ml'.
+- Solids (meat, veg, flour, rice, pasta) MUST have unit: 'g'.
+- Do NOT default to 'count' or empty unit for measured ingredients.
+- Do NOT use 'cup', 'tbsp', 'tsp', 'oz', 'lb'. Convert everything to 'ml' or 'g'.
 
 INSTRUCTIONS:
 - 5-10 clear, numbered steps
