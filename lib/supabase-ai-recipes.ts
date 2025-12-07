@@ -99,6 +99,27 @@ export async function getAiRecipeById(
       return null;
     }
 
+    // Normalize instructions: support either flattened steps or Spoonacular-style sections
+    const rawInstructions = (data.instructions as any) || [];
+    let analyzedInstructions: any[] = [];
+    if (Array.isArray(rawInstructions)) {
+      // Detect flattened steps shape: [{ number, text }]
+      const looksLikeFlatSteps =
+        rawInstructions.length > 0 &&
+        typeof rawInstructions[0] === "object" &&
+        "number" in rawInstructions[0] &&
+        ("text" in rawInstructions[0] || "step" in rawInstructions[0]);
+      if (looksLikeFlatSteps) {
+        const steps = rawInstructions.map((s: any) => ({
+          number: s.number,
+          step: s.text ?? s.step ?? "",
+        }));
+        analyzedInstructions = [{ name: "", steps }];
+      } else {
+        analyzedInstructions = rawInstructions;
+      }
+    }
+
     // Convert Supabase data back to Recipe format
     const recipe: Recipe = {
       id: data.recipe_id,
@@ -112,7 +133,7 @@ export async function getAiRecipeById(
       servings: data.servings || undefined,
       nutrition: data.nutrition || undefined,
       extendedIngredients: data.ingredients || [],
-      analyzedInstructions: data.instructions || [],
+      analyzedInstructions,
     };
 
     return recipe;

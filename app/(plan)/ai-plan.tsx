@@ -20,6 +20,7 @@ import {
   resolveDietPreferences,
 } from "@/lib/allergies-diet-helpers";
 import { Recipe } from "@/lib/spoonacular";
+import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -150,6 +151,20 @@ export default function AiPlan() {
     }
   }, [params.mealType]);
 
+  // Lock meal type selection if navigated from a specific meal slot
+  const lockedMealType = useMemo(() => {
+    const mt = params.mealType as string | undefined;
+    return mt && ["breakfast", "lunch", "dinner"].includes(mt)
+      ? (mt as AIMealTypeOption)
+      : null;
+  }, [params.mealType]);
+
+  const mealTypeOptions = useMemo(() => {
+    return lockedMealType
+      ? MEAL_TYPE_OPTIONS.filter((opt) => opt.id === lockedMealType)
+      : MEAL_TYPE_OPTIONS;
+  }, [lockedMealType]);
+
   const handleOpenIngredientModal = () => {
     ingredientModalRef.current?.present();
   };
@@ -196,6 +211,71 @@ export default function AiPlan() {
       }
 
       const recipe: AIGeneratedRecipe = await response.json();
+
+      // Persist AI generated recipe for the user in Supabase
+      if (userId && recipe?.id) {
+        try {
+          const calories = recipe.nutrition?.nutrients?.find(
+            (n) => n.name.toLowerCase() === "calories"
+          )?.amount;
+          const protein = recipe.nutrition?.nutrients?.find(
+            (n) => n.name.toLowerCase() === "protein"
+          )?.amount;
+          const carbs = recipe.nutrition?.nutrients?.find(
+            (n) => n.name.toLowerCase() === "carbohydrates"
+          )?.amount;
+          const fat = recipe.nutrition?.nutrients?.find(
+            (n) => n.name.toLowerCase() === "fat"
+          )?.amount;
+
+          const ingredientsPayload = (recipe.extendedIngredients || []).map(
+            (ing: any) => ({
+              id: ing.id,
+              name: ing.name,
+              original: ing.original,
+              amount: ing.amount,
+              unit: ing.unit,
+            })
+          );
+
+          const instructionsPayload = (
+            recipe.analyzedInstructions || []
+          ).flatMap((section) =>
+            (section.steps || []).map((step) => ({
+              number: step.number,
+              text: step.step,
+            }))
+          );
+
+          const upsertPayload = {
+            user_id: userId,
+            recipe_id: recipe.id,
+            title: recipe.title,
+            summary: recipe.summary ?? null,
+            image_url: recipe.image ?? null,
+            ready_in_minutes: recipe.readyInMinutes ?? null,
+            servings: recipe.servings ?? null,
+            cuisines: (recipe.cuisines as string[]) ?? [],
+            dish_types: (recipe.dishTypes as string[]) ?? [],
+            diets: (recipe.diets as string[]) ?? [],
+            ingredients: ingredientsPayload,
+            instructions: instructionsPayload,
+            nutrition: recipe.nutrition ?? {},
+            calories_per_serving: calories ?? null,
+            protein_per_serving: protein ?? null,
+            carbs_per_serving: carbs ?? null,
+            fat_per_serving: fat ?? null,
+            updated_at: new Date().toISOString(),
+          };
+
+          await supabase
+            .from("ai_generated_recipes")
+            .upsert(upsertPayload, { onConflict: "user_id,recipe_id" });
+        } catch (e) {
+          console.error("Failed to persist AI recipe:", e);
+        }
+      }
+
       setGeneratedRecipe(recipe);
       setViewState("preview");
     } catch (error) {
@@ -222,6 +302,7 @@ export default function AiPlan() {
     selectedDietPreferences,
     selectedCuisines,
     dislikedCuisines,
+    userId,
   ]);
 
   const handleRegenerate = useCallback(async () => {
@@ -239,6 +320,7 @@ export default function AiPlan() {
       image: generatedRecipe.image || "",
       readyInMinutes: generatedRecipe.readyInMinutes ?? undefined,
       servings: generatedRecipe.servings ?? undefined,
+      isAiGenerated: true,
       nutrition: {
         calories: generatedRecipe.nutrition?.nutrients?.find(
           (n) => n.name.toLowerCase() === "calories"
@@ -401,12 +483,12 @@ export default function AiPlan() {
           </Pressable>
         </View>
 
-        {/* Meal Type Section */}
+        {/* Meal Type Section (locked when coming from Breakfast/Lunch/Dinner) */}
         <ChipSection
           title="Meal Type"
-          options={MEAL_TYPE_OPTIONS}
+          options={mealTypeOptions}
           selectedValue={selectedMealType}
-          onSelect={setSelectedMealType}
+          onSelect={lockedMealType ? () => {} : setSelectedMealType}
         />
 
         {/* Cooking Time Section */}

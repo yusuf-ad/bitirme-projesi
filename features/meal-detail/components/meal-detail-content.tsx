@@ -7,36 +7,39 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    LayoutAnimation,
-    Platform,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    UIManager,
-    View,
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-    Easing,
-    Extrapolation,
-    FadeInDown,
-    FadeOutUp,
-    interpolate,
-    runOnJS,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withTiming
+  Easing,
+  Extrapolation,
+  FadeInDown,
+  FadeOutUp,
+  interpolate,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SWIPE_THRESHOLD = 30;
 
 // Enable LayoutAnimation for Android
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -72,24 +75,32 @@ interface MacroData {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
 }
 
-const MACRO_CONFIG: Record<string, { color: string; bgColor: string; iconBgColor: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = {
+const MACRO_CONFIG: Record<
+  string,
+  {
+    color: string;
+    bgColor: string;
+    iconBgColor: string;
+    icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  }
+> = {
   protein: {
     color: "#41D5B7",
     bgColor: "#E8FAF6",
     iconBgColor: "#C5F2E9",
-    icon: "heart-pulse"
+    icon: "heart-pulse",
   },
   fat: {
     color: "#FCB205",
     bgColor: "#FFF8E5",
     iconBgColor: "#FFEDB8",
-    icon: "water"
+    icon: "water",
   },
   carbs: {
     color: "#CB8395",
     bgColor: "#F9F0F2",
     iconBgColor: "#F0D9DF",
-    icon: "silverware-fork-knife"
+    icon: "silverware-fork-knife",
   },
 };
 
@@ -102,11 +113,17 @@ function NutritionCard({ macro, index }: { macro: MacroData; index: number }) {
   useEffect(() => {
     // Smooth, subtle entrance animation
     cardOpacity.value = withDelay(index * 60, withTiming(1, { duration: 200 }));
-    cardScale.value = withDelay(index * 60, withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }));
+    cardScale.value = withDelay(
+      index * 60,
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) })
+    );
     // Progress bar animation - smooth timing instead of spring
     progressWidth.value = withDelay(
       150 + index * 80,
-      withTiming(macro.percentValue, { duration: 400, easing: Easing.out(Easing.cubic) })
+      withTiming(macro.percentValue, {
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+      })
     );
   }, [macro.percentValue, index]);
 
@@ -120,18 +137,41 @@ function NutritionCard({ macro, index }: { macro: MacroData; index: number }) {
   }));
 
   return (
-    <Animated.View style={[styles.nutritionCard, { backgroundColor: macro.bgColor }, cardAnimatedStyle]}>
-      <View style={[styles.nutritionIconContainer, { backgroundColor: macro.iconBgColor }]}>
-        <MaterialCommunityIcons name={macro.icon} size={22} color={macro.color} />
+    <Animated.View
+      style={[
+        styles.nutritionCard,
+        { backgroundColor: macro.bgColor },
+        cardAnimatedStyle,
+      ]}
+    >
+      <View
+        style={[
+          styles.nutritionIconContainer,
+          { backgroundColor: macro.iconBgColor },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={macro.icon}
+          size={22}
+          color={macro.color}
+        />
       </View>
-      <Text style={[styles.nutritionAmount, { color: macro.color }]}>{macro.amountLabel}</Text>
+      <Text style={[styles.nutritionAmount, { color: macro.color }]}>
+        {macro.amountLabel}
+      </Text>
       <Text style={styles.nutritionLabel}>{macro.label}</Text>
       <View style={styles.nutritionProgressTrack}>
         <Animated.View
-          style={[styles.nutritionProgressFill, { backgroundColor: macro.color }, progressAnimatedStyle]}
+          style={[
+            styles.nutritionProgressFill,
+            { backgroundColor: macro.color },
+            progressAnimatedStyle,
+          ]}
         />
       </View>
-      <Text style={[styles.nutritionPercent, { color: macro.color }]}>{macro.percentLabel}</Text>
+      <Text style={[styles.nutritionPercent, { color: macro.color }]}>
+        {macro.percentLabel}
+      </Text>
     </Animated.View>
   );
 }
@@ -212,7 +252,9 @@ export function MealDetailContent({
     ? `${meal.readyInMinutes} min`
     : "N/A";
   const servingsCount = meal.servings ?? 1;
-  const servingsText = `${servingsCount} ${servingsCount === 1 ? "serving" : "servings"}`;
+  const servingsText = `${servingsCount} ${
+    servingsCount === 1 ? "serving" : "servings"
+  }`;
   const calories = findNutrientValue("Calories", nutrients);
   const caloriesAmount =
     typeof calories?.amount === "number" ? Math.round(calories.amount) : null;
@@ -266,8 +308,11 @@ export function MealDetailContent({
   }, [nutrients]);
 
   const instructions = useMemo(() => {
-    if (meal.analyzedInstructions?.length) {
-      return meal.analyzedInstructions[0].steps
+    const analyzed = meal.analyzedInstructions;
+    if (Array.isArray(analyzed) && analyzed.length > 0) {
+      const first = analyzed[0];
+      const steps = Array.isArray(first?.steps) ? first.steps : [];
+      return steps
         .map((step) => ({
           number: step.number,
           text: sanitizeText(step.step),
@@ -275,7 +320,7 @@ export function MealDetailContent({
         .filter((step) => Boolean(step.text));
     }
 
-    if (meal.instructions) {
+    if (typeof meal.instructions === "string" && meal.instructions.length > 0) {
       return sanitizeText(meal.instructions)
         .split(/\r?\n|\.\s+/)
         .map((text, index) => ({
@@ -328,18 +373,29 @@ export function MealDetailContent({
       const { translationX, velocityX } = event;
 
       // Swipe left -> go to instructions (lower threshold for faster response)
-      if ((translationX < -SWIPE_THRESHOLD || velocityX < -300) && activeTab === "ingredients") {
+      if (
+        (translationX < -SWIPE_THRESHOLD || velocityX < -300) &&
+        activeTab === "ingredients"
+      ) {
         runOnJS(switchTab)("instructions");
       }
       // Swipe right -> go to ingredients
-      else if ((translationX > SWIPE_THRESHOLD || velocityX > 300) && activeTab === "instructions") {
+      else if (
+        (translationX > SWIPE_THRESHOLD || velocityX > 300) &&
+        activeTab === "instructions"
+      ) {
         runOnJS(switchTab)("ingredients");
       }
     });
 
   // Tab indicator animated style - snappier, using interpolate for smooth transition
   const tabIndicatorStyle = useAnimatedStyle(() => {
-    const leftPercent = interpolate(tabProgress.value, [0, 1], [0, 50], Extrapolation.CLAMP);
+    const leftPercent = interpolate(
+      tabProgress.value,
+      [0, 1],
+      [0, 50],
+      Extrapolation.CLAMP
+    );
     return {
       left: `${leftPercent}%`,
     };
@@ -347,13 +403,23 @@ export function MealDetailContent({
 
   // Ingredients tab animated style
   const ingredientsTabStyle = useAnimatedStyle(() => {
-    const scale = interpolate(tabProgress.value, [0, 1], [1, 0.95], Extrapolation.CLAMP);
+    const scale = interpolate(
+      tabProgress.value,
+      [0, 1],
+      [1, 0.95],
+      Extrapolation.CLAMP
+    );
     return { transform: [{ scale }] };
   });
 
   // Instructions tab animated style
   const instructionsTabStyle = useAnimatedStyle(() => {
-    const scale = interpolate(tabProgress.value, [0, 1], [0.95, 1], Extrapolation.CLAMP);
+    const scale = interpolate(
+      tabProgress.value,
+      [0, 1],
+      [0.95, 1],
+      Extrapolation.CLAMP
+    );
     return { transform: [{ scale }] };
   });
 
@@ -478,7 +544,11 @@ export function MealDetailContent({
             </View>
             <Text style={styles.metaSeparator}>|</Text>
             <View style={styles.metaItem}>
-              <Ionicons name="people-outline" size={18} color={Colors.gray[600]} />
+              <Ionicons
+                name="people-outline"
+                size={18}
+                color={Colors.gray[600]}
+              />
               <Text style={styles.metaText}>{servingsText}</Text>
             </View>
           </View>
@@ -527,12 +597,20 @@ export function MealDetailContent({
                   <Ionicons
                     name="leaf"
                     size={18}
-                    color={activeTab === "ingredients" ? Colors.lilac[800] : Colors.gray[400]}
+                    color={
+                      activeTab === "ingredients"
+                        ? Colors.lilac[800]
+                        : Colors.gray[400]
+                    }
                   />
-                  <Text style={[
-                    styles.tabLabel,
-                    activeTab === "ingredients" ? styles.tabLabelActive : styles.tabLabelInactive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      activeTab === "ingredients"
+                        ? styles.tabLabelActive
+                        : styles.tabLabelInactive,
+                    ]}
+                  >
                     Ingredients
                   </Text>
                 </Animated.View>
@@ -547,12 +625,20 @@ export function MealDetailContent({
                   <Ionicons
                     name="reader-outline"
                     size={18}
-                    color={activeTab === "instructions" ? Colors.lilac[800] : Colors.gray[400]}
+                    color={
+                      activeTab === "instructions"
+                        ? Colors.lilac[800]
+                        : Colors.gray[400]
+                    }
                   />
-                  <Text style={[
-                    styles.tabLabel,
-                    activeTab === "instructions" ? styles.tabLabelActive : styles.tabLabelInactive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      activeTab === "instructions"
+                        ? styles.tabLabelActive
+                        : styles.tabLabelInactive,
+                    ]}
+                  >
                     Instructions
                   </Text>
                 </Animated.View>
@@ -576,45 +662,57 @@ export function MealDetailContent({
                     style={styles.contentHeader}
                   >
                     <View style={styles.contentHeaderIcon}>
-                      <Ionicons name="leaf-outline" size={16} color={Colors.lilac[700]} />
+                      <Ionicons
+                        name="leaf-outline"
+                        size={16}
+                        color={Colors.lilac[700]}
+                      />
                     </View>
                     <Text style={styles.contentHeaderTitle}>
                       {(meal.extendedIngredients ?? []).length} Ingredients
                     </Text>
                   </Animated.View>
                   <View style={styles.ingredientsList}>
-                    {(meal.extendedIngredients ?? []).map((ingredient, index, arr) => (
-                      <Animated.View
-                        key={`${ingredient.id}-${ingredient.original}-${index}`}
-                        entering={FadeInDown.duration(200).delay(50 + index * 30)}
-                        exiting={FadeOutUp.duration(80)}
-                        style={styles.ingredientCard}
-                      >
-                        <View style={styles.ingredientIconWrapper}>
-                          <View style={styles.ingredientIcon} />
-                          {index < arr.length - 1 && (
-                            <View style={styles.ingredientConnector} />
+                    {(meal.extendedIngredients ?? []).map(
+                      (ingredient, index, arr) => (
+                        <Animated.View
+                          key={`${ingredient.id}-${ingredient.original}-${index}`}
+                          entering={FadeInDown.duration(200).delay(
+                            50 + index * 30
                           )}
-                        </View>
-                        <View style={styles.ingredientContent}>
-                          <Text style={styles.ingredientText}>
-                            {ingredient.original}
-                          </Text>
-                        </View>
-                      </Animated.View>
-                    ))}
+                          exiting={FadeOutUp.duration(80)}
+                          style={styles.ingredientCard}
+                        >
+                          <View style={styles.ingredientIconWrapper}>
+                            <View style={styles.ingredientIcon} />
+                            {index < arr.length - 1 && (
+                              <View style={styles.ingredientConnector} />
+                            )}
+                          </View>
+                          <View style={styles.ingredientContent}>
+                            <Text style={styles.ingredientText}>
+                              {ingredient.original}
+                            </Text>
+                          </View>
+                        </Animated.View>
+                      )
+                    )}
                     {(!meal.extendedIngredients ||
                       meal.extendedIngredients.length === 0) && (
-                        <Animated.View
-                          entering={FadeInDown.duration(200).delay(50)}
-                          style={styles.emptyState}
-                        >
-                          <Ionicons name="basket-outline" size={48} color={Colors.gray[300]} />
-                          <Text style={styles.emptyText}>
-                            No ingredients available
-                          </Text>
-                        </Animated.View>
-                      )}
+                      <Animated.View
+                        entering={FadeInDown.duration(200).delay(50)}
+                        style={styles.emptyState}
+                      >
+                        <Ionicons
+                          name="basket-outline"
+                          size={48}
+                          color={Colors.gray[300]}
+                        />
+                        <Text style={styles.emptyText}>
+                          No ingredients available
+                        </Text>
+                      </Animated.View>
+                    )}
                   </View>
                 </View>
               ) : (
@@ -626,7 +724,11 @@ export function MealDetailContent({
                     style={styles.contentHeader}
                   >
                     <View style={styles.contentHeaderIcon}>
-                      <Ionicons name="list-outline" size={16} color={Colors.lilac[700]} />
+                      <Ionicons
+                        name="list-outline"
+                        size={16}
+                        color={Colors.lilac[700]}
+                      />
                     </View>
                     <Text style={styles.contentHeaderTitle}>
                       {instructions.length} Steps
@@ -637,13 +739,17 @@ export function MealDetailContent({
                       instructions.map((step, index) => (
                         <Animated.View
                           key={step.number}
-                          entering={FadeInDown.duration(200).delay(50 + index * 40)}
+                          entering={FadeInDown.duration(200).delay(
+                            50 + index * 40
+                          )}
                           exiting={FadeOutUp.duration(80)}
                           style={styles.stepCard}
                         >
                           <View style={styles.stepNumberContainer}>
                             <View style={styles.stepBadge}>
-                              <Text style={styles.stepBadgeText}>{step.number}</Text>
+                              <Text style={styles.stepBadgeText}>
+                                {step.number}
+                              </Text>
                             </View>
                             {index < instructions.length - 1 && (
                               <View style={styles.stepConnector} />
@@ -659,7 +765,11 @@ export function MealDetailContent({
                         entering={FadeInDown.duration(200).delay(50)}
                         style={styles.emptyState}
                       >
-                        <Ionicons name="document-text-outline" size={48} color={Colors.gray[300]} />
+                        <Ionicons
+                          name="document-text-outline"
+                          size={48}
+                          color={Colors.gray[300]}
+                        />
                         <Text style={styles.emptyText}>
                           No instructions available
                         </Text>
