@@ -24,6 +24,13 @@ export default function AddLayout() {
           animation: "slide_from_right",
         }}
       />
+      <Stack.Screen
+        name="manual-add"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
     </Stack>
   );
 }

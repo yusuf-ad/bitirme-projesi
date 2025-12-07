@@ -2,13 +2,12 @@ import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PantryCategory } from "@/features/pantry/types";
 import { generateAPIUrl } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,101 +17,52 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-interface ScannedIngredient {
+interface EditableIngredient {
   name: string;
-  quantity: string;
+  parsedAmount: number;
+  parsedUnit: string;
+  isWeight: boolean;
   spoonacularId?: number;
   spoonacularName?: string;
   spoonacularImage?: string;
 }
 
-interface EditableIngredient extends ScannedIngredient {
-  parsedAmount: number;
-  parsedUnit: string;
-  isWeight: boolean;
-}
-
-export default function ScanResults() {
+export default function ManualAdd() {
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    items?: string;
-    durationMs?: string;
-    llmMs?: string;
-  }>();
   const { top, bottom } = useSafeAreaInsets();
-
-  const INGREDIENT_IMAGE_BASE_URL =
-    "https://spoonacular.com/cdn/ingredients_100x100";
 
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [amountInputs, setAmountInputs] = useState<string[]>([]);
 
+  // Start with one empty row for convenience
   useEffect(() => {
-    if (params.items) {
-      try {
-        const parsedItems = JSON.parse(params.items);
-        if (Array.isArray(parsedItems)) {
-          const mapped = parsedItems.map((item: ScannedIngredient) => {
-            // Simple regex to separate number and text
-            const match = item.quantity.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
-            let amount = 1;
-            let unit = "";
-
-            if (match) {
-              amount = parseFloat(match[1]);
-              unit = match[2].trim();
-            } else {
-              unit = "piece";
-            }
-
-            // Detect if weight/volume or pieces
-            const weightUnits = [
-              "g",
-              "kg",
-              "ml",
-              "l",
-              "oz",
-              "lb",
-              "mg",
-              "gram",
-              "grams",
-              "kilogram",
-              "kilograms",
-            ];
-            const isWeightUnit =
-              weightUnits.includes(unit.toLowerCase()) || unit === "";
-
-            return {
-              ...item,
-              parsedAmount: amount,
-              parsedUnit: unit,
-              isWeight: isWeightUnit,
-            };
-          });
-          setIngredients(mapped);
-        }
-      } catch (e) {
-        console.error("Failed to parse items", e);
-      }
+    if (ingredients.length === 0) {
+      setIngredients([
+        {
+          name: "",
+          parsedAmount: 1,
+          parsedUnit: "piece",
+          isWeight: false,
+        },
+      ]);
+      setEditingIndex(0);
+      setAmountInputs(["1"]);
     }
-  }, [params.items]);
-
-  const secondsText = useMemo(() => {
-    const ms = Number(params.durationMs ?? params.llmMs ?? 0);
-    if (!ms || Number.isNaN(ms)) return null;
-    const secs = (ms / 1000).toFixed(1);
-    return `${secs}s`;
-  }, [params.durationMs, params.llmMs]);
+  }, [ingredients.length]);
 
   const updateAmount = (index: number, newAmount: number) => {
     const newIngredients = [...ingredients];
     newIngredients[index].parsedAmount = newAmount;
-    newIngredients[
-      index
-    ].quantity = `${newAmount} ${newIngredients[index].parsedUnit}`;
     setIngredients(newIngredients);
+    setAmountInputs((prev) => {
+      const next = [...prev];
+      const isPiece =
+        newIngredients[index].parsedUnit.toLowerCase() === "piece";
+      next[index] = isPiece ? String(Math.round(newAmount)) : String(newAmount);
+      return next;
+    });
   };
 
   const handleIncrement = (index: number) => {
@@ -122,43 +72,36 @@ export default function ScanResults() {
 
   const handleDecrement = (index: number) => {
     const current = ingredients[index].parsedAmount;
-    if (current > 0) {
-      updateAmount(index, current - 1);
-    }
+    if (current > 0) updateAmount(index, current - 1);
   };
 
-  const handleWeightChange = (index: number, text: string) => {
-    const val = parseFloat(text);
-    if (!isNaN(val)) {
-      updateAmount(index, val);
+  const handleAmountChange = (
+    index: number,
+    text: string,
+    isPiece: boolean
+  ) => {
+    // Track raw input for controlled editing
+    setAmountInputs((prev) => {
+      const next = [...prev];
+      next[index] = text;
+      return next;
+    });
+
+    // Validate and update parsed amount only when text is numeric
+    const numericPattern = isPiece ? /^\d+$/ : /^\d*(?:\.\d*)?$/;
+    if (numericPattern.test(text) && text !== "" && text !== ".") {
+      const val = isPiece ? parseInt(text, 10) : parseFloat(text);
+      if (!isNaN(val)) updateAmount(index, val);
     }
   };
 
   const handleNameChange = (index: number, text: string) => {
     const newIngredients = [...ingredients];
-    // Update the display name logic
-    if (newIngredients[index].spoonacularName) {
-      newIngredients[index].spoonacularName = text;
-    } else {
-      newIngredients[index].name = text;
-    }
+    newIngredients[index].name = text;
     setIngredients(newIngredients);
   };
 
-  const addNewIngredient = () => {
-    setIngredients([
-      ...ingredients,
-      {
-        name: "New Item",
-        quantity: "1 piece",
-        parsedAmount: 1,
-        parsedUnit: "piece",
-        isWeight: false,
-      },
-    ]);
-    // Automatically start editing the new item
-    setEditingIndex(ingredients.length);
-  };
+  // unit changes are handled via chips; inline unit edit is removed to avoid accidental switches
 
   const COMMON_UNITS = [
     { label: "piece", value: "piece", weight: false },
@@ -173,13 +116,14 @@ export default function ScanResults() {
     const prevUnit = (updated[index].parsedUnit || "").toLowerCase();
     const amount = updated[index].parsedAmount;
 
-    // Handle simple conversions
+    // Handle simple unit conversions for weight/volume
     let newAmount = amount;
     const nu = nextUnit.toLowerCase();
     if (prevUnit === "g" && nu === "kg") newAmount = amount / 1000;
     else if (prevUnit === "kg" && nu === "g") newAmount = amount * 1000;
     else if (prevUnit === "ml" && nu === "l") newAmount = amount / 1000;
     else if (prevUnit === "l" && nu === "ml") newAmount = amount * 1000;
+    // piece or other switches: keep same numeric amount
 
     updated[index].parsedAmount = newAmount;
     updated[index].parsedUnit = nextUnit;
@@ -187,38 +131,49 @@ export default function ScanResults() {
     setIngredients(updated);
   };
 
+  const addNewIngredient = () => {
+    setIngredients([
+      ...ingredients,
+      {
+        name: "",
+        parsedAmount: 1,
+        parsedUnit: "piece",
+        isWeight: false,
+      },
+    ]);
+    setEditingIndex(ingredients.length);
+  };
+
   const removeIngredient = (index: number) => {
-    Alert.alert(
-      "Remove Item",
-      "Are you sure you want to remove this ingredient?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () => {
-            const newIngredients = [...ingredients];
-            newIngredients.splice(index, 1);
-            setIngredients(newIngredients);
-            if (editingIndex === index) setEditingIndex(null);
-          },
+    Alert.alert("Remove Item", "Remove this ingredient?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          const newIngredients = [...ingredients];
+          newIngredients.splice(index, 1);
+          setIngredients(newIngredients);
+          if (editingIndex === index) setEditingIndex(null);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleAddToPantry = async () => {
-    if (ingredients.length === 0) {
-      Alert.alert("No items", "Please add at least one item to save.");
+    const cleaned = ingredients
+      .map((i) => ({ ...i, name: i.name.trim() }))
+      .filter((i) => i.name.length > 0);
+
+    if (cleaned.length === 0) {
+      Alert.alert("No items", "Please add at least one item.");
       return;
     }
 
     setIsSaving(true);
     try {
-      // 1. Categorize items
-      const ingredientNames = ingredients.map(
-        (i) => i.spoonacularName || i.name
-      );
+      // Categorize based on names
+      const ingredientNames = cleaned.map((i) => i.name);
       const categorizeRes = await fetch(generateAPIUrl("/api/categorize"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -232,7 +187,7 @@ export default function ScanResults() {
         categorizedItems.map((i: any) => [i.name, i.category])
       );
 
-      // 2. Fetch existing pantry items to check for duplicates
+      // Fetch existing pantry to merge amounts
       const existingItems = await pantryService.getItems("pantry");
 
       const itemsToInsert: Omit<
@@ -240,18 +195,12 @@ export default function ScanResults() {
         "id" | "user_id" | "created_at" | "updated_at"
       >[] = [];
 
-      const itemsToUpdate: {
-        id: string;
-        amount: number;
-      }[] = [];
+      const itemsToUpdate: { id: string; amount: number }[] = [];
 
-      // 3. Prepare items for DB
-      ingredients.forEach((item) => {
-        const name = item.spoonacularName || item.name;
+      cleaned.forEach((item) => {
+        const name = item.name;
         const category = (categoryMap.get(name) as PantryCategory) || "Other";
 
-        // Check if item already exists in pantry (same name and similar unit)
-        // We do a simple case-insensitive check on name and unit
         const existingItem = existingItems.find(
           (existing) =>
             existing.name.toLowerCase() === name.toLowerCase() &&
@@ -259,21 +208,19 @@ export default function ScanResults() {
         );
 
         if (existingItem) {
-          // If exists, add to update list
           itemsToUpdate.push({
             id: existingItem.id,
             amount: existingItem.amount + item.parsedAmount,
           });
         } else {
-          // If new, add to insert list
           itemsToInsert.push({
             name,
             amount: item.parsedAmount,
             unit: item.parsedUnit,
             is_weight: item.isWeight,
-            spoonacular_id: item.spoonacularId,
-            spoonacular_name: item.spoonacularName,
-            spoonacular_image: item.spoonacularImage,
+            spoonacular_id: undefined,
+            spoonacular_name: undefined,
+            spoonacular_image: undefined,
             category,
             status: "pantry" as const,
             checked: false,
@@ -281,34 +228,25 @@ export default function ScanResults() {
         }
       });
 
-      // 4. Save to Supabase
-      // Perform updates
-      console.log("Saving items...", {
-        toUpdate: itemsToUpdate.length,
-        toInsert: itemsToInsert.length,
-      });
-
       if (itemsToUpdate.length > 0) {
         await Promise.all(
-          itemsToUpdate.map((update) =>
-            pantryService.updateItem(update.id, { amount: update.amount })
+          itemsToUpdate.map((u) =>
+            pantryService.updateItem(u.id, { amount: u.amount })
           )
         );
       }
 
-      // Perform inserts
       if (itemsToInsert.length > 0) {
-        const inserted = await pantryService.addItems(itemsToInsert);
-        console.log("Inserted items:", inserted);
+        await pantryService.addItems(itemsToInsert);
       }
 
       router.push({
         pathname: "/(app)/pantry",
         params: { refresh: Date.now().toString() },
       });
-    } catch (error) {
-      console.error("Error saving items:", error);
-      Alert.alert("Error", "Failed to save items to pantry. Please try again.");
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to save items. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -328,110 +266,78 @@ export default function ScanResults() {
           >
             <Ionicons name="chevron-back" size={22} color="#111" />
           </Pressable>
-          <Text style={styles.title}>Detected Ingredients</Text>
+          <Text style={styles.title}>Add Ingredients Manually</Text>
           <View style={{ width: 42 }} />
         </View>
 
-        {secondsText && (
-          <View style={styles.metaBar}>
-            <Ionicons name="time-outline" size={16} color="#6b7280" />
-            <Text style={styles.metaText}>Scan time: {secondsText}</Text>
-          </View>
-        )}
-
         <FlatList
           data={ingredients}
-          showsVerticalScrollIndicator={false}
           keyExtractor={(it, idx) => `${it.name}-${idx}`}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>No ingredients found</Text>
+              <Text style={styles.emptyText}>
+                No ingredients. Add one below.
+              </Text>
             </View>
           }
           renderItem={({ item, index }) => {
-            const displayName = item.spoonacularName || item.name;
-            const isEditing = editingIndex === index;
-
+            // const isEditing = editingIndex === index;
             return (
               <View style={styles.row}>
-                {/* Delete Button */}
-                <Pressable
-                  style={styles.deleteButton}
-                  onPress={() => removeIngredient(index)}
-                >
-                  <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                </Pressable>
-
-                {item.spoonacularImage ? (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{
-                        uri: `${INGREDIENT_IMAGE_BASE_URL}/${item.spoonacularImage}`,
-                      }}
-                      style={styles.ingredientImage}
-                    />
-                  </View>
-                ) : (
-                  <View style={styles.ingredientImagePlaceholder}>
-                    <Ionicons name="leaf-outline" size={20} color="#16a34a" />
-                  </View>
-                )}
-
                 <View style={styles.rowContent}>
                   <View style={styles.nameContainer}>
-                    {isEditing ? (
-                      <View style={styles.editNameRow}>
-                        <TextInput
-                          style={styles.nameInput}
-                          value={displayName}
-                          onChangeText={(text) => handleNameChange(index, text)}
-                          autoFocus
-                          onBlur={() => setEditingIndex(null)}
+                    <View style={styles.editNameRow}>
+                      <TextInput
+                        style={styles.nameInput}
+                        placeholder="Ingredient name"
+                        value={item.name}
+                        onChangeText={(text) => handleNameChange(index, text)}
+                        onFocus={() => setEditingIndex(index)}
+                        onBlur={() => setEditingIndex(null)}
+                      />
+                      <Pressable
+                        style={styles.deleteButton}
+                        onPress={() => removeIngredient(index)}
+                        accessibilityLabel="Delete ingredient"
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={20}
+                          color="#ef4444"
                         />
-                        <Pressable onPress={() => setEditingIndex(null)}>
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={20}
-                            color="#16a34a"
-                          />
-                        </Pressable>
-                      </View>
-                    ) : (
-                      <View style={styles.displayNameRow}>
-                        <Text style={styles.rowText} numberOfLines={1}>
-                          {displayName}
-                        </Text>
-                        <Pressable
-                          onPress={() => setEditingIndex(index)}
-                          hitSlop={8}
-                        >
-                          <Ionicons name="pencil" size={14} color="#9ca3af" />
-                        </Pressable>
-                      </View>
-                    )}
-
-                    {item.spoonacularId && !isEditing && (
-                      <Text style={styles.idText}>
-                        ID: {item.spoonacularId}
-                      </Text>
-                    )}
+                      </Pressable>
+                    </View>
                   </View>
 
-                  {/* Quantity Controls */}
                   <View style={styles.quantityControls}>
                     {item.isWeight ? (
                       <View style={styles.weightInputWrapper}>
                         <TextInput
-                          style={styles.weightInput}
-                          defaultValue={String(item.parsedAmount)}
+                          style={styles.amountInput}
+                          value={
+                            amountInputs[index] ??
+                            Number(item.parsedAmount).toFixed(2)
+                          }
                           keyboardType="numeric"
                           onChangeText={(text) =>
-                            handleWeightChange(index, text)
+                            handleAmountChange(index, text, false)
+                          }
+                          onBlur={() =>
+                            setAmountInputs((prev) => {
+                              const next = [...prev];
+                              next[index] = Number(
+                                ingredients[index].parsedAmount
+                              ).toFixed(2);
+                              return next;
+                            })
                           }
                           returnKeyType="done"
                         />
-                        <Text style={styles.unitText}>{item.parsedUnit}</Text>
+                        <Text style={styles.unitStaticText}>
+                          {item.parsedUnit}
+                        </Text>
                       </View>
                     ) : (
                       <View style={styles.pieceControls}>
@@ -442,11 +348,27 @@ export default function ScanResults() {
                         >
                           <Ionicons name="remove" size={16} color="#4b5563" />
                         </Pressable>
-                        <Text style={styles.pieceText}>
-                          {item.parsedUnit.toLowerCase() === "piece"
-                            ? Math.round(item.parsedAmount)
-                            : Number(item.parsedAmount).toFixed(2)}
-                        </Text>
+                        <TextInput
+                          style={styles.amountInput}
+                          value={
+                            amountInputs[index] ??
+                            String(Math.round(item.parsedAmount))
+                          }
+                          keyboardType="numeric"
+                          onChangeText={(text) =>
+                            handleAmountChange(index, text, true)
+                          }
+                          onBlur={() =>
+                            setAmountInputs((prev) => {
+                              const next = [...prev];
+                              next[index] = String(
+                                Math.round(ingredients[index].parsedAmount)
+                              );
+                              return next;
+                            })
+                          }
+                          returnKeyType="done"
+                        />
                         <Pressable
                           onPress={() => handleIncrement(index)}
                           style={styles.pieceBtn}
@@ -454,6 +376,7 @@ export default function ScanResults() {
                         >
                           <Ionicons name="add" size={16} color="#4b5563" />
                         </Pressable>
+                        {/* Inline unit input removed to avoid accidental unit changes; use chips below */}
                       </View>
                     )}
                     <View style={styles.unitChipsRow}>
@@ -492,7 +415,7 @@ export default function ScanResults() {
           ListFooterComponent={
             <Pressable style={styles.addButton} onPress={addNewIngredient}>
               <Ionicons name="add-circle-outline" size={24} color="#7849B6" />
-              <Text style={styles.addButtonText}>Add new ingredient</Text>
+              <Text style={styles.addButtonText}>Add ingredient</Text>
             </Pressable>
           }
         />
@@ -507,7 +430,7 @@ export default function ScanResults() {
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <Text style={styles.primaryButtonText}>Add to Pantry</Text>
+                <Text style={styles.primaryButtonText}>Save to Pantry</Text>
                 <Ionicons name="arrow-forward" size={20} color="#fff" />
               </>
             )}
@@ -519,13 +442,8 @@ export default function ScanResults() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
+  safeArea: { flex: 1 },
   header: {
     height: 56,
     paddingHorizontal: 16,
@@ -543,36 +461,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#f3f4f6",
   },
-  title: {
-    color: "#111",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  empty: {
-    padding: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    color: "#6b7280",
-  },
-  listContent: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 120, // Increased padding to account for footer
-  },
-  metaBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  metaText: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
+  title: { color: "#111", fontSize: 16, fontWeight: "600" },
+  empty: { padding: 40, alignItems: "center", justifyContent: "center" },
+  emptyText: { color: "#6b7280" },
+  listContent: { padding: 16, gap: 12, paddingBottom: 120 },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -588,50 +480,15 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  deleteButton: {
-    padding: 4,
-  },
-  imageContainer: {
-    width: 48,
-    height: 48,
-    overflow: "hidden",
-    borderRadius: 24,
-    backgroundColor: "#f9fafb",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  ingredientImage: {
-    width: 48,
-    height: 48,
-    resizeMode: "center",
-  },
-  ingredientImagePlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#f0fdf4",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  deleteButton: { padding: 4 },
   rowContent: {
     flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
+    gap: 10,
   },
-  nameContainer: {
-    flex: 1,
-    gap: 2,
-    marginRight: 4,
-  },
-  displayNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
+  nameContainer: { flex: 1, gap: 2, marginRight: 4 },
   editNameRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -640,33 +497,25 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 18,
     color: "#111",
-    borderBottomWidth: 1,
-    borderBottomColor: "#16a34a",
-    paddingVertical: 0,
-  },
-  rowText: {
-    fontSize: 16,
-    color: "#111",
-    textTransform: "capitalize",
-    fontWeight: "500",
-    maxWidth: 120,
-  },
-  idText: {
-    fontSize: 10,
-    color: "#9ca3af",
+    borderBottomWidth: 2,
+    borderBottomColor: "#7849B6",
+    paddingVertical: 2,
   },
   quantityControls: {
-    minWidth: 90,
-    alignItems: "flex-end",
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
   unitChipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
     marginTop: 6,
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
+    maxWidth: "100%",
   },
   unitChip: {
     paddingHorizontal: 8,
@@ -675,6 +524,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e5e7eb",
     backgroundColor: "#f9fafb",
+    flexShrink: 0,
+    marginBottom: 6,
   },
   unitChipSelected: {
     borderColor: "#7849B6",
@@ -693,15 +544,24 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
   },
   weightInput: {
-    minWidth: 30,
+    minWidth: 40,
     fontSize: 14,
     textAlign: "right",
     padding: 0,
     color: "#111",
     fontWeight: "600",
   },
-  unitText: {
-    marginLeft: 4,
+  unitTextInput: {
+    marginLeft: 6,
+    minWidth: 40,
+    fontSize: 12,
+    color: "#6b7280",
+    padding: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  unitStaticText: {
+    marginLeft: 6,
     fontSize: 12,
     color: "#6b7280",
   },
@@ -730,6 +590,26 @@ const styles = StyleSheet.create({
     minWidth: 24,
     textAlign: "center",
   },
+  unitInlineInput: {
+    marginLeft: 6,
+    minWidth: 40,
+    fontSize: 12,
+    color: "#6b7280",
+    paddingVertical: 0,
+  },
+  amountInput: {
+    minWidth: 60,
+    height: 36,
+    fontSize: 16,
+    textAlign: "center",
+    paddingHorizontal: 8,
+    color: "#111",
+    fontWeight: "600",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -743,11 +623,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     borderStyle: "dashed",
   },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#7849B6",
-  },
+  addButtonText: { fontSize: 16, fontWeight: "500", color: "#7849B6" },
   footer: {
     position: "absolute",
     bottom: 0,
@@ -773,9 +649,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  primaryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  primaryButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

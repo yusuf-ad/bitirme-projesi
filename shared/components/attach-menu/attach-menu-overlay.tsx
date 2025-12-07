@@ -57,6 +57,13 @@ export function AttachMenuOverlay() {
     }, ANIMATION_DURATION);
   };
 
+  const handleManualAddPress = () => {
+    closeMenu();
+    setTimeout(() => {
+      router.push("/(add)/manual-add");
+    }, ANIMATION_DURATION);
+  };
+
   const handleCreateMealPlan = () => {
     closeMenu();
     setTimeout(() => {
@@ -138,6 +145,11 @@ export function AttachMenuOverlay() {
               icon: "camera-outline",
               label: "Camera",
               onPress: handleCameraPress,
+            },
+            {
+              icon: "add-circle-outline",
+              label: "Add Manually",
+              onPress: handleManualAddPress,
             },
           ],
         };
