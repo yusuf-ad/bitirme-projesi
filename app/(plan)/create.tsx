@@ -6,7 +6,7 @@ import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,8 +18,17 @@ export default function CreateMealPlan() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const params = useLocalSearchParams<{ date?: string }>();
+  const initialStartDate = (() => {
+    if (params?.date) {
+      const d = new Date(params.date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    return new Date(today);
+  })();
 
-  const [startDate, setStartDate] = useState<Date>(new Date(today));
+  const [startDate, setStartDate] = useState<Date>(initialStartDate);
 
   const { session } = useAuthContext();
   const { data: mealPlanData } = useMealPlansQuery(

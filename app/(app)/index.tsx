@@ -72,7 +72,10 @@ export default function MealplanTab() {
     : undefined;
 
   function handleCreateMealPlan() {
-    router.push("/(plan)/create");
+    router.push({
+      pathname: "/(plan)/create",
+      params: { date: selectedDate.toISOString() },
+    });
   }
 
   const handleDateSelect = useCallback((date: Date) => {
