@@ -1,9 +1,14 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors } from "@/constants/theme";
-import { CategorySection, PantryItem } from "@/features/pantry";
+import {
+  CategorySection,
+  PantryItem,
+  PantryItemDetailSheet,
+} from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
@@ -24,6 +29,8 @@ export default function ShoppingListScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isMovingToPantry, setIsMovingToPantry] = useState(false);
   const hasCheckedItems = useRef(false);
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [selectedItem, setSelectedItem] = useState<PantryItem | null>(null);
 
   console.log(items);
 
@@ -133,7 +140,31 @@ export default function ShoppingListScreen() {
   };
 
   const handleEditItem = (id: string) => {
-    console.log("Edit item:", id);
+    const item = items.find((i) => i.id === id) || null;
+    setSelectedItem(item);
+    bottomSheetRef.current?.present();
+  };
+
+  const handleUpdateItem = async (id: string, updates: Partial<PantryItem>) => {
+    try {
+      if (selectedItem && selectedItem.id === id) {
+        setSelectedItem((prev) => (prev ? { ...prev, ...updates } : null));
+      }
+      await pantryService.updateItem(id, updates);
+      await fetchItems();
+    } catch (error) {
+      console.error("Failed to update item:", error);
+    }
+  };
+
+  const handleRemoveItem = async (id: string) => {
+    try {
+      bottomSheetRef.current?.dismiss();
+      await pantryService.deleteItem(id);
+      await fetchItems();
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+    }
   };
 
   const handleMarkAll = async () => {
@@ -260,6 +291,13 @@ export default function ShoppingListScreen() {
           )}
         </ScrollView>
       )}
+      <PantryItemDetailSheet
+        ref={bottomSheetRef}
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onUpdateItem={handleUpdateItem}
+        onRemoveItem={handleRemoveItem}
+      />
     </View>
   );
 }

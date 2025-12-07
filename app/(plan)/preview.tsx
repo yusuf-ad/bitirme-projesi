@@ -72,6 +72,10 @@ export default function MealPlanPreview() {
     Partial<Record<MealType, number>>
   >({});
   const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
+  // Track which meal types were generated via AI in this session
+  const [aiGeneratedTypes, setAiGeneratedTypes] = useState<
+    Partial<Record<MealType, boolean>>
+  >({});
 
   const planStartDate = normalizeDateParam(params.startDate);
   const planEndDate = normalizeDateParam(params.endDate ?? params.startDate);
@@ -129,20 +133,31 @@ export default function MealPlanPreview() {
         // Check if data is valid and has at least one meal type with results
         if (data && typeof data === "object") {
           const indices: Partial<Record<MealType, number>> = {};
+          const aiFlags: Partial<Record<MealType, boolean>> = {};
 
           // Initialize indices for meal types that have results
           if (data.breakfast?.results?.length > 0) {
             indices.breakfast = 0;
+            if (data.breakfast.results[0]?.isAiGenerated) {
+              aiFlags.breakfast = true;
+            }
           }
           if (data.lunch?.results?.length > 0) {
             indices.lunch = 0;
+            if (data.lunch.results[0]?.isAiGenerated) {
+              aiFlags.lunch = true;
+            }
           }
           if (data.dinner?.results?.length > 0) {
             indices.dinner = 0;
+            if (data.dinner.results[0]?.isAiGenerated) {
+              aiFlags.dinner = true;
+            }
           }
 
           setMealPlan(data);
           setSelectedMealIndices(indices);
+          setAiGeneratedTypes(aiFlags);
         } else {
           console.error("Invalid meal plan structure:", data);
         }
@@ -167,7 +182,20 @@ export default function MealPlanPreview() {
     }
 
     // Only create meal items for meal types that exist in the plan
-    const mealItems: any[] = [];
+    type MealItemPayload = {
+      spoonacular_recipe_id: number;
+      recipe_name: string;
+      recipe_image_url?: string | null;
+      calories_per_serving?: number | null;
+      carbs_per_serving?: number | null;
+      protein_per_serving?: number | null;
+      fat_per_serving?: number | null;
+      ready_in_minutes?: number | null;
+      meal_date: string;
+      meal_type: MealType;
+      is_ai_generated?: boolean;
+    };
+    const mealItems: MealItemPayload[] = [];
 
     if (
       mealPlan.breakfast?.results?.length > 0 &&
@@ -180,7 +208,10 @@ export default function MealPlanPreview() {
         planStartDate
       );
       if (breakfastMealItem) {
-        mealItems.push(breakfastMealItem);
+        mealItems.push({
+          ...breakfastMealItem,
+          is_ai_generated: !!aiGeneratedTypes.breakfast,
+        });
       }
     }
 
@@ -195,7 +226,10 @@ export default function MealPlanPreview() {
         planStartDate
       );
       if (lunchMealItem) {
-        mealItems.push(lunchMealItem);
+        mealItems.push({
+          ...lunchMealItem,
+          is_ai_generated: !!aiGeneratedTypes.lunch,
+        });
       }
     }
 
@@ -210,7 +244,10 @@ export default function MealPlanPreview() {
         planStartDate
       );
       if (dinnerMealItem) {
-        mealItems.push(dinnerMealItem);
+        mealItems.push({
+          ...dinnerMealItem,
+          is_ai_generated: !!aiGeneratedTypes.dinner,
+        });
       }
     }
 
@@ -326,14 +363,15 @@ export default function MealPlanPreview() {
           meal_plan_id: newPlan.id,
           spoonacular_recipe_id: item.spoonacular_recipe_id,
           recipe_name: item.recipe_name,
-          recipe_image_url: item.recipe_image_url,
-          calories_per_serving: item.calories_per_serving,
-          carbs_per_serving: item.carbs_per_serving,
-          protein_per_serving: item.protein_per_serving,
-          fat_per_serving: item.fat_per_serving,
-          ready_in_minutes: item.ready_in_minutes,
+          recipe_image_url: item.recipe_image_url ?? null,
+          calories_per_serving: item.calories_per_serving ?? null,
+          carbs_per_serving: item.carbs_per_serving ?? null,
+          protein_per_serving: item.protein_per_serving ?? null,
+          fat_per_serving: item.fat_per_serving ?? null,
+          ready_in_minutes: item.ready_in_minutes ?? null,
           meal_date: item.meal_date,
           meal_type: item.meal_type,
+          is_ai_generated: !!item.is_ai_generated,
         })
       );
 
@@ -424,8 +462,26 @@ export default function MealPlanPreview() {
     const imageUrl = getMealImageUrl(meal);
 
     const handleReplace = () => {
-      const mealTypeData = mealPlan?.[mealType];
+      // If this meal type was generated via AI, go to AI generator.
+      if (aiGeneratedTypes[mealType]) {
+        const existingMealPlanData = mealPlan
+          ? JSON.stringify(mealPlan)
+          : undefined;
 
+        router.push({
+          pathname: "/(plan)/ai-plan",
+          params: {
+            mealType,
+            startDate: formatDate(planStartDate),
+            endDate: formatDate(planEndDate),
+            existingMealPlanData,
+          },
+        });
+        return;
+      }
+
+      // Otherwise, open local selection modal for non-AI meals
+      const mealTypeData = mealPlan?.[mealType];
       if (!mealTypeData || mealTypeData.results.length === 0) {
         Alert.alert(
           "No recipes found",
@@ -433,7 +489,6 @@ export default function MealPlanPreview() {
         );
         return;
       }
-
       setActiveMealType(mealType);
       mealSelectionRef.current?.present();
     };
@@ -452,7 +507,18 @@ export default function MealPlanPreview() {
       <View key={meal.id} style={styles.mealItem}>
         <Pressable
           style={styles.mealContent}
-          onPress={() => router.push(`/(meal)/${meal.id}`)}
+          onPress={() =>
+            router.push({
+              pathname: "/(meal)/[id]",
+              params: {
+                id: String(meal.id),
+                mealSlot: mealType,
+                isAiGenerated: String(
+                  !!(aiGeneratedTypes[mealType] || (meal as any)?.isAiGenerated)
+                ),
+              },
+            })
+          }
         >
           {imageUrl ? (
             <Image
@@ -521,6 +587,9 @@ export default function MealPlanPreview() {
     const existingMealPlanData = mealPlan
       ? JSON.stringify(mealPlan)
       : undefined;
+
+    // Mark this meal type as AI-generated for save attribution
+    setAiGeneratedTypes((prev) => ({ ...prev, [mealType]: true }));
 
     router.push({
       pathname: "/(plan)/ai-plan",

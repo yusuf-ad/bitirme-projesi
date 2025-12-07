@@ -72,7 +72,10 @@ export default function MealplanTab() {
     : undefined;
 
   function handleCreateMealPlan() {
-    router.push("/(plan)/create");
+    router.push({
+      pathname: "/(plan)/create",
+      params: { date: selectedDate.toISOString() },
+    });
   }
 
   const handleDateSelect = useCallback((date: Date) => {
@@ -82,6 +85,7 @@ export default function MealplanTab() {
   }, []);
 
   const hasMeals = (data?.items?.length ?? 0) > 0;
+  const hasPlan = !!data?.plan;
 
   // Check if selected date is in the past
   const today = useMemo(() => {
@@ -133,7 +137,6 @@ export default function MealplanTab() {
       contentContainerStyle={{
         paddingBottom: bottom + 52 * (Platform.OS === "ios" ? 1 : 2),
       }}
-      bounces={false}
       scrollEventThrottle={32}
       refreshControl={
         <RefreshControl
@@ -192,8 +195,11 @@ export default function MealplanTab() {
             ) : isPastDate ? (
               // Show empty meal slots for past dates
               <DailyMealsList items={[]} selectedDate={selectedDate} />
+            ) : hasPlan ? (
+              // Plan exists but has no recipes yet: show empty slots
+              <DailyMealsList items={[]} selectedDate={selectedDate} />
             ) : (
-              // Show create meal plan prompt for today and future dates
+              // No plan yet for today/future: show create prompt
               <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
             )}
           </>
