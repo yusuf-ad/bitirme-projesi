@@ -30,7 +30,6 @@ export const PantryItemDetailSheet = forwardRef<
   PantryItemDetailSheetProps
 >(({ item, onClose, onUpdateItem, onRemoveItem }, ref) => {
   const insets = useSafeAreaInsets();
-  const snapPoints = useMemo(() => ["60%"], []);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -168,7 +167,6 @@ export const PantryItemDetailSheet = forwardRef<
     <BottomSheetModal
       ref={ref}
       index={0}
-      snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
       onDismiss={onClose}
       enablePanDownToClose

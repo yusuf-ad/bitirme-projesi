@@ -35,7 +35,9 @@ export function PantryItemRow({
           onPress={() => onToggle(item.id)}
           style={styles.checkboxContainer}
         >
-          <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
+          <View
+            style={[styles.checkbox, item.checked && styles.checkboxChecked]}
+          >
             {item.checked && (
               <Feather name="check" size={18} color={Colors.lilac[900]} />
             )}
@@ -43,7 +45,12 @@ export function PantryItemRow({
         </Pressable>
       )}
 
-      <View style={styles.itemContent}>
+      <Pressable
+        style={styles.itemContent}
+        onPress={() => onToggle(item.id)}
+        android_ripple={{ color: Colors.lilac[100] }}
+        hitSlop={4}
+      >
         <Text style={[styles.itemName, item.checked && styles.itemNameChecked]}>
           {item.name}
         </Text>
@@ -55,13 +62,10 @@ export function PantryItemRow({
         {showRecipe && item.recipe_name ? (
           <Text style={styles.itemRecipe}>{item.recipe_name}</Text>
         ) : null}
-      </View>
+      </Pressable>
 
       {onEdit && (
-        <Pressable
-          style={styles.editButton}
-          onPress={() => onEdit(item.id)}
-        >
+        <Pressable style={styles.editButton} onPress={() => onEdit(item.id)}>
           <Feather name="edit-2" size={18} color={Colors.gray[300]} />
         </Pressable>
       )}
@@ -102,6 +106,7 @@ const styles = StyleSheet.create({
     color: Colors.purple[800],
     fontWeight: "400",
     lineHeight: 20,
+    textTransform: "capitalize",
   },
   itemNameChecked: {
     color: Colors.gray[400],
