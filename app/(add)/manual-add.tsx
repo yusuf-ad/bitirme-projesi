@@ -2,22 +2,21 @@ import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PantryCategory } from "@/features/pantry/types";
 import { generateAPIUrl } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface EditableIngredient {
+  id: string;
   name: string;
   parsedAmount: number;
   parsedUnit: string;
@@ -29,18 +28,27 @@ interface EditableIngredient {
 
 export default function ManualAdd() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ destination?: string }>();
+  const destination = params.destination || "pantry";
   const { top, bottom } = useSafeAreaInsets();
 
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [amountInputs, setAmountInputs] = useState<string[]>([]);
+  const idCounter = useRef(0);
+
+  const generateId = () => {
+    idCounter.current += 1;
+    return `ingredient-${idCounter.current}`;
+  };
 
   // Start with one empty row for convenience
   useEffect(() => {
     if (ingredients.length === 0) {
       setIngredients([
         {
+          id: generateId(),
           name: "",
           parsedAmount: 1,
           parsedUnit: "piece",
@@ -135,6 +143,7 @@ export default function ManualAdd() {
     setIngredients([
       ...ingredients,
       {
+        id: generateId(),
         name: "",
         parsedAmount: 1,
         parsedUnit: "piece",
@@ -170,6 +179,8 @@ export default function ManualAdd() {
       return;
     }
 
+    const isShoppingList = destination === "shopping_list";
+
     setIsSaving(true);
     try {
       // Categorize based on names
@@ -187,8 +198,10 @@ export default function ManualAdd() {
         categorizedItems.map((i: any) => [i.name, i.category])
       );
 
-      // Fetch existing pantry to merge amounts
-      const existingItems = await pantryService.getItems("pantry");
+      // Fetch existing items to merge amounts
+      const existingItems = await pantryService.getItems(
+        isShoppingList ? "shopping_list" : "pantry"
+      );
 
       const itemsToInsert: Omit<
         import("@/features/pantry/types").PantryItem,
@@ -222,7 +235,7 @@ export default function ManualAdd() {
             spoonacular_name: undefined,
             spoonacular_image: undefined,
             category,
-            status: "pantry" as const,
+            status: isShoppingList ? "shopping_list" : "pantry",
             checked: false,
           });
         }
@@ -240,10 +253,17 @@ export default function ManualAdd() {
         await pantryService.addItems(itemsToInsert);
       }
 
-      router.push({
-        pathname: "/(app)/pantry",
-        params: { refresh: Date.now().toString() },
-      });
+      if (isShoppingList) {
+        router.replace({
+          pathname: "/shopping-list",
+          params: { refresh: Date.now().toString() },
+        });
+      } else {
+        router.replace({
+          pathname: "/(app)/pantry",
+          params: { refresh: Date.now().toString() },
+        });
+      }
     } catch (e) {
       console.error(e);
       Alert.alert("Error", "Failed to save items. Please try again.");
@@ -253,197 +273,190 @@ export default function ManualAdd() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <View style={[styles.safeArea, { paddingTop: top }]}>
-        <View style={styles.header}>
-          <Pressable
-            style={styles.iconButton}
-            onPress={() => router.back()}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={22} color="#111" />
-          </Pressable>
-          <Text style={styles.title}>Add Ingredients Manually</Text>
-          <View style={{ width: 42 }} />
-        </View>
+    <View style={[styles.container, { paddingTop: top }]}>
+      <View style={styles.header}>
+        <Pressable
+          style={styles.iconButton}
+          onPress={() => router.back()}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color="#111" />
+        </Pressable>
+        <Text style={styles.title}>Add Ingredients Manually</Text>
+        <View style={{ width: 42 }} />
+      </View>
 
-        <FlatList
-          data={ingredients}
-          keyExtractor={(it, idx) => `${it.name}-${idx}`}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>
-                No ingredients. Add one below.
-              </Text>
-            </View>
-          }
-          renderItem={({ item, index }) => {
-            // const isEditing = editingIndex === index;
-            return (
-              <View style={styles.row}>
-                <View style={styles.rowContent}>
-                  <View style={styles.nameContainer}>
-                    <View style={styles.editNameRow}>
+      <KeyboardAwareScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        enableOnAndroid
+        extraScrollHeight={100}
+        keyboardShouldPersistTaps="handled"
+      >
+        {ingredients.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>No ingredients. Add one below.</Text>
+          </View>
+        ) : (
+          ingredients.map((item, index) => (
+            <View key={item.id} style={styles.row}>
+              <View style={styles.rowContent}>
+                <View style={styles.nameContainer}>
+                  <View style={styles.editNameRow}>
+                    <TextInput
+                      style={styles.nameInput}
+                      placeholder="Ingredient name"
+                      value={item.name}
+                      onChangeText={(text) => handleNameChange(index, text)}
+                      onFocus={() => setEditingIndex(index)}
+                      onBlur={() => setEditingIndex(null)}
+                    />
+                    <Pressable
+                      style={styles.deleteButton}
+                      onPress={() => removeIngredient(index)}
+                      accessibilityLabel="Delete ingredient"
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={20}
+                        color="#ef4444"
+                      />
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View style={styles.quantityControls}>
+                  {item.isWeight ? (
+                    <View style={styles.weightInputWrapper}>
                       <TextInput
-                        style={styles.nameInput}
-                        placeholder="Ingredient name"
-                        value={item.name}
-                        onChangeText={(text) => handleNameChange(index, text)}
-                        onFocus={() => setEditingIndex(index)}
-                        onBlur={() => setEditingIndex(null)}
+                        style={styles.amountInput}
+                        value={
+                          amountInputs[index] ??
+                          Number(item.parsedAmount).toFixed(2)
+                        }
+                        keyboardType="numeric"
+                        onChangeText={(text) =>
+                          handleAmountChange(index, text, false)
+                        }
+                        onBlur={() =>
+                          setAmountInputs((prev) => {
+                            const next = [...prev];
+                            next[index] = Number(
+                              ingredients[index].parsedAmount
+                            ).toFixed(2);
+                            return next;
+                          })
+                        }
+                        returnKeyType="done"
+                      />
+                      <Text style={styles.unitStaticText}>
+                        {item.parsedUnit}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.pieceControls}>
+                      <Pressable
+                        onPress={() => handleDecrement(index)}
+                        style={styles.pieceBtn}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="remove" size={16} color="#4b5563" />
+                      </Pressable>
+                      <TextInput
+                        style={styles.amountInput}
+                        value={
+                          amountInputs[index] ??
+                          String(Math.round(item.parsedAmount))
+                        }
+                        keyboardType="numeric"
+                        onChangeText={(text) =>
+                          handleAmountChange(index, text, true)
+                        }
+                        onBlur={() =>
+                          setAmountInputs((prev) => {
+                            const next = [...prev];
+                            next[index] = String(
+                              Math.round(ingredients[index].parsedAmount)
+                            );
+                            return next;
+                          })
+                        }
+                        returnKeyType="done"
                       />
                       <Pressable
-                        style={styles.deleteButton}
-                        onPress={() => removeIngredient(index)}
-                        accessibilityLabel="Delete ingredient"
+                        onPress={() => handleIncrement(index)}
+                        style={styles.pieceBtn}
+                        hitSlop={8}
                       >
-                        <Ionicons
-                          name="trash-outline"
-                          size={20}
-                          color="#ef4444"
-                        />
+                        <Ionicons name="add" size={16} color="#4b5563" />
                       </Pressable>
                     </View>
-                  </View>
-
-                  <View style={styles.quantityControls}>
-                    {item.isWeight ? (
-                      <View style={styles.weightInputWrapper}>
-                        <TextInput
-                          style={styles.amountInput}
-                          value={
-                            amountInputs[index] ??
-                            Number(item.parsedAmount).toFixed(2)
-                          }
-                          keyboardType="numeric"
-                          onChangeText={(text) =>
-                            handleAmountChange(index, text, false)
-                          }
-                          onBlur={() =>
-                            setAmountInputs((prev) => {
-                              const next = [...prev];
-                              next[index] = Number(
-                                ingredients[index].parsedAmount
-                              ).toFixed(2);
-                              return next;
-                            })
-                          }
-                          returnKeyType="done"
-                        />
-                        <Text style={styles.unitStaticText}>
-                          {item.parsedUnit}
-                        </Text>
-                      </View>
-                    ) : (
-                      <View style={styles.pieceControls}>
+                  )}
+                  <View style={styles.unitChipsRow}>
+                    {COMMON_UNITS.map((u) => {
+                      const selected =
+                        item.parsedUnit.toLowerCase() === u.value.toLowerCase();
+                      return (
                         <Pressable
-                          onPress={() => handleDecrement(index)}
-                          style={styles.pieceBtn}
-                          hitSlop={8}
+                          key={u.value}
+                          onPress={() => quickSetUnit(index, u.value, u.weight)}
+                          style={[
+                            styles.unitChip,
+                            selected && styles.unitChipSelected,
+                          ]}
                         >
-                          <Ionicons name="remove" size={16} color="#4b5563" />
-                        </Pressable>
-                        <TextInput
-                          style={styles.amountInput}
-                          value={
-                            amountInputs[index] ??
-                            String(Math.round(item.parsedAmount))
-                          }
-                          keyboardType="numeric"
-                          onChangeText={(text) =>
-                            handleAmountChange(index, text, true)
-                          }
-                          onBlur={() =>
-                            setAmountInputs((prev) => {
-                              const next = [...prev];
-                              next[index] = String(
-                                Math.round(ingredients[index].parsedAmount)
-                              );
-                              return next;
-                            })
-                          }
-                          returnKeyType="done"
-                        />
-                        <Pressable
-                          onPress={() => handleIncrement(index)}
-                          style={styles.pieceBtn}
-                          hitSlop={8}
-                        >
-                          <Ionicons name="add" size={16} color="#4b5563" />
-                        </Pressable>
-                        {/* Inline unit input removed to avoid accidental unit changes; use chips below */}
-                      </View>
-                    )}
-                    <View style={styles.unitChipsRow}>
-                      {COMMON_UNITS.map((u) => {
-                        const selected =
-                          item.parsedUnit.toLowerCase() ===
-                          u.value.toLowerCase();
-                        return (
-                          <Pressable
-                            key={u.value}
-                            onPress={() =>
-                              quickSetUnit(index, u.value, u.weight)
-                            }
+                          <Text
                             style={[
-                              styles.unitChip,
-                              selected && styles.unitChipSelected,
+                              styles.unitChipText,
+                              selected && styles.unitChipTextSelected,
                             ]}
                           >
-                            <Text
-                              style={[
-                                styles.unitChipText,
-                                selected && styles.unitChipTextSelected,
-                              ]}
-                            >
-                              {u.label}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
+                            {u.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
                   </View>
                 </View>
               </View>
-            );
-          }}
-          ListFooterComponent={
-            <Pressable style={styles.addButton} onPress={addNewIngredient}>
-              <Ionicons name="add-circle-outline" size={24} color="#7849B6" />
-              <Text style={styles.addButtonText}>Add ingredient</Text>
-            </Pressable>
-          }
-        />
+            </View>
+          ))
+        )}
 
-        <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
-          <Pressable
-            style={[styles.primaryButton, isSaving && { opacity: 0.7 }]}
-            onPress={handleAddToPantry}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Text style={styles.primaryButtonText}>Save to Pantry</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </>
-            )}
-          </Pressable>
-        </View>
+        <Pressable style={styles.addButton} onPress={addNewIngredient}>
+          <Ionicons name="add-circle-outline" size={24} color="#7849B6" />
+          <Text style={styles.addButtonText}>Add ingredient</Text>
+        </Pressable>
+      </KeyboardAwareScrollView>
+
+      <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
+        <Pressable
+          style={[styles.primaryButton, isSaving && { opacity: 0.7 }]}
+          onPress={handleAddToPantry}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.primaryButtonText}>
+                {destination === "shopping_list"
+                  ? "Save to Shopping List"
+                  : "Save to Pantry"}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
+            </>
+          )}
+        </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  safeArea: { flex: 1 },
+  scrollView: { flex: 1 },
   header: {
     height: 56,
     paddingHorizontal: 16,
@@ -599,10 +612,13 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     minWidth: 60,
-    height: 36,
+    height: 40,
     fontSize: 16,
+    lineHeight: 20,
     textAlign: "center",
+    textAlignVertical: "center",
     paddingHorizontal: 8,
+    paddingVertical: 8,
     color: "#111",
     fontWeight: "600",
     backgroundColor: "#fff",

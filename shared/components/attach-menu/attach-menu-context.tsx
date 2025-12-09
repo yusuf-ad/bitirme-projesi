@@ -1,6 +1,11 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
 
-export type AttachMenuRoute = "index" | "recipes" | "pantry" | "(profile)";
+export type AttachMenuRoute =
+  | "index"
+  | "recipes"
+  | "pantry"
+  | "(profile)"
+  | "shopping-list";
 
 interface AttachMenuContextType {
   isOpen: boolean;
