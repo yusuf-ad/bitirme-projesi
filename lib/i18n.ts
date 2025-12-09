@@ -1,6 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Localization from "expo-localization";
 import { I18n } from "i18n-js";
+
+// Safe locale detection without native module dependency
+const getDeviceLocale = (): string => {
+  try {
+    // Dynamic import to avoid native module crash
+    const Localization = require("expo-localization");
+    return Localization.getLocales?.()?.[0]?.languageCode || "en";
+  } catch {
+    return "en";
+  }
+};
 
 // English translations
 const en = {
@@ -792,7 +802,7 @@ const i18n = new I18n({
 });
 
 // Set default locale from device
-i18n.locale = Localization.getLocales()[0]?.languageCode || "en";
+i18n.locale = getDeviceLocale();
 i18n.enableFallback = true;
 i18n.defaultLocale = "en";
 
