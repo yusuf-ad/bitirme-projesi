@@ -1,13 +1,16 @@
 import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
 import {
+  fetchMoreRecipes,
   mealPlanIngredientsService,
   MealPlanItemRecord,
 } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { supabase } from "@/lib/supabase";
+import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import {
   createMealItem,
   getMealImageUrl,
@@ -17,13 +20,13 @@ import {
 } from "@/lib/utils";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -63,6 +66,16 @@ export default function MealPlanPreview() {
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
+  const userId = session?.user?.id;
+
+  // Fetch onboarding data for pagination
+  const { data: onboardingData } = useQuery({
+    queryKey: ["onboardingProfile", userId],
+    queryFn: () => getUserOnboardingProfile(userId!),
+    enabled: !!userId,
+  });
+
+  const { data: pantryData } = usePantryQuery();
 
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan>();
@@ -76,6 +89,8 @@ export default function MealPlanPreview() {
   const [aiGeneratedTypes, setAiGeneratedTypes] = useState<
     Partial<Record<MealType, boolean>>
   >({});
+  // Pagination state
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const planStartDate = normalizeDateParam(params.startDate);
   const planEndDate = normalizeDateParam(params.endDate ?? params.startDate);
@@ -96,6 +111,13 @@ export default function MealPlanPreview() {
   }, [allMeals, currentSelectedIndex]);
 
   const modalMeals = alternativeMealsWithIndex.map(({ meal }) => meal);
+
+  // Check if there are more recipes to load for the active meal type
+  const hasMorePages = useMemo(() => {
+    if (!activeMealType || !mealPlan?.[activeMealType]) return false;
+    const mealTypeData = mealPlan[activeMealType];
+    return mealTypeData.results.length < mealTypeData.totalResults;
+  }, [activeMealType, mealPlan]);
 
   const modalTitle = activeMealType
     ? `Replace ${activeMealType.charAt(0).toUpperCase()}${activeMealType.slice(
@@ -125,6 +147,51 @@ export default function MealPlanPreview() {
     setActiveMealType(null);
   }, []);
 
+  const handleLoadMore = useCallback(async () => {
+    if (!activeMealType || !mealPlan || isLoadingMore) return;
+
+    const currentMealTypeData = mealPlan[activeMealType];
+    if (!currentMealTypeData) return;
+
+    const currentOffset = currentMealTypeData.results.length;
+
+    // Check if we've already loaded all results
+    if (currentOffset >= currentMealTypeData.totalResults) return;
+
+    setIsLoadingMore(true);
+
+    try {
+      const moreRecipes = await fetchMoreRecipes(
+        onboardingData,
+        pantryData,
+        activeMealType,
+        currentOffset
+      );
+
+      if (moreRecipes && moreRecipes.results.length > 0) {
+        setMealPlan((prev) => {
+          if (!prev) return prev;
+
+          return {
+            ...prev,
+            [activeMealType]: {
+              ...prev[activeMealType],
+              results: [
+                ...prev[activeMealType].results,
+                ...moreRecipes.results,
+              ],
+            },
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Error loading more recipes:", error);
+      Alert.alert("Error", "Failed to load more recipes. Please try again.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [activeMealType, mealPlan, isLoadingMore, onboardingData, pantryData]);
+
   useEffect(() => {
     if (params.mealPlanData) {
       try {
@@ -135,21 +202,24 @@ export default function MealPlanPreview() {
           const indices: Partial<Record<MealType, number>> = {};
           const aiFlags: Partial<Record<MealType, boolean>> = {};
 
-          // Initialize indices for meal types that have results
+          // Initialize indices for meal types that have results - randomly select initial meal
           if (data.breakfast?.results?.length > 0) {
-            indices.breakfast = 0;
+            const resultsLength = data.breakfast.results.length;
+            indices.breakfast = Math.floor(Math.random() * resultsLength);
             if (data.breakfast.results[0]?.isAiGenerated) {
               aiFlags.breakfast = true;
             }
           }
           if (data.lunch?.results?.length > 0) {
-            indices.lunch = 0;
+            const resultsLength = data.lunch.results.length;
+            indices.lunch = Math.floor(Math.random() * resultsLength);
             if (data.lunch.results[0]?.isAiGenerated) {
               aiFlags.lunch = true;
             }
           }
           if (data.dinner?.results?.length > 0) {
-            indices.dinner = 0;
+            const resultsLength = data.dinner.results.length;
+            indices.dinner = Math.floor(Math.random() * resultsLength);
             if (data.dinner.results[0]?.isAiGenerated) {
               aiFlags.dinner = true;
             }
@@ -521,13 +591,12 @@ export default function MealPlanPreview() {
           }
         >
           {imageUrl ? (
-            <Image
+            <ExpoImage
               source={{ uri: imageUrl }}
               style={styles.mealImage}
-              resizeMode="cover"
-              onError={(error) => {
-                console.log("Image failed to load:", imageUrl, error);
-              }}
+              contentFit="cover"
+              transition={100}
+              cachePolicy="disk"
             />
           ) : (
             <View style={[styles.mealImage, styles.placeholderImage]} />
@@ -727,6 +796,17 @@ export default function MealPlanPreview() {
         title={modalTitle}
         onSelect={handleMealSelect}
         onDismiss={handleModalDismiss}
+        onGenerateMore={
+          activeMealType
+            ? () => {
+                mealSelectionRef.current?.dismiss();
+                handleGenerateWithAI(activeMealType);
+              }
+            : undefined
+        }
+        onLoadMore={handleLoadMore}
+        isLoadingMore={isLoadingMore}
+        hasMorePages={hasMorePages}
       />
     </View>
   );

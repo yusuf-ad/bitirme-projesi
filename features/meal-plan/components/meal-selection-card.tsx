@@ -40,12 +40,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
+    borderWidth: 2,
   },
   cardSelected: {
     backgroundColor: "#D2E6CE",
+    borderColor: Colors.green[600],
   },
   cardUnselected: {
-    backgroundColor: "#E1D9EE",
+    backgroundColor: Colors.gray[100],
+    borderColor: Colors.gray[200],
+    opacity: 0.6,
   },
   checkboxSelected: {
     width: 24,
@@ -56,4 +60,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 });
-

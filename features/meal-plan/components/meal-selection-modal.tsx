@@ -1,13 +1,13 @@
 import { Colors } from "@/constants/theme";
 import { getMealImageUrl, type Meal } from "@/lib/utils";
-import CustomButton from "@/shared/components/custom-button";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import {
   BottomSheetBackdrop,
+  BottomSheetFlatList,
   BottomSheetModal,
-  BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
 import {
   forwardRef,
   useCallback,
@@ -17,8 +17,7 @@ import {
 } from "react";
 import {
   ActivityIndicator,
-  Image,
-  ListRenderItemInfo,
+  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
@@ -40,6 +39,9 @@ interface MealSelectionModalProps {
   onDismiss?: () => void;
   onGenerateMore?: () => void;
   isGeneratingMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  hasMorePages?: boolean;
 }
 
 export const MealSelectionModal = forwardRef<
@@ -55,13 +57,19 @@ export const MealSelectionModal = forwardRef<
       onDismiss,
       onGenerateMore,
       isGeneratingMore,
+      onLoadMore,
+      isLoadingMore,
+      hasMorePages,
     },
     ref
   ) => {
     const internalRef = useRef<BottomSheetModal>(null);
-    const { bottom } = useSafeAreaInsets();
+    const { top, bottom } = useSafeAreaInsets();
+    const screenHeight =
+      Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
 
-    const snapPoints = useMemo(() => ["58%"], []);
+    // Match IngredientModal: use 95% and fixed sizing
+    const snapPoints = useMemo(() => ["95%"], []);
     const safeSelectedIndex = selectedIndex >= meals.length ? 0 : selectedIndex;
 
     const handleBackdrop = useCallback(
@@ -85,7 +93,7 @@ export const MealSelectionModal = forwardRef<
     );
 
     const renderMealCard = useCallback(
-      ({ item, index }: ListRenderItemInfo<Meal>) => {
+      ({ item, index }: { item: Meal; index: number }) => {
         const isSelected = index === safeSelectedIndex;
         const imageUrl = getMealImageUrl(item);
 
@@ -131,38 +139,36 @@ export const MealSelectionModal = forwardRef<
 
     const hasMeals = meals.length > 0;
 
-    const generateFooter = useMemo(() => {
-      if (!onGenerateMore) return null;
+    const renderLoadMoreFooter = useCallback(() => {
+      if (!onLoadMore || !hasMorePages) return null;
 
       return (
-        <View style={styles.generateWrapper}>
+        <View style={styles.loadMoreContainer}>
           <Pressable
-            onPress={onGenerateMore}
-            disabled={isGeneratingMore}
+            onPress={onLoadMore}
+            disabled={isLoadingMore}
             style={({ pressed }) => [
-              styles.generateCard,
-              pressed && styles.mealCardPressed,
-              isGeneratingMore && styles.generateCardDisabled,
+              styles.loadMoreButton,
+              pressed && { opacity: 0.8 },
+              isLoadingMore && styles.loadMoreButtonDisabled,
             ]}
           >
-            {isGeneratingMore ? (
-              <ActivityIndicator color={Colors.lilac[900]} />
+            {isLoadingMore ? (
+              <ActivityIndicator color={Colors.lilac[900]} size="small" />
             ) : (
               <>
-                <View style={styles.generateIconCircle}>
-                  <Ionicons
-                    name="refresh"
-                    size={18}
-                    color={Colors.lilac[900]}
-                  />
-                </View>
-                <Text style={styles.generateText}>Generate meal recipe</Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={18}
+                  color={Colors.lilac[900]}
+                />
+                <Text style={styles.loadMoreText}>Load more recipes</Text>
               </>
             )}
           </Pressable>
         </View>
       );
-    }, [onGenerateMore, isGeneratingMore]);
+    }, [onLoadMore, isLoadingMore, hasMorePages]);
 
     return (
       <BottomSheetModal
@@ -171,11 +177,16 @@ export const MealSelectionModal = forwardRef<
         snapPoints={snapPoints}
         backdropComponent={handleBackdrop}
         enableOverDrag={false}
+        enableDynamicSizing={false}
+        enablePanDownToClose={false}
         onDismiss={() => onDismiss?.()}
         handleIndicatorStyle={styles.handleIndicator}
       >
-        <BottomSheetView
-          style={[styles.container, { paddingBottom: bottom + 16 }]}
+        <View
+          style={[
+            styles.container,
+            { height: screenHeight, paddingBottom: bottom + 16 },
+          ]}
         >
           <View style={styles.header}>
             <Text style={styles.title}>{title ?? "Select a meal"}</Text>
@@ -185,69 +196,89 @@ export const MealSelectionModal = forwardRef<
           </View>
 
           {hasMeals ? (
-            <View style={styles.gridContainer}>
-              {meals.map((meal, index) => {
-                const isSelected = index === safeSelectedIndex;
-                const imageUrl = getMealImageUrl(meal);
-
-                return (
-                  <Pressable
-                    key={meal.id}
-                    onPress={() => onSelect(index)}
-                    style={({ pressed }) => [
-                      styles.mealCard,
-                      isSelected && styles.mealCardSelected,
-                      pressed && styles.mealCardPressed,
-                    ]}
-                  >
-                    {imageUrl ? (
-                      <Image
-                        source={{ uri: imageUrl }}
-                        style={styles.mealImage}
-                      />
-                    ) : (
-                      <View
-                        style={[styles.mealImage, styles.mealPlaceholder]}
-                      />
-                    )}
-                    <View style={styles.mealInfo}>
-                      <Text numberOfLines={2} style={styles.mealTitle}>
-                        {meal.title}
-                      </Text>
-                      <View style={styles.mealMeta}>
-                        {meal.nutrition?.calories && (
-                          <Text style={styles.metaText}>
-                            {Math.round(meal.nutrition.calories)} cal
-                          </Text>
-                        )}
-                        {meal.readyInMinutes && (
-                          <Text style={styles.metaText}>
-                            {meal.readyInMinutes} min
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    {isSelected && (
-                      <View style={styles.checkmark}>
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
+            <BottomSheetFlatList
+              data={meals}
+              renderItem={renderMealCard}
+              keyExtractor={(item: Meal) => String(item.id)}
+              numColumns={2}
+              columnWrapperStyle={styles.columnWrapper}
+              contentContainerStyle={[
+                styles.gridContainer,
+                onGenerateMore && { paddingBottom: 80 },
+              ]}
+              ListFooterComponent={renderLoadMoreFooter}
+              removeClippedSubviews
+              windowSize={5}
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              updateCellsBatchingPeriod={50}
+              showsVerticalScrollIndicator={false}
+            />
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No meals available</Text>
-              <CustomButton
-                containerStyle={styles.dismissButton}
-                onPress={() => internalRef.current?.dismiss()}
-              >
-                <Text style={styles.dismissText}>Close</Text>
-              </CustomButton>
+              <MaterialIcons
+                name="restaurant-menu"
+                size={48}
+                color={Colors.gray[300]}
+              />
+              <Text style={styles.emptyText}>
+                No recipes found for this meal
+              </Text>
+              {onGenerateMore && (
+                <Pressable
+                  onPress={onGenerateMore}
+                  disabled={isGeneratingMore}
+                  style={({ pressed }) => [
+                    styles.emptyAiButton,
+                    pressed && styles.mealCardPressed,
+                    isGeneratingMore && styles.generateCardDisabled,
+                  ]}
+                >
+                  {isGeneratingMore ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <>
+                      <MaterialIcons
+                        name="auto-awesome"
+                        size={18}
+                        color="#fff"
+                      />
+                      <Text style={styles.emptyAiButtonText}>
+                        Generate with AI
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              )}
             </View>
           )}
-        </BottomSheetView>
+
+          {/* Sticky Footer - Generate with AI */}
+          {hasMeals && onGenerateMore && (
+            <View style={[styles.stickyFooter, { paddingBottom: bottom }]}>
+              <Pressable
+                onPress={onGenerateMore}
+                disabled={isGeneratingMore}
+                style={({ pressed }) => [
+                  styles.stickyFooterButton,
+                  pressed && { opacity: 0.9 },
+                  isGeneratingMore && styles.generateCardDisabled,
+                ]}
+              >
+                {isGeneratingMore ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <MaterialIcons name="auto-awesome" size={18} color="#fff" />
+                    <Text style={styles.stickyFooterButtonText}>
+                      Generate with AI
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          )}
+        </View>
       </BottomSheetModal>
     );
   }
@@ -261,6 +292,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.select({ ios: 12, android: 4 }),
   },
+  contentContainer: {
+    flexGrow: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -273,10 +307,11 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    paddingBottom: 8,
+  },
+  columnWrapper: {
     justifyContent: "space-between",
+    marginBottom: 12,
   },
   mealCard: {
     width: "48%",
@@ -334,60 +369,82 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 16,
+    paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: 16,
     color: Colors.text.secondary,
+    textAlign: "center",
+    marginTop: 8,
   },
-  dismissButton: {
+  emptyAiButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     backgroundColor: Colors.lilac[900],
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 12,
+    marginTop: 8,
   },
-  dismissText: {
-    color: "#fff",
+  emptyAiButtonText: {
+    fontSize: 15,
     fontWeight: "600",
+    color: "#fff",
   },
   handleIndicator: {
     backgroundColor: Colors.gray[300],
   },
-  separator: {
-    width: 12,
-  },
-  generateWrapper: {
-    flex: 1,
-    marginLeft: 12,
-    paddingRight: 16,
-  },
-  generateCard: {
-    flex: 1,
-    width: 180,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.lilac[900],
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   generateCardDisabled: {
     opacity: 0.7,
   },
-  generateIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.lilac[100],
+  stickyFooter: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background.primary,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[200],
+  },
+  stickyFooterButton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.lilac[900],
+    paddingVertical: 14,
+    borderRadius: 12,
   },
-  generateText: {
-    marginTop: 12,
+  stickyFooterButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  loadMoreContainer: {
+    width: "100%",
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  loadMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.lilac[900],
+    backgroundColor: "#fff",
+  },
+  loadMoreButtonDisabled: {
+    opacity: 0.6,
+  },
+  loadMoreText: {
     fontSize: 14,
     fontWeight: "600",
     color: Colors.lilac[900],
-    textAlign: "center",
   },
 });
