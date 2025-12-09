@@ -114,16 +114,17 @@ async function fetchRecipesForMealType(
     diet?: string;
     includeIngredients?: string;
     excludeIngredients?: string;
+    offset?: number;
   }
 ): Promise<MealTypeResults> {
   const apiType = SPOONACULAR_TYPE_MAPPING[mealType];
 
-  console.log(`Fetching ${mealType}...`);
+  console.log(`Fetching ${mealType}... (offset: ${params.offset ?? 0})`);
 
   const response = await searchRecipesComplex({
     ...params,
     type: apiType,
-    number: 10,
+    number: 11,
     addRecipeNutrition: true,
     ignorePantry: false,
     fillIngredients: false,
@@ -150,8 +151,6 @@ export async function fetchRecipes(
   }
 
   const preferences = onboardingData.tastePreferences;
-
-  const goal_ids = onboardingData.goals?.goal_ids;
 
   console.log("Fetching recipes with user preferences...");
 
@@ -205,6 +204,55 @@ export async function fetchRecipes(
     return results;
   } catch (error) {
     console.error("Error fetching recipes:", error);
+    throw error;
+  }
+}
+
+// Pagination function - fetch more recipes for a specific meal type
+export async function fetchMoreRecipes(
+  onboardingData: UserOnboardingProfile | undefined,
+  pantryData: PantryItem[] | undefined,
+  mealType: MealType,
+  offset: number
+): Promise<MealTypeResults | undefined> {
+  if (!onboardingData) {
+    console.warn("Onboarding data is not ready yet.");
+    return;
+  }
+
+  const preferences = onboardingData.tastePreferences;
+
+  console.log(`Fetching more ${mealType} recipes with offset: ${offset}...`);
+
+  try {
+    // Prepare search parameters
+    const cuisineParam = preferences?.cuisines?.join(",");
+    const excludeCuisineParam = preferences?.cuisine_dislikes?.join(",");
+    const dietParam = preferences?.diet_preferences?.join(",");
+
+    const allergyIds = preferences?.allergies_dislikes || [];
+    const allergyNames = await fetchAllergyNames(allergyIds);
+    const excludeIngredientsParam = allergyNames.join(",");
+
+    const includeIngredientsParam = extractPantryIngredients(pantryData);
+
+    const mealResults = await fetchRecipesForMealType(mealType, {
+      cuisine: cuisineParam,
+      excludeCuisine: excludeCuisineParam,
+      diet: dietParam,
+      includeIngredients: includeIngredientsParam,
+      excludeIngredients: excludeIngredientsParam,
+      offset,
+    });
+
+    console.log(
+      `\n=== MORE ${mealType.toUpperCase()} RESULTS (offset: ${offset}) ===`,
+      JSON.stringify(mealResults.results, null, 2)
+    );
+
+    return mealResults;
+  } catch (error) {
+    console.error(`Error fetching more ${mealType} recipes:`, error);
     throw error;
   }
 }

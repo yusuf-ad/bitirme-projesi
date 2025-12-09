@@ -32,5 +32,5 @@ export { useMealPlanGenerator } from "./hooks/use-meal-plan-generator";
 export { mealPlanIngredientsService } from "./services/meal-plan-ingredients-service";
 export type { AddToShoppingListResult } from "./services/meal-plan-ingredients-service";
 export type { MealPlanItemRecord, MealPlanRecord, MealSlot } from "./types";
-export { fetchRecipes } from "./utils/fetch-recipes";
+export { fetchMoreRecipes, fetchRecipes } from "./utils/fetch-recipes";
 export type { FetchedRecipe, MealTypeResults } from "./utils/fetch-recipes";
