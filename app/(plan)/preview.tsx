@@ -18,12 +18,12 @@ import {
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
+import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -521,13 +521,12 @@ export default function MealPlanPreview() {
           }
         >
           {imageUrl ? (
-            <Image
+            <ExpoImage
               source={{ uri: imageUrl }}
               style={styles.mealImage}
-              resizeMode="cover"
-              onError={(error) => {
-                console.log("Image failed to load:", imageUrl, error);
-              }}
+              contentFit="cover"
+              transition={100}
+              cachePolicy="disk"
             />
           ) : (
             <View style={[styles.mealImage, styles.placeholderImage]} />

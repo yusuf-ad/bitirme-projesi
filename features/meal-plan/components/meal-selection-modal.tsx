@@ -5,9 +5,10 @@ import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import {
   BottomSheetBackdrop,
+  BottomSheetFlatList,
   BottomSheetModal,
-  BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
 import {
   forwardRef,
   useCallback,
@@ -17,8 +18,7 @@ import {
 } from "react";
 import {
   ActivityIndicator,
-  Image,
-  ListRenderItemInfo,
+  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
@@ -59,9 +59,12 @@ export const MealSelectionModal = forwardRef<
     ref
   ) => {
     const internalRef = useRef<BottomSheetModal>(null);
-    const { bottom } = useSafeAreaInsets();
+    const { top, bottom } = useSafeAreaInsets();
+    const screenHeight =
+      Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
 
-    const snapPoints = useMemo(() => ["58%"], []);
+    // Match IngredientModal: use 95% and fixed sizing
+    const snapPoints = useMemo(() => ["95%"], []);
     const safeSelectedIndex = selectedIndex >= meals.length ? 0 : selectedIndex;
 
     const handleBackdrop = useCallback(
@@ -85,7 +88,7 @@ export const MealSelectionModal = forwardRef<
     );
 
     const renderMealCard = useCallback(
-      ({ item, index }: ListRenderItemInfo<Meal>) => {
+      ({ item, index }: { item: Meal; index: number }) => {
         const isSelected = index === safeSelectedIndex;
         const imageUrl = getMealImageUrl(item);
 
@@ -171,11 +174,16 @@ export const MealSelectionModal = forwardRef<
         snapPoints={snapPoints}
         backdropComponent={handleBackdrop}
         enableOverDrag={false}
+        enableDynamicSizing={false}
+        enablePanDownToClose={false}
         onDismiss={() => onDismiss?.()}
         handleIndicatorStyle={styles.handleIndicator}
       >
-        <BottomSheetView
-          style={[styles.container, { paddingBottom: bottom + 16 }]}
+        <View
+          style={[
+            styles.container,
+            { height: screenHeight, paddingBottom: bottom + 16 },
+          ]}
         >
           <View style={styles.header}>
             <Text style={styles.title}>{title ?? "Select a meal"}</Text>
@@ -185,57 +193,20 @@ export const MealSelectionModal = forwardRef<
           </View>
 
           {hasMeals ? (
-            <View style={styles.gridContainer}>
-              {meals.map((meal, index) => {
-                const isSelected = index === safeSelectedIndex;
-                const imageUrl = getMealImageUrl(meal);
-
-                return (
-                  <Pressable
-                    key={meal.id}
-                    onPress={() => onSelect(index)}
-                    style={({ pressed }) => [
-                      styles.mealCard,
-                      isSelected && styles.mealCardSelected,
-                      pressed && styles.mealCardPressed,
-                    ]}
-                  >
-                    {imageUrl ? (
-                      <Image
-                        source={{ uri: imageUrl }}
-                        style={styles.mealImage}
-                      />
-                    ) : (
-                      <View
-                        style={[styles.mealImage, styles.mealPlaceholder]}
-                      />
-                    )}
-                    <View style={styles.mealInfo}>
-                      <Text numberOfLines={2} style={styles.mealTitle}>
-                        {meal.title}
-                      </Text>
-                      <View style={styles.mealMeta}>
-                        {meal.nutrition?.calories && (
-                          <Text style={styles.metaText}>
-                            {Math.round(meal.nutrition.calories)} cal
-                          </Text>
-                        )}
-                        {meal.readyInMinutes && (
-                          <Text style={styles.metaText}>
-                            {meal.readyInMinutes} min
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    {isSelected && (
-                      <View style={styles.checkmark}>
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
+            <BottomSheetFlatList
+              data={meals}
+              renderItem={renderMealCard}
+              keyExtractor={(item: Meal) => String(item.id)}
+              numColumns={2}
+              columnWrapperStyle={styles.columnWrapper}
+              contentContainerStyle={styles.gridContainer}
+              removeClippedSubviews
+              windowSize={5}
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              updateCellsBatchingPeriod={50}
+              showsVerticalScrollIndicator={false}
+            />
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>No meals available</Text>
@@ -247,7 +218,7 @@ export const MealSelectionModal = forwardRef<
               </CustomButton>
             </View>
           )}
-        </BottomSheetView>
+        </View>
       </BottomSheetModal>
     );
   }
@@ -261,6 +232,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.select({ ios: 12, android: 4 }),
   },
+  contentContainer: {
+    flexGrow: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -273,10 +247,11 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    paddingBottom: 8,
+  },
+  columnWrapper: {
     justifyContent: "space-between",
+    marginBottom: 12,
   },
   mealCard: {
     width: "48%",
