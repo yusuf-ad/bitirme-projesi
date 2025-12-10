@@ -9,16 +9,16 @@ import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Linking,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -74,7 +74,7 @@ const defaultNotifications: NotificationPreferences = {
   shoppingReminders: false,
 };
 
-const SUB_OPTIONS_HEIGHT = 220; // Approximate height of sub-options
+const SUB_OPTIONS_HEIGHT = 400; // Increased height to prevent clipping on Android (approx height of sub-options)
 
 export default function NotificationsScreen() {
   const { top, bottom } = useSafeAreaInsets();

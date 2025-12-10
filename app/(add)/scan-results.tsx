@@ -39,7 +39,9 @@ export default function ScanResults() {
     items?: string;
     durationMs?: string;
     llmMs?: string;
+    destination?: string;
   }>();
+  const destination = params.destination || "pantry";
   const { top, bottom } = useSafeAreaInsets();
 
   const INGREDIENT_IMAGE_BASE_URL =
@@ -213,6 +215,8 @@ export default function ScanResults() {
       return;
     }
 
+    const isShoppingList = destination === "shopping_list";
+
     setIsSaving(true);
     try {
       // 1. Categorize items
@@ -232,8 +236,10 @@ export default function ScanResults() {
         categorizedItems.map((i: any) => [i.name, i.category])
       );
 
-      // 2. Fetch existing pantry items to check for duplicates
-      const existingItems = await pantryService.getItems("pantry");
+      // 2. Fetch existing items to check for duplicates
+      const existingItems = await pantryService.getItems(
+        isShoppingList ? "shopping_list" : "pantry"
+      );
 
       const itemsToInsert: Omit<
         import("@/features/pantry/types").PantryItem,
@@ -250,7 +256,7 @@ export default function ScanResults() {
         const name = item.spoonacularName || item.name;
         const category = (categoryMap.get(name) as PantryCategory) || "Other";
 
-        // Check if item already exists in pantry (same name and similar unit)
+        // Check if item already exists (same name and similar unit)
         // We do a simple case-insensitive check on name and unit
         const existingItem = existingItems.find(
           (existing) =>
@@ -275,7 +281,7 @@ export default function ScanResults() {
             spoonacular_name: item.spoonacularName,
             spoonacular_image: item.spoonacularImage,
             category,
-            status: "pantry" as const,
+            status: isShoppingList ? "shopping_list" : "pantry",
             checked: false,
           });
         }
@@ -286,6 +292,7 @@ export default function ScanResults() {
       console.log("Saving items...", {
         toUpdate: itemsToUpdate.length,
         toInsert: itemsToInsert.length,
+        destination,
       });
 
       if (itemsToUpdate.length > 0) {
@@ -302,10 +309,17 @@ export default function ScanResults() {
         console.log("Inserted items:", inserted);
       }
 
-      router.push({
-        pathname: "/(app)/pantry",
-        params: { refresh: Date.now().toString() },
-      });
+      if (isShoppingList) {
+        router.push({
+          pathname: "/shopping-list",
+          params: { refresh: Date.now().toString() },
+        });
+      } else {
+        router.push({
+          pathname: "/(app)/pantry",
+          params: { refresh: Date.now().toString() },
+        });
+      }
     } catch (error) {
       console.error("Error saving items:", error);
       Alert.alert("Error", "Failed to save items to pantry. Please try again.");
@@ -507,7 +521,11 @@ export default function ScanResults() {
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <Text style={styles.primaryButtonText}>Add to Pantry</Text>
+                <Text style={styles.primaryButtonText}>
+                  {destination === "shopping_list"
+                    ? "Add to Shopping List"
+                    : "Add to Pantry"}
+                </Text>
                 <Ionicons name="arrow-forward" size={20} color="#fff" />
               </>
             )}

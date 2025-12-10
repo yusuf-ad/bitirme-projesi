@@ -1,19 +1,20 @@
 import { getThemeColors } from "@/constants/theme";
 import {
-    EmptyState,
-    EndMessage,
-    ErrorState,
-    FavoritesEmptyState,
-    FavoritesHeroCard,
-    FilterChips,
-    HomeHeader,
-    LoadingState,
-    READY_TIME_OPTIONS,
-    RecipeGrid,
-    SearchBar,
-    TimeFilterModal,
-    type ReadyTimeOption,
+  EmptyState,
+  EndMessage,
+  ErrorState,
+  FavoritesEmptyState,
+  FavoritesHeroCard,
+  FilterChips,
+  HomeHeader,
+  LoadingState,
+  READY_TIME_OPTIONS,
+  RecipeGrid,
+  SearchBar,
+  TimeFilterModal,
+  type ReadyTimeOption,
 } from "@/features/home";
+import { CALORIE_OPTIONS, CalorieFilterModal, type CalorieOption } from "@/features/home/components/calorie-filter-modal";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
@@ -26,13 +27,13 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Platform,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    View,
+  Animated,
+  Dimensions,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "use-debounce";
@@ -61,12 +62,16 @@ export default function HomeTab() {
     minReadyTime,
     maxReadyTime,
     setReadyTimeRange,
+    minCalories,
+    maxCalories,
+    setCalorieRange,
   } = useFilterStore();
   const horizontalPagerRef = useRef<ScrollView>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const ingredientModalRef = useRef<BottomSheetModal>(null);
   const cuisineModalRef = useRef<BottomSheetModal>(null);
   const timeModalRef = useRef<BottomSheetModal>(null);
+  const calorieModalRef = useRef<BottomSheetModal>(null);
   const [debouncedSearchQuery] = useDebounce(searchQuery, 400);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const {
@@ -110,6 +115,8 @@ export default function HomeTab() {
     pageSize: 10,
     minReadyTime,
     maxReadyTime,
+    minCalories,
+    maxCalories,
   });
 
   const handleRefresh = useCallback(async () => {
@@ -181,6 +188,38 @@ export default function HomeTab() {
       (option) => option.id === selectedTimeOptionId
     )?.label;
   }, [selectedTimeOptionId]);
+
+  const handleOpenCalorieModal = useCallback(() => {
+    calorieModalRef.current?.present();
+  }, []);
+
+  const selectedCalorieOptionId = useMemo(() => {
+    const match = CALORIE_OPTIONS.find(
+      (option) =>
+        (option.minCalories ?? null) === (minCalories ?? null) &&
+        (option.maxCalories ?? null) === (maxCalories ?? null)
+    );
+    return match?.id ?? null;
+  }, [minCalories, maxCalories]);
+
+  const handleCalorieSelect = useCallback(
+    (option: CalorieOption | null) => {
+      setCalorieRange({
+        min: option?.minCalories ?? null,
+        max: option?.maxCalories ?? null,
+      });
+    },
+    [setCalorieRange]
+  );
+
+  const selectedCalorieLabel = useMemo(() => {
+    if (!selectedCalorieOptionId) {
+      return undefined;
+    }
+    return CALORIE_OPTIONS.find(
+      (option) => option.id === selectedCalorieOptionId
+    )?.label;
+  }, [selectedCalorieOptionId]);
 
   const handleScroll = useCallback(
     (event: any) => {
@@ -280,6 +319,8 @@ export default function HomeTab() {
             selectedCuisines={selectedCuisines}
             onTimePress={handleOpenTimeModal}
             selectedTimeLabel={selectedTimeLabel}
+            onCaloriePress={handleOpenCalorieModal}
+            selectedCalorieLabel={selectedCalorieLabel}
           />
         </View>
       )}
@@ -403,6 +444,11 @@ export default function HomeTab() {
         ref={timeModalRef}
         selectedOptionId={selectedTimeOptionId}
         onSelect={handleTimeSelect}
+      />
+      <CalorieFilterModal
+        ref={calorieModalRef}
+        selectedOptionId={selectedCalorieOptionId}
+        onSelect={handleCalorieSelect}
       />
     </View>
   );
