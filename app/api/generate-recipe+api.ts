@@ -82,6 +82,8 @@ const requestSchema = z.object({
   dietPreferences: z.array(z.string()).default([]),
   cuisines: z.array(z.string()).default([]),
   dislikedCuisines: z.array(z.string()).default([]),
+  goals: z.array(z.string()).default([]),
+  cookingSkill: z.string().nullable().optional(),
 });
 
 export async function POST(req: Request) {
@@ -98,6 +100,8 @@ export async function POST(req: Request) {
       dietPreferences,
       cuisines,
       dislikedCuisines,
+      goals,
+      cookingSkill,
     } = validatedData;
 
     const cookingTimeText = COOKING_TIME_MAP[cookingTime];
@@ -130,6 +134,21 @@ export async function POST(req: Request) {
 
     const calorieRangeText = formatCalorieRange(calorieRange, calorieRangeObj);
 
+    // Map cooking skill to description
+    const COOKING_SKILL_MAP: Record<string, string> = {
+      beginner:
+        "beginner (simple techniques, minimal steps, basic ingredients)",
+      basic:
+        "basic (comfortable with common techniques, some multi-step processes)",
+      intermediate:
+        "intermediate (confident with various techniques, can handle complex recipes)",
+      advanced:
+        "advanced (skilled with professional techniques, enjoys challenging recipes)",
+    };
+    const cookingSkillText = cookingSkill
+      ? COOKING_SKILL_MAP[cookingSkill] || cookingSkill
+      : "any level";
+
     const prompt = `
 CREATE A REALISTIC RECIPE - STRICT NAMING & FORMAT RULES
 
@@ -145,6 +164,64 @@ CREATE A REALISTIC RECIPE - STRICT NAMING & FORMAT RULES
 - Preferred Cuisines: ${cuisines.length > 0 ? cuisines.join(", ") : "Any"}
 - Avoid Cuisines: ${
       dislikedCuisines.length > 0 ? dislikedCuisines.join(", ") : "None"
+    }
+- User Goals: ${goals.length > 0 ? goals.join(", ") : "None specified"}
+- Cooking Skill Level: ${cookingSkillText}
+
+---
+
+**GOAL-AWARE RECIPE GUIDELINES:**
+${
+  goals.includes("Eat healthy")
+    ? "- Prioritize nutritious ingredients, whole foods, and balanced macros.\n"
+    : ""
+}${
+      goals.includes("Lose weight")
+        ? "- Keep calories on the lower end of the range, use lean proteins, minimize added fats/sugars.\n"
+        : ""
+    }${
+      goals.includes("Gain weight")
+        ? "- Include calorie-dense ingredients, healthy fats, complex carbs.\n"
+        : ""
+    }${
+      goals.includes("Build muscle")
+        ? "- Ensure high protein content (30g+ per serving), include complete proteins.\n"
+        : ""
+    }${
+      goals.includes("Save time")
+        ? "- Minimize prep steps, use time-saving techniques.\n"
+        : ""
+    }${
+      goals.includes("Learn to cook")
+        ? "- Include educational tips in instructions, explain techniques.\n"
+        : ""
+    }${
+      goals.includes("Try new recipes")
+        ? "- Be creative with flavors and combinations.\n"
+        : ""
+    }${
+      goals.includes("Stick to your diet")
+        ? "- Strictly adhere to specified diet preferences.\n"
+        : ""
+    }
+
+**SKILL-LEVEL ADAPTATION:**
+${
+  cookingSkill === "beginner"
+    ? "- Use simple, foolproof techniques (boiling, basic sautéing).\n- Keep steps to 5-7 maximum.\n- Avoid complex timing or multi-component dishes.\n- Use common, easy-to-find ingredients."
+    : ""
+}${
+      cookingSkill === "basic"
+        ? "- Include moderate techniques (roasting, pan-frying).\n- Can have 6-8 steps.\n- Allow some ingredient prep work."
+        : ""
+    }${
+      cookingSkill === "intermediate"
+        ? "- Can include varied techniques (braising, reduction sauces).\n- Allow more complex flavor layering.\n- Can involve some parallel cooking steps."
+        : ""
+    }${
+      cookingSkill === "advanced"
+        ? "- Can include professional techniques.\n- Complex flavor profiles and presentations welcome.\n- Multi-component dishes acceptable."
+        : ""
     }
 
 ---
