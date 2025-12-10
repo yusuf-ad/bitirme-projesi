@@ -1237,7 +1237,7 @@ constants/
 - [x] Spoonacular API integration - yusuf
 - [x] Recipe search and display - yusuf
 
-- [ ] Ingredient management (CRUD operations) - yusuf
+- [x] Ingredient management (CRUD operations) - yusuf
 - [ ] Fix error states - yunus
 - [x] Recipe detail scroll header (sticky header) - osman
 - [x] Onboarding veri hatası - yunus

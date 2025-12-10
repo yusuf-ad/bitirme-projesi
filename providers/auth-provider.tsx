@@ -1,7 +1,7 @@
 import { AuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren, useCallback, useEffect, useState } from "react";
 
 export default function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | undefined | null>();
@@ -22,7 +22,10 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         if (error) {
           console.error("Error fetching session:", error);
           // If refresh token is invalid, sign out and clear session
-          if (error.message?.includes("Refresh Token") || error.name === "AuthApiError") {
+          if (
+            error.message?.includes("Refresh Token") ||
+            error.name === "AuthApiError"
+          ) {
             await supabase.auth.signOut();
             setSession(null);
           }
@@ -43,12 +46,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", { event: _event, session });
-      
+
       // Handle token refresh errors
       if (_event === "TOKEN_REFRESHED" && !session) {
         await supabase.auth.signOut();
       }
-      
+
       setSession(session);
     });
 
@@ -58,7 +61,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setIsLoading(true);
 
     if (session) {
@@ -74,12 +77,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     }
 
     setIsLoading(false);
-  };
+  }, [session]);
 
   // Fetch the profile when the session changes
   useEffect(() => {
     fetchProfile();
-  }, [session]);
+  }, [fetchProfile]);
 
   return (
     <AuthContext.Provider
@@ -87,7 +90,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         session,
         isLoading,
         profile,
-        isLoggedIn: session != undefined,
+        isLoggedIn: !!session,
         refreshProfile: fetchProfile,
       }}
     >
