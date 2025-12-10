@@ -1,7 +1,7 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -30,8 +30,12 @@ try {
 
 export default function CameraPantry() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ destination?: string }>();
+  const destination = params.destination || "pantry";
   const cameraRef = useRef<any>(null);
-  const [permission, setPermission] = useState<{ granted: boolean } | null>(null);
+  const [permission, setPermission] = useState<{ granted: boolean } | null>(
+    null
+  );
   const [mediaPermission, requestMediaPermission] =
     ImagePicker.useMediaLibraryPermissions();
   const [flash, setFlash] = useState<"off" | "on">("off");
@@ -43,9 +47,11 @@ export default function CameraPantry() {
   const lastShotAtRef = useRef(0);
 
   // Use camera permissions hook if available
-  const cameraPermissionHook = useCameraPermissions?.() ?? [null, () => Promise.resolve({ granted: false })];
+  const cameraPermissionHook = useCameraPermissions?.() ?? [
+    null,
+    () => Promise.resolve({ granted: false }),
+  ];
   const [cameraPermission, requestCameraPermission] = cameraPermissionHook;
-
 
   // Reset capture lock whenever this screen regains focus
   useFocusEffect(
@@ -84,7 +90,7 @@ export default function CameraPantry() {
           console.log("Photo taken:", photo.uri);
           router.push({
             pathname: "/(add)/preview",
-            params: { uri: photo.uri },
+            params: { uri: photo.uri, destination },
           });
         }
       }
@@ -93,7 +99,7 @@ export default function CameraPantry() {
       setIsCapturing(false);
       capturingRef.current = false;
     }
-  }, [router]);
+  }, [router, destination]);
 
   const onShutterPressIn = useCallback(() => {
     Animated.timing(shutterScale, {
@@ -147,19 +153,23 @@ export default function CameraPantry() {
       if (!result.canceled && result.assets?.[0]?.uri) {
         router.replace({
           pathname: "/(add)/preview",
-          params: { uri: result.assets[0].uri },
+          params: { uri: result.assets[0].uri, destination },
         });
       }
     } catch (error) {
       console.error("Failed to pick image:", error);
     }
-  }, [ensureMediaLibraryPermission, router]);
-
+  }, [ensureMediaLibraryPermission, router, destination]);
 
   // Camera not available - show fallback UI
   if (!cameraAvailable) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top, paddingBottom: insets.bottom },
+        ]}
+      >
         <View style={styles.header}>
           <Pressable
             style={styles.iconButton}
@@ -258,7 +268,10 @@ export default function CameraPantry() {
           </Pressable>
 
           <Pressable
-            style={[styles.shutterButton, isCapturing && styles.shutterDisabled]}
+            style={[
+              styles.shutterButton,
+              isCapturing && styles.shutterDisabled,
+            ]}
             accessibilityLabel="Take photo"
             onPress={takePhoto}
             onPressIn={onShutterPressIn}
@@ -289,7 +302,6 @@ export default function CameraPantry() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {

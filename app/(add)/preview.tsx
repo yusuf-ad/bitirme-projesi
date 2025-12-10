@@ -26,7 +26,8 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function PhotoPreview() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ uri?: string }>();
+  const params = useLocalSearchParams<{ uri?: string; destination?: string }>();
+  const destination = params.destination || "pantry";
   const insets = useSafeAreaInsets();
   const [isScanning, setIsScanning] = useState(false);
   const [previewHeight, setPreviewHeight] = useState(0);
@@ -238,6 +239,7 @@ export default function PhotoPreview() {
           items: JSON.stringify(enrichedItems),
           durationMs: String(elapsedMs),
           llmMs: json.durationMs ? String(json.durationMs) : undefined,
+          destination,
         },
       });
     } catch (error) {
@@ -245,7 +247,7 @@ export default function PhotoPreview() {
     } finally {
       setIsScanning(false);
     }
-  }, [buildOptimizedDataUrl, fileUri, isScanning, router]);
+  }, [buildOptimizedDataUrl, fileUri, isScanning, router, destination]);
   // Animate a green linear-gradient sweep while scanning (Reanimated)
   useEffect(() => {
     const startPos = -60;
