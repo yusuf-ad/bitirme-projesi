@@ -19,7 +19,7 @@ import {
   resolveAllergiesFast,
   resolveDietPreferences,
 } from "@/lib/allergies-diet-helpers";
-import { Recipe } from "@/lib/spoonacular";
+import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import CustomButton from "@/shared/components/custom-button";
@@ -210,7 +210,43 @@ export default function AiPlan() {
         throw new Error("Failed to generate recipe");
       }
 
-      const recipe: AIGeneratedRecipe = await response.json();
+      let recipe: AIGeneratedRecipe = await response.json();
+
+      // Enrich ingredients with Spoonacular IDs and images
+      if (recipe.extendedIngredients && recipe.extendedIngredients.length > 0) {
+        try {
+          const ingredientStrings = recipe.extendedIngredients.map(
+            (ing) => `${ing.amount} ${ing.unit || ""} ${ing.name}`
+          );
+
+          console.log("Parsing ingredients for AI recipe:", ingredientStrings);
+          const parsedIngredients = await parseIngredients(ingredientStrings);
+
+          recipe.extendedIngredients = recipe.extendedIngredients.map(
+            (ing, index) => {
+              const parsed = parsedIngredients[index];
+              if (parsed && parsed.id) {
+                return {
+                  ...ing,
+                  id: parsed.id,
+                  name: parsed.name,
+                  image: parsed.image,
+                  aisle: parsed.aisle,
+                  amount: parsed.amount,
+                  unit: parsed.unit,
+                  original: ingredientStrings[index],
+                };
+              }
+              return ing;
+            }
+          );
+        } catch (err) {
+          console.warn(
+            "Failed to parse ingredients, using AI generated ones:",
+            err
+          );
+        }
+      }
 
       // Persist AI generated recipe for the user in Supabase
       if (userId && recipe?.id) {
