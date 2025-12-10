@@ -4,8 +4,8 @@ import Entypo from "@expo/vector-icons/Entypo";
 import { useEffect, useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import Animated, {
-  Layout,
-  SlideInRight,
+    Layout,
+    SlideInRight,
 } from "react-native-reanimated";
 
 interface FilterChipsProps {
@@ -18,6 +18,8 @@ interface FilterChipsProps {
   selectedCuisines?: string[];
   onTimePress?: () => void;
   selectedTimeLabel?: string;
+  onCaloriePress?: () => void;
+  selectedCalorieLabel?: string;
 }
 
 export function FilterChips({
@@ -30,6 +32,8 @@ export function FilterChips({
   selectedCuisines = [],
   onTimePress,
   selectedTimeLabel,
+  onCaloriePress,
+  selectedCalorieLabel,
 }: FilterChipsProps) {
   const prevSelectedFiltersRef = useRef<string[]>([]);
   const newlyAddedFiltersRef = useRef<Set<string>>(new Set());
@@ -97,6 +101,7 @@ export function FilterChips({
         </CustomButton>
       )}
 
+
       {onTimePress && (
         <CustomButton
           containerStyle={[
@@ -107,6 +112,21 @@ export function FilterChips({
         >
           <Text style={styles.addIngredientsText}>
             {selectedTimeLabel ?? "Total time"}
+          </Text>
+          <Entypo name="chevron-down" size={20} color="black" />
+        </CustomButton>
+      )}
+
+      {onCaloriePress && (
+        <CustomButton
+          containerStyle={[
+            styles.addIngredientsButton,
+            selectedCalorieLabel && styles.addIngredientsButtonActive,
+          ]}
+          onPress={onCaloriePress}
+        >
+          <Text style={styles.addIngredientsText}>
+            {selectedCalorieLabel ?? "Calories"}
           </Text>
           <Entypo name="chevron-down" size={20} color="black" />
         </CustomButton>
