@@ -1,8 +1,8 @@
 import {
-  Ingredient,
-  Recipe,
-  getRandomRecipes,
-  searchRecipes,
+    Ingredient,
+    Recipe,
+    getRandomRecipes,
+    searchRecipes,
 } from "@/lib/spoonacular";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -15,6 +15,8 @@ export interface UseRecipesQueryOptions {
   pageSize?: number;
   minReadyTime?: number | null;
   maxReadyTime?: number | null;
+  minCalories?: number | null;
+  maxCalories?: number | null;
 }
 
 // Deduplicate recipes by ID
@@ -41,6 +43,8 @@ export function useRecipesQuery({
   pageSize = 10,
   minReadyTime = null,
   maxReadyTime = null,
+  minCalories = null,
+  maxCalories = null,
 }: UseRecipesQueryOptions = {}) {
   // Create stable query key based on filters
   const queryKey = useMemo(
@@ -54,8 +58,10 @@ export function useRecipesQuery({
       cuisines.sort().join(","),
       minReadyTime ?? "",
       maxReadyTime ?? "",
+      minCalories ?? "",
+      maxCalories ?? "",
     ],
-    [query, ingredients, cuisines, minReadyTime, maxReadyTime]
+    [query, ingredients, cuisines, minReadyTime, maxReadyTime, minCalories, maxCalories]
   );
 
   const {
@@ -84,6 +90,8 @@ export function useRecipesQuery({
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
           maxReadyTime: maxReadyTime ?? undefined,
+          minCalories: minCalories ?? undefined,
+          maxCalories: maxCalories ?? undefined,
           sort,
           sortDirection,
         });
@@ -105,6 +113,8 @@ export function useRecipesQuery({
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
           maxReadyTime: maxReadyTime ?? undefined,
+          minCalories: minCalories ?? undefined,
+          maxCalories: maxCalories ?? undefined,
           sort,
           sortDirection,
         });
