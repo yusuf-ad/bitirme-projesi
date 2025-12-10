@@ -131,7 +131,7 @@ export function AttachMenuOverlay() {
             },
             {
               icon: "sparkles-outline",
-              label: "AI Meal Plan",
+              label: "Create AI Recipe",
               onPress: handleAIPlan,
             },
             {

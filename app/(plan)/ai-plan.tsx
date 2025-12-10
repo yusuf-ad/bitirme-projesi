@@ -8,18 +8,21 @@ import {
   ChipSection,
   COOKING_TIME_OPTIONS,
   CookingTimeOption,
+  DisplayCookingSkill,
+  DisplayGoal,
   IngredientSelectionModal,
   IngredientSelectionModalHandle,
   MEAL_TYPE_OPTIONS,
   SelectedIngredient,
   UserPreferencesSection,
 } from "@/features/meal-plan";
+import { goalOptions } from "@/features/onboarding/sections/goals/goals-content";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import {
   resolveAllergiesFast,
   resolveDietPreferences,
 } from "@/lib/allergies-diet-helpers";
-import { Recipe } from "@/lib/spoonacular";
+import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import CustomButton from "@/shared/components/custom-button";
@@ -47,6 +50,14 @@ interface AIGeneratedRecipe extends Recipe {
 
 const INGREDIENT_IMAGE_BASE_URL =
   "https://spoonacular.com/cdn/ingredients_100x100";
+
+// Cooking skill options (matching those in cooking-skill.tsx)
+const COOKING_SKILL_OPTIONS: DisplayCookingSkill[] = [
+  { id: "beginner", emoji: "🍳", label: "Novice" },
+  { id: "basic", emoji: "🥘", label: "Basic" },
+  { id: "intermediate", emoji: "👨‍🍳", label: "Intermediate" },
+  { id: "advanced", emoji: "🍰", label: "Advanced" },
+];
 
 // Selected Ingredient Chip Component
 function SelectedIngredientChip({
@@ -112,6 +123,40 @@ export default function AiPlan() {
   const dislikedCuisines = useMemo(
     () => onboardingData?.tastePreferences?.cuisine_dislikes || [],
     [onboardingData?.tastePreferences?.cuisine_dislikes]
+  );
+
+  // Extract goals from onboarding data
+  const selectedGoalIds = useMemo(
+    () => onboardingData?.goals?.goal_ids || [],
+    [onboardingData?.goals?.goal_ids]
+  );
+
+  // Resolve goals to display format
+  const resolvedGoals: DisplayGoal[] = useMemo(
+    () =>
+      selectedGoalIds
+        .map((id) => {
+          const goal = goalOptions.find((g) => g.id === id);
+          return goal ? { id: goal.id, title: goal.title } : null;
+        })
+        .filter((g): g is DisplayGoal => g !== null),
+    [selectedGoalIds]
+  );
+
+  // Extract cooking skill from onboarding data
+  const selectedCookingSkillId = useMemo(
+    () => onboardingData?.tastePreferences?.cooking_skill_level || null,
+    [onboardingData?.tastePreferences?.cooking_skill_level]
+  );
+
+  // Resolve cooking skill to display format
+  const resolvedCookingSkill: DisplayCookingSkill | null = useMemo(
+    () =>
+      selectedCookingSkillId
+        ? COOKING_SKILL_OPTIONS.find((s) => s.id === selectedCookingSkillId) ||
+          null
+        : null,
+    [selectedCookingSkillId]
   );
 
   // Resolve allergies and diet preferences with images
@@ -189,6 +234,9 @@ export default function AiPlan() {
     setIsRegenerating(false);
 
     try {
+      // Convert goal objects to title strings for API
+      const goalTitles = resolvedGoals.map((g) => g.title.replace("\n", " "));
+
       const response = await fetch("/api/generate-recipe", {
         method: "POST",
         headers: {
@@ -203,6 +251,8 @@ export default function AiPlan() {
           dietPreferences: selectedDietPreferences,
           cuisines: selectedCuisines,
           dislikedCuisines,
+          goals: goalTitles,
+          cookingSkill: resolvedCookingSkill?.id || null,
         }),
       });
 
@@ -210,7 +260,43 @@ export default function AiPlan() {
         throw new Error("Failed to generate recipe");
       }
 
-      const recipe: AIGeneratedRecipe = await response.json();
+      let recipe: AIGeneratedRecipe = await response.json();
+
+      // Enrich ingredients with Spoonacular IDs and images
+      if (recipe.extendedIngredients && recipe.extendedIngredients.length > 0) {
+        try {
+          const ingredientStrings = recipe.extendedIngredients.map(
+            (ing) => `${ing.amount} ${ing.unit || ""} ${ing.name}`
+          );
+
+          console.log("Parsing ingredients for AI recipe:", ingredientStrings);
+          const parsedIngredients = await parseIngredients(ingredientStrings);
+
+          recipe.extendedIngredients = recipe.extendedIngredients.map(
+            (ing, index) => {
+              const parsed = parsedIngredients[index];
+              if (parsed && parsed.id) {
+                return {
+                  ...ing,
+                  id: parsed.id,
+                  name: parsed.name,
+                  image: parsed.image,
+                  aisle: parsed.aisle,
+                  amount: parsed.amount,
+                  unit: parsed.unit,
+                  original: ingredientStrings[index],
+                };
+              }
+              return ing;
+            }
+          );
+        } catch (err) {
+          console.warn(
+            "Failed to parse ingredients, using AI generated ones:",
+            err
+          );
+        }
+      }
 
       // Persist AI generated recipe for the user in Supabase
       if (userId && recipe?.id) {
@@ -302,6 +388,8 @@ export default function AiPlan() {
     selectedDietPreferences,
     selectedCuisines,
     dislikedCuisines,
+    resolvedGoals,
+    resolvedCookingSkill,
     userId,
   ]);
 
@@ -513,6 +601,8 @@ export default function AiPlan() {
           dietPreferences={resolvedDietPreferences}
           cuisines={selectedCuisines}
           dislikedCuisines={dislikedCuisines}
+          goals={resolvedGoals}
+          cookingSkill={resolvedCookingSkill}
         />
       </ScrollView>
 

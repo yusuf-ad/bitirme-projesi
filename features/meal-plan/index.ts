@@ -28,6 +28,10 @@ export { MealSelectionCard } from "./components/meal-selection-card";
 export { MealSelectionHeader } from "./components/meal-selection-header";
 export { MealTypeLabels } from "./components/meal-type-labels";
 export { UserPreferencesSection } from "./components/user-preferences-section";
+export type {
+  DisplayCookingSkill,
+  DisplayGoal,
+} from "./components/user-preferences-section";
 export { useMealPlanGenerator } from "./hooks/use-meal-plan-generator";
 export { mealPlanIngredientsService } from "./services/meal-plan-ingredients-service";
 export type { AddToShoppingListResult } from "./services/meal-plan-ingredients-service";

@@ -1237,7 +1237,7 @@ constants/
 - [x] Spoonacular API integration - yusuf
 - [x] Recipe search and display - yusuf
 
-- [ ] Ingredient management (CRUD operations) - yusuf
+- [x] Ingredient management (CRUD operations) - yusuf
 - [ ] Fix error states - yunus
 - [x] Recipe detail scroll header (sticky header) - osman
 - [x] Onboarding veri hatası - yunus
@@ -1247,14 +1247,14 @@ constants/
 
 ### Phase 3: Meal Planning (Weeks 6-7)
 
-- [ ] Weekly meal planner functionality - yusuf
+- [x] Weekly meal planner functionality - yusuf
 - [x] Drag-and-drop recipe assignment - osman
 
 - [x] Nutrition summary calculations
 
-- [ ] Shopping list generation - yusuf
-- [ ] Shopping list management - yusuf
-- [ ] Yemek eklenince shopping listeye otomatik ekleme - yusuf
+- [x] Shopping list generation - yusuf
+- [x] Shopping list management - yusuf
+- [x] Yemek eklenince shopping listeye otomatik ekleme - yusuf
 - [ ] servings ayarlama - osman
 
 - [x] Multiple conflicting goals? If user selects both lose-weight and gain-weight, how should we prioritize? / Recommend prioritizing the first selected goal or showing a warning.

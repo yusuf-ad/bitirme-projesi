@@ -46,11 +46,26 @@ function DietCard({ diet }: { diet: DisplayDietPreference }) {
   );
 }
 
+// Goal display info
+export interface DisplayGoal {
+  id: string;
+  title: string;
+}
+
+// Cooking skill display info
+export interface DisplayCookingSkill {
+  id: string;
+  emoji: string;
+  label: string;
+}
+
 interface UserPreferencesSectionProps {
   allergies: DisplayAllergy[];
   dietPreferences: DisplayDietPreference[];
   cuisines: string[];
   dislikedCuisines?: string[];
+  goals?: DisplayGoal[];
+  cookingSkill?: DisplayCookingSkill | null;
 }
 
 export function UserPreferencesSection({
@@ -58,12 +73,16 @@ export function UserPreferencesSection({
   dietPreferences,
   cuisines,
   dislikedCuisines = [],
+  goals = [],
+  cookingSkill,
 }: UserPreferencesSectionProps) {
   const hasPreferences =
     allergies.length > 0 ||
     dietPreferences.length > 0 ||
     cuisines.length > 0 ||
-    dislikedCuisines.length > 0;
+    dislikedCuisines.length > 0 ||
+    goals.length > 0 ||
+    !!cookingSkill;
 
   if (!hasPreferences) return null;
 
@@ -71,6 +90,33 @@ export function UserPreferencesSection({
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Your Preferences</Text>
       <Text style={styles.sectionSubtitle}>Based on your profile settings</Text>
+
+      {/* Goals */}
+      {goals.length > 0 && (
+        <View style={styles.preferenceGroup}>
+          <Text style={styles.preferenceLabel}>Your Goals</Text>
+          <View style={styles.infoChipsContainer}>
+            {goals.map((goal) => (
+              <InfoChip
+                key={goal.id}
+                label={goal.title.replace("\n", " ")}
+                variant="positive"
+              />
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Cooking Skill */}
+      {cookingSkill && (
+        <View style={styles.preferenceGroup}>
+          <Text style={styles.preferenceLabel}>Cooking Skill</Text>
+          <View style={styles.cookingSkillChip}>
+            <Text style={styles.cookingSkillEmoji}>{cookingSkill.emoji}</Text>
+            <Text style={styles.cookingSkillLabel}>{cookingSkill.label}</Text>
+          </View>
+        </View>
+      )}
 
       {/* Allergies */}
       {allergies.length > 0 && (
@@ -200,5 +246,25 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.text.primary,
     textAlign: "center",
+  },
+  cookingSkillChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: Colors.lilac[100],
+    borderRadius: 99,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: Colors.lilac[300],
+  },
+  cookingSkillEmoji: {
+    fontSize: 18,
+  },
+  cookingSkillLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.lilac[900],
   },
 });
