@@ -1,9 +1,10 @@
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { Colors } from "@/constants/theme";
 import {
-  DateMealRow,
-  fetchRecipes,
-  MealSelectionHeader,
-  MealTypeLabels,
+    DateMealRow,
+    fetchRecipes,
+    MealSelectionHeader,
+    MealTypeLabels,
 } from "@/features/meal-plan";
 import type { MealType, MealTypeOption } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
@@ -14,11 +15,11 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -51,6 +52,15 @@ export default function SelectMeals() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pendingNavigationParams, setPendingNavigationParams] = useState<any>(null);
+
+  const handleModalAction = () => {
+    setShowSuccessModal(false);
+    if (pendingNavigationParams) {
+      router.push(pendingNavigationParams);
+    }
+  };
 
   function toggleMealType(mealType: MealType) {
     setSelectedMealTypes((prev) => ({
@@ -91,7 +101,8 @@ export default function SelectMeals() {
       }
 
       // Navigate to preview with the meal plan data
-      router.push({
+      // Store the pending navigation parameters in state
+      setPendingNavigationParams({
         pathname: "/preview",
         params: {
           startDate: params.startDate as string,
@@ -99,6 +110,9 @@ export default function SelectMeals() {
           mealPlanData: JSON.stringify(mealPlanData),
         },
       });
+
+      // Show celebration modal
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error creating meal plan:", error);
     } finally {
@@ -155,6 +169,12 @@ export default function SelectMeals() {
           )}
         </CustomButton>
       </View>
+      <CelebrationModal
+        visible={showSuccessModal}
+        type="meal-plan-created"
+        onClose={() => setShowSuccessModal(false)}
+        onAction={handleModalAction}
+      />
     </View>
   );
 }
