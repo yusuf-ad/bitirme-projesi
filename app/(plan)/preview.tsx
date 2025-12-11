@@ -1,9 +1,10 @@
 import ReplaceIcon from "@/assets/icons/replace-icon";
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { Colors } from "@/constants/theme";
 import {
-  fetchMoreRecipes,
-  mealPlanIngredientsService,
-  MealPlanItemRecord,
+    fetchMoreRecipes,
+    mealPlanIngredientsService,
+    MealPlanItemRecord,
 } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
@@ -12,11 +13,11 @@ import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import {
-  createMealItem,
-  getMealImageUrl,
-  Meal,
-  MealPlan,
-  MealType,
+    createMealItem,
+    getMealImageUrl,
+    Meal,
+    MealPlan,
+    MealType,
 } from "@/lib/utils";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -25,13 +26,13 @@ import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -81,6 +82,22 @@ export default function MealPlanPreview() {
   const [mealPlan, setMealPlan] = useState<MealPlan>();
   const [isSaving, setIsSaving] = useState(false);
   const [isAddingToShoppingList, setIsAddingToShoppingList] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+
+  // We actually don't need generic state anymore if we have specific buttons.
+  // The primary button is "Shopping List", secondary is "Home".
+  
+  const handleShoppingListAction = () => {
+    setShowSuccessModal(false);
+    router.replace("/shopping-list");
+  };
+
+  const handleHomeAction = () => {
+    setShowSuccessModal(false);
+    router.replace("/(app)");
+  };
+
   const [selectedMealIndices, setSelectedMealIndices] = useState<
     Partial<Record<MealType, number>>
   >({});
@@ -473,56 +490,13 @@ export default function MealPlanPreview() {
         queryKey: ["pantry"],
       });
 
-      if (result.addedCount > 0) {
-        Alert.alert(
-          "Meal plan saved! 🎉",
-          `${result.addedCount} missing ingredient${
-            result.addedCount > 1 ? "s" : ""
-          } added to your shopping list.${
-            result.alreadyInPantryCount > 0
-              ? `\n\n${result.alreadyInPantryCount} ingredient${
-                  result.alreadyInPantryCount !== 1 ? "s" : ""
-                } already in your pantry.`
-              : ""
-          }`,
-          [
-            {
-              text: "View Shopping List",
-              onPress: () => router.replace("/shopping-list"),
-            },
-            {
-              text: "Go to Home",
-              onPress: () => router.replace("/(app)"),
-            },
-          ]
-        );
-      } else {
-        Alert.alert(
-          "Meal plan saved! ✨",
-          `All ${result.alreadyInPantryCount} ingredient${
-            result.alreadyInPantryCount !== 1 ? "s" : ""
-          } already in your pantry. No shopping needed!`,
-          [
-            {
-              text: "OK",
-              onPress: () => router.replace("/(app)"),
-            },
-          ]
-        );
-      }
+      // Whether ingredients were added or not, we show the success modal
+      // User can choose to go to Shopping List or Home
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error adding ingredients to shopping list:", error);
-      // Still show success for meal plan save, but note the shopping list error
-      Alert.alert(
-        "Meal plan saved!",
-        "Your meal plan was saved, but we couldn't check your pantry for missing ingredients.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(app)"),
-          },
-        ]
-      );
+      // Still show success for meal plan save
+      setShowSuccessModal(true);
     } finally {
       setIsAddingToShoppingList(false);
     }
@@ -807,6 +781,14 @@ export default function MealPlanPreview() {
         onLoadMore={handleLoadMore}
         isLoadingMore={isLoadingMore}
         hasMorePages={hasMorePages}
+      />
+
+      <CelebrationModal
+        visible={showSuccessModal}
+        type="meal-plan-saved"
+        onClose={() => setShowSuccessModal(false)}
+        onAction={handleShoppingListAction}
+        onSecondaryAction={handleHomeAction}
       />
     </View>
   );
