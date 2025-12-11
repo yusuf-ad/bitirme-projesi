@@ -1,4 +1,6 @@
 import { Colors } from "@/constants/theme";
+import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
+import { Recipe } from "@/lib/spoonacular";
 import { getMealImageUrl, type Meal } from "@/lib/utils";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -7,6 +9,7 @@ import {
   BottomSheetFlatList,
   BottomSheetModal,
 } from "@gorhom/bottom-sheet";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import {
   forwardRef,
@@ -14,6 +17,7 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import {
   ActivityIndicator,
@@ -24,6 +28,11 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedRef,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface MealSelectionModalHandle {
@@ -34,8 +43,8 @@ export interface MealSelectionModalHandle {
 interface MealSelectionModalProps {
   title?: string;
   meals: Meal[];
-  selectedIndex: number;
-  onSelect: (index: number) => void;
+  selectedIndex?: number;
+  onSelect: (meal: Meal) => void;
   onDismiss?: () => void;
   onGenerateMore?: () => void;
   isGeneratingMore?: boolean;
@@ -64,13 +73,80 @@ export const MealSelectionModal = forwardRef<
     ref
   ) => {
     const internalRef = useRef<BottomSheetModal>(null);
+    const horizontalPagerRef = useAnimatedRef<Animated.ScrollView>();
+    const scrollX = useSharedValue(0);
     const { top, bottom } = useSafeAreaInsets();
     const screenHeight =
       Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
+    const screenWidth = Dimensions.get("window").width;
+    const contentWidth = screenWidth - 40; // 20 padding on each side
+
+    const [activeTab, setActiveTab] = useState<"suggestions" | "favorites">(
+      "suggestions"
+    );
+
+    const handleTabChange = useCallback(
+      async (tab: "suggestions" | "favorites") => {
+        if (tab === activeTab) {
+          return;
+        }
+        const pageIndex = tab === "suggestions" ? 0 : 1;
+        setActiveTab(tab);
+        horizontalPagerRef.current?.scrollTo({
+          x: pageIndex * contentWidth,
+          y: 0,
+          animated: true,
+        });
+        await Haptics.selectionAsync();
+      },
+      [activeTab, contentWidth, horizontalPagerRef]
+    );
+
+    const scrollHandler = useAnimatedScrollHandler({
+      onScroll: (event) => {
+        scrollX.value = event.contentOffset.x;
+      },
+    });
+
+    const handleMomentumScrollEnd = useCallback(
+      (event: any) => {
+        const { contentOffset, layoutMeasurement } = event.nativeEvent;
+        const pageIndex = Math.round(contentOffset.x / layoutMeasurement.width);
+        const newTab = pageIndex === 0 ? "suggestions" : "favorites";
+
+        if (newTab !== activeTab) {
+          setActiveTab(newTab);
+          Haptics.selectionAsync();
+        }
+      },
+      [activeTab]
+    );
+
+    const { favorites } = useFavoriteRecipes();
+
+    const favoriteMeals: Meal[] = useMemo(() => {
+      return favorites.map((recipe: Recipe) => {
+        const calories = recipe.nutrition?.nutrients?.find(
+          (n) => n.name === "Calories"
+        )?.amount;
+        return {
+          id: recipe.id,
+          title: recipe.title,
+          readyInMinutes: recipe.readyInMinutes,
+          servings: recipe.servings,
+          image: recipe.image,
+          sourceUrl: recipe.sourceUrl,
+          nutrition: {
+            calories: calories,
+          },
+        };
+      });
+    }, [favorites]);
 
     // Match IngredientModal: use 95% and fixed sizing
     const snapPoints = useMemo(() => ["95%"], []);
-    const safeSelectedIndex = selectedIndex >= meals.length ? 0 : selectedIndex;
+    const safeSelectedIndex =
+      selectedIndex && selectedIndex >= meals.length ? 0 : selectedIndex;
 
     const handleBackdrop = useCallback(
       (props: any) => (
@@ -94,12 +170,13 @@ export const MealSelectionModal = forwardRef<
 
     const renderMealCard = useCallback(
       ({ item, index }: { item: Meal; index: number }) => {
-        const isSelected = index === safeSelectedIndex;
+        const isSelected =
+          activeTab === "suggestions" && index === safeSelectedIndex;
         const imageUrl = getMealImageUrl(item);
 
         return (
           <Pressable
-            onPress={() => onSelect(index)}
+            onPress={() => onSelect(item)}
             style={({ pressed }) => [
               styles.mealCard,
               isSelected && styles.mealCardSelected,
@@ -134,10 +211,8 @@ export const MealSelectionModal = forwardRef<
           </Pressable>
         );
       },
-      [onSelect, safeSelectedIndex]
+      [onSelect, safeSelectedIndex, activeTab]
     );
-
-    const hasMeals = meals.length > 0;
 
     const renderLoadMoreFooter = useCallback(() => {
       if (!onLoadMore || !hasMorePages) return null;
@@ -170,6 +245,76 @@ export const MealSelectionModal = forwardRef<
       );
     }, [onLoadMore, isLoadingMore, hasMorePages]);
 
+    const renderList = useCallback(
+      (data: Meal[], type: "suggestions" | "favorites") => {
+        const hasData = data.length > 0;
+
+        if (hasData) {
+          return (
+            <BottomSheetFlatList
+              data={data}
+              renderItem={renderMealCard}
+              keyExtractor={(item: Meal) => String(item.id)}
+              numColumns={2}
+              columnWrapperStyle={styles.columnWrapper}
+              contentContainerStyle={[
+                styles.gridContainer,
+                type === "suggestions" &&
+                  onGenerateMore && { paddingBottom: 80 },
+              ]}
+              ListFooterComponent={
+                type === "suggestions" ? renderLoadMoreFooter : undefined
+              }
+              removeClippedSubviews
+              windowSize={5}
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              updateCellsBatchingPeriod={50}
+              showsVerticalScrollIndicator={false}
+            />
+          );
+        }
+
+        return (
+          <View style={styles.emptyState}>
+            <MaterialIcons
+              name="restaurant-menu"
+              size={48}
+              color={Colors.gray[300]}
+            />
+            <Text style={styles.emptyText}>
+              {type === "favorites"
+                ? "No favorite recipes yet"
+                : "No recipes found for this meal"}
+            </Text>
+            {type === "suggestions" && onGenerateMore && (
+              <Pressable
+                onPress={onGenerateMore}
+                disabled={isGeneratingMore}
+                style={({ pressed }) => [
+                  styles.emptyAiButton,
+                  pressed && styles.mealCardPressed,
+                  isGeneratingMore && styles.generateCardDisabled,
+                ]}
+              >
+                {isGeneratingMore ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <MaterialIcons name="auto-awesome" size={18} color="#fff" />
+                    <Text style={styles.emptyAiButtonText}>
+                      Generate with AI
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            )}
+          </View>
+        );
+      },
+      [renderMealCard, renderLoadMoreFooter, onGenerateMore, isGeneratingMore]
+    );
+
     return (
       <BottomSheetModal
         ref={internalRef}
@@ -189,48 +334,79 @@ export const MealSelectionModal = forwardRef<
           ]}
         >
           <View style={styles.header}>
-            <Text style={styles.title}>{title ?? "Select a meal"}</Text>
-            <Pressable onPress={() => internalRef.current?.dismiss()}>
-              <AntDesign name="close" size={20} color={Colors.text.primary} />
-            </Pressable>
+            <View style={styles.headerTop}>
+              <Text style={styles.title}>{title ?? "Select a meal"}</Text>
+              <Pressable onPress={() => internalRef.current?.dismiss()}>
+                <AntDesign name="close" size={20} color={Colors.text.primary} />
+              </Pressable>
+            </View>
+
+            <View style={styles.tabsContainer}>
+              <Pressable
+                style={[
+                  styles.tab,
+                  activeTab === "suggestions" && styles.activeTab,
+                ]}
+                onPress={() => handleTabChange("suggestions")}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === "suggestions" && styles.activeTabText,
+                  ]}
+                >
+                  Suggestions
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.tab,
+                  activeTab === "favorites" && styles.activeTab,
+                ]}
+                onPress={() => handleTabChange("favorites")}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === "favorites" && styles.activeTabText,
+                  ]}
+                >
+                  Favorites
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
-          {hasMeals ? (
-            <BottomSheetFlatList
-              data={meals}
-              renderItem={renderMealCard}
-              keyExtractor={(item: Meal) => String(item.id)}
-              numColumns={2}
-              columnWrapperStyle={styles.columnWrapper}
-              contentContainerStyle={[
-                styles.gridContainer,
-                onGenerateMore && { paddingBottom: 80 },
-              ]}
-              ListFooterComponent={renderLoadMoreFooter}
-              removeClippedSubviews
-              windowSize={5}
-              initialNumToRender={8}
-              maxToRenderPerBatch={8}
-              updateCellsBatchingPeriod={50}
-              showsVerticalScrollIndicator={false}
-            />
-          ) : (
-            <View style={styles.emptyState}>
-              <MaterialIcons
-                name="restaurant-menu"
-                size={48}
-                color={Colors.gray[300]}
-              />
-              <Text style={styles.emptyText}>
-                No recipes found for this meal
-              </Text>
-              {onGenerateMore && (
+          <Animated.ScrollView
+            ref={horizontalPagerRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={scrollHandler}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            scrollEventThrottle={16}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ width: contentWidth * 2 }}
+          >
+            <View style={{ width: contentWidth, height: "100%" }}>
+              {renderList(meals, "suggestions")}
+            </View>
+            <View style={{ width: contentWidth, height: "100%" }}>
+              {renderList(favoriteMeals, "favorites")}
+            </View>
+          </Animated.ScrollView>
+
+          {/* Sticky Footer - Generate with AI */}
+          {activeTab === "suggestions" &&
+            meals.length > 0 &&
+            onGenerateMore && (
+              <View style={[styles.stickyFooter, { paddingBottom: bottom }]}>
                 <Pressable
                   onPress={onGenerateMore}
                   disabled={isGeneratingMore}
                   style={({ pressed }) => [
-                    styles.emptyAiButton,
-                    pressed && styles.mealCardPressed,
+                    styles.stickyFooterButton,
+                    pressed && { opacity: 0.9 },
                     isGeneratingMore && styles.generateCardDisabled,
                   ]}
                 >
@@ -243,41 +419,14 @@ export const MealSelectionModal = forwardRef<
                         size={18}
                         color="#fff"
                       />
-                      <Text style={styles.emptyAiButtonText}>
+                      <Text style={styles.stickyFooterButtonText}>
                         Generate with AI
                       </Text>
                     </>
                   )}
                 </Pressable>
-              )}
-            </View>
-          )}
-
-          {/* Sticky Footer - Generate with AI */}
-          {hasMeals && onGenerateMore && (
-            <View style={[styles.stickyFooter, { paddingBottom: bottom }]}>
-              <Pressable
-                onPress={onGenerateMore}
-                disabled={isGeneratingMore}
-                style={({ pressed }) => [
-                  styles.stickyFooterButton,
-                  pressed && { opacity: 0.9 },
-                  isGeneratingMore && styles.generateCardDisabled,
-                ]}
-              >
-                {isGeneratingMore ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <>
-                    <MaterialIcons name="auto-awesome" size={18} color="#fff" />
-                    <Text style={styles.stickyFooterButtonText}>
-                      Generate with AI
-                    </Text>
-                  </>
-                )}
-              </Pressable>
-            </View>
-          )}
+              </View>
+            )}
         </View>
       </BottomSheetModal>
     );
@@ -296,10 +445,43 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
+    flexDirection: "column",
+    marginBottom: 20,
+    gap: 16,
+  },
+  headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    backgroundColor: Colors.gray[100],
+    padding: 4,
+    borderRadius: 12,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text.secondary,
+  },
+  activeTabText: {
+    color: Colors.text.primary,
+    fontWeight: "600",
   },
   title: {
     fontSize: 18,

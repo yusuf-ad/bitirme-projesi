@@ -126,21 +126,42 @@ export default function MealPlanPreview() {
     : "Select a meal";
 
   const handleMealSelect = useCallback(
-    (index: number) => {
-      if (!activeMealType) return;
+    (selectedMeal: Meal) => {
+      if (!activeMealType || !mealPlan) return;
 
-      // Map the index from the filtered list back to the original index
-      const originalIndex = alternativeMealsWithIndex[index]?.index;
+      const currentResults = mealPlan[activeMealType].results;
+      const existingIndex = currentResults.findIndex(
+        (m) => m.id === selectedMeal.id
+      );
 
-      if (originalIndex === undefined) return;
+      if (existingIndex !== -1) {
+        setSelectedMealIndices((prev) => ({
+          ...prev,
+          [activeMealType]: existingIndex,
+        }));
+      } else {
+        const newResults = [selectedMeal, ...currentResults];
 
-      setSelectedMealIndices((prev) => ({
-        ...prev,
-        [activeMealType]: originalIndex,
-      }));
+        setMealPlan((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            [activeMealType]: {
+              ...prev[activeMealType],
+              results: newResults,
+            },
+          };
+        });
+
+        setSelectedMealIndices((prev) => ({
+          ...prev,
+          [activeMealType]: 0,
+        }));
+      }
+
       mealSelectionRef.current?.dismiss();
     },
-    [activeMealType, alternativeMealsWithIndex]
+    [activeMealType, mealPlan]
   );
 
   const handleModalDismiss = useCallback(() => {
