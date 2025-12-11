@@ -1259,6 +1259,10 @@ constants/
 
 - [x] Multiple conflicting goals? If user selects both lose-weight and gain-weight, how should we prioritize? / Recommend prioritizing the first selected goal or showing a warning.
 
+- [] hep aynı mealler üretilyor düzelt
+- [] ai recipe yapınca mealplandeki yemek değişiyor
+- [] hangi gün için yapıldıysa o güne atsın
+
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
 - [ ] Meal logging system
