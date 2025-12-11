@@ -175,18 +175,20 @@ export default function MealplanTab() {
           </View>
         ) : (
           <>
-            <Animated.View
-              style={styles.section}
-              entering={FadeInDown.duration(400).springify()}
-            >
-              <DailyOverview
-                totalCalories={totalCalories}
-                totalCarbs={totalCarbs}
-                totalProtein={totalProtein}
-                totalFat={totalFat}
-                isEmpty={!hasMeals}
-              />
-            </Animated.View>
+            {hasMeals && (
+              <Animated.View
+                style={styles.section}
+                entering={FadeInDown.duration(400).springify()}
+              >
+                <DailyOverview
+                  totalCalories={totalCalories}
+                  totalCarbs={totalCarbs}
+                  totalProtein={totalProtein}
+                  totalFat={totalFat}
+                  isEmpty={!hasMeals}
+                />
+              </Animated.View>
+            )}
 
             {hasMeals ? (
               <DailyMealsList items={data!.items} selectedDate={selectedDate} />
