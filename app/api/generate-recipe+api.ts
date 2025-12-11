@@ -20,7 +20,11 @@ const CALORIE_RANGE_MAP: Record<string, { min: number; max: number }> = {
 };
 
 const recipeSchema = z.object({
-  title: z.string().describe("A creative and appetizing name for the recipe"),
+  title: z
+    .string()
+    .describe(
+      "A realistic, culturally authentic dish name that sounds like a real recipe from culinary tradition. Use proper dish names like 'Chicken Tikka Masala' or 'Beef Stroganoff'. Avoid poetic words, nonsensical combinations, or made-up terms. The name must clearly describe what the dish is."
+    ),
   summary: z.string().describe("A brief 2-3 sentence description of the dish"),
   readyInMinutes: z
     .number()
@@ -287,15 +291,19 @@ ${randomBooster}
 **GOAL-SPECIFIC GUIDELINES:**
 ${goalSpecificInstructions}
 
-**RECIPE NAMING RULES (STRICT):**
+**RECIPE NAMING RULES (STRICT - CRITICAL):**
 - Use REALISTIC, culturally authentic dish names from actual cuisines
 - Format: Use proper culinary terminology and traditional dish names when possible
-- Examples of GOOD names: "Chicken Tikka Masala", "Beef Stroganoff", "Caprese Salad", "Pad Thai", "Chicken Parmesan", "Beef Bulgogi", "Shakshuka", "Chicken Adobo"
-- Format alternatives: [Main Ingredient] + [Style/Method] OR [Ingredient A] + [Ingredient B] + [Dish Type] for non-traditional dishes
+- Examples of GOOD names: "Chicken Tikka Masala", "Beef Stroganoff", "Caprese Salad", "Pad Thai", "Chicken Parmesan", "Beef Bulgogi", "Shakshuka", "Chicken Adobo", "Scrambled Eggs with Avocado", "Avocado Toast", "Egg Salad"
+- Format alternatives for non-traditional dishes: [Main Ingredient] + [Cooking Method] (e.g., "Pan-Seared Salmon") OR [Ingredient A] + [Ingredient B] + [Dish Type] (e.g., "Chicken and Vegetable Stir-Fry")
+- NEVER use poetic or nonsensical words: "blossom", "symphony", "dance", "melody", "dream", "magic", "wonder", "bliss", "harmony", "serenade", "cascade", "whisper", "sparkle", "glow", "radiance", "essence", "soul", "heart", "spirit"
 - NEVER use: kitchen tools (skillet, pot, pan, bowl, plate), size adjectives (large, medium, small), subjective adjectives (delicious, tasty, savory, hearty, perfect, ultimate, best, quick, easy), cuisine names at start, container words (bowl, plate, dish, pot, casserole), generic combinations like "Chicken and Rice"
+- NEVER use abstract concepts: The name must describe WHAT the dish is, not how it makes you feel
 - Avoid generic names: Prefer specific dish names over generic ingredient combinations
 - CRITICAL: Every recipe name must be UNIQUE and DIFFERENT from previous ones
 - Realism: The name should sound like a real dish that exists in culinary tradition, not a made-up combination
+- Examples of BAD names to avoid: "Egg and Avocado Blossom", "Chicken Symphony", "Beef Dream", "Vegetable Harmony", "Salmon Whisper" - these are nonsensical and don't describe actual dishes
+- The name must be descriptive and logical: If it contains eggs and avocado, use names like "Scrambled Eggs with Avocado", "Avocado and Egg Toast", "Egg and Avocado Salad" - NOT poetic combinations
 
 **NUTRITIONAL REQUIREMENTS:**
 - Must include per serving: Calories, Protein, Carbs, Fat, Fiber, Sugar, Sodium
@@ -374,21 +382,24 @@ export async function POST(req: Request) {
 
 CORE DIRECTIVES:
 1. ALWAYS produce a REALISTIC recipe name that sounds like an actual dish from culinary tradition - use proper dish names like "Chicken Tikka Masala", "Beef Stroganoff", "Pad Thai" rather than generic combinations
-2. Use EXACT metric units (g for solids, ml for liquids) - NEVER approximations
-3. STRICTLY ENFORCE all dietary restrictions and allergy exclusions
-4. PRECISELY match the specified calorie range
-5. Be CREATIVE and ADVENTUROUS with ingredients, flavors, and techniques while maintaining authenticity
-6. ENSURE every recipe is DISTINCT from previous generations - VARIATION is mandatory
-7. NO PORK products under any circumstances
-8. Double-check every ingredient for compliance
-9. When the user provides a list of recent meals to avoid, ensure the new recipe is completely different in name, ingredients, and cooking method
+2. CRITICAL: Recipe names must be LOGICAL and DESCRIPTIVE - NEVER use poetic words like "blossom", "symphony", "dream", "harmony", "whisper", "magic", "essence", "soul", "spirit", "cascade", "sparkle", "glow", "radiance", "serenade", "dance", "melody", "bliss", "wonder", "heart"
+3. Recipe names must describe WHAT the dish is (ingredients + cooking method/dish type), not abstract concepts or emotions
+4. Examples of CORRECT naming: "Scrambled Eggs with Avocado", "Avocado Toast", "Egg and Avocado Salad", "Pan-Fried Eggs with Avocado Slices"
+5. Examples of INCORRECT naming: "Egg and Avocado Blossom", "Avocado Symphony", "Egg Dream", "Avocado Harmony" - these are nonsensical
+6. Use EXACT metric units (g for solids, ml for liquids) - NEVER approximations
+7. STRICTLY ENFORCE all dietary restrictions and allergy exclusions
+8. PRECISELY match the specified calorie range
+9. Be CREATIVE and ADVENTUROUS with ingredients, flavors, and techniques while maintaining authenticity
+10. ENSURE every recipe is DISTINCT from previous generations - VARIATION is mandatory
+11. NO PORK products under any circumstances
+12. Double-check every ingredient for compliance
+13. When the user provides a list of recent meals to avoid, ensure the new recipe is completely different in name, ingredients, and cooking method
 
-Your goal is SURPRISE and VARIETY with REALISTIC dish names, not repetition or generic combinations. Challenge yourself to explore new culinary directions with each generation while maintaining authenticity.`;
+Your goal is SURPRISE and VARIETY with REALISTIC, LOGICAL dish names that describe actual dishes, not poetic or abstract concepts. Challenge yourself to explore new culinary directions with each generation while maintaining authenticity and realism.`;
 
     const result = await generateObject({
       model: openai("gpt-4o"),
       schema: recipeSchema,
-      temperature: 0.85,
       messages: [
         {
           role: "system",

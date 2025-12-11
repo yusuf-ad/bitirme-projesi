@@ -154,8 +154,11 @@ export const MealSelectionModal = forwardRef<
 
     // Match IngredientModal: use 95% and fixed sizing
     const snapPoints = useMemo(() => ["95%"], []);
-    const safeSelectedIndex =
-      selectedIndex && selectedIndex >= meals.length ? 0 : selectedIndex;
+    const safeSelectedIndex = useMemo(() => {
+      if (!Array.isArray(meals) || meals.length === 0) return -1;
+      if (selectedIndex === undefined || selectedIndex === null) return -1;
+      return selectedIndex >= meals.length ? 0 : selectedIndex;
+    }, [meals, selectedIndex]);
 
     const handleBackdrop = useCallback(
       (props: any) => (
@@ -172,18 +175,53 @@ export const MealSelectionModal = forwardRef<
       ref,
       () => ({
         present: () => {
-          // Reset to suggestions tab when modal opens
-          setActiveTab("suggestions");
-          // Reset scroll position to suggestions page
-          runOnUI(() => {
-            "worklet";
-            scrollTo(horizontalPagerRef, 0, 0, false);
-          })();
-          internalRef.current?.present();
+          try {
+            // Validate meals prop
+            if (!Array.isArray(meals)) {
+              console.error(
+                "MealSelectionModal: meals prop is not an array",
+                meals
+              );
+              return;
+            }
+
+            // Reset to suggestions tab when modal opens
+            setActiveTab("suggestions");
+
+            // Present modal first, then reset scroll position after a short delay
+            if (internalRef.current) {
+              internalRef.current.present();
+
+              // Reset scroll position after modal is presented (give it time to mount)
+              setTimeout(() => {
+                try {
+                  if (horizontalPagerRef.current) {
+                    runOnUI(() => {
+                      "worklet";
+                      scrollTo(horizontalPagerRef, 0, 0, false);
+                    })();
+                  }
+                } catch (scrollError) {
+                  console.warn("Error resetting scroll position:", scrollError);
+                  // Non-critical error, continue
+                }
+              }, 100);
+            } else {
+              console.error("MealSelectionModal: internalRef is not available");
+            }
+          } catch (error) {
+            console.error("Error in MealSelectionModal.present:", error);
+          }
         },
-        dismiss: () => internalRef.current?.dismiss(),
+        dismiss: () => {
+          try {
+            internalRef.current?.dismiss();
+          } catch (error) {
+            console.error("Error in MealSelectionModal.dismiss:", error);
+          }
+        },
       }),
-      [horizontalPagerRef]
+      [horizontalPagerRef, meals]
     );
 
     const renderMealCard = useCallback(
@@ -407,15 +445,19 @@ export const MealSelectionModal = forwardRef<
             contentContainerStyle={{ width: contentWidth * 2 }}
           >
             <View style={{ width: contentWidth, height: "100%" }}>
-              {renderList(meals, "suggestions")}
+              {renderList(Array.isArray(meals) ? meals : [], "suggestions")}
             </View>
             <View style={{ width: contentWidth, height: "100%" }}>
-              {renderList(favoriteMeals, "favorites")}
+              {renderList(
+                Array.isArray(favoriteMeals) ? favoriteMeals : [],
+                "favorites"
+              )}
             </View>
           </Animated.ScrollView>
 
           {/* Sticky Footer - Generate with AI */}
           {activeTab === "suggestions" &&
+            Array.isArray(meals) &&
             meals.length > 0 &&
             onGenerateMore && (
               <View style={[styles.stickyFooter, { paddingBottom: bottom }]}>

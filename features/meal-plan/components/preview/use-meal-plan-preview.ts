@@ -10,7 +10,7 @@ import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { createMealItem, Meal, MealPlan, MealType } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 
 import { formatDate, normalizeDateParam } from "./preview-utils";
@@ -52,26 +52,38 @@ export function useMealPlanPreview({
   >({});
   // Pagination state
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // Track if we should present modal when activeMealType changes
+  const shouldPresentModalRef = useRef(false);
 
   const planStartDate = normalizeDateParam(params.startDate);
   const planEndDate = normalizeDateParam(params.endDate ?? params.startDate);
 
   const allMeals = useMemo(() => {
-    return activeMealType ? mealPlan?.[activeMealType]?.results ?? [] : [];
+    if (!activeMealType || !mealPlan?.[activeMealType]) return [];
+    const results = mealPlan[activeMealType].results;
+    return Array.isArray(results) ? results : [];
   }, [activeMealType, mealPlan]);
 
-  const currentSelectedIndex = activeMealType
-    ? selectedMealIndices[activeMealType] ?? 0
-    : 0;
+  const currentSelectedIndex = useMemo(() => {
+    if (!activeMealType) return 0;
+    const index = selectedMealIndices[activeMealType] ?? 0;
+    // Ensure index is within bounds
+    const maxIndex = Math.max(0, allMeals.length - 1);
+    return Math.max(0, Math.min(index, maxIndex));
+  }, [activeMealType, selectedMealIndices, allMeals.length]);
 
   // Filter out the currently selected meal to show only alternatives
   const alternativeMealsWithIndex = useMemo(() => {
+    if (!Array.isArray(allMeals) || allMeals.length === 0) return [];
     return allMeals
       .map((meal, index) => ({ meal, index }))
       .filter(({ index }) => index !== currentSelectedIndex);
   }, [allMeals, currentSelectedIndex]);
 
-  const modalMeals = alternativeMealsWithIndex.map(({ meal }) => meal);
+  const modalMeals = useMemo(() => {
+    if (!Array.isArray(alternativeMealsWithIndex)) return [];
+    return alternativeMealsWithIndex.map(({ meal }) => meal).filter(Boolean);
+  }, [alternativeMealsWithIndex]);
 
   // Check if there are more recipes to load for the active meal type
   const hasMorePages = useMemo(() => {
@@ -128,6 +140,7 @@ export function useMealPlanPreview({
   );
 
   const handleModalDismiss = useCallback(() => {
+    shouldPresentModalRef.current = false;
     setActiveMealType(null);
   }, []);
 
@@ -259,6 +272,47 @@ export function useMealPlanPreview({
       }
     }
   }, [params.mealPlanData, params.initialSelections]);
+
+  // Present modal when activeMealType changes (if triggered by handleReplaceMeal)
+  useEffect(() => {
+    if (activeMealType && shouldPresentModalRef.current) {
+      shouldPresentModalRef.current = false;
+
+      // Double-check that we have meals to show before presenting
+      if (!Array.isArray(modalMeals) || modalMeals.length === 0) {
+        console.warn("No alternative meals available for modal");
+        Alert.alert(
+          "No alternatives available",
+          `There are no alternative recipes available for ${activeMealType}. Try generating more with AI.`
+        );
+        setActiveMealType(null);
+        return;
+      }
+
+      // Use requestAnimationFrame to ensure modalMeals has been computed
+      requestAnimationFrame(() => {
+        try {
+          if (
+            mealSelectionRef.current &&
+            Array.isArray(modalMeals) &&
+            modalMeals.length > 0
+          ) {
+            mealSelectionRef.current.present();
+          } else {
+            console.error("Cannot present modal: ref or meals not available");
+            setActiveMealType(null);
+          }
+        } catch (error) {
+          console.error("Error presenting meal selection modal:", error);
+          Alert.alert(
+            "Error",
+            "Unable to open meal selection. Please try again."
+          );
+          setActiveMealType(null);
+        }
+      });
+    }
+  }, [activeMealType, modalMeals, mealSelectionRef]);
 
   const handleAddMissingIngredients = async (
     mealPlanItems: MealPlanItemRecord[]
@@ -620,8 +674,35 @@ export function useMealPlanPreview({
         );
         return;
       }
+
+      // Check if there are alternative meals (more than just the current selection)
+      const currentIndex = selectedMealIndices[mealType] ?? 0;
+      const allMealsForType = mealTypeData.results;
+      const alternativeMeals = allMealsForType.filter(
+        (_, index) => index !== currentIndex
+      );
+
+      if (alternativeMeals.length === 0) {
+        Alert.alert(
+          "No alternatives available",
+          `There is only one recipe available for ${mealType}. Try generating more with AI.`
+        );
+        return;
+      }
+
+      // Ensure ref is available before setting state
+      if (!mealSelectionRef.current) {
+        console.error("MealSelectionModal ref is not available");
+        Alert.alert(
+          "Error",
+          "Unable to open meal selection. Please try again."
+        );
+        return;
+      }
+
+      // Set flag to present modal after state update
+      shouldPresentModalRef.current = true;
       setActiveMealType(mealType);
-      mealSelectionRef.current?.present();
     },
     [
       aiGeneratedTypes,

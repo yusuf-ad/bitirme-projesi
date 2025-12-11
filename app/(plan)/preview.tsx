@@ -113,7 +113,7 @@ export default function MealPlanPreview() {
 
       <MealSelectionModal
         ref={mealSelectionRef}
-        meals={modalMeals}
+        meals={Array.isArray(modalMeals) ? modalMeals : []}
         selectedIndex={-1}
         title={modalTitle}
         onSelect={handleMealSelect}
