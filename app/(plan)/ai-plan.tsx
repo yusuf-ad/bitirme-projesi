@@ -496,6 +496,16 @@ export default function AiPlan() {
     setGeneratedRecipe(null);
   }, []);
 
+  // Handle image generation completion
+  const handleImageGenerated = useCallback(
+    (imageUrl: string) => {
+      if (generatedRecipe) {
+        setGeneratedRecipe({ ...generatedRecipe, image: imageUrl });
+      }
+    },
+    [generatedRecipe]
+  );
+
   // Render generating state
   if (viewState === "generating") {
     return <AIRecipeGenerating />;
@@ -511,6 +521,7 @@ export default function AiPlan() {
         onBack={handleBackFromPreview}
         mealSlot={params.mealSlot as string | undefined}
         isRegenerating={isRegenerating}
+        onImageGenerated={handleImageGenerated}
       />
     );
   }

@@ -531,6 +531,16 @@ export default function AiRecipe() {
     [isFromMealSlot]
   );
 
+  // Handle image generation completion
+  const handleImageGenerated = useCallback(
+    (imageUrl: string) => {
+      if (generatedRecipe) {
+        setGeneratedRecipe({ ...generatedRecipe, image: imageUrl });
+      }
+    },
+    [generatedRecipe]
+  );
+
   // Render generating state
   if (viewState === "generating") {
     return <AIRecipeGenerating />;
@@ -547,6 +557,7 @@ export default function AiRecipe() {
         mealSlot={params.mealSlot}
         isRegenerating={isRegenerating}
         isSaving={isSaving}
+        onImageGenerated={handleImageGenerated}
       />
     );
   }

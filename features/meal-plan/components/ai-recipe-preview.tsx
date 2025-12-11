@@ -4,13 +4,13 @@ import { Recipe } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
 import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
 import {
-    Ionicons,
-    MaterialCommunityIcons,
-    MaterialIcons,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,6 +19,13 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Placeholder image for AI-generated recipes
@@ -33,6 +40,7 @@ interface AIRecipePreviewProps {
   mealSlot?: string;
   isRegenerating?: boolean;
   isSaving?: boolean;
+  onImageGenerated?: (imageUrl: string) => void;
 }
 
 interface MacroData {
@@ -57,9 +65,112 @@ export function AIRecipePreview({
   mealSlot,
   isRegenerating = false,
   isSaving = false,
+  onImageGenerated,
 }: AIRecipePreviewProps) {
   const insets = useSafeAreaInsets();
   const { impact } = useHaptics();
+
+  // Image generation state
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
+    null
+  );
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const hasTriggeredGeneration = useRef(false);
+
+  // Animation for loading shimmer
+  const shimmerProgress = useSharedValue(0);
+
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmerProgress.value * 300 - 150 }],
+  }));
+
+  // Start shimmer animation when generating image
+  useEffect(() => {
+    if (isGeneratingImage) {
+      shimmerProgress.value = withRepeat(
+        withTiming(1, { duration: 1500, easing: Easing.linear }),
+        -1,
+        false
+      );
+    } else {
+      shimmerProgress.value = 0;
+    }
+  }, [isGeneratingImage, shimmerProgress]);
+
+  // Generate recipe image function
+  const generateRecipeImage = useCallback(async () => {
+    setIsGeneratingImage(true);
+
+    try {
+      const ingredientNames =
+        recipe.extendedIngredients?.slice(0, 6).map((ing) => ing.name) || [];
+
+      const response = await fetch("/api/generate-recipe-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recipeId: recipe.id,
+          title: recipe.title,
+          summary: recipe.summary,
+          ingredients: ingredientNames,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate image");
+      }
+
+      const data = await response.json();
+      if (data.imageUrl) {
+        setGeneratedImageUrl(data.imageUrl);
+        onImageGenerated?.(data.imageUrl);
+      }
+    } catch (error) {
+      console.error("Error generating recipe image:", error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  }, [
+    recipe.id,
+    recipe.title,
+    recipe.summary,
+    recipe.extendedIngredients,
+    onImageGenerated,
+  ]);
+
+  // Generate image when component mounts (only for AI recipes without image)
+  useEffect(() => {
+    const shouldGenerateImage =
+      recipe.isAiGenerated &&
+      !recipe.image &&
+      !generatedImageUrl &&
+      !hasTriggeredGeneration.current &&
+      !isRegenerating;
+
+    if (shouldGenerateImage) {
+      hasTriggeredGeneration.current = true;
+      generateRecipeImage();
+    }
+  }, [
+    recipe.isAiGenerated,
+    recipe.image,
+    generatedImageUrl,
+    isRegenerating,
+    generateRecipeImage,
+  ]);
+
+  // Reset generation state when recipe changes (regeneration)
+  useEffect(() => {
+    if (isRegenerating) {
+      hasTriggeredGeneration.current = false;
+      setGeneratedImageUrl(null);
+    }
+  }, [isRegenerating]);
+
+  // Determine which image to display
+  const displayImageUrl = generatedImageUrl || recipe.image || null;
 
   const nutrients = useMemo(
     () => recipe.nutrition?.nutrients ?? [],
@@ -176,12 +287,34 @@ export function AIRecipePreview({
       >
         {/* Hero Image */}
         <View style={styles.heroContainer}>
-          <Image
-            source={{ uri: recipe.image || AI_RECIPE_PLACEHOLDER }}
-            style={styles.heroImage}
-            contentFit="cover"
-            transition={300}
-          />
+          {isGeneratingImage ? (
+            // Loading state with shimmer animation
+            <View style={styles.imageLoadingContainer}>
+              <View style={styles.shimmerBackground}>
+                <Animated.View style={[styles.shimmerOverlay, shimmerStyle]} />
+              </View>
+              <View style={styles.loadingContent}>
+                <ActivityIndicator size="large" color={Colors.lilac[500]} />
+                <Text style={styles.loadingText}>Generating image...</Text>
+              </View>
+            </View>
+          ) : displayImageUrl ? (
+            // Display generated or existing image
+            <Image
+              source={{ uri: displayImageUrl }}
+              style={styles.heroImage}
+              contentFit="contain"
+              transition={300}
+            />
+          ) : (
+            // Placeholder when no image and not loading
+            <Image
+              source={{ uri: AI_RECIPE_PLACEHOLDER }}
+              style={styles.heroImage}
+              contentFit="cover"
+              transition={300}
+            />
+          )}
           <View style={styles.heroOverlay}>
             <View style={styles.badge}>
               <Ionicons name="time-outline" size={14} color="#fff" />
@@ -384,6 +517,38 @@ const styles = StyleSheet.create({
   heroImage: {
     width: "100%",
     height: "100%",
+  },
+  imageLoadingContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.gray[100],
+    overflow: "hidden",
+  },
+  shimmerBackground: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    backgroundColor: Colors.gray[200],
+    overflow: "hidden",
+  },
+  shimmerOverlay: {
+    position: "absolute",
+    width: 150,
+    height: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    transform: [{ skewX: "-20deg" }],
+  },
+  loadingContent: {
+    alignItems: "center",
+    gap: 12,
+    zIndex: 1,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text.secondary,
   },
   heroOverlay: {
     position: "absolute",
