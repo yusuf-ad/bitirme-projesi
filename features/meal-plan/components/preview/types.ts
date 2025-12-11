@@ -11,6 +11,7 @@ export interface MealItemProps {
 export interface EmptyMealStateProps {
   mealType: MealType;
   onGenerateWithAI: (mealType: MealType) => void;
+  onReplace: (mealType: MealType) => void;
 }
 
 export interface PreviewHeaderProps {
@@ -59,4 +60,3 @@ export interface UseMealPlanPreviewReturn extends MealPlanPreviewState {
     index: number;
   } | null;
 }
-

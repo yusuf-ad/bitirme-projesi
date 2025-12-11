@@ -49,6 +49,7 @@ export default function MealPlanPreview() {
           key={mealType}
           mealType={mealType}
           onGenerateWithAI={handleGenerateWithAI}
+          onReplace={handleReplaceMeal}
         />
       );
     }

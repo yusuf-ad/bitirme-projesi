@@ -100,7 +100,70 @@ export function useMealPlanPreview({
 
   const handleMealSelect = useCallback(
     (selectedMeal: Meal) => {
-      if (!activeMealType || !mealPlan) return;
+      if (!activeMealType) return;
+
+      // If mealPlan doesn't exist, create it with empty entries for all meal types
+      if (!mealPlan) {
+        setMealPlan({
+          breakfast: {
+            results: activeMealType === "breakfast" ? [selectedMeal] : [],
+            totalResults: activeMealType === "breakfast" ? 1 : 0,
+          },
+          lunch: {
+            results: activeMealType === "lunch" ? [selectedMeal] : [],
+            totalResults: activeMealType === "lunch" ? 1 : 0,
+          },
+          dinner: {
+            results: activeMealType === "dinner" ? [selectedMeal] : [],
+            totalResults: activeMealType === "dinner" ? 1 : 0,
+          },
+        });
+
+        setSelectedMealIndices((prev) => ({
+          ...prev,
+          [activeMealType]: 0,
+        }));
+
+        mealSelectionRef.current?.dismiss();
+        return;
+      }
+
+      // If meal type doesn't have results, initialize it
+      if (!mealPlan[activeMealType]?.results) {
+        setMealPlan((prev) => {
+          if (!prev) {
+            return {
+              breakfast: {
+                results: activeMealType === "breakfast" ? [selectedMeal] : [],
+                totalResults: activeMealType === "breakfast" ? 1 : 0,
+              },
+              lunch: {
+                results: activeMealType === "lunch" ? [selectedMeal] : [],
+                totalResults: activeMealType === "lunch" ? 1 : 0,
+              },
+              dinner: {
+                results: activeMealType === "dinner" ? [selectedMeal] : [],
+                totalResults: activeMealType === "dinner" ? 1 : 0,
+              },
+            };
+          }
+          return {
+            ...prev,
+            [activeMealType]: {
+              results: [selectedMeal],
+              totalResults: 1,
+            },
+          };
+        });
+
+        setSelectedMealIndices((prev) => ({
+          ...prev,
+          [activeMealType]: 0,
+        }));
+
+        mealSelectionRef.current?.dismiss();
+        return;
+      }
 
       const currentResults = mealPlan[activeMealType].results;
       const existingIndex = currentResults.findIndex(
@@ -278,28 +341,14 @@ export function useMealPlanPreview({
     if (activeMealType && shouldPresentModalRef.current) {
       shouldPresentModalRef.current = false;
 
-      // Double-check that we have meals to show before presenting
-      if (!Array.isArray(modalMeals) || modalMeals.length === 0) {
-        console.warn("No alternative meals available for modal");
-        Alert.alert(
-          "No alternatives available",
-          `There are no alternative recipes available for ${activeMealType}. Try generating more with AI.`
-        );
-        setActiveMealType(null);
-        return;
-      }
-
-      // Use requestAnimationFrame to ensure modalMeals has been computed
+      // Always open modal to allow user to select from favorites
+      // even if suggestions are empty
       requestAnimationFrame(() => {
         try {
-          if (
-            mealSelectionRef.current &&
-            Array.isArray(modalMeals) &&
-            modalMeals.length > 0
-          ) {
+          if (mealSelectionRef.current) {
             mealSelectionRef.current.present();
           } else {
-            console.error("Cannot present modal: ref or meals not available");
+            console.error("Cannot present modal: ref not available");
             setActiveMealType(null);
           }
         } catch (error) {
@@ -312,7 +361,7 @@ export function useMealPlanPreview({
         }
       });
     }
-  }, [activeMealType, modalMeals, mealSelectionRef]);
+  }, [activeMealType, mealSelectionRef]);
 
   const handleAddMissingIngredients = async (
     mealPlanItems: MealPlanItemRecord[]
@@ -644,53 +693,8 @@ export function useMealPlanPreview({
 
   const handleReplaceMeal = useCallback(
     (mealType: MealType) => {
-      // If this meal type was generated via AI, go to AI generator.
-      if (aiGeneratedTypes[mealType]) {
-        const existingMealPlanData = mealPlan
-          ? JSON.stringify(mealPlan)
-          : undefined;
-
-        const currentSelections = JSON.stringify(selectedMealIndices);
-
-        router.push({
-          pathname: "/(plan)/ai-plan",
-          params: {
-            mealType,
-            startDate: formatDate(planStartDate),
-            endDate: formatDate(planEndDate),
-            existingMealPlanData,
-            currentSelections,
-          },
-        });
-        return;
-      }
-
-      // Otherwise, open local selection modal for non-AI meals
-      const mealTypeData = mealPlan?.[mealType];
-      if (!mealTypeData || mealTypeData.results.length === 0) {
-        Alert.alert(
-          "No recipes found",
-          `There are no ${mealType} recipes to choose from right now.`
-        );
-        return;
-      }
-
-      // Check if there are alternative meals (more than just the current selection)
-      const currentIndex = selectedMealIndices[mealType] ?? 0;
-      const allMealsForType = mealTypeData.results;
-      const alternativeMeals = allMealsForType.filter(
-        (_, index) => index !== currentIndex
-      );
-
-      if (alternativeMeals.length === 0) {
-        Alert.alert(
-          "No alternatives available",
-          `There is only one recipe available for ${mealType}. Try generating more with AI.`
-        );
-        return;
-      }
-
-      // Ensure ref is available before setting state
+      // Always open meal selection modal to allow user to select from favorites
+      // even if there are no alternative suggestions
       if (!mealSelectionRef.current) {
         console.error("MealSelectionModal ref is not available");
         Alert.alert(
@@ -701,18 +705,11 @@ export function useMealPlanPreview({
       }
 
       // Set flag to present modal after state update
+      // Modal will show suggestions (even if empty) and favorites tabs
       shouldPresentModalRef.current = true;
       setActiveMealType(mealType);
     },
-    [
-      aiGeneratedTypes,
-      mealPlan,
-      selectedMealIndices,
-      planStartDate,
-      planEndDate,
-      router,
-      mealSelectionRef,
-    ]
+    [mealSelectionRef]
   );
 
   const handleMealPress = useCallback(

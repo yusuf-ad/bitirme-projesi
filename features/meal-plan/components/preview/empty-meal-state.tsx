@@ -1,4 +1,6 @@
+import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
+import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -8,6 +10,7 @@ import type { EmptyMealStateProps } from "./types";
 export function EmptyMealState({
   mealType,
   onGenerateWithAI,
+  onReplace,
 }: EmptyMealStateProps) {
   const mealTypeLabel = capitalizeFirst(mealType);
 
@@ -32,6 +35,13 @@ export function EmptyMealState({
             <Text style={styles.aiGenerateButtonText}>Generate with AI</Text>
           </Pressable>
         </View>
+        {/* Replace Button */}
+        <CustomButton
+          containerStyle={styles.replaceButton}
+          onPress={() => onReplace(mealType)}
+        >
+          <ReplaceIcon />
+        </CustomButton>
       </View>
     </View>
   );
@@ -93,5 +103,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#fff",
   },
+  replaceButton: {
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.lilac[900],
+    borderRadius: 8,
+  },
 });
-
