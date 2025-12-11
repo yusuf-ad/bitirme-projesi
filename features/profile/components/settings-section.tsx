@@ -1,8 +1,7 @@
 import { getThemeColors } from "@/constants/theme";
 import { useTheme } from "@/providers/theme-provider";
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
 import { MenuItem, MenuItemComponent } from "./menu-item";
 
 export interface SettingsSection {
@@ -17,27 +16,23 @@ interface SettingsSectionProps {
 }
 
 export const SettingsSectionComponent = React.memo(
-  function SettingsSectionComponent({
-    section,
-    sectionIndex,
-  }: SettingsSectionProps) {
+  function SettingsSectionComponent({ section }: SettingsSectionProps) {
     const { isDark } = useTheme();
-    const Colors = getThemeColors(isDark);
+
+    // Memoize theme colors to prevent recalculation
+    const Colors = useMemo(() => getThemeColors(isDark), [isDark]);
 
     return (
-      <Animated.View
-        style={styles.sectionWrapper}
-        entering={FadeInDown.delay(400 + sectionIndex * 100).springify()}
-      >
+      <View style={styles.sectionWrapper}>
         <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
           {section.title}
         </Text>
         <View style={styles.sectionItems}>
-          {section.items.map((item, index) => (
-            <MenuItemComponent key={item.id} item={item} index={index} />
+          {section.items.map((item) => (
+            <MenuItemComponent key={item.id} item={item} />
           ))}
         </View>
-      </Animated.View>
+      </View>
     );
   }
 );

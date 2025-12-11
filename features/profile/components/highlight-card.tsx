@@ -1,10 +1,24 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
-import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 const { width } = Dimensions.get("window");
+
+// Pre-calculate card width to avoid recalculation
+const CARD_WIDTH = width * 0.42;
+
+// Static gradient positions - defined outside component to prevent recreation
+const GRADIENT_START = { x: 0, y: 0 };
+const GRADIENT_END = { x: 1, y: 1 };
 
 export interface HighlightCard {
   id: string;
@@ -24,65 +38,68 @@ interface HighlightCardProps {
 }
 
 export const HighlightCardComponent = React.memo(
-  function HighlightCardComponent({ card, index }: HighlightCardProps) {
+  function HighlightCardComponent({ card }: HighlightCardProps) {
+    // Memoize the press handler to prevent recreation
+    const handlePress = useCallback(() => {
+      Haptics.selectionAsync();
+      card.onPress();
+    }, [card.onPress]);
+
+    // Memoize card style with shadow
+    const cardStyle = useMemo(
+      () => [
+        styles.highlightCard,
+        {
+          backgroundColor: card.gradientColors[0],
+          shadowColor: card.shadowColor,
+        },
+      ],
+      [card.gradientColors, card.shadowColor]
+    );
+
     return (
       <View style={styles.cardWrapper}>
         <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            card.onPress();
-          }}
-          style={({ pressed }) => [
-            styles.highlightCard,
-            {
-              backgroundColor: card.gradientColors[0],
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-              shadowColor: card.shadowColor,
-            },
-          ]}
+          onPress={handlePress}
+          style={({ pressed }) =>
+            pressed ? [cardStyle, styles.cardPressed] : cardStyle
+          }
         >
           <LinearGradient
             colors={card.gradientColors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            start={GRADIENT_START}
+            end={GRADIENT_END}
             style={StyleSheet.absoluteFill}
           />
 
           <View style={styles.highlightHeader}>
-            <View
-              style={[
-                styles.highlightIcon,
-                { backgroundColor: "rgba(255,255,255,0.2)" },
-              ]}
-            >
+            <View style={styles.highlightIcon}>
               <MaterialCommunityIcons
                 name={card.icon}
                 size={20}
                 color="#FFFFFF"
               />
             </View>
-            <Text style={[styles.highlightTitle, { color: "#FFFFFF" }]}>
-              {card.title}
-            </Text>
+            <Text style={styles.highlightTitle}>{card.title}</Text>
           </View>
 
           <View style={styles.highlightContent}>
-            <Text style={[styles.highlightValue, { color: "#FFFFFF" }]}>
-              {card.value}
-            </Text>
+            <Text style={styles.highlightValue}>{card.value}</Text>
             {card.detail && (
-              <Text
-                style={[
-                  styles.highlightDetail,
-                  { color: "rgba(255,255,255,0.8)" },
-                ]}
-              >
-                {card.detail}
-              </Text>
+              <Text style={styles.highlightDetail}>{card.detail}</Text>
             )}
           </View>
         </Pressable>
       </View>
+    );
+  },
+  // Custom comparison to avoid unnecessary re-renders
+  (prevProps, nextProps) => {
+    return (
+      prevProps.card.id === nextProps.card.id &&
+      prevProps.card.value === nextProps.card.value &&
+      prevProps.card.detail === nextProps.card.detail &&
+      prevProps.card.title === nextProps.card.title
     );
   }
 );
@@ -114,7 +131,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   highlightCard: {
-    width: width * 0.42,
+    width: CARD_WIDTH,
     height: 160,
     borderRadius: 24,
     padding: 16,
@@ -125,6 +142,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 6,
+    // Enable rasterization on iOS for better scroll performance
+    ...(Platform.OS === "ios" && {
+      shouldRasterizeIOS: true,
+    }),
+  },
+  cardPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
   },
   highlightHeader: {
     alignItems: "center",
@@ -137,6 +162,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 6,
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
   highlightContent: {
     alignItems: "center",
@@ -151,12 +177,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     opacity: 0.9,
     textAlign: "center",
+    color: "#FFFFFF",
   },
   highlightValue: {
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: -0.3,
     textAlign: "center",
+    color: "#FFFFFF",
   },
   highlightDetail: {
     fontSize: 11,
@@ -164,5 +192,6 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     lineHeight: 14,
     textAlign: "center",
+    color: "rgba(255,255,255,0.8)",
   },
 });

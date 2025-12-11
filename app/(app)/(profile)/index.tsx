@@ -31,14 +31,16 @@ import {
 } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const HEADER_HEIGHT = 60;
 const { width } = Dimensions.get("window");
+
+// Pre-calculate card dimensions to avoid recalculation
+const CARD_WIDTH = width * 0.42;
+const CARD_ITEM_SIZE = CARD_WIDTH + 16;
 
 interface ProfileData {
   goals: string[];
@@ -56,6 +58,17 @@ interface ProfileData {
   cookingSkill?: string;
 }
 
+// Helper function moved outside component to prevent recreation
+function formatTime(time: {
+  hour: number;
+  minute: number;
+  period: "AM" | "PM";
+}) {
+  return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${
+    time.period
+  }`;
+}
+
 export default function ProfileTab() {
   const { profile, session, isLoading: authLoading } = useAuthContext();
   const onboarding = useOnboarding();
@@ -64,19 +77,25 @@ export default function ProfileTab() {
   const { t } = useLanguage();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const Colors = getThemeColors(isDark);
   const scrollY = useSharedValue(0);
   const scrollViewRef = useRef<Animated.ScrollView>(null);
 
-  // Optimized scroll handler with throttling
+  // Memoize theme colors to prevent recalculation on every render
+  const Colors = useMemo(() => getThemeColors(isDark), [isDark]);
+
+  // Optimized scroll handler
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
+      "worklet";
       scrollY.value = event.contentOffset.y;
     },
   });
 
+  // Load profile data on mount - intentionally run once
   useEffect(() => {
-    loadProfileData();
+    onboarding.loadOnboardingData().catch((error) => {
+      console.error("Error loading profile data:", error);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -87,42 +106,25 @@ export default function ProfileTab() {
     }
   }, [onboarding.isLoading, authLoading]);
 
-  const loadProfileData = useCallback(async () => {
-    try {
-      await onboarding.loadOnboardingData();
-    } catch (error) {
-      console.error("Error loading profile data:", error);
-    }
-  }, [onboarding]);
-
-  const formatTime = useCallback(
-    (time: { hour: number; minute: number; period: "AM" | "PM" }) => {
-      return `${time.hour}:${time.minute.toString().padStart(2, "0")} ${
-        time.period
-      }`;
-    },
-    []
-  );
-
-  // Update profile data whenever context values change
+  // Update profile data using a ref to track previous values and minimize updates
   useEffect(() => {
-    if (!onboarding.isLoading) {
-      setProfileData({
-        goals: onboarding.selectedGoals,
-        gender: onboarding.selectedGender,
-        age: onboarding.age,
-        height: onboarding.height,
-        weight: onboarding.weight,
-        breakfastTime: formatTime(onboarding.breakfastTime),
-        lunchTime: formatTime(onboarding.lunchTime),
-        dinnerTime: formatTime(onboarding.dinnerTime),
-        meals: onboarding.selectedMeals,
-        cuisines: onboarding.selectedCuisines,
-        allergies: onboarding.selectedAllergies,
-        dietPreferences: onboarding.selectedDietPreferences,
-        cookingSkill: onboarding.selectedCookingSkill,
-      });
-    }
+    if (onboarding.isLoading) return;
+
+    setProfileData({
+      goals: onboarding.selectedGoals,
+      gender: onboarding.selectedGender,
+      age: onboarding.age,
+      height: onboarding.height,
+      weight: onboarding.weight,
+      breakfastTime: formatTime(onboarding.breakfastTime),
+      lunchTime: formatTime(onboarding.lunchTime),
+      dinnerTime: formatTime(onboarding.dinnerTime),
+      meals: onboarding.selectedMeals,
+      cuisines: onboarding.selectedCuisines,
+      allergies: onboarding.selectedAllergies,
+      dietPreferences: onboarding.selectedDietPreferences,
+      cookingSkill: onboarding.selectedCookingSkill,
+    });
   }, [
     onboarding.isLoading,
     onboarding.selectedGoals,
@@ -138,7 +140,6 @@ export default function ProfileTab() {
     onboarding.selectedAllergies,
     onboarding.selectedDietPreferences,
     onboarding.selectedCookingSkill,
-    formatTime,
   ]);
 
   const formattedUnitsSummary = useMemo(() => {
@@ -201,7 +202,7 @@ export default function ProfileTab() {
         icon: "scale-bathroom",
         onPress: () => router.push("/(app)/(profile)/units-nutrition"),
         accentColor: "#FFFFFF",
-        gradientColors: ["#60A5FA", "#3B82F6"],
+        gradientColors: ["#60A5FA", "#3B82F6"] as [string, string],
         shadowColor: "#3B82F6",
       },
       {
@@ -214,7 +215,7 @@ export default function ProfileTab() {
         icon: "clock-time-three-outline",
         onPress: () => router.push("/(app)/(profile)/meal-times"),
         accentColor: "#FFFFFF",
-        gradientColors: ["#A78BFA", "#7C3AED"],
+        gradientColors: ["#A78BFA", "#7C3AED"] as [string, string],
         shadowColor: "#7C3AED",
       },
       {
@@ -228,7 +229,7 @@ export default function ProfileTab() {
         icon: "target",
         onPress: () => router.push("/(app)/(profile)/goals-metrics"),
         accentColor: "#FFFFFF",
-        gradientColors: ["#4ADE80", "#22C55E"],
+        gradientColors: ["#4ADE80", "#22C55E"] as [string, string],
         shadowColor: "#22C55E",
       },
       {
@@ -247,7 +248,7 @@ export default function ProfileTab() {
         icon: "food-apple-outline",
         onPress: () => router.push("/(app)/(profile)/taste-preferences"),
         accentColor: "#FFFFFF",
-        gradientColors: ["#F472B6", "#DB2777"],
+        gradientColors: ["#F472B6", "#DB2777"] as [string, string],
         shadowColor: "#DB2777",
       },
     ];
@@ -265,6 +266,12 @@ export default function ProfileTab() {
     }
   }, []);
 
+  // Memoize lilac colors to prevent object recreation
+  const lilacColors = useMemo(
+    () => ({ color600: Colors.lilac[600], color900: Colors.lilac[900] }),
+    [Colors.lilac]
+  );
+
   const settingsSections: SettingsSection[] = useMemo(
     () => [
       {
@@ -277,7 +284,7 @@ export default function ProfileTab() {
             description: t("profile.editProfileDesc"),
             icon: "account-edit-outline",
             onPress: () => router.push("/(app)/(profile)/account"),
-            color: Colors.lilac[600],
+            color: lilacColors.color600,
           },
           {
             id: "preferences",
@@ -286,7 +293,7 @@ export default function ProfileTab() {
             meta: formattedUnitsSummary,
             icon: "tune",
             onPress: () => router.push("/(app)/(profile)/units-nutrition"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "goals-metrics",
@@ -294,7 +301,7 @@ export default function ProfileTab() {
             description: t("profile.goalsMetricsDesc"),
             icon: "chart-line",
             onPress: () => router.push("/(app)/(profile)/goals-metrics"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "privacy",
@@ -302,7 +309,7 @@ export default function ProfileTab() {
             description: t("profile.privacyDesc"),
             icon: "shield-check-outline",
             onPress: () => router.push("/(app)/(profile)/privacy"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "notifications",
@@ -310,7 +317,7 @@ export default function ProfileTab() {
             description: t("profile.notificationsDesc"),
             icon: "bell-outline",
             onPress: () => router.push("/(app)/(profile)/notifications"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
         ],
       },
@@ -324,7 +331,7 @@ export default function ProfileTab() {
             description: t("profile.preferencesDesc"),
             icon: "cog-outline",
             onPress: () => router.push("/(app)/(profile)/preferences"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "meal-times",
@@ -332,7 +339,7 @@ export default function ProfileTab() {
             description: t("profile.mealTimesDesc"),
             icon: "calendar-clock",
             onPress: () => router.push("/(app)/(profile)/meal-times"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "social-sharing",
@@ -340,7 +347,7 @@ export default function ProfileTab() {
             description: t("profile.socialSharingDesc"),
             icon: "share-variant-outline",
             onPress: handleShareApp,
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
         ],
       },
@@ -354,7 +361,7 @@ export default function ProfileTab() {
             description: t("profile.tastePreferencesDesc"),
             icon: "silverware-fork-knife",
             onPress: () => router.push("/(app)/(profile)/taste-preferences"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "allergies",
@@ -362,7 +369,7 @@ export default function ProfileTab() {
             description: t("profile.allergiesDietDesc"),
             icon: "alert-circle-outline",
             onPress: () => router.push("/(app)/(profile)/allergies-diet"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "cooking",
@@ -370,7 +377,7 @@ export default function ProfileTab() {
             description: t("profile.cookingSkillDesc"),
             icon: "chef-hat",
             onPress: () => router.push("/(app)/(profile)/cooking-skill"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
           {
             id: "support",
@@ -378,15 +385,15 @@ export default function ProfileTab() {
             description: t("profile.supportDesc"),
             icon: "message-question-outline",
             onPress: () => router.push("/(app)/(profile)/support-feedback"),
-            color: Colors.lilac[900],
+            color: lilacColors.color900,
           },
         ],
       },
     ],
-    [formattedUnitsSummary, Colors.lilac, t, handleShareApp]
+    [formattedUnitsSummary, lilacColors, t, handleShareApp]
   );
 
-  // Render function for highlight cards FlatList
+  // Render function for highlight cards FlatList - stable reference
   const renderHighlightCard = useCallback(
     ({ item, index }: { item: HighlightCard; index: number }) => (
       <HighlightCardComponent card={item} index={index} />
@@ -394,11 +401,11 @@ export default function ProfileTab() {
     []
   );
 
-  // Get item layout for FlatList optimization
+  // Get item layout for FlatList optimization - using pre-calculated values
   const getHighlightCardLayout = useCallback(
-    (data: ArrayLike<HighlightCard> | null | undefined, index: number) => ({
-      length: width * 0.42 + 16,
-      offset: (width * 0.42 + 16) * index,
+    (_data: ArrayLike<HighlightCard> | null | undefined, index: number) => ({
+      length: CARD_ITEM_SIZE,
+      offset: CARD_ITEM_SIZE * index,
       index,
     }),
     []
@@ -407,12 +414,32 @@ export default function ProfileTab() {
   // Key extractor for FlatList
   const keyExtractor = useCallback((item: HighlightCard) => item.id, []);
 
-  // Container animation for smooth theme transition
-  const containerAnimation = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(1, { duration: 300 }),
-    };
-  });
+  // Memoize content container style to prevent recreation
+  const contentContainerStyle = useMemo(
+    () => ({
+      paddingTop: top + HEADER_HEIGHT + 20,
+      paddingBottom: bottom + 80,
+    }),
+    [top, bottom]
+  );
+
+  // Memoize profile header props to prevent unnecessary re-renders
+  const profileHeaderProps = useMemo(
+    () => ({
+      profile: profile || null,
+      session: session
+        ? {
+            user: session.user
+              ? {
+                  email: session.user.email || null,
+                  created_at: session.user.created_at || null,
+                }
+              : null,
+          }
+        : null,
+    }),
+    [profile, session]
+  );
 
   if (isLoading) {
     return <ProfessionalLoadingScreen />;
@@ -431,35 +458,16 @@ export default function ProfileTab() {
       {/* Scrollable Content */}
       <Animated.ScrollView
         ref={scrollViewRef}
-        style={[styles.scroll, containerAnimation]}
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: top + HEADER_HEIGHT + 20,
-            paddingBottom: bottom + 80,
-          },
-        ]}
+        style={styles.scroll}
+        contentContainerStyle={contentContainerStyle}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
+        overScrollMode="never"
       >
         {/* User Profile Header */}
-        <ProfileHeader
-          profile={profile || null}
-          session={
-            session
-              ? {
-                  user: session.user
-                    ? {
-                        email: session.user.email || null,
-                        created_at: session.user.created_at || null,
-                      }
-                    : null,
-                }
-              : null
-          }
-        />
+        <ProfileHeader {...profileHeaderProps} />
 
         {/* Highlights - horizontally scrollable with FlatList */}
         <View style={styles.highlightsWrapper}>
@@ -471,12 +479,12 @@ export default function ProfileTab() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.highlightsContainer}
             decelerationRate="fast"
-            snapToInterval={width * 0.42 + 16}
+            snapToInterval={CARD_ITEM_SIZE}
             getItemLayout={getHighlightCardLayout}
             removeClippedSubviews={true}
-            initialNumToRender={2}
+            initialNumToRender={3}
             maxToRenderPerBatch={2}
-            windowSize={5}
+            windowSize={3}
           />
         </View>
 
@@ -499,9 +507,6 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-  },
-  content: {
-    // Padding handled in contentContainerStyle
   },
   highlightsWrapper: {
     marginBottom: 24,

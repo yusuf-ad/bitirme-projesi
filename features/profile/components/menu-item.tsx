@@ -1,14 +1,8 @@
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, {
-  FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
 
 export interface MenuItem {
   id: string;
@@ -22,47 +16,37 @@ export interface MenuItem {
 
 interface MenuItemComponentProps {
   item: MenuItem;
-  index: number;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const MenuItemComponent = React.memo(function MenuItemComponent({
   item,
-  index,
 }: MenuItemComponentProps) {
   const { isDark } = useTheme();
-  const scale = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = React.useCallback(() => {
-    scale.value = withSpring(0.98);
-  }, [scale]);
-
-  const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1);
-  }, [scale]);
-
-  const handlePress = React.useCallback(() => {
+  const handlePress = useCallback(() => {
     Haptics.selectionAsync();
     item.onPress();
   }, [item]);
 
+  // Memoize theme-dependent colors
+  const colors = useMemo(
+    () => ({
+      background: isDark ? "#1F1F1F" : "#FFFFFF",
+      iconBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.03)",
+      iconColor: item.color || (isDark ? "#FFFFFF" : "#000000"),
+      textColor: isDark ? "#FFFFFF" : "#000000",
+      secondaryColor: isDark ? "#9CA3AF" : "#6B7280",
+    }),
+    [isDark, item.color]
+  );
+
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * 50).springify()}
-      style={styles.menuItemWrapper}
-    >
-      <AnimatedPressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={[
+    <View style={styles.menuItemWrapper}>
+      <Pressable
+        style={({ pressed }) => [
           styles.menuItem,
-          { backgroundColor: isDark ? "#1F1F1F" : "#FFFFFF" },
-          animatedStyle,
+          { backgroundColor: colors.background },
+          pressed && styles.menuItemPressed,
         ]}
         onPress={handlePress}
       >
@@ -70,33 +54,24 @@ export const MenuItemComponent = React.memo(function MenuItemComponent({
           <View
             style={[
               styles.menuIconContainer,
-              {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.03)",
-              },
+              { backgroundColor: colors.iconBg },
             ]}
           >
             <MaterialCommunityIcons
               name={item.icon}
               size={20}
-              color={item.color || (isDark ? "#FFFFFF" : "#000000")}
+              color={colors.iconColor}
             />
           </View>
           <View style={styles.menuItemCopy}>
-            <Text
-              style={[
-                styles.menuItemText,
-                { color: isDark ? "#FFFFFF" : "#000000" },
-              ]}
-            >
+            <Text style={[styles.menuItemText, { color: colors.textColor }]}>
               {item.title}
             </Text>
             {item.description && (
               <Text
                 style={[
                   styles.menuItemDescription,
-                  { color: isDark ? "#9CA3AF" : "#6B7280" },
+                  { color: colors.secondaryColor },
                 ]}
                 numberOfLines={2}
               >
@@ -108,10 +83,7 @@ export const MenuItemComponent = React.memo(function MenuItemComponent({
         <View style={styles.metaWrapper}>
           {item.meta && (
             <Text
-              style={[
-                styles.menuItemMeta,
-                { color: isDark ? "#9CA3AF" : "#6B7280" },
-              ]}
+              style={[styles.menuItemMeta, { color: colors.secondaryColor }]}
               numberOfLines={1}
             >
               {item.meta}
@@ -120,11 +92,11 @@ export const MenuItemComponent = React.memo(function MenuItemComponent({
           <MaterialCommunityIcons
             name="chevron-right"
             size={20}
-            color={isDark ? "#9CA3AF" : "#6B7280"}
+            color={colors.secondaryColor}
           />
         </View>
-      </AnimatedPressable>
-    </Animated.View>
+      </Pressable>
+    </View>
   );
 });
 
@@ -143,6 +115,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 20,
+  },
+  menuItemPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
   menuItemLeft: {
     flexDirection: "row",

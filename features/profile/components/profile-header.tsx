@@ -3,9 +3,8 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/providers/theme-provider";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
 
 interface ProfileHeaderProps {
   profile: {
@@ -64,30 +63,35 @@ export const ProfileHeader = React.memo(function ProfileHeader({
 }: ProfileHeaderProps) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
-  const Colors = getThemeColors(isDark);
 
-  const initials = React.useMemo(
+  // Memoize theme colors to prevent recalculation
+  const Colors = useMemo(() => getThemeColors(isDark), [isDark]);
+
+  const initials = useMemo(
     () => getUserInitials(profile, session),
     [profile?.full_name, session?.user?.email]
   );
 
-  const displayName = React.useMemo(
+  const displayName = useMemo(
     () => getUserDisplayName(profile, session),
     [profile?.full_name, session?.user?.email]
   );
 
-  const memberSince = React.useMemo(
+  const memberSince = useMemo(
     () => getMemberSinceDate(session),
     [session?.user?.created_at]
   );
 
+  // Memoize gradient colors array to prevent recreation
+  const gradientColors = useMemo(
+    () => [Colors.lilac[900], Colors.lilac[900], Colors.lilac[900]] as const,
+    [Colors.lilac]
+  );
+
   return (
-    <Animated.View
-      entering={FadeInDown.delay(100).springify()}
-      style={styles.profileHeader}
-    >
+    <View style={styles.profileHeader}>
       <LinearGradient
-        colors={[Colors.lilac[900], Colors.lilac[900], Colors.lilac[900]]}
+        colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.avatarGradientBorder}
@@ -123,7 +127,7 @@ export const ProfileHeader = React.memo(function ProfileHeader({
           {t("profile.memberSince")} {memberSince}
         </Text>
       </View>
-    </Animated.View>
+    </View>
   );
 });
 

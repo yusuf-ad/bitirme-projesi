@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -18,6 +18,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const HEADER_HEIGHT = 60;
 const SCROLL_THRESHOLD = 100;
+
+// Pre-calculated threshold values to avoid recalculation in worklets
+const THRESHOLD_50 = SCROLL_THRESHOLD * 0.5;
+const THRESHOLD_60 = SCROLL_THRESHOLD * 0.6;
+const THRESHOLD_80 = SCROLL_THRESHOLD * 0.8;
+const THRESHOLD_110 = SCROLL_THRESHOLD * 1.1;
+const THRESHOLD_120 = SCROLL_THRESHOLD * 1.2;
 
 interface FixedHeaderProps {
   scrollY: Animated.SharedValue<number>;
@@ -57,9 +64,11 @@ export const FixedHeader = React.memo(function FixedHeader({
 }: FixedHeaderProps) {
   const { profile, session } = useAuthContext();
   const { top } = useSafeAreaInsets();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
   const { t } = useLanguage();
-  const Colors = getThemeColors(isDark);
+
+  // Memoize theme colors to prevent recalculation
+  const Colors = useMemo(() => getThemeColors(isDark), [isDark]);
 
   // Scroll to top animation values
   const scrollToTopScale = useSharedValue(1);
@@ -103,56 +112,36 @@ export const FixedHeader = React.memo(function FixedHeader({
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, [scrollToTopScale, scrollToTopRotation, scrollViewRef]);
 
-  // Animated style for scroll to top button
-  const scrollToTopAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scale: scrollToTopScale.value },
-        { rotate: `${scrollToTopRotation.value}deg` },
-      ],
-    };
-  });
-
-  // Header background fade in animation (synced with scroll)
+  // Combined header background animation - opacity only, border handled separately
   const headerBackgroundStyle = useAnimatedStyle(() => {
+    "worklet";
     const opacity = interpolate(
       scrollY.value,
-      [SCROLL_THRESHOLD * 0.5, SCROLL_THRESHOLD],
+      [THRESHOLD_50, SCROLL_THRESHOLD],
       [0, 1],
       Extrapolation.CLAMP
     );
-    const borderOpacity = interpolate(
-      scrollY.value,
-      [SCROLL_THRESHOLD * 0.8, SCROLL_THRESHOLD],
-      [0, 1],
-      Extrapolation.CLAMP
-    );
-    return {
-      opacity,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark
-        ? `rgba(255,255,255,${borderOpacity * 0.1})`
-        : `rgba(0,0,0,${borderOpacity * 0.05})`,
-    };
+    return { opacity };
   });
 
-  // Profile avatar animation - slides in from left with scale and rotation
-  const profileAvatarStyle = useAnimatedStyle(() => {
+  // Combined profile section animation (avatar + container)
+  const profileSectionStyle = useAnimatedStyle(() => {
+    "worklet";
     const opacity = interpolate(
       scrollY.value,
-      [SCROLL_THRESHOLD * 0.6, SCROLL_THRESHOLD * 1.1],
+      [THRESHOLD_60, THRESHOLD_110],
       [0, 1],
       Extrapolation.CLAMP
     );
     const translateX = interpolate(
       scrollY.value,
-      [SCROLL_THRESHOLD * 0.6, SCROLL_THRESHOLD * 1.1],
+      [THRESHOLD_60, THRESHOLD_110],
       [-20, 0],
       Extrapolation.CLAMP
     );
     const scale = interpolate(
       scrollY.value,
-      [SCROLL_THRESHOLD * 0.6, SCROLL_THRESHOLD * 1.1],
+      [THRESHOLD_60, THRESHOLD_110],
       [0.5, 1],
       Extrapolation.CLAMP
     );
@@ -162,17 +151,18 @@ export const FixedHeader = React.memo(function FixedHeader({
     };
   });
 
-  // Profile name animation - slides in from right with slight delay
+  // Profile name animation - only translateX and opacity
   const profileNameStyle = useAnimatedStyle(() => {
+    "worklet";
     const opacity = interpolate(
       scrollY.value,
-      [SCROLL_THRESHOLD * 0.8, SCROLL_THRESHOLD * 1.2],
+      [THRESHOLD_80, THRESHOLD_120],
       [0, 1],
       Extrapolation.CLAMP
     );
     const translateX = interpolate(
       scrollY.value,
-      [SCROLL_THRESHOLD * 0.8, SCROLL_THRESHOLD * 1.2],
+      [THRESHOLD_80, THRESHOLD_120],
       [15, 0],
       Extrapolation.CLAMP
     );
@@ -182,37 +172,24 @@ export const FixedHeader = React.memo(function FixedHeader({
     };
   });
 
-  // SETTINGS title fade out animation (in header)
-  const inContentTitleStyle = useAnimatedStyle(() => {
+  // SETTINGS title fade out animation
+  const titleStyle = useAnimatedStyle(() => {
+    "worklet";
     const opacity = interpolate(
       scrollY.value,
-      [0, SCROLL_THRESHOLD * 0.6],
+      [0, THRESHOLD_60],
       [1, 0],
       Extrapolation.CLAMP
     );
     const scale = interpolate(
       scrollY.value,
-      [0, SCROLL_THRESHOLD * 0.6],
+      [0, THRESHOLD_60],
       [1, 0.9],
       Extrapolation.CLAMP
     );
     return {
       opacity,
       transform: [{ scale }],
-    };
-  });
-
-  // Animation for theme toggle icon
-  const iconRotation = useAnimatedStyle(() => {
-    return {
-      transform: [
-        {
-          rotate: withSpring(isDark ? "360deg" : "0deg", {
-            damping: 15,
-            stiffness: 100,
-          }),
-        },
-      ],
     };
   });
 
@@ -241,14 +218,40 @@ export const FixedHeader = React.memo(function FixedHeader({
     toggleTheme();
   }, [toggleTheme]);
 
-  const initials = React.useMemo(
+  const initials = useMemo(
     () => getUserInitials(profile, session),
     [profile?.full_name, session?.user?.email]
   );
 
-  const displayName = React.useMemo(
+  const displayName = useMemo(
     () => getUserDisplayName(profile, session),
     [profile?.full_name, session?.user?.email]
+  );
+
+  // Memoize static styles that depend on theme
+  const iconButtonBgColor = useMemo(
+    () => (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"),
+    [isDark]
+  );
+
+  const signOutBgColor = useMemo(
+    () => (isDark ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)"),
+    [isDark]
+  );
+
+  const themeIconColor = useMemo(
+    () => (isDark ? "#FDB022" : Colors.lilac[800]),
+    [isDark, Colors.lilac]
+  );
+
+  const headerBgWithBorder = useMemo(
+    () => ({
+      height: HEADER_HEIGHT + top,
+      backgroundColor: Colors.background.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+    }),
+    [top, Colors.background.surface, isDark]
   );
 
   return (
@@ -257,10 +260,7 @@ export const FixedHeader = React.memo(function FixedHeader({
       <Animated.View
         style={[
           styles.headerBackground,
-          {
-            height: HEADER_HEIGHT + top,
-            backgroundColor: Colors.background.surface,
-          },
+          headerBgWithBorder,
           headerBackgroundStyle,
         ]}
       />
@@ -279,29 +279,21 @@ export const FixedHeader = React.memo(function FixedHeader({
           <View
             style={[
               styles.iconButtonCircle,
-              {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.05)",
-              },
+              { backgroundColor: iconButtonBgColor },
             ]}
           >
-            <Animated.View style={iconRotation}>
-              <MaterialCommunityIcons
-                name={isDark ? "white-balance-sunny" : "moon-waning-crescent"}
-                size={20}
-                color={isDark ? "#FDB022" : Colors.lilac[800]}
-              />
-            </Animated.View>
+            <MaterialCommunityIcons
+              name={isDark ? "white-balance-sunny" : "moon-waning-crescent"}
+              size={20}
+              color={themeIconColor}
+            />
           </View>
         </Pressable>
 
         {/* Header Center - SETTINGS title or Profile Avatar & Name */}
         <View style={styles.headerTitleContainer}>
           {/* SETTINGS title (visible initially, fades out on scroll) */}
-          <Animated.View
-            style={[styles.headerSettingsWrapper, inContentTitleStyle]}
-          >
+          <Animated.View style={[styles.headerSettingsWrapper, titleStyle]}>
             <Text
               style={[
                 styles.headerSettingsTitle,
@@ -318,7 +310,7 @@ export const FixedHeader = React.memo(function FixedHeader({
             style={styles.headerProfileTouchable}
           >
             <Animated.View
-              style={[styles.headerProfileRow, profileAvatarStyle]}
+              style={[styles.headerProfileRow, profileSectionStyle]}
             >
               <View
                 style={[
@@ -360,11 +352,7 @@ export const FixedHeader = React.memo(function FixedHeader({
           <View
             style={[
               styles.iconButtonCircle,
-              {
-                backgroundColor: isDark
-                  ? "rgba(239, 68, 68, 0.15)"
-                  : "rgba(239, 68, 68, 0.1)",
-              },
+              { backgroundColor: signOutBgColor },
             ]}
           >
             <MaterialCommunityIcons name="logout" size={20} color="#EF4444" />
