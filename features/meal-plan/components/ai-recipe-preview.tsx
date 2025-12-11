@@ -452,7 +452,7 @@ export function AIRecipePreview({
           onPress={handleConfirm}
           disabled={isSaving || isRegenerating}
         >
-          {isSaving ? (
+          {isSaving || isGeneratingImage ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
             <>
