@@ -1266,7 +1266,6 @@ constants/
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
 - [ ] Meal logging system
-
 - [ ] Nutrition tracking - yunus
 - [ ] Goal progress indicators - yunus
 - [x] History view - yunus

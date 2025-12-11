@@ -223,25 +223,66 @@ export default function MealPlanPreview() {
           const indices: Partial<Record<MealType, number>> = {};
           const aiFlags: Partial<Record<MealType, boolean>> = {};
 
-          // Initialize indices for meal types that have results - randomly select initial meal
+          // Parse initial selections if provided (e.g. returning from AI generation)
+          let initialSelections: Partial<Record<MealType, number>> = {};
+          if (params.initialSelections) {
+            try {
+              initialSelections = JSON.parse(
+                params.initialSelections as string
+              );
+            } catch (e) {
+              console.error("Error parsing initial selections:", e);
+            }
+          }
+
+          // Initialize indices for meal types that have results
           if (data.breakfast?.results?.length > 0) {
             const resultsLength = data.breakfast.results.length;
-            indices.breakfast = Math.floor(Math.random() * resultsLength);
-            if (data.breakfast.results[0]?.isAiGenerated) {
+            // Use initial selection if valid, otherwise random
+            if (
+              initialSelections.breakfast !== undefined &&
+              initialSelections.breakfast < resultsLength
+            ) {
+              indices.breakfast = initialSelections.breakfast;
+            } else {
+              indices.breakfast = Math.floor(Math.random() * resultsLength);
+            }
+
+            if (data.breakfast.results[indices.breakfast || 0]?.isAiGenerated) {
               aiFlags.breakfast = true;
             }
           }
+
           if (data.lunch?.results?.length > 0) {
             const resultsLength = data.lunch.results.length;
-            indices.lunch = Math.floor(Math.random() * resultsLength);
-            if (data.lunch.results[0]?.isAiGenerated) {
+            // Use initial selection if valid, otherwise random
+            if (
+              initialSelections.lunch !== undefined &&
+              initialSelections.lunch < resultsLength
+            ) {
+              indices.lunch = initialSelections.lunch;
+            } else {
+              indices.lunch = Math.floor(Math.random() * resultsLength);
+            }
+
+            if (data.lunch.results[indices.lunch || 0]?.isAiGenerated) {
               aiFlags.lunch = true;
             }
           }
+
           if (data.dinner?.results?.length > 0) {
             const resultsLength = data.dinner.results.length;
-            indices.dinner = Math.floor(Math.random() * resultsLength);
-            if (data.dinner.results[0]?.isAiGenerated) {
+            // Use initial selection if valid, otherwise random
+            if (
+              initialSelections.dinner !== undefined &&
+              initialSelections.dinner < resultsLength
+            ) {
+              indices.dinner = initialSelections.dinner;
+            } else {
+              indices.dinner = Math.floor(Math.random() * resultsLength);
+            }
+
+            if (data.dinner.results[indices.dinner || 0]?.isAiGenerated) {
               aiFlags.dinner = true;
             }
           }
@@ -256,7 +297,7 @@ export default function MealPlanPreview() {
         console.error("Error parsing meal plan data:", error);
       }
     }
-  }, [params.mealPlanData]);
+  }, [params.mealPlanData, params.initialSelections]);
 
   const handleSaveMealPlan = async () => {
     if (!session?.user?.id) {
@@ -513,7 +554,11 @@ export default function MealPlanPreview() {
             },
             {
               text: "Go to Home",
-              onPress: () => router.replace("/(app)"),
+              onPress: () =>
+                router.replace({
+                  pathname: "/(app)",
+                  params: { date: formatDate(planStartDate) },
+                }),
             },
           ]
         );
@@ -526,7 +571,11 @@ export default function MealPlanPreview() {
           [
             {
               text: "OK",
-              onPress: () => router.replace("/(app)"),
+              onPress: () =>
+                router.replace({
+                  pathname: "/(app)",
+                  params: { date: formatDate(planStartDate) },
+                }),
             },
           ]
         );
@@ -540,7 +589,11 @@ export default function MealPlanPreview() {
         [
           {
             text: "OK",
-            onPress: () => router.replace("/(app)"),
+            onPress: () =>
+              router.replace({
+                pathname: "/(app)",
+                params: { date: formatDate(planStartDate) },
+              }),
           },
         ]
       );
@@ -559,6 +612,8 @@ export default function MealPlanPreview() {
           ? JSON.stringify(mealPlan)
           : undefined;
 
+        const currentSelections = JSON.stringify(selectedMealIndices);
+
         router.push({
           pathname: "/(plan)/ai-plan",
           params: {
@@ -566,6 +621,7 @@ export default function MealPlanPreview() {
             startDate: formatDate(planStartDate),
             endDate: formatDate(planEndDate),
             existingMealPlanData,
+            currentSelections,
           },
         });
         return;
@@ -678,6 +734,9 @@ export default function MealPlanPreview() {
       ? JSON.stringify(mealPlan)
       : undefined;
 
+    // Pass current selections to preserve them
+    const currentSelections = JSON.stringify(selectedMealIndices);
+
     // Mark this meal type as AI-generated for save attribution
     setAiGeneratedTypes((prev) => ({ ...prev, [mealType]: true }));
 
@@ -688,6 +747,7 @@ export default function MealPlanPreview() {
         startDate: formatDate(planStartDate),
         endDate: formatDate(planEndDate),
         existingMealPlanData,
+        currentSelections,
       },
     });
   };

@@ -1,4 +1,3 @@
-// generate-recipe+api.ts
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
@@ -86,23 +85,195 @@ const requestSchema = z.object({
   cookingSkill: z.string().nullable().optional(),
 });
 
+function generateDynamicPrompt(
+  validatedData: z.infer<typeof requestSchema>
+): string {
+  const {
+    ingredients,
+    mealType,
+    cookingTime,
+    calorieRange,
+    allergies,
+    dietPreferences,
+    cuisines,
+    dislikedCuisines,
+    goals,
+    cookingSkill,
+  } = validatedData;
+
+  const cookingTimeText = COOKING_TIME_MAP[cookingTime] || cookingTime;
+
+  const calorieRangeObj = CALORIE_RANGE_MAP[calorieRange];
+  let calorieRangeText = calorieRange;
+  if (calorieRangeObj) {
+    if (calorieRange === "1000+") calorieRangeText = "at least 1000 calories";
+    else if (calorieRange === "flexible")
+      calorieRangeText = "flexible (200-800 calories)";
+    else
+      calorieRangeText = `${calorieRangeObj.min}-${calorieRangeObj.max} calories per serving`;
+  }
+
+  const COOKING_SKILL_MAP: Record<string, string> = {
+    beginner: "beginner (simple techniques, minimal steps, basic ingredients)",
+    basic:
+      "basic (comfortable with common techniques, some multi-step processes)",
+    intermediate:
+      "intermediate (confident with various techniques, can handle complex recipes)",
+    advanced:
+      "advanced (skilled with professional techniques, enjoys challenging recipes)",
+  };
+  const cookingSkillText = cookingSkill
+    ? COOKING_SKILL_MAP[cookingSkill] || cookingSkill
+    : "any level";
+
+  // Dinamik yaratıcılık artırıcıları
+  const creativityBoosters = [
+    "Focus on uncommon ingredient combinations that work surprisingly well together.",
+    "Incorporate a surprising technique or unexpected flavor pairing.",
+    "Emphasize seasonal ingredients and freshness in the dish composition.",
+    "Create a fusion-style recipe blending unexpected culinary traditions.",
+    "Design a recipe with vibrant colors and varied textures for visual appeal.",
+    "Use a modern, creative interpretation of a classic dish concept.",
+    "Prioritize minimal cleanup while maintaining flavor complexity.",
+    "Feature an underutilized ingredient as the star component.",
+  ];
+  const randomBooster =
+    creativityBoosters[Math.floor(Math.random() * creativityBoosters.length)];
+
+  // Farklı prompt açılışları
+  const openings = [
+    `Create a UNIQUE and INNOVATIVE recipe for ${
+      mealType || "a meal"
+    } with these specifications:`,
+    `Design a CREATIVE ${
+      mealType || "dish"
+    } that stands out from typical recipes:`,
+    `Generate an ORIGINAL recipe concept for ${mealType || "cooking"}:`,
+    `Craft a DISTINCTIVE ${
+      mealType || "recipe"
+    } with the following constraints:`,
+    `Develop a NOVEL ${
+      mealType || "culinary creation"
+    } that breaks from repetition:`,
+  ];
+  const opening = openings[Math.floor(Math.random() * openings.length)];
+
+  // Hedefe özel varyasyonlar
+  const goalSpecificInstructions = goals
+    .map((goal) => {
+      const variations: Record<string, string[]> = {
+        "Eat healthy": [
+          "- Prioritize nutritious ingredients, whole foods, and balanced macros.\n- Incorporate colorful vegetables and superfoods for maximum nutrition.",
+          "- Focus on high-fiber, nutrient-dense ingredients.\n- Minimize processed components and maximize natural flavors.",
+        ],
+        "Lose weight": [
+          "- Keep calories on the lower end of the specified range.\n- Use lean proteins and minimize added fats and sugars.",
+          "- Emphasize high-volume, low-calorie ingredients for satiety without excess calories.",
+        ],
+        "Build muscle": [
+          "- Ensure high protein content (30g+ per serving) with complete proteins.\n- Include ingredients that support muscle recovery and growth.",
+          "- Include multiple protein sources and nutrients that aid muscle synthesis.",
+        ],
+        "Gain weight": [
+          "- Include calorie-dense ingredients, healthy fats, and complex carbohydrates.",
+          "- Focus on nutrient-rich, energy-dense foods to support healthy weight gain.",
+        ],
+        "Save time": [
+          "- Minimize prep steps and use time-saving cooking techniques.\n- Prioritize one-pot or sheet-pan methods.",
+          "- Streamline the process with efficient mise en place and parallel cooking steps.",
+        ],
+        "Learn to cook": [
+          "- Include educational tips within the instructions.\n- Explain cooking techniques and the reasoning behind steps.",
+          "- Break down fundamental skills and provide timing guidance for beginners.",
+        ],
+        "Try new recipes": [
+          "- Be highly creative with flavors, ingredients, and combinations.\n- Introduce unexpected but harmonious elements.",
+          "- Push culinary boundaries while maintaining balance and accessibility.",
+        ],
+        "Stick to your diet": [
+          "- Strictly adhere to all specified diet preferences without compromise.\n- Double-check every ingredient for compliance.",
+          "- Ensure zero deviation from dietary restrictions and preferences.",
+        ],
+      };
+      const varArray = variations[goal];
+      if (!varArray) return "";
+      return varArray[Math.floor(Math.random() * varArray.length)];
+    })
+    .filter(Boolean)
+    .join("\n\n");
+
+  return `
+${opening}
+
+**User Preferences:**
+- Ingredients: ${
+    ingredients.length > 0 ? ingredients.join(", ") : "Any available"
+  }
+- Meal Type: ${mealType || "Flexible"}
+- Cooking Time: ${cookingTimeText}
+- Calories: ${calorieRangeText}
+- Allergies: ${allergies.length > 0 ? allergies.join(", ") : "None"}
+- Diet: ${dietPreferences.length > 0 ? dietPreferences.join(", ") : "None"}
+- Preferred Cuisines: ${cuisines.length > 0 ? cuisines.join(", ") : "Any"}
+- Avoid Cuisines: ${
+    dislikedCuisines.length > 0 ? dislikedCuisines.join(", ") : "None"
+  }
+- Goals: ${goals.length > 0 ? goals.join(", ") : "None specified"}
+- Cooking Skill: ${cookingSkillText}
+
+---
+
+**CREATIVE REQUIREMENT (CRITICAL):**
+${randomBooster}
+
+**GOAL-SPECIFIC GUIDELINES:**
+${goalSpecificInstructions}
+
+**RECIPE NAMING RULES (STRICT):**
+- Format: [Main Ingredient] + [Style/Method] OR [Ingredient A] + [Ingredient B] + [Dish Type]
+- NEVER use: kitchen tools (skillet, pot, pan, bowl, plate), size adjectives (large, medium, small), subjective adjectives (delicious, tasty, savory, hearty, perfect, ultimate, best, quick, easy), cuisine names at start, container words (bowl, plate, dish, pot, casserole)
+- Correct Examples: "Garlic Butter Salmon", "Spicy Chicken Pasta", "Beef and Broccoli Stir-Fry"
+- CRITICAL: Every recipe name must be UNIQUE and DIFFERENT from previous ones
+
+**NUTRITIONAL REQUIREMENTS:**
+- Must include per serving: Calories, Protein, Carbs, Fat, Fiber, Sugar, Sodium
+- Use accurate gram/mg values
+- Match specified calorie range exactly
+
+**INGREDIENT MEASUREMENTS (CRITICAL):**
+- SOLIDS: Always grams (g) - "200g chicken breast"
+- LIQUIDS: Milliliters (ml) - "250ml milk"
+- EXCEPTIONS: Whole eggs ("2 eggs"), garlic cloves ("3 garlic cloves")
+- SPICES: tsp/tbsp acceptable only for <10g amounts
+- NEVER: Use cups, tablespoons, teaspoons for main measured items
+- CRITICAL: Ensure 'unit' field matches measurement type precisely (g for solids, ml for liquids)
+
+**INSTRUCTIONS:**
+- Provide 5-10 clear, numbered steps
+- Include temperatures (°C) and cooking times
+- Be specific about doneness indicators
+
+**TIME & CALORIES:**
+- Total time: ${cookingTimeText}
+- Target per serving: ${calorieRangeText}
+
+**ALLERGY & DIET ENFORCEMENT:**
+- DOUBLE-CHECK all ingredients against allergy list - ZERO exceptions
+- VERIFY strict compliance with all diet preferences
+- ABSOLUTELY NO PORK or pork-derived products under any circumstances
+- Review each ingredient for potential hidden allergens
+
+**REPETITION WARNING:**
+This recipe MUST be completely different from previous generations. Do not reuse the same main proteins, cooking methods, or flavor profiles repeatedly. VARIATION is required.
+`.trim();
+}
+
 export async function POST(req: Request) {
   try {
     const rawBody = await req.json();
     const validatedData = requestSchema.parse(rawBody);
 
-    const {
-      ingredients,
-      mealType,
-      cookingTime,
-      calorieRange,
-      allergies,
-      dietPreferences,
-      cuisines,
-      dislikedCuisines,
-      goals,
-      cookingSkill,
-    } = validatedData;
+    const { cookingTime, calorieRange } = validatedData;
 
     const cookingTimeText = COOKING_TIME_MAP[cookingTime];
     if (!cookingTimeText) {
@@ -122,190 +293,32 @@ export async function POST(req: Request) {
       );
     }
 
-    function formatCalorieRange(
-      range: string,
-      obj: { min: number; max: number }
-    ): string {
-      if (range === "1000+") return "at least 1000 calories";
-      if (range === "flexible")
-        return "flexible calorie range (200-800 calories)";
-      return `${obj.min}-${obj.max} calories`;
-    }
+    const systemPrompt = `You are an expert chef specializing in creating DIVERSE, CREATIVE, and UNIQUE recipes. Your primary mission is to generate COMPLETELY DIFFERENT recipes each time, never falling into repetition patterns.
 
-    const calorieRangeText = formatCalorieRange(calorieRange, calorieRangeObj);
+CORE DIRECTIVES:
+1. ALWAYS produce a UNIQUE recipe name following strict naming rules (no tools, adjectives, cuisines)
+2. Use EXACT metric units (g for solids, ml for liquids) - NEVER approximations
+3. STRICTLY ENFORCE all dietary restrictions and allergy exclusions
+4. PRECISELY match the specified calorie range
+5. Be CREATIVE and ADVENTUROUS with ingredients, flavors, and techniques
+6. ENSURE every recipe is DISTINCT from previous generations - VARIATION is mandatory
+7. NO PORK products under any circumstances
+8. Double-check every ingredient for compliance
 
-    // Map cooking skill to description
-    const COOKING_SKILL_MAP: Record<string, string> = {
-      beginner:
-        "beginner (simple techniques, minimal steps, basic ingredients)",
-      basic:
-        "basic (comfortable with common techniques, some multi-step processes)",
-      intermediate:
-        "intermediate (confident with various techniques, can handle complex recipes)",
-      advanced:
-        "advanced (skilled with professional techniques, enjoys challenging recipes)",
-    };
-    const cookingSkillText = cookingSkill
-      ? COOKING_SKILL_MAP[cookingSkill] || cookingSkill
-      : "any level";
-
-    const prompt = `
-CREATE A REALISTIC RECIPE - STRICT NAMING & FORMAT RULES
-
-**User Preferences:**
-- Ingredients: ${
-      ingredients.length > 0 ? ingredients.join(", ") : "Any available"
-    }
-- Meal Type: ${mealType || "Flexible"}
-- Cooking Time: ${cookingTimeText}
-- Calories: ${calorieRangeText} per serving
-- Allergies: ${allergies.length > 0 ? allergies.join(", ") : "None"}
-- Diet: ${dietPreferences.length > 0 ? dietPreferences.join(", ") : "None"}
-- Preferred Cuisines: ${cuisines.length > 0 ? cuisines.join(", ") : "Any"}
-- Avoid Cuisines: ${
-      dislikedCuisines.length > 0 ? dislikedCuisines.join(", ") : "None"
-    }
-- User Goals: ${goals.length > 0 ? goals.join(", ") : "None specified"}
-- Cooking Skill Level: ${cookingSkillText}
-
----
-
-**GOAL-AWARE RECIPE GUIDELINES:**
-${
-  goals.includes("Eat healthy")
-    ? "- Prioritize nutritious ingredients, whole foods, and balanced macros.\n"
-    : ""
-}${
-      goals.includes("Lose weight")
-        ? "- Keep calories on the lower end of the range, use lean proteins, minimize added fats/sugars.\n"
-        : ""
-    }${
-      goals.includes("Gain weight")
-        ? "- Include calorie-dense ingredients, healthy fats, complex carbs.\n"
-        : ""
-    }${
-      goals.includes("Build muscle")
-        ? "- Ensure high protein content (30g+ per serving), include complete proteins.\n"
-        : ""
-    }${
-      goals.includes("Save time")
-        ? "- Minimize prep steps, use time-saving techniques.\n"
-        : ""
-    }${
-      goals.includes("Learn to cook")
-        ? "- Include educational tips in instructions, explain techniques.\n"
-        : ""
-    }${
-      goals.includes("Try new recipes")
-        ? "- Be creative with flavors and combinations.\n"
-        : ""
-    }${
-      goals.includes("Stick to your diet")
-        ? "- Strictly adhere to specified diet preferences.\n"
-        : ""
-    }
-
-**SKILL-LEVEL ADAPTATION:**
-${
-  cookingSkill === "beginner"
-    ? "- Use simple, foolproof techniques (boiling, basic sautéing).\n- Keep steps to 5-7 maximum.\n- Avoid complex timing or multi-component dishes.\n- Use common, easy-to-find ingredients."
-    : ""
-}${
-      cookingSkill === "basic"
-        ? "- Include moderate techniques (roasting, pan-frying).\n- Can have 6-8 steps.\n- Allow some ingredient prep work."
-        : ""
-    }${
-      cookingSkill === "intermediate"
-        ? "- Can include varied techniques (braising, reduction sauces).\n- Allow more complex flavor layering.\n- Can involve some parallel cooking steps."
-        : ""
-    }${
-      cookingSkill === "advanced"
-        ? "- Can include professional techniques.\n- Complex flavor profiles and presentations welcome.\n- Multi-component dishes acceptable."
-        : ""
-    }
-
----
-
-RECIPE NAMING - STRICT RULES:
-ALLOWED FORMATS:
-1. [Main Ingredient] + [Style/Method] → "Chicken Stir-Fry", "Salmon Teriyaki"
-2. [Cooking Verb] + [Main Ingredient] → "Grilled Salmon", "Roasted Vegetables"
-3. [Ingredient A] + [Ingredient B] + [Dish Type] → "Tomato Basil Pasta"
-
-FORBIDDEN ELEMENTS (NEVER USE):
-- Kitchen tools: skillet, pot, pan, bowl, plate, baking dish, crockpot, instant pot, wok, griddle
-- Size adjectives: large, medium, small, big, mini, jumbo
-- Subjective adjectives: delicious, tasty, savory, hearty, perfect, ultimate, best, quick, easy
-- Cuisine names at start: Mediterranean, Italian, Asian, Mexican, Greek
-- Container words: bowl, plate, dish, pot, casserole
-
-CORRECT EXAMPLES:
-- "Garlic Butter Salmon"
-- "Spicy Chicken Pasta"
-- "Beef and Broccoli Stir-Fry"
-- "Lemon Herb Roasted Potatoes"
-- "Creamy Mushroom Risotto"
-
-INCORRECT EXAMPLES (NEVER DO THIS):
-- "Savory Tomato Skillet" (adjective + tool)
-- "Chicken Bowl" (tool)
-- "Hearty Beef Pot" (adjective + tool)
-
----
-
-NUTRITIONAL REQUIREMENTS:
-- Must include per serving: Calories, Protein, Carbs, Fat, Fiber, Sugar, Sodium
-- Use accurate gram/mg values
-- Match specified calorie range exactly
-
-INGREDIENT MEASUREMENTS:
-- SOLIDS: Always grams (g) - "200g chicken breast"
-- LIQUIDS: Milliliters (ml) - "250ml milk"
-- EXCEPTIONS: Whole eggs ("2 eggs"), garlic cloves ("3 garlic cloves")
-- SPICES: tsp/tbsp allowed for <10g amounts
-- NEVER: cups, tablespoons for main items, size adjectives
-
-CRITICAL FOR UNITS:
-- Ensure the 'unit' field in the JSON response matches the measurement type.
-- Liquids (oil, sauce, milk, water, juice) MUST have unit: 'ml'.
-- Solids (meat, veg, flour, rice, pasta) MUST have unit: 'g'.
-- Do NOT default to 'count' or empty unit for measured ingredients.
-- Do NOT use 'cup', 'tbsp', 'tsp', 'oz', 'lb'. Convert everything to 'ml' or 'g'.
-
-INSTRUCTIONS:
-- 5-10 clear, numbered steps
-- Include temperatures (°C) and times
-
-TIME & CALORIES:
-- Total time: ${cookingTimeText}
-- Calories: ${
-      calorieRange === "1000+"
-        ? "≥1000"
-        : calorieRange === "flexible"
-        ? "200-800"
-        : `${calorieRangeObj.min}-${calorieRangeObj.max}`
-    } kcal/serving
-
-ALLERGY & DIET ENFORCEMENT:
-- DOUBLE-CHECK all ingredients against allergy list
-- VERIFY diet compliance
-- NO PORK or pork-derived products
-
-Critical: Violating naming rules will reject the recipe. Use simple, direct names.
-`;
+Your goal is SURPRISE and VARIETY, not repetition. Challenge yourself to explore new culinary directions with each generation.`;
 
     const result = await generateObject({
       model: openai("gpt-4o"),
       schema: recipeSchema,
-      temperature: 0.6,
+      temperature: 0.85,
       messages: [
         {
           role: "system",
-          content: `You are a professional chef creating STRICTLY FORMATTED recipes. You ALWAYS follow naming conventions precisely. You NEVER add kitchen tools, adjectives, or subjective terms to recipe names. You are meticulous about measurements and dietary restrictions.`,
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: prompt,
+          content: generateDynamicPrompt(validatedData),
         },
       ],
     });
