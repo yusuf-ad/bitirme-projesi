@@ -1,4 +1,5 @@
 import { Recipe } from "@/lib/spoonacular";
+import { isAiRecipeId } from "@/lib/supabase-ai-recipes";
 import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { RecipeCard } from "./recipe-card";
@@ -27,6 +28,10 @@ export function RecipeGrid({
               const navigationParams: any = { id: recipe.id };
               if (mealSlot) {
                 navigationParams.mealSlot = mealSlot;
+              }
+              // Add isAiGenerated flag for AI recipes
+              if (isAiRecipeId(recipe.id)) {
+                navigationParams.isAiGenerated = "true";
               }
               router.push({
                 pathname: "/(meal)/[id]",
