@@ -38,3 +38,22 @@ export type { AddToShoppingListResult } from "./services/meal-plan-ingredients-s
 export type { MealPlanItemRecord, MealPlanRecord, MealSlot } from "./types";
 export { fetchMoreRecipes, fetchRecipes } from "./utils/fetch-recipes";
 export type { FetchedRecipe, MealTypeResults } from "./utils/fetch-recipes";
+
+// Preview components
+export {
+  EmptyMealState,
+  LoadingOverlay,
+  MealItem,
+  PreviewFooter,
+  PreviewHeader,
+  formatDate,
+  normalizeDateParam,
+  useMealPlanPreview,
+} from "./components/preview";
+export type {
+  EmptyMealStateProps,
+  LoadingOverlayProps,
+  MealItemProps,
+  PreviewFooterProps,
+  PreviewHeaderProps,
+} from "./components/preview";
