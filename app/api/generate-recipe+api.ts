@@ -1,3 +1,4 @@
+import { supabaseServer } from "@/lib/supabase-server";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
@@ -83,10 +84,67 @@ const requestSchema = z.object({
   dislikedCuisines: z.array(z.string()).default([]),
   goals: z.array(z.string()).default([]),
   cookingSkill: z.string().nullable().optional(),
+  userId: z.string().optional(),
 });
 
+/**
+ * Fetches meal names from the last 7 days for a given user
+ * Queries both meal_plan_items and ai_generated_recipes tables
+ */
+async function getRecentMealNames(userId: string): Promise<string[]> {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+    // Query meal_plan_items table (join with meal_plans to get user_id)
+    const { data: mealPlanItems, error: mealPlanError } = await supabaseServer
+      .from("meal_plan_items")
+      .select("recipe_name, meal_plans!inner(user_id)")
+      .eq("meal_plans.user_id", userId)
+      .eq("is_ai_generated", true)
+      .gte("created_at", sevenDaysAgoISO)
+      .limit(50);
+
+    // Query ai_generated_recipes table
+    const { data: aiRecipes, error: aiRecipesError } = await supabaseServer
+      .from("ai_generated_recipes")
+      .select("title")
+      .eq("user_id", userId)
+      .gte("created_at", sevenDaysAgoISO)
+      .limit(50);
+
+    // Combine and deduplicate meal names
+    const mealNames = new Set<string>();
+
+    if (!mealPlanError && mealPlanItems) {
+      mealPlanItems.forEach((item) => {
+        if (item.recipe_name) {
+          mealNames.add(item.recipe_name.trim());
+        }
+      });
+    }
+
+    if (!aiRecipesError && aiRecipes) {
+      aiRecipes.forEach((recipe) => {
+        if (recipe.title) {
+          mealNames.add(recipe.title.trim());
+        }
+      });
+    }
+
+    // Convert to array and limit to 50 to prevent prompt from becoming too long
+    return Array.from(mealNames).slice(0, 50);
+  } catch (error) {
+    console.error("Error fetching recent meal names:", error);
+    // Return empty array on error to allow recipe generation to continue
+    return [];
+  }
+}
+
 function generateDynamicPrompt(
-  validatedData: z.infer<typeof requestSchema>
+  validatedData: z.infer<typeof requestSchema>,
+  recentMealNames: string[] = []
 ): string {
   const {
     ingredients,
@@ -230,10 +288,14 @@ ${randomBooster}
 ${goalSpecificInstructions}
 
 **RECIPE NAMING RULES (STRICT):**
-- Format: [Main Ingredient] + [Style/Method] OR [Ingredient A] + [Ingredient B] + [Dish Type]
-- NEVER use: kitchen tools (skillet, pot, pan, bowl, plate), size adjectives (large, medium, small), subjective adjectives (delicious, tasty, savory, hearty, perfect, ultimate, best, quick, easy), cuisine names at start, container words (bowl, plate, dish, pot, casserole)
-- Correct Examples: "Garlic Butter Salmon", "Spicy Chicken Pasta", "Beef and Broccoli Stir-Fry"
+- Use REALISTIC, culturally authentic dish names from actual cuisines
+- Format: Use proper culinary terminology and traditional dish names when possible
+- Examples of GOOD names: "Chicken Tikka Masala", "Beef Stroganoff", "Caprese Salad", "Pad Thai", "Chicken Parmesan", "Beef Bulgogi", "Shakshuka", "Chicken Adobo"
+- Format alternatives: [Main Ingredient] + [Style/Method] OR [Ingredient A] + [Ingredient B] + [Dish Type] for non-traditional dishes
+- NEVER use: kitchen tools (skillet, pot, pan, bowl, plate), size adjectives (large, medium, small), subjective adjectives (delicious, tasty, savory, hearty, perfect, ultimate, best, quick, easy), cuisine names at start, container words (bowl, plate, dish, pot, casserole), generic combinations like "Chicken and Rice"
+- Avoid generic names: Prefer specific dish names over generic ingredient combinations
 - CRITICAL: Every recipe name must be UNIQUE and DIFFERENT from previous ones
+- Realism: The name should sound like a real dish that exists in culinary tradition, not a made-up combination
 
 **NUTRITIONAL REQUIREMENTS:**
 - Must include per serving: Calories, Protein, Carbs, Fat, Fiber, Sugar, Sodium
@@ -265,6 +327,15 @@ ${goalSpecificInstructions}
 
 **REPETITION WARNING:**
 This recipe MUST be completely different from previous generations. Do not reuse the same main proteins, cooking methods, or flavor profiles repeatedly. VARIATION is required.
+
+${
+  recentMealNames.length > 0
+    ? `**AVOID THESE RECENT MEALS (Last 7 Days):**
+${recentMealNames.map((name) => `- ${name}`).join("\n")}
+
+CRITICAL: Do NOT generate any recipe with a name similar to or matching these meals. Generate something completely different and unique. Avoid similar ingredient combinations, cooking methods, or flavor profiles from these recent meals.`
+    : ""
+}
 `.trim();
 }
 
@@ -273,7 +344,13 @@ export async function POST(req: Request) {
     const rawBody = await req.json();
     const validatedData = requestSchema.parse(rawBody);
 
-    const { cookingTime, calorieRange } = validatedData;
+    const { cookingTime, calorieRange, userId } = validatedData;
+
+    // Fetch recent meal names if userId is provided
+    let recentMealNames: string[] = [];
+    if (userId) {
+      recentMealNames = await getRecentMealNames(userId);
+    }
 
     const cookingTimeText = COOKING_TIME_MAP[cookingTime];
     if (!cookingTimeText) {
@@ -293,19 +370,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemPrompt = `You are an expert chef specializing in creating DIVERSE, CREATIVE, and UNIQUE recipes. Your primary mission is to generate COMPLETELY DIFFERENT recipes each time, never falling into repetition patterns.
+    const systemPrompt = `You are an expert chef specializing in creating DIVERSE, CREATIVE, and UNIQUE recipes with REALISTIC, culturally authentic dish names. Your primary mission is to generate COMPLETELY DIFFERENT recipes each time, never falling into repetition patterns.
 
 CORE DIRECTIVES:
-1. ALWAYS produce a UNIQUE recipe name following strict naming rules (no tools, adjectives, cuisines)
+1. ALWAYS produce a REALISTIC recipe name that sounds like an actual dish from culinary tradition - use proper dish names like "Chicken Tikka Masala", "Beef Stroganoff", "Pad Thai" rather than generic combinations
 2. Use EXACT metric units (g for solids, ml for liquids) - NEVER approximations
 3. STRICTLY ENFORCE all dietary restrictions and allergy exclusions
 4. PRECISELY match the specified calorie range
-5. Be CREATIVE and ADVENTUROUS with ingredients, flavors, and techniques
+5. Be CREATIVE and ADVENTUROUS with ingredients, flavors, and techniques while maintaining authenticity
 6. ENSURE every recipe is DISTINCT from previous generations - VARIATION is mandatory
 7. NO PORK products under any circumstances
 8. Double-check every ingredient for compliance
+9. When the user provides a list of recent meals to avoid, ensure the new recipe is completely different in name, ingredients, and cooking method
 
-Your goal is SURPRISE and VARIETY, not repetition. Challenge yourself to explore new culinary directions with each generation.`;
+Your goal is SURPRISE and VARIETY with REALISTIC dish names, not repetition or generic combinations. Challenge yourself to explore new culinary directions with each generation while maintaining authenticity.`;
 
     const result = await generateObject({
       model: openai("gpt-4o"),
@@ -318,7 +396,7 @@ Your goal is SURPRISE and VARIETY, not repetition. Challenge yourself to explore
         },
         {
           role: "user",
-          content: generateDynamicPrompt(validatedData),
+          content: generateDynamicPrompt(validatedData, recentMealNames),
         },
       ],
     });

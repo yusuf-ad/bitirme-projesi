@@ -169,7 +169,7 @@ export default function MealplanTab() {
           </View>
         ) : (
           <>
-            {hasMeals && (
+            {(hasMeals || isPastDate) && (
               <Animated.View
                 style={styles.section}
                 entering={FadeInDown.duration(400).springify()}

@@ -253,6 +253,7 @@ export default function AiPlan() {
           dislikedCuisines,
           goals: goalTitles,
           cookingSkill: resolvedCookingSkill?.id || null,
+          userId: userId || undefined,
         }),
       });
 

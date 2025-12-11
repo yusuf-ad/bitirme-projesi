@@ -29,6 +29,8 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  runOnUI,
+  scrollTo,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useSharedValue,
@@ -92,11 +94,11 @@ export const MealSelectionModal = forwardRef<
         }
         const pageIndex = tab === "suggestions" ? 0 : 1;
         setActiveTab(tab);
-        horizontalPagerRef.current?.scrollTo({
-          x: pageIndex * contentWidth,
-          y: 0,
-          animated: true,
-        });
+        // Use Reanimated's scrollTo for animated refs
+        runOnUI(() => {
+          "worklet";
+          scrollTo(horizontalPagerRef, pageIndex * contentWidth, 0, true);
+        })();
         await Haptics.selectionAsync();
       },
       [activeTab, contentWidth, horizontalPagerRef]
@@ -126,9 +128,13 @@ export const MealSelectionModal = forwardRef<
 
     const favoriteMeals: Meal[] = useMemo(() => {
       return favorites.map((recipe: Recipe) => {
-        const calories = recipe.nutrition?.nutrients?.find(
-          (n) => n.name === "Calories"
+        const nutrients = recipe.nutrition?.nutrients;
+        const calories = nutrients?.find((n) => n.name === "Calories")?.amount;
+        const carbs = nutrients?.find(
+          (n) => n.name === "Carbohydrates"
         )?.amount;
+        const protein = nutrients?.find((n) => n.name === "Protein")?.amount;
+        const fat = nutrients?.find((n) => n.name === "Fat")?.amount;
         return {
           id: recipe.id,
           title: recipe.title,
@@ -137,7 +143,10 @@ export const MealSelectionModal = forwardRef<
           image: recipe.image,
           sourceUrl: recipe.sourceUrl,
           nutrition: {
-            calories: calories,
+            calories,
+            carbs,
+            protein,
+            fat,
           },
         };
       });
@@ -162,10 +171,19 @@ export const MealSelectionModal = forwardRef<
     useImperativeHandle(
       ref,
       () => ({
-        present: () => internalRef.current?.present(),
+        present: () => {
+          // Reset to suggestions tab when modal opens
+          setActiveTab("suggestions");
+          // Reset scroll position to suggestions page
+          runOnUI(() => {
+            "worklet";
+            scrollTo(horizontalPagerRef, 0, 0, false);
+          })();
+          internalRef.current?.present();
+        },
         dismiss: () => internalRef.current?.dismiss(),
       }),
-      []
+      [horizontalPagerRef]
     );
 
     const renderMealCard = useCallback(

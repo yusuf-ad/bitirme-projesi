@@ -253,6 +253,7 @@ export default function AiRecipe() {
           dislikedCuisines,
           goals: goalTitles,
           cookingSkill: resolvedCookingSkill?.id || null,
+          userId: userId || undefined,
         }),
       });
 

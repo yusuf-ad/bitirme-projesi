@@ -7,15 +7,10 @@ import { useAuthContext } from "@/hooks/use-auth-context";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
-import {
-  createMealItem,
-  Meal,
-  MealPlan,
-  MealType,
-} from "@/lib/utils";
+import { createMealItem, Meal, MealPlan, MealType } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
 import { formatDate, normalizeDateParam } from "./preview-utils";
@@ -26,7 +21,9 @@ interface UseMealPlanPreviewOptions {
   mealSelectionRef: React.RefObject<MealSelectionModalHandle | null>;
 }
 
-export function useMealPlanPreview({ mealSelectionRef }: UseMealPlanPreviewOptions) {
+export function useMealPlanPreview({
+  mealSelectionRef,
+}: UseMealPlanPreviewOptions) {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
@@ -113,6 +110,8 @@ export function useMealPlanPreview({ mealSelectionRef }: UseMealPlanPreviewOptio
             [activeMealType]: {
               ...prev[activeMealType],
               results: newResults,
+              // Increment totalResults to account for newly added favorite
+              totalResults: prev[activeMealType].totalResults + 1,
             },
           };
         });
@@ -706,4 +705,3 @@ export function useMealPlanPreview({ mealSelectionRef }: UseMealPlanPreviewOptio
     getMealForType,
   };
 }
-
