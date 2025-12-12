@@ -1,13 +1,13 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
-import { TasteAllergies } from "@/features/onboarding/sections/taste";
+import { TasteAllergies, TasteDietPreferences } from "@/features/onboarding/sections/taste";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
-    resolveAllergiesFast,
-    resolveDietPreferences,
-    type DisplayAllergy,
-    type DisplayDietPreference,
+  resolveAllergiesFast,
+  resolveDietPreferences,
+  type DisplayAllergy,
+  type DisplayDietPreference,
 } from "@/lib/allergies-diet-helpers";
 import { supabase } from "@/lib/supabase";
 import { updateUserTastePreferences } from "@/lib/supabase-onboarding";
@@ -18,14 +18,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,7 +40,9 @@ export default function AllergiesDietScreen() {
   const [dietItems, setDietItems] = useState<DisplayDietPreference[]>([]);
   const [allergyItems, setAllergyItems] = useState<DisplayAllergy[]>([]);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDietEditModalVisible, setIsDietEditModalVisible] = useState(false);
   const [tempSelectedAllergies, setTempSelectedAllergies] = useState<string[]>([]);
+  const [tempSelectedDiets, setTempSelectedDiets] = useState<string[]>([]);
 
   useEffect(() => {
     onboarding.loadOnboardingData();
@@ -87,6 +89,40 @@ export default function AllergiesDietScreen() {
       </Text>
     </View>
   );
+
+  const handleEditDiets = () => {
+    selection();
+    setTempSelectedDiets(onboarding.selectedDietPreferences);
+    setIsDietEditModalVisible(true);
+  };
+
+  const handleSaveDiets = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error("No user logged in");
+        return;
+      }
+
+      // Update local state
+      onboarding.setSelectedDietPreferences(tempSelectedDiets);
+      
+      // Save directly to Supabase
+      await updateUserTastePreferences(user.id, {
+        diet_preferences: tempSelectedDiets,
+      });
+
+      setIsDietEditModalVisible(false);
+    } catch (error) {
+      console.error("Error saving diets:", error);
+      setTempSelectedDiets(onboarding.selectedDietPreferences);
+    }
+  };
+
+  const handleCloseDietModal = () => {
+    setIsDietEditModalVisible(false);
+    setTempSelectedDiets(onboarding.selectedDietPreferences);
+  };
 
   const handleEditAllergies = () => {
     selection();
@@ -185,17 +221,26 @@ export default function AllergiesDietScreen() {
         </Animated.View>
 
         {/* Diet Preferences Section */}
-        {dietItems.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIcon, { backgroundColor: `${Colors.lilac[900]}15` }]}>
-                <MaterialCommunityIcons name="leaf" size={18} color={Colors.lilac[900]} />
-              </View>
-              <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-                {t("allergiesDiet.dietPreferences")}
-              </Text>
+        <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIcon, { backgroundColor: `${Colors.lilac[900]}15` }]}>
+              <MaterialCommunityIcons name="leaf" size={18} color={Colors.lilac[900]} />
             </View>
-            
+            <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+              {t("allergiesDiet.dietPreferences")}
+            </Text>
+            <Pressable
+              onPress={handleEditDiets}
+              style={[styles.editButton, { backgroundColor: `${Colors.lilac[900]}10` }]}
+            >
+              <MaterialCommunityIcons name="pencil" size={16} color={Colors.lilac[900]} />
+              <Text style={[styles.editButtonText, { color: Colors.lilac[900] }]}>
+                {t("common.edit") || "Edit"}
+              </Text>
+            </Pressable>
+          </View>
+          
+          {dietItems.length > 0 ? (
             <FlatList
               data={dietItems}
               renderItem={renderDietChip}
@@ -204,8 +249,18 @@ export default function AllergiesDietScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.chipList}
             />
-          </Animated.View>
-        )}
+          ) : (
+            <Pressable
+              onPress={handleEditDiets}
+              style={[styles.emptyChipList, { borderColor: Colors.gray[300] }]}
+            >
+              <MaterialCommunityIcons name="plus-circle-outline" size={20} color={Colors.text.secondary} />
+              <Text style={[styles.emptyChipText, { color: Colors.text.secondary }]}>
+                {t("allergiesDiet.addDiets") || "Add diet preferences"}
+              </Text>
+            </Pressable>
+          )}
+        </Animated.View>
 
         {/* Allergies Section */}
         <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
@@ -307,6 +362,37 @@ export default function AllergiesDietScreen() {
           <View style={[styles.modalFooter, { paddingBottom: bottom + 16 }]}>
             <Pressable
               onPress={handleSaveAllergies}
+              style={[styles.saveButton, { backgroundColor: Colors.lilac[900] }]}
+            >
+              <Text style={styles.saveButtonText}>{t("allergiesDiet.saveChanges")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Diet Edit Modal */}
+      <Modal visible={isDietEditModalVisible} animationType="slide" onRequestClose={handleCloseDietModal}>
+        <View style={[styles.modalContainer, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
+          <View style={[styles.modalHeader, { backgroundColor: Colors.background.surface }]}>
+            <Pressable onPress={handleCloseDietModal} style={styles.modalCloseButton}>
+              <MaterialCommunityIcons name="close" size={24} color={Colors.text.primary} />
+            </Pressable>
+            <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
+              {t("allergiesDiet.editDiets") || "Edit Diet Preferences"}
+            </Text>
+            <View style={styles.modalHeaderRight} />
+          </View>
+          <View style={styles.modalContent}>
+            <TasteDietPreferences
+              title="Diet Preferences"
+              description="Do you follow any specific diet?"
+              onSelectionChange={setTempSelectedDiets}
+              initialSelection={tempSelectedDiets}
+            />
+          </View>
+          <View style={[styles.modalFooter, { paddingBottom: bottom + 16 }]}>
+            <Pressable
+              onPress={handleSaveDiets}
               style={[styles.saveButton, { backgroundColor: Colors.lilac[900] }]}
             >
               <Text style={styles.saveButtonText}>{t("allergiesDiet.saveChanges")}</Text>

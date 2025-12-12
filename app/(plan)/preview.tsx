@@ -131,6 +131,14 @@ export default function MealPlanPreview() {
         isLoadingMore={isLoadingMore}
         hasMorePages={hasMorePages}
       />
+
+      <CelebrationModal
+        visible={showSuccessModal}
+        type="meal-plan-saved"
+        onClose={() => setShowSuccessModal(false)}
+        onAction={handleShoppingListAction}
+        onSecondaryAction={handleHomeAction}
+      />
     </View>
   );
 }
