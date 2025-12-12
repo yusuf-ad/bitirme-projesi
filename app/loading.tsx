@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
   icon: {
     width: 120,
     height: 120,
+    transform: [{ scale: 2 }],
     marginBottom: 32,
   },
   dotsContainer: {
