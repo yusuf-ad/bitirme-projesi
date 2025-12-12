@@ -306,7 +306,7 @@ ${goalSpecificInstructions}
 - The name must be descriptive and logical: If it contains eggs and avocado, use names like "Scrambled Eggs with Avocado", "Avocado and Egg Toast", "Egg and Avocado Salad" - NOT poetic combinations
 
 **NUTRITIONAL REQUIREMENTS:**
-- Must include per serving: Calories, Protein, Carbs, Fat, Fiber, Sugar, Sodium
+- Must include per serving: Calories, Protein, Carbs, Fat
 - Use accurate gram/mg values
 - Match specified calorie range exactly
 

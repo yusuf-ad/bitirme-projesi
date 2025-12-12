@@ -1,0 +1,34 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.94039,0.68125,1.00000,1.00000",
+      "display-p3:0.68224,0.33533,0.96783,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : false,
+          "hidden" : false,
+          "image-name" : "ChatGPT Image 12 Ara 2025 11_42_41.png",
+          "name" : "ChatGPT Image 12 Ara 2025 11_42_41"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
