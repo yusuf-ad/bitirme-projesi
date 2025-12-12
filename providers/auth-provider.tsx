@@ -6,13 +6,12 @@ import { PropsWithChildren, useCallback, useEffect, useState } from "react";
 export default function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | undefined | null>();
   const [profile, setProfile] = useState<any>();
+  // isLoading is ONLY for initial auth check, not for profile loading
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Fetch the session once, and subscribe to auth state changes
   useEffect(() => {
     const fetchSession = async () => {
-      setIsLoading(true);
-
       try {
         const {
           data: { session },
@@ -37,6 +36,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         setSession(null);
       }
 
+      // Only set isLoading to false after initial auth check
       setIsLoading(false);
     };
 
@@ -61,9 +61,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  // Fetch profile without affecting isLoading state
   const fetchProfile = useCallback(async () => {
-    setIsLoading(true);
-
     if (session) {
       const { data } = await supabase
         .from("profiles")
@@ -75,8 +74,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     } else {
       setProfile(null);
     }
-
-    setIsLoading(false);
   }, [session]);
 
   // Fetch the profile when the session changes

@@ -7,8 +7,8 @@ import { LanguageProvider } from "@/providers/language-provider";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
 import { ThemeProvider, useTheme } from "@/providers/theme-provider";
 import {
-    AttachMenuOverlay,
-    AttachMenuProvider,
+  AttachMenuOverlay,
+  AttachMenuProvider,
 } from "@/shared/components/attach-menu";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -19,10 +19,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Initialize app preferences
 const initializeApp = async () => {
-  await Promise.all([
-    initHaptics(),
-    loadSavedLanguage(),
-  ]);
+  await Promise.all([initHaptics(), loadSavedLanguage()]);
 };
 
 // Create QueryClient instance
@@ -39,14 +36,20 @@ const queryClient = new QueryClient({
 
 // Separate RootNavigator so we can access the AuthContext
 function RootNavigator() {
-  const { isLoggedIn } = useAuthContext();
+  const { isLoggedIn, isLoading } = useAuthContext();
   const { isDark } = useTheme();
 
   return (
     <>
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack>
-        <Stack.Protected guard={isLoggedIn}>
+        {/* Show loading screen while auth state is being determined */}
+        <Stack.Protected guard={isLoading}>
+          <Stack.Screen name="loading" options={{ headerShown: false }} />
+        </Stack.Protected>
+
+        {/* Show app screens when logged in and not loading */}
+        <Stack.Protected guard={!isLoading && isLoggedIn}>
           <Stack.Screen name="(app)" options={{ headerShown: false }} />
           <Stack.Screen name="(plan)" options={{ headerShown: false }} />
           <Stack.Screen name="(add)" options={{ headerShown: false }} />
@@ -54,7 +57,9 @@ function RootNavigator() {
           <Stack.Screen name="ai-recipe" options={{ headerShown: false }} />
           <Stack.Screen name="ai-chat" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Protected guard={!isLoggedIn}>
+
+        {/* Show onboarding screens when logged out and not loading */}
+        <Stack.Protected guard={!isLoading && !isLoggedIn}>
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
