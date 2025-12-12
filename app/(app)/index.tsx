@@ -5,6 +5,7 @@ import Header from "@/features/home/components/header";
 import { DailyMealsList, MealPlanEmptyState } from "@/features/meal-plan";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
+import { useMealTimes } from "@/hooks/use-meal-times";
 import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -55,6 +56,8 @@ export default function MealplanTab() {
     session?.user?.id,
     selectedDate
   );
+
+  const { data: mealTimes } = useMealTimes(session?.user?.id);
 
   // Extract first name from user data or use default
   const fullName = session?.user?.user_metadata?.fullName || "User";
@@ -185,13 +188,13 @@ export default function MealplanTab() {
             )}
 
             {hasMeals ? (
-              <DailyMealsList items={data!.items} selectedDate={selectedDate} />
+              <DailyMealsList items={data!.items} selectedDate={selectedDate} mealTimes={mealTimes} />
             ) : isPastDate ? (
               // Show empty meal slots for past dates
-              <DailyMealsList items={[]} selectedDate={selectedDate} />
+              <DailyMealsList items={[]} selectedDate={selectedDate} mealTimes={mealTimes} />
             ) : hasPlan ? (
               // Plan exists but has no recipes yet: show empty slots
-              <DailyMealsList items={[]} selectedDate={selectedDate} />
+              <DailyMealsList items={[]} selectedDate={selectedDate} mealTimes={mealTimes} />
             ) : (
               // No plan yet for today/future: show create prompt
               <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
