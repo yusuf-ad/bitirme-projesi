@@ -1,10 +1,18 @@
 {
-  "fill" : {
-    "linear-gradient" : [
-      "display-p3:0.94039,0.68125,1.00000,1.00000",
-      "display-p3:0.68224,0.33533,0.96783,1.00000"
-    ]
-  },
+  "fill-specializations" : [
+    {
+      "value" : "system-light"
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.94585,0.65331,1.00000,1.00000",
+          "display-p3:0.77790,0.31620,0.96783,1.00000"
+        ]
+      }
+    }
+  ],
   "groups" : [
     {
       "layers" : [
