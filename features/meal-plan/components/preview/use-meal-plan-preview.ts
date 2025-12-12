@@ -1,7 +1,7 @@
 import {
-  fetchMoreRecipes,
-  mealPlanIngredientsService,
-  MealPlanItemRecord,
+    fetchMoreRecipes,
+    mealPlanIngredientsService,
+    MealPlanItemRecord,
 } from "@/features/meal-plan";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
@@ -10,19 +10,20 @@ import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { createMealItem, Meal, MealPlan, MealType } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 
 import { formatDate, normalizeDateParam } from "./preview-utils";
 
 import type { MealSelectionModalHandle } from "../meal-selection-modal";
-
 interface UseMealPlanPreviewOptions {
   mealSelectionRef: React.RefObject<MealSelectionModalHandle | null>;
+  onSaveSuccess?: () => void;
 }
 
 export function useMealPlanPreview({
   mealSelectionRef,
+  onSaveSuccess,
 }: UseMealPlanPreviewOptions) {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -380,49 +381,57 @@ export function useMealPlanPreview({
       });
 
       if (result.addedCount > 0) {
-        Alert.alert(
-          "Meal plan saved! 🎉",
-          `${result.addedCount} missing ingredient${
-            result.addedCount > 1 ? "s" : ""
-          } added to your shopping list.${
-            result.alreadyInPantryCount > 0
-              ? `\n\n${result.alreadyInPantryCount} ingredient${
-                  result.alreadyInPantryCount !== 1 ? "s" : ""
-                } already in your pantry.`
-              : ""
-          }`,
-          [
-            {
-              text: "View Shopping List",
-              onPress: () => router.replace("/shopping-list"),
-            },
-            {
-              text: "Go to Home",
-              onPress: () =>
-                router.replace({
-                  pathname: "/(app)",
-                  params: { date: formatDate(planStartDate) },
-                }),
-            },
-          ]
-        );
+        if (onSaveSuccess) {
+          onSaveSuccess();
+        } else {
+          Alert.alert(
+            "Meal plan saved! 🎉",
+            `${result.addedCount} missing ingredient${
+              result.addedCount > 1 ? "s" : ""
+            } added to your shopping list.${
+              result.alreadyInPantryCount > 0
+                ? `\n\n${result.alreadyInPantryCount} ingredient${
+                    result.alreadyInPantryCount !== 1 ? "s" : ""
+                  } already in your pantry.`
+                : ""
+            }`,
+            [
+              {
+                text: "View Shopping List",
+                onPress: () => router.replace("/shopping-list"),
+              },
+              {
+                text: "Go to Home",
+                onPress: () =>
+                  router.replace({
+                    pathname: "/(app)",
+                    params: { date: formatDate(planStartDate) },
+                  }),
+              },
+            ]
+          );
+        }
       } else {
-        Alert.alert(
-          "Meal plan saved! ✨",
-          `All ${result.alreadyInPantryCount} ingredient${
-            result.alreadyInPantryCount !== 1 ? "s" : ""
-          } already in your pantry. No shopping needed!`,
-          [
-            {
-              text: "OK",
-              onPress: () =>
-                router.replace({
-                  pathname: "/(app)",
-                  params: { date: formatDate(planStartDate) },
-                }),
-            },
-          ]
-        );
+        if (onSaveSuccess) {
+          onSaveSuccess();
+        } else {
+          Alert.alert(
+            "Meal plan saved! ✨",
+            `All ${result.alreadyInPantryCount} ingredient${
+              result.alreadyInPantryCount !== 1 ? "s" : ""
+            } already in your pantry. No shopping needed!`,
+            [
+              {
+                text: "OK",
+                onPress: () =>
+                  router.replace({
+                    pathname: "/(app)",
+                    params: { date: formatDate(planStartDate) },
+                  }),
+              },
+            ]
+          );
+        }
       }
     } catch (error) {
       console.error("Error adding ingredients to shopping list:", error);

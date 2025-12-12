@@ -1,3 +1,4 @@
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { Colors } from "@/constants/theme";
 import {
   EmptyMealState,
@@ -12,7 +13,7 @@ import { MealSelectionModal } from "@/features/meal-plan/components/meal-selecti
 import { capitalizeFirst } from "@/features/meal-plan/components/preview";
 import type { MealType } from "@/lib/utils";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,6 +21,17 @@ export default function MealPlanPreview() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const handleShoppingListAction = () => {
+    setShowSuccessModal(false);
+    router.replace("/shopping-list");
+  };
+
+  const handleHomeAction = () => {
+    setShowSuccessModal(false);
+    router.dismissTo("/");
+  };
 
   const {
     isSaving,
@@ -37,7 +49,10 @@ export default function MealPlanPreview() {
     handleReplaceMeal,
     handleMealPress,
     getMealForType,
-  } = useMealPlanPreview({ mealSelectionRef });
+  } = useMealPlanPreview({
+    mealSelectionRef,
+    onSaveSuccess: () => setShowSuccessModal(true),
+  });
 
   const renderDayMeals = (mealType: MealType) => {
     const mealData = getMealForType(mealType);
