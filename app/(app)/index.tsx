@@ -33,7 +33,6 @@ export default function MealplanTab() {
     today.setHours(0, 0, 0, 0);
     return today;
   });
-  const [hasHydratedInitialDate, setHasHydratedInitialDate] = useState(false);
 
   // Animated container for smooth theme transitions
   const containerAnimation = useAnimatedStyle(() => ({
@@ -41,12 +40,8 @@ export default function MealplanTab() {
   }));
 
   useEffect(() => {
-    if (hasHydratedInitialDate) {
-      return;
-    }
     const rawParam = Array.isArray(params.date) ? params.date[0] : params.date;
     if (!rawParam) {
-      setHasHydratedInitialDate(true);
       return;
     }
     const parsed = new Date(rawParam);
@@ -54,8 +49,7 @@ export default function MealplanTab() {
       parsed.setHours(0, 0, 0, 0);
       setSelectedDate(parsed);
     }
-    setHasHydratedInitialDate(true);
-  }, [params.date, hasHydratedInitialDate]);
+  }, [params.date]);
 
   const { data, isLoading, refetch, isRefetching } = useMealPlansQuery(
     session?.user?.id,
@@ -175,18 +169,20 @@ export default function MealplanTab() {
           </View>
         ) : (
           <>
-            <Animated.View
-              style={styles.section}
-              entering={FadeInDown.duration(400).springify()}
-            >
-              <DailyOverview
-                totalCalories={totalCalories}
-                totalCarbs={totalCarbs}
-                totalProtein={totalProtein}
-                totalFat={totalFat}
-                isEmpty={!hasMeals}
-              />
-            </Animated.View>
+            {(hasMeals || isPastDate) && (
+              <Animated.View
+                style={styles.section}
+                entering={FadeInDown.duration(400).springify()}
+              >
+                <DailyOverview
+                  totalCalories={totalCalories}
+                  totalCarbs={totalCarbs}
+                  totalProtein={totalProtein}
+                  totalFat={totalFat}
+                  isEmpty={!hasMeals}
+                />
+              </Animated.View>
+            )}
 
             {hasMeals ? (
               <DailyMealsList items={data!.items} selectedDate={selectedDate} />

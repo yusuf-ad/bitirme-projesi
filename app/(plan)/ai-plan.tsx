@@ -253,6 +253,7 @@ export default function AiPlan() {
           dislikedCuisines,
           goals: goalTitles,
           cookingSkill: resolvedCookingSkill?.id || null,
+          userId: userId || undefined,
         }),
       });
 
@@ -454,6 +455,18 @@ export default function AiPlan() {
       [mealType]: { results: [aiMeal], totalResults: 1 },
     };
 
+    // Handle selections preservation
+    let selections = {};
+    if (params.currentSelections) {
+      try {
+        selections = JSON.parse(params.currentSelections as string);
+      } catch (e) {
+        console.error("Error parsing current selections:", e);
+      }
+    }
+    // Update selection for the generated meal type to 0 (since we replaced results with [aiMeal])
+    selections = { ...selections, [mealType]: 0 };
+
     // Get dates from params or use today
     const startDate =
       (params.startDate as string) || new Date().toISOString().split("T")[0];
@@ -465,6 +478,7 @@ export default function AiPlan() {
         mealPlanData: JSON.stringify(mealPlanData),
         startDate,
         endDate,
+        initialSelections: JSON.stringify(selections),
       },
     });
   }, [
@@ -473,6 +487,7 @@ export default function AiPlan() {
     params.startDate,
     params.endDate,
     params.existingMealPlanData,
+    params.currentSelections,
     router,
   ]);
 
@@ -480,6 +495,16 @@ export default function AiPlan() {
     setViewState("form");
     setGeneratedRecipe(null);
   }, []);
+
+  // Handle image generation completion
+  const handleImageGenerated = useCallback(
+    (imageUrl: string) => {
+      if (generatedRecipe) {
+        setGeneratedRecipe({ ...generatedRecipe, image: imageUrl });
+      }
+    },
+    [generatedRecipe]
+  );
 
   // Render generating state
   if (viewState === "generating") {
@@ -496,6 +521,7 @@ export default function AiPlan() {
         onBack={handleBackFromPreview}
         mealSlot={params.mealSlot as string | undefined}
         isRegenerating={isRegenerating}
+        onImageGenerated={handleImageGenerated}
       />
     );
   }
