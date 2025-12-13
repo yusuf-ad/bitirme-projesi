@@ -105,7 +105,9 @@ async function cleanupOldRecipeImages(
 
     if (oldFiles.length > 0) {
       await supabaseServer.storage.from(STORAGE_BUCKET).remove(oldFiles);
-      console.log(`Cleaned up ${oldFiles.length} old image(s) for recipe ${recipeId}`);
+      console.log(
+        `Cleaned up ${oldFiles.length} old image(s) for recipe ${recipeId}`
+      );
     }
   } catch (err) {
     // Non-critical error, just log it
