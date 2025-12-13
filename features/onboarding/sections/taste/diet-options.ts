@@ -19,6 +19,23 @@ export interface DietOption {
 
 export const DIET_OPTIONS: DietOption[] = [
   {
+    id: "normal",
+    label: "Normal",
+    subtitle: "No restrictions",
+    description: "A balanced diet",
+    detailDescription:
+      "A standard balanced diet including all food groups without specific restrictions.",
+    image: { uri: "https://spoonacular.com/recipeImages/659109-312x231.jpg" }, // Salmon with roasted vegetables
+    spoonacularDiet: "",
+    targetCalories: 2300,
+    sourceUrl: "https://spoonacular.com/meal-planner?timeFrame=day",
+    defaultMacros: {
+      protein: 0.25,
+      fat: 0.3,
+      carbohydrates: 0.45,
+    },
+  },
+  {
     id: "gluten-free",
     label: "Gluten Free",
     subtitle: "No gluten",
