@@ -25,6 +25,12 @@ import Markdown from "react-native-markdown-display";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const getBaseUrl = () => {
+    // Production: use EXPO_PUBLIC_API_BASE_URL
+    if (process.env.EXPO_PUBLIC_API_BASE_URL) {
+        return process.env.EXPO_PUBLIC_API_BASE_URL;
+    }
+    
+    // Development: use local dev server
     const debuggerHost = Constants.expoConfig?.hostUri;
     const localhost = debuggerHost?.split(":")[0];
     if (!localhost) {
