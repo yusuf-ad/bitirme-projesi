@@ -445,10 +445,10 @@ export function useMealPlanPreview({
     }
   };
 
-  const handleSaveMealPlan = async () => {
+  const handleSaveMealPlan = async (): Promise<boolean> => {
     if (!session?.user?.id) {
       Alert.alert("You need to sign in", "Please sign in to save a meal plan.");
-      return;
+      return false;
     }
 
     if (!mealPlan) {
@@ -456,7 +456,7 @@ export function useMealPlanPreview({
         "Nothing to save",
         "Generate a meal plan before trying to save it."
       );
-      return;
+      return false;
     }
 
     // Only create meal items for meal types that exist in the plan
@@ -534,7 +534,7 @@ export function useMealPlanPreview({
         "Missing recipes",
         "Select a recipe for at least one meal before saving."
       );
-      return;
+      return false;
     }
 
     setIsSaving(true);
@@ -574,7 +574,7 @@ export function useMealPlanPreview({
             "Meal plan already exists",
             "You already have a meal plan with recipes for this date range."
           );
-          return;
+          return false;
         }
 
         // Plan exists but has no items - delete it and create new one
@@ -654,11 +654,14 @@ export function useMealPlanPreview({
 
       // Automatically add missing ingredients to shopping list
       await handleAddMissingIngredients(savedMealPlanItems);
+
+      return true;
     } catch (error) {
       console.error("Error saving meal plan:", error);
       const message =
         error instanceof Error ? error.message : "Unable to save meal plan.";
       Alert.alert("Error saving meal plan", message);
+      return false;
     } finally {
       setIsSaving(false);
     }

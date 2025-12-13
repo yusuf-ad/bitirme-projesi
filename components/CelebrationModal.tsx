@@ -3,13 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React, { useEffect } from "react";
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -18,7 +12,11 @@ import Animated, {
 
 interface CelebrationModalProps {
   visible: boolean;
-  type: "account-created" | "meal-plan-created" | "profile-updated" | "meal-plan-saved";
+  type:
+    | "account-created"
+    | "meal-plan-created"
+    | "profile-updated"
+    | "meal-plan-saved";
   onClose: () => void;
   onAction?: () => void;
   onSecondaryAction?: () => void;
@@ -82,11 +80,11 @@ export function CelebrationModal({
         <View style={styles.backdropOverlay} />
 
         {/* Modal Content */}
-        <Animated.View 
+        <Animated.View
           entering={ZoomIn.duration(400).springify()}
           style={styles.modalCard}
         >
-          <Animated.View 
+          <Animated.View
             entering={ZoomIn.delay(100).springify()}
             style={styles.iconContainer}
           >
@@ -97,14 +95,14 @@ export function CelebrationModal({
             />
           </Animated.View>
 
-          <Animated.Text 
-            entering={FadeInDown.delay(200).springify()} 
+          <Animated.Text
+            entering={FadeInDown.delay(200).springify()}
             style={styles.title}
           >
             {config.title}
           </Animated.Text>
-          
-          <Animated.Text 
+
+          <Animated.Text
             entering={FadeInDown.delay(300).springify()}
             style={styles.description}
           >
@@ -113,7 +111,7 @@ export function CelebrationModal({
 
           <View style={styles.buttonContainer}>
             {/* Primary Button */}
-            <Animated.View 
+            <Animated.View
               entering={FadeInUp.delay(500).springify()}
               style={{ width: "100%" }}
             >
@@ -131,7 +129,7 @@ export function CelebrationModal({
 
             {/* Secondary Button - Only if defined */}
             {config.secondaryButtonText && (
-              <Animated.View 
+              <Animated.View
                 entering={FadeInUp.delay(600).springify()}
                 style={{ width: "100%", marginTop: 12 }}
               >
@@ -143,7 +141,9 @@ export function CelebrationModal({
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.secondaryButtonText}>{config.secondaryButtonText}</Text>
+                  <Text style={styles.secondaryButtonText}>
+                    {config.secondaryButtonText}
+                  </Text>
                 </TouchableOpacity>
               </Animated.View>
             )}
@@ -221,12 +221,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   button: {
-    backgroundColor: Colors.lilac[600],
+    backgroundColor: Colors.lilac[900],
     paddingVertical: 18,
     width: "100%",
     borderRadius: 20,
     alignItems: "center",
-    shadowColor: Colors.lilac[600],
+    shadowColor: Colors.lilac[900],
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
