@@ -25,6 +25,7 @@ import {
 import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
+import { generateAPIUrl } from "@/lib/utils";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -237,7 +238,7 @@ export default function AiPlan() {
       // Convert goal objects to title strings for API
       const goalTitles = resolvedGoals.map((g) => g.title.replace("\n", " "));
 
-      const response = await fetch("/api/generate-recipe", {
+      const response = await fetch(generateAPIUrl("/api/generate-recipe"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

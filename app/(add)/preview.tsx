@@ -163,8 +163,7 @@ export default function PhotoPreview() {
       if (!dataUrl) throw new Error("Image payload unavailable");
 
       const base =
-        (typeof process !== "undefined" &&
-          (process as any).env?.EXPO_PUBLIC_API_URL) ||
+        process.env.EXPO_PUBLIC_API_BASE_URL ||
         getDevServerBaseUrl();
       const url = `${base}/api/scan`;
 

@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "planned-eat",
+    "name": "Planned Eat",
     "slug": "planned-eat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icon2.icon",
     "scheme": "plannedeat",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "owner": "yusufad",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yusufad.plannedeat",
@@ -19,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#fff",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
       "edgeToEdgeEnabled": true,
@@ -32,8 +33,15 @@
       ]
     },
     "web": {
-      "output": "static",
+      "bundler": "metro",
+      "output": "server",
       "favicon": "./assets/images/favicon.png"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/19e0705a-6bc8-4895-bb6b-d1938a06f3b2"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "plugins": [
       "expo-router",
