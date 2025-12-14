@@ -1,18 +1,18 @@
 import { getThemeColors } from "@/constants/theme";
 import {
-  EmptyState,
-  EndMessage,
-  ErrorState,
-  FavoritesEmptyState,
-  FavoritesHeroCard,
-  FilterChips,
-  HomeHeader,
-  LoadingState,
-  READY_TIME_OPTIONS,
-  RecipeGrid,
-  SearchBar,
-  TimeFilterModal,
-  type ReadyTimeOption,
+    EmptyState,
+    EndMessage,
+    ErrorState,
+    FavoritesEmptyState,
+    FavoritesHeroCard,
+    FilterChips,
+    HomeHeader,
+    LoadingState,
+    READY_TIME_OPTIONS,
+    RecipeGrid,
+    SearchBar,
+    TimeFilterModal,
+    type ReadyTimeOption,
 } from "@/features/home";
 import { CALORIE_OPTIONS, CalorieFilterModal, type CalorieOption } from "@/features/home/components/calorie-filter-modal";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
@@ -27,13 +27,13 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Platform,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
+    Animated,
+    Dimensions,
+    Platform,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "use-debounce";
@@ -93,12 +93,13 @@ export default function HomeTab() {
     extrapolate: "clamp",
   });
 
-  // Ingredients ve cuisines'i stabilize et - sonsuz loop'u önlemek için
+  // Ingredients, cuisines ve filters'ı stabilize et - sonsuz loop'u önlemek için
   const memoizedIngredients = useMemo(
     () => selectedIngredients,
     [selectedIngredients]
   );
   const memoizedCuisines = useMemo(() => selectedCuisines, [selectedCuisines]);
+  const memoizedFilters = useMemo(() => selectedFilters, [selectedFilters]);
 
   // Use TanStack Query for caching
   const {
@@ -112,6 +113,7 @@ export default function HomeTab() {
     query: debouncedSearchQuery,
     ingredients: memoizedIngredients,
     cuisines: memoizedCuisines,
+    quickFilters: memoizedFilters,
     pageSize: 10,
     minReadyTime,
     maxReadyTime,
@@ -439,6 +441,7 @@ export default function HomeTab() {
       <CuisineModal
         ref={cuisineModalRef}
         onCuisinesSelect={handleCuisinesSelect}
+        initialSelectedCuisines={selectedCuisines}
       />
       <TimeFilterModal
         ref={timeModalRef}

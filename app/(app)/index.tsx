@@ -10,16 +10,16 @@ import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  View,
+    ActivityIndicator,
+    Platform,
+    RefreshControl,
+    StyleSheet,
+    View,
 } from "react-native";
 import Animated, {
-  FadeInDown,
-  useAnimatedStyle,
-  withTiming,
+    FadeInDown,
+    useAnimatedStyle,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

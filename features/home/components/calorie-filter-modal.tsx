@@ -9,10 +9,12 @@ import * as Haptics from "expo-haptics";
 import {
     ForwardedRef,
     forwardRef,
+    memo,
     useCallback,
     useMemo,
 } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface CalorieOption {
@@ -60,6 +62,53 @@ export const CALORIE_OPTIONS: CalorieOption[] = [
     maxCalories: null,
   },
 ];
+
+// Memoized option card
+const OptionCard = memo(({
+  option,
+  isActive,
+  onSelect,
+  index,
+}: {
+  option: CalorieOption;
+  isActive: boolean;
+  onSelect: (option: CalorieOption) => void;
+  index: number;
+}) => (
+  <Animated.View entering={FadeInDown.delay(50 + index * 40).duration(250)}>
+    <Pressable
+      onPress={() => onSelect(option)}
+      style={({ pressed }) => [
+        styles.optionCard,
+        isActive && styles.optionCardActive,
+        pressed && styles.optionCardPressed,
+      ]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
+    >
+      <View>
+        <Text
+          style={[
+            styles.optionLabel,
+            isActive && styles.optionLabelActive,
+          ]}
+        >
+          {option.label}
+        </Text>
+        <Text
+          style={[
+            styles.optionDescription,
+            isActive && styles.optionDescriptionActive,
+          ]}
+        >
+          {option.description}
+        </Text>
+      </View>
+    </Pressable>
+  </Animated.View>
+));
+
+OptionCard.displayName = "OptionCard";
 
 interface CalorieFilterModalProps {
   selectedOptionId?: string | null;
@@ -117,67 +166,46 @@ export const CalorieFilterModal = forwardRef(function CalorieFilterModal(
           },
         ]}
       >
-        <View style={styles.header}>
+        {/* Header */}
+        <Animated.View entering={FadeInDown.duration(200)} style={styles.header}>
           <Text style={styles.title}>Calories</Text>
           <Text style={styles.subtitle}>
             Filter recipes by calorie content
           </Text>
-        </View>
+        </Animated.View>
 
+        {/* Options with staggered animation */}
         <View style={styles.optionList}>
-          {CALORIE_OPTIONS.map((option) => {
-            const isActive = option.id === activeOption?.id;
-            return (
-              <Pressable
-                key={option.id}
-                onPress={() => handleSelect(option)}
-                style={({ pressed }) => [
-                  styles.optionCard,
-                  isActive && styles.optionCardActive,
-                  pressed && styles.optionCardPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isActive }}
-              >
-                <View>
-                  <Text
-                    style={[
-                      styles.optionLabel,
-                      isActive && styles.optionLabelActive,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.optionDescription,
-                      isActive && styles.optionDescriptionActive,
-                    ]}
-                  >
-                    {option.description}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
+          {CALORIE_OPTIONS.map((option, index) => (
+            <OptionCard
+              key={option.id}
+              option={option}
+              isActive={option.id === activeOption?.id}
+              onSelect={handleSelect}
+              index={index}
+            />
+          ))}
         </View>
 
-        <CustomButton
-          onPress={() => handleSelect(null)}
-          containerStyle={[
-            styles.clearButton,
-            activeOption && styles.clearButtonActive,
-          ]}
-        >
-          <Text
-            style={[
-              styles.clearText,
-              activeOption && styles.clearTextActive,
+        {/* Clear button */}
+        <Animated.View entering={FadeInDown.delay(280).duration(200)}>
+          <CustomButton
+            onPress={() => handleSelect(null)}
+            containerStyle={[
+              styles.clearButton,
+              activeOption && styles.clearButtonActive,
             ]}
           >
-            Clear selection
-          </Text>
-        </CustomButton>
+            <Text
+              style={[
+                styles.clearText,
+                activeOption && styles.clearTextActive,
+              ]}
+            >
+              Clear selection
+            </Text>
+          </CustomButton>
+        </Animated.View>
       </BottomSheetView>
     </BottomSheetModal>
   );
@@ -241,15 +269,18 @@ const styles = StyleSheet.create({
     color: Colors.lilac[800],
   },
   clearButton: {
-    backgroundColor: Colors.gray[100],
+    backgroundColor: Colors.lilac[100],
     paddingVertical: 16,
     width: "100%",
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
   },
   clearButtonActive: {
     backgroundColor: Colors.lilac[900],
+    borderColor: Colors.lilac[900],
   },
   clearText: {
-    color: Colors.text.primary,
+    color: Colors.lilac[800],
     fontWeight: "600",
   },
   clearTextActive: {

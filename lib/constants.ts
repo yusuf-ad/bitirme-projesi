@@ -1,16 +1,16 @@
-// Cuisines
+// Cuisines - Spoonacular API format (case-sensitive)
 export const CUISINES = {
-  AMERICAN: "american",
-  ASIAN: "asian",
-  CHINESE: "chinese",
-  FRENCH: "french",
-  GREEK: "greek",
-  INDIAN: "indian",
-  ITALIAN: "italian",
-  JAPANESE: "japanese",
-  MEDITERRANEAN: "mediterranean",
-  MEXICAN: "mexican",
-  MIDDLE_EASTERN: "middleeastern",
+  AMERICAN: "American",
+  ASIAN: "Asian",
+  CHINESE: "Chinese",
+  FRENCH: "French",
+  GREEK: "Greek",
+  INDIAN: "Indian",
+  ITALIAN: "Italian",
+  JAPANESE: "Japanese",
+  MEDITERRANEAN: "Mediterranean",
+  MEXICAN: "Mexican",
+  MIDDLE_EASTERN: "Middle Eastern",
 } as const;
 
 export const cuisines = Object.values(CUISINES);
@@ -135,15 +135,15 @@ export const POPULAR_CUISINES: {
   name: string;
   flag?: string;
 }[] = [
-  { id: "american", name: "American", flag: "🇺🇸" },
-  { id: "asian", name: "Asian", flag: "🌏" },
-  { id: "chinese", name: "Chinese", flag: "🇨🇳" },
-  { id: "french", name: "French", flag: "🇫🇷" },
-  { id: "greek", name: "Greek", flag: "🇬🇷" },
-  { id: "indian", name: "Indian", flag: "🇮🇳" },
-  { id: "italian", name: "Italian", flag: "🇮🇹" },
-  { id: "japanese", name: "Japanese", flag: "🇯🇵" },
-  { id: "mediterranean", name: "Mediterranean", flag: "🏛️" },
-  { id: "mexican", name: "Mexican", flag: "🇲🇽" },
-  { id: "middleeastern", name: "Middle Eastern", flag: "🇸🇦" },
+  { id: "American", name: "American", flag: "🇺🇸" },
+  { id: "Asian", name: "Asian", flag: "🌏" },
+  { id: "Chinese", name: "Chinese", flag: "🇨🇳" },
+  { id: "French", name: "French", flag: "🇫🇷" },
+  { id: "Greek", name: "Greek", flag: "🇬🇷" },
+  { id: "Indian", name: "Indian", flag: "🇮🇳" },
+  { id: "Italian", name: "Italian", flag: "🇮🇹" },
+  { id: "Japanese", name: "Japanese", flag: "🇯🇵" },
+  { id: "Mediterranean", name: "Mediterranean", flag: "🏛️" },
+  { id: "Mexican", name: "Mexican", flag: "🇲🇽" },
+  { id: "Middle Eastern", name: "Middle Eastern", flag: "🇸🇦" },
 ];

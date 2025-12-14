@@ -7,29 +7,29 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  LayoutAnimation,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  UIManager,
-  View,
+    LayoutAnimation,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    UIManager,
+    View
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  Easing,
-  Extrapolation,
-  FadeInDown,
-  FadeOutUp,
-  interpolate,
-  runOnJS,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
+    Easing,
+    Extrapolation,
+    FadeInDown,
+    FadeOutUp,
+    interpolate,
+    runOnJS,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -191,6 +191,9 @@ export function MealDetailContent({
   const scrollY = useSharedValue(0);
   const tabProgress = useSharedValue(0);
 
+  // Servings - sadece default değer gösterilir
+  const servings = meal.servings ?? 1;
+
   // Scroll threshold - when content title reaches header position
   const SCROLL_THRESHOLD = HERO_HEIGHT - (HEADER_HEIGHT + insets.top);
 
@@ -251,18 +254,22 @@ export function MealDetailContent({
   const readyInMinutes = meal.readyInMinutes
     ? `${meal.readyInMinutes} min`
     : "N/A";
-  const servingsCount = meal.servings ?? 1;
-  const servingsText = `${servingsCount} ${
-    servingsCount === 1 ? "serving" : "servings"
-  }`;
+
+  // Calories
   const calories = findNutrientValue("Calories", nutrients);
   const caloriesAmount =
-    typeof calories?.amount === "number" ? Math.round(calories.amount) : null;
+    typeof calories?.amount === "number"
+      ? Math.round(calories.amount)
+      : null;
+
+  // Ingredients
+  const ingredients = meal.extendedIngredients ?? [];
 
   const macros = useMemo<MacroData[]>(() => {
     const protein = findMacro("Protein", nutrients);
     const fat = findMacro("Fat", nutrients);
     const carbs = findMacro("Carbohydrates", nutrients);
+
     const totalGrams = protein.amount + fat.amount + carbs.amount || 1;
 
     const macroList = [
@@ -543,13 +550,16 @@ export function MealDetailContent({
               </Text>
             </View>
             <Text style={styles.metaSeparator}>|</Text>
+            {/* Servings */}
             <View style={styles.metaItem}>
               <Ionicons
                 name="people-outline"
-                size={18}
+                size={16}
                 color={Colors.gray[600]}
               />
-              <Text style={styles.metaText}>{servingsText}</Text>
+              <Text style={styles.metaText}>
+                {servings} {servings === 1 ? "serving" : "servings"}
+              </Text>
             </View>
           </View>
 
@@ -669,36 +679,33 @@ export function MealDetailContent({
                       />
                     </View>
                     <Text style={styles.contentHeaderTitle}>
-                      {(meal.extendedIngredients ?? []).length} Ingredients
+                      {ingredients.length} Ingredients
                     </Text>
                   </Animated.View>
                   <View style={styles.ingredientsList}>
-                    {(meal.extendedIngredients ?? []).map(
-                      (ingredient, index, arr) => (
-                        <Animated.View
-                          key={`${ingredient.id}-${ingredient.original}-${index}`}
-                          entering={FadeInDown.duration(200).delay(
-                            50 + index * 30
+                    {ingredients.map((ingredient, index, arr) => (
+                      <Animated.View
+                        key={`${ingredient.id}-${ingredient.original}-${index}`}
+                        entering={FadeInDown.duration(200).delay(
+                          50 + index * 30
+                        )}
+                        exiting={FadeOutUp.duration(80)}
+                        style={styles.ingredientCard}
+                      >
+                        <View style={styles.ingredientIconWrapper}>
+                          <View style={styles.ingredientIcon} />
+                          {index < arr.length - 1 && (
+                            <View style={styles.ingredientConnector} />
                           )}
-                          exiting={FadeOutUp.duration(80)}
-                          style={styles.ingredientCard}
-                        >
-                          <View style={styles.ingredientIconWrapper}>
-                            <View style={styles.ingredientIcon} />
-                            {index < arr.length - 1 && (
-                              <View style={styles.ingredientConnector} />
-                            )}
-                          </View>
-                          <View style={styles.ingredientContent}>
-                            <Text style={styles.ingredientText}>
-                              {ingredient.original}
-                            </Text>
-                          </View>
-                        </Animated.View>
-                      )
-                    )}
-                    {(!meal.extendedIngredients ||
-                      meal.extendedIngredients.length === 0) && (
+                        </View>
+                        <View style={styles.ingredientContent}>
+                          <Text style={styles.ingredientText}>
+                            {ingredient.original}
+                          </Text>
+                        </View>
+                      </Animated.View>
+                    ))}
+                    {ingredients.length === 0 && (
                       <Animated.View
                         entering={FadeInDown.duration(200).delay(50)}
                         style={styles.emptyState}
@@ -795,6 +802,8 @@ export function MealDetailContent({
           </View>
         )}
       </Animated.ScrollView>
+
+
     </View>
   );
 }
@@ -933,6 +942,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.gray[400],
   },
+
   tagsScrollView: {
     marginTop: 16,
     flexGrow: 0,

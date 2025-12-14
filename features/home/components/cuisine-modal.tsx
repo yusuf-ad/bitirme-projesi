@@ -4,40 +4,82 @@ import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-  BottomSheetView,
+    BottomSheetBackdrop,
+    BottomSheetModal,
+    BottomSheetView
 } from "@gorhom/bottom-sheet";
-import { forwardRef, useCallback, useMemo, useState } from "react";
+import { forwardRef, memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Dimensions,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Dimensions,
+    Pressable,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface CuisineModalProps {
   onCuisinesSelect?: (cuisines: string[]) => void;
+  initialSelectedCuisines?: string[];
 }
 
+// Memoized cuisine item
+const CuisineItem = memo(({
+  cuisine,
+  isSelected,
+  onToggle,
+  index,
+}: {
+  cuisine: (typeof POPULAR_CUISINES)[0];
+  isSelected: boolean;
+  onToggle: (id: string) => void;
+  index: number;
+}) => (
+  <Animated.View
+    entering={FadeInDown.delay(index * 40).duration(300)}
+    style={styles.cuisineItemWrapper}
+  >
+    <Pressable
+      style={({ pressed }) => [
+        styles.cuisineItem,
+        isSelected && styles.cuisineItemSelected,
+        pressed && styles.cuisineItemPressed,
+      ]}
+      onPress={() => onToggle(cuisine.id)}
+    >
+      {cuisine.flag ? (
+        <Text style={styles.flagEmoji}>{cuisine.flag}</Text>
+      ) : (
+        <View style={styles.cuisineCircle} />
+      )}
+      <Text style={styles.cuisineText}>{cuisine.name}</Text>
+      {isSelected && (
+        <View style={styles.checkmark}>
+          <Ionicons name="checkmark" size={16} color="white" />
+        </View>
+      )}
+    </Pressable>
+  </Animated.View>
+));
+
+CuisineItem.displayName = "CuisineItem";
+
 export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
-  ({ onCuisinesSelect }, ref) => {
-    const { top } = useSafeAreaInsets();
+  ({ onCuisinesSelect, initialSelectedCuisines = [] }, ref) => {
+    const { bottom } = useSafeAreaInsets();
     const [selectedCuisines, setSelectedCuisines] = useState<Set<string>>(
-      new Set()
+      new Set(initialSelectedCuisines)
     );
 
-    const screenHeight =
-      Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
+    // Sync with external state when modal opens
+    const initialCuisinesKey = initialSelectedCuisines.join(",");
+    useEffect(() => {
+      setSelectedCuisines(new Set(initialSelectedCuisines));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialCuisinesKey]);
 
-    const handleSheetChanges = useCallback((index: number) => {
-      console.log("handleSheetChanges", index);
-    }, []);
+
 
     const renderBackdrop = useCallback(
       (props: any) => (
@@ -62,172 +104,105 @@ export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
       });
     }, []);
 
-    const handleClearAll = useCallback(() => {
+    const handleReset = useCallback(() => {
       setSelectedCuisines(new Set());
-    }, []);
+      onCuisinesSelect?.([]);
+      if (typeof ref !== "function" && ref?.current?.dismiss) {
+        ref.current.dismiss();
+      }
+    }, [onCuisinesSelect, ref]);
 
-    // Filter cuisines based on search query
-    const displayCuisines = useMemo(() => {
-      return POPULAR_CUISINES;
-    }, []);
+    const selectedItems = useMemo(
+      () => Array.from(selectedCuisines),
+      [selectedCuisines]
+    );
 
-    // Selected items
-    const selectedItems = useMemo(() => {
-      return Array.from(selectedCuisines);
-    }, [selectedCuisines]);
-
-    // Unselected items from display
-    const unselectedItems = useMemo(() => {
-      return displayCuisines.filter(
-        (cuisine) => !selectedCuisines.has(cuisine.id)
-      );
-    }, [displayCuisines, selectedCuisines]);
+    const unselectedItems = useMemo(
+      () => POPULAR_CUISINES.filter((c) => !selectedCuisines.has(c.id)),
+      [selectedCuisines]
+    );
 
     const handleApply = useCallback(() => {
-      const cuisinesToSend = Array.from(selectedCuisines);
-      onCuisinesSelect?.(cuisinesToSend);
+      onCuisinesSelect?.(Array.from(selectedCuisines));
       if (typeof ref !== "function" && ref?.current?.dismiss) {
         ref.current.dismiss();
       }
     }, [selectedCuisines, onCuisinesSelect, ref]);
 
-    const renderCuisineItem = (
-      cuisine: (typeof POPULAR_CUISINES)[0],
-      isSelected: boolean
-    ) => {
-      return (
-        <Pressable
-          key={`cuisine-${cuisine.id}`}
-          style={({ pressed }) => [
-            styles.cuisineItem,
-            isSelected && styles.cuisineItemSelectedPopular,
-            pressed && { transform: [{ scale: 0.95 }] },
-          ]}
-          onPress={() => toggleCuisine(cuisine.id)}
-        >
-          {cuisine.flag ? (
-            <Text style={[styles.flagEmoji, isSelected && { opacity: 0.75 }]}>
-              {cuisine.flag}
-            </Text>
-          ) : (
-            <View
-              style={[styles.cuisineCircle, isSelected && { opacity: 0.75 }]}
-            />
-          )}
-          <Text style={[styles.cuisineText, isSelected && { opacity: 0.75 }]}>
-            {cuisine.name}
-          </Text>
-          {isSelected && (
-            <View style={styles.checkmark}>
-              <Ionicons name="checkmark" size={16} color="white" />
-            </View>
-          )}
-        </Pressable>
-      );
-    };
-
-    const renderSelectedCuisineItem = (cuisine: string) => {
-      const cuisineData = POPULAR_CUISINES.find((c) => c.id === cuisine);
-      if (!cuisineData) return null;
-
-      return (
-        <Pressable
-          key={`selected-${cuisine}`}
-          style={({ pressed }) => [
-            styles.cuisineItem,
-            styles.cuisineItemSelected,
-            pressed && { transform: [{ scale: 0.95 }] },
-          ]}
-          onPress={() => toggleCuisine(cuisine)}
-        >
-          {cuisineData.flag ? (
-            <Text style={styles.flagEmoji}>{cuisineData.flag}</Text>
-          ) : (
-            <View style={styles.cuisineCircle} />
-          )}
-          <Text style={styles.cuisineText}>{cuisineData.name}</Text>
-          <View style={styles.checkmark}>
-            <Ionicons name="checkmark" size={16} color="white" />
-          </View>
-        </Pressable>
-      );
-    };
-
-    const ScrollContent = ({ children }: { children: React.ReactNode }) =>
-      Platform.OS === "ios" ? (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 28, paddingTop: 12 }}
-        >
-          {children}
-        </ScrollView>
-      ) : (
-        <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-          <View
-            style={{
-              height: screenHeight,
-            }}
-          >
-            {children}
-          </View>
-        </BottomSheetScrollView>
-      );
+    const handleDismiss = useCallback(() => {
+      if (typeof ref !== "function" && ref?.current?.dismiss) {
+        ref.current.dismiss();
+      }
+    }, [ref]);
 
     return (
       <BottomSheetModal
         ref={ref}
-        onChange={handleSheetChanges}
         backdropComponent={renderBackdrop}
         enableOverDrag={false}
+        enablePanDownToClose
+        enableDynamicSizing
       >
-        <BottomSheetView
-          style={[styles.contentContainer, { height: screenHeight }]}
-        >
-          <View>
-            <View style={styles.header}>
-              <Text style={styles.title}>Search by Cuisine</Text>
+        <BottomSheetView style={[styles.contentContainer, { paddingBottom: Math.max(bottom, 16), minHeight: Dimensions.get("window").height * 0.75 }]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Search by Cuisine</Text>
+            <Pressable
+              onPress={handleDismiss}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <AntDesign name="close" size={20} color="black" />
+            </Pressable>
+          </View>
 
-              <Pressable
-                onPress={() =>
-                  typeof ref !== "function" && ref?.current?.dismiss()
-                }
-              >
-                <AntDesign name="close" size={20} color="black" />
-              </Pressable>
+          {/* Content Area - takes remaining space */}
+          <View style={styles.contentArea}>
+            {/* Selected Items Section */}
+            {selectedItems.length > 0 && (
+              <>
+                <Text style={styles.subtitle}>Selected</Text>
+                <View style={styles.cuisinesContainer}>
+                  {selectedItems.map((cuisineId, index) => {
+                    const cuisine = POPULAR_CUISINES.find((c) => c.id === cuisineId);
+                    if (!cuisine) return null;
+                    return (
+                      <CuisineItem
+                        key={`selected-${cuisineId}`}
+                        cuisine={cuisine}
+                        isSelected={true}
+                        onToggle={toggleCuisine}
+                        index={index}
+                      />
+                    );
+                  })}
+                </View>
+              </>
+            )}
+
+            {/* Cuisines Title */}
+            <Text style={styles.subtitle}>Cuisines</Text>
+
+            {/* Cuisine Items */}
+            <View style={styles.cuisinesContainer}>
+              {unselectedItems.map((cuisine, index) => (
+                <CuisineItem
+                  key={`cuisine-${cuisine.id}`}
+                  cuisine={cuisine}
+                  isSelected={false}
+                  onToggle={toggleCuisine}
+                  index={index}
+                />
+              ))}
             </View>
           </View>
 
-          <View style={{ flex: 1 }}>
-            <ScrollContent>
-              {/* Selected Items Section */}
-              {selectedItems.length > 0 && (
-                <>
-                  <Text style={styles.subtitle}>Selected</Text>
-                  <View style={styles.cuisinesContainer}>
-                    {selectedItems.map((cuisine) =>
-                      renderSelectedCuisineItem(cuisine)
-                    )}
-                  </View>
-                </>
-              )}
-
-              {/* Main Content Section */}
-              <Text style={styles.subtitle}>Cuisines</Text>
-
-              <View style={styles.cuisinesContainer}>
-                {unselectedItems.map((cuisine) =>
-                  renderCuisineItem(cuisine, false)
-                )}
-              </View>
-            </ScrollContent>
-          </View>
-
+          {/* Bottom Buttons - Fixed at bottom */}
           <View style={styles.bottomContainer}>
             <CustomButton
               containerStyle={styles.clearButton}
-              onPress={handleClearAll}
+              onPress={handleReset}
             >
-              <Text style={styles.clearButtonText}>Clear All</Text>
+              <Text style={styles.clearButtonText}>Reset</Text>
             </CustomButton>
             <CustomButton
               containerStyle={styles.applyButton}
@@ -249,11 +224,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 40,
+    justifyContent: "space-between",
   },
+  contentArea: {
+    flex: 1,
+  },
+
   title: {
     fontSize: 20,
-    fontWeight: "semibold",
+    fontWeight: "600",
     color: "#000",
   },
   subtitle: {
@@ -265,6 +244,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 8,
   },
   cuisinesContainer: {
     flexDirection: "row",
@@ -273,10 +253,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingHorizontal: 4,
   },
+  cuisineItemWrapper: {
+    width: "22%",
+  },
   cuisineItem: {
     justifyContent: "center",
     alignItems: "center",
-    width: "22%",
     position: "relative",
   },
   cuisineItemSelected: {
@@ -284,8 +266,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
   },
-  cuisineItemSelectedPopular: {
-    opacity: 0.75,
+  cuisineItemPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
   },
   cuisineCircle: {
     height: 52,
@@ -318,20 +301,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 12,
-    paddingBottom: 0,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lilac[100],
+    paddingTop: 16,
   },
   clearButton: {
-    backgroundColor: Colors.gray[100],
+    backgroundColor: Colors.lilac[100],
     flex: 1,
     width: "auto",
     paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
   },
   clearButtonText: {
-    color: "black",
-    fontWeight: "semibold",
+    color: Colors.lilac[800],
+    fontWeight: "600",
   },
   applyButton: {
     backgroundColor: Colors.lilac[900],

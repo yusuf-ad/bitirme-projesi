@@ -12,6 +12,7 @@ export interface UseRecipesQueryOptions {
   query?: string;
   ingredients?: Ingredient[];
   cuisines?: string[];
+  quickFilters?: string[]; // Healthy, Easy, Batch, Veg
   pageSize?: number;
   minReadyTime?: number | null;
   maxReadyTime?: number | null;
@@ -40,6 +41,7 @@ export function useRecipesQuery({
   query = "",
   ingredients = [],
   cuisines = [],
+  quickFilters = [],
   pageSize = 10,
   minReadyTime = null,
   maxReadyTime = null,
@@ -56,12 +58,13 @@ export function useRecipesQuery({
         .sort()
         .join(","),
       cuisines.sort().join(","),
+      quickFilters.sort().join(","),
       minReadyTime ?? "",
       maxReadyTime ?? "",
       minCalories ?? "",
       maxCalories ?? "",
     ],
-    [query, ingredients, cuisines, minReadyTime, maxReadyTime, minCalories, maxCalories]
+    [query, ingredients, cuisines, quickFilters, minReadyTime, maxReadyTime, minCalories, maxCalories]
   );
 
   const {
@@ -80,8 +83,24 @@ export function useRecipesQuery({
       const ingredientNames = ingredients.map((ing) => ing.name).join(",");
       const cuisineNames = cuisines.join(",");
       const shouldSortByTime = Boolean(minReadyTime);
-      const sort = shouldSortByTime ? "time" : undefined;
-      const sortDirection = shouldSortByTime ? "desc" : undefined;
+      
+      // Quick filters mapping
+      const isHealthy = quickFilters.includes("Healthy");
+      const isEasy = quickFilters.includes("Easy");
+      const isVeg = quickFilters.includes("Veg");
+      const isBatch = quickFilters.includes("Batch");
+      
+      // Determine sort based on filters
+      let sort = shouldSortByTime ? "time" : undefined;
+      if (isHealthy) sort = "healthiness";
+      
+      const sortDirection = shouldSortByTime ? "desc" : isHealthy ? "desc" : undefined;
+      
+      // Easy filter: max 30 minutes
+      const effectiveMaxReadyTime = isEasy ? Math.min(maxReadyTime ?? 30, 30) : maxReadyTime;
+      
+      // Veg filter: vegetarian diet
+      const diet = isVeg ? "vegetarian" : undefined;
 
       if (query.trim()) {
         // Search mode with filters
@@ -89,18 +108,25 @@ export function useRecipesQuery({
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
-          maxReadyTime: maxReadyTime ?? undefined,
+          maxReadyTime: effectiveMaxReadyTime ?? undefined,
           minCalories: minCalories ?? undefined,
           maxCalories: maxCalories ?? undefined,
           sort,
           sortDirection,
+          diet,
         });
-        const filtered = minReadyTime
+        let filtered = minReadyTime
           ? result.recipes.filter((recipe) => {
               if (recipe.readyInMinutes == null) return false;
               return recipe.readyInMinutes >= minReadyTime;
             })
           : result.recipes;
+        
+        // Batch filter: servings >= 6
+        if (isBatch) {
+          filtered = filtered.filter((recipe) => (recipe.servings ?? 0) >= 6);
+        }
+        
         return {
           recipes: filtered,
           totalResults: result.totalResults,
@@ -112,19 +138,25 @@ export function useRecipesQuery({
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
-          maxReadyTime: maxReadyTime ?? undefined,
+          maxReadyTime: effectiveMaxReadyTime ?? undefined,
           minCalories: minCalories ?? undefined,
           maxCalories: maxCalories ?? undefined,
           sort,
           sortDirection,
+          diet,
         });
 
-        const filtered = minReadyTime
+        let filtered = minReadyTime
           ? recipes.filter((recipe) => {
               if (recipe.readyInMinutes == null) return false;
               return recipe.readyInMinutes >= minReadyTime;
             })
           : recipes;
+        
+        // Batch filter: servings >= 6
+        if (isBatch) {
+          filtered = filtered.filter((recipe) => (recipe.servings ?? 0) >= 6);
+        }
 
         return {
           recipes: filtered,
