@@ -1,12 +1,8 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
-import { useEffect, useRef } from "react";
+import { memo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
-import Animated, {
-    Layout,
-    SlideInRight,
-} from "react-native-reanimated";
 
 interface FilterChipsProps {
   filters: string[];
@@ -22,6 +18,37 @@ interface FilterChipsProps {
   selectedCalorieLabel?: string;
 }
 
+// Memoized filter chip
+const FilterChip = memo(({
+  filter,
+  isSelected,
+  onToggle,
+}: {
+  filter: string;
+  isSelected: boolean;
+  onToggle: (filter: string) => void;
+}) => (
+  <Pressable
+    style={({ pressed }) => [
+      styles.filterChip,
+      isSelected && styles.filterChipActive,
+      pressed && styles.filterChipPressed,
+    ]}
+    onPress={() => onToggle(filter)}
+  >
+    <Text
+      style={[
+        styles.filterChipText,
+        isSelected && styles.filterChipTextActive,
+      ]}
+    >
+      {filter}
+    </Text>
+  </Pressable>
+));
+
+FilterChip.displayName = "FilterChip";
+
 export function FilterChips({
   filters,
   selectedFilters,
@@ -35,24 +62,6 @@ export function FilterChips({
   onCaloriePress,
   selectedCalorieLabel,
 }: FilterChipsProps) {
-  const prevSelectedFiltersRef = useRef<string[]>([]);
-  const newlyAddedFiltersRef = useRef<Set<string>>(new Set());
-
-  // Track newly added filters for animation
-  useEffect(() => {
-    const prevSelected = prevSelectedFiltersRef.current;
-    const newlyAdded = new Set<string>();
-    
-    // Find filters that are now selected but weren't before
-    selectedFilters.forEach(filter => {
-      if (!prevSelected.includes(filter)) {
-        newlyAdded.add(filter);
-      }
-    });
-    
-    newlyAddedFiltersRef.current = newlyAdded;
-    prevSelectedFiltersRef.current = [...selectedFilters];
-  }, [selectedFilters]);
   const getIngredientButtonText = () => {
     if (selectedIngredients.length === 0) return "Ingredients";
     if (selectedIngredients.length === 1) return selectedIngredients[0];
@@ -64,6 +73,7 @@ export function FilterChips({
     if (selectedCuisines.length === 1) return selectedCuisines[0];
     return `${selectedCuisines.length} items`;
   };
+
   return (
     <ScrollView
       horizontal
@@ -101,7 +111,6 @@ export function FilterChips({
         </CustomButton>
       )}
 
-
       {onTimePress && (
         <CustomButton
           containerStyle={[
@@ -132,35 +141,14 @@ export function FilterChips({
         </CustomButton>
       )}
 
-      {filters.map((filter) => {
-        const isSelected = selectedFilters.includes(filter);
-        const isNewlyAdded = newlyAddedFiltersRef.current.has(filter);
-        
-        return (
-          <Animated.View
-            key={`${filter}-${isNewlyAdded ? 'new' : 'existing'}`}
-            entering={isNewlyAdded ? SlideInRight.springify() : undefined}
-            layout={Layout.springify()}
-          >
-            <Pressable
-              style={[
-                styles.filterChip,
-                isSelected && styles.filterChipActive,
-              ]}
-              onPress={() => onToggleFilter(filter)}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  isSelected && styles.filterChipTextActive,
-                ]}
-              >
-                {filter}
-              </Text>
-            </Pressable>
-          </Animated.View>
-        );
-      })}
+      {filters.map((filter) => (
+        <FilterChip
+          key={filter}
+          filter={filter}
+          isSelected={selectedFilters.includes(filter)}
+          onToggle={onToggleFilter}
+        />
+      ))}
     </ScrollView>
   );
 }
@@ -182,15 +170,14 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     borderWidth: 1,
     borderColor: Colors.lilac[200],
-
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
   },
   addIngredientsButtonActive: {
-    backgroundColor: "rgba(180, 156, 218, 0.15)", // Çok hafif mor arka plan
-    borderColor: Colors.lilac[700], // Daha belirgin mor border
+    backgroundColor: "rgba(180, 156, 218, 0.15)",
+    borderColor: Colors.lilac[700],
   },
   addIngredientsText: {
     fontSize: 14,
@@ -208,6 +195,10 @@ const styles = StyleSheet.create({
   filterChipActive: {
     backgroundColor: Colors.lilac[900],
     borderColor: Colors.lilac[900],
+  },
+  filterChipPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
   },
   filterChipText: {
     fontSize: 14,
