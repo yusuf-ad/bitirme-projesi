@@ -17,7 +17,10 @@ import {
     View,
 } from "react-native";
 import Animated, {
+    FadeIn,
     FadeInDown,
+    FadeOut,
+    Layout,
     useAnimatedStyle,
     withTiming,
 } from "react-native-reanimated";
@@ -188,16 +191,34 @@ export default function MealplanTab() {
             )}
 
             {hasMeals ? (
-              <DailyMealsList items={data!.items} selectedDate={selectedDate} mealTimes={mealTimes} />
+              <Animated.View
+                key="meals-list"
+                entering={FadeIn.duration(400)}
+                exiting={FadeOut.duration(300)}
+                layout={Layout.springify()}
+              >
+                <DailyMealsList items={data!.items} selectedDate={selectedDate} mealTimes={mealTimes} />
+              </Animated.View>
             ) : isPastDate ? (
               // Show empty meal slots for past dates
-              <DailyMealsList items={[]} selectedDate={selectedDate} mealTimes={mealTimes} />
-            ) : hasPlan ? (
-              // Plan exists but has no recipes yet: show empty slots
-              <DailyMealsList items={[]} selectedDate={selectedDate} mealTimes={mealTimes} />
+              <Animated.View
+                key="empty-past"
+                entering={FadeIn.duration(400)}
+                exiting={FadeOut.duration(300)}
+                layout={Layout.springify()}
+              >
+                <DailyMealsList items={[]} selectedDate={selectedDate} mealTimes={mealTimes} />
+              </Animated.View>
             ) : (
-              // No plan yet for today/future: show create prompt
-              <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
+              // No meals: show create prompt with smooth transition
+              <Animated.View
+                key="empty-state"
+                entering={FadeInDown.duration(500).springify()}
+                exiting={FadeOut.duration(300)}
+                layout={Layout.springify()}
+              >
+                <MealPlanEmptyState onCreatePress={handleCreateMealPlan} />
+              </Animated.View>
             )}
           </>
         )}
