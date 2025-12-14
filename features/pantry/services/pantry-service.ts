@@ -133,6 +133,21 @@ export const pantryService = {
     if (error) throw error;
   },
 
+  async clearShoppingListItems() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
+    const { error } = await supabase
+      .from("pantry_items")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("status", "shopping_list");
+
+    if (error) throw error;
+  },
+
   /**
    * Tiklenen shopping list öğelerini pantry'e taşır
    * Shopping list sayfasından çıkıldığında çağrılır
