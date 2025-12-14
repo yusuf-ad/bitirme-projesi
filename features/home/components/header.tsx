@@ -1,14 +1,15 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  FadeIn,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    FadeIn,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 
 interface HeaderProps {
@@ -25,6 +26,8 @@ export default function Header({
   const router = useRouter();
   const { impact } = useHaptics();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const ThemeColors = getThemeColors(isDark, true);
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -57,8 +60,8 @@ export default function Header({
     <Animated.View style={styles.header} entering={FadeIn.duration(500)}>
       <View style={styles.headerLeft}>
         <View>
-          <Text style={styles.greeting}>{t("home.hello")}, {firstName}!</Text>
-          <Text style={styles.date}>{motivationText || t("home.letsplan")}</Text>
+          <Text style={[styles.greeting, { color: ThemeColors.text.primary }]}>{t("home.hello")}, {firstName}!</Text>
+          <Text style={[styles.date, { color: ThemeColors.text.tertiary }]}>{motivationText || t("home.letsplan")}</Text>
         </View>
       </View>
       <View style={styles.headerRight}>
