@@ -1,30 +1,40 @@
 import { Colors } from "@/constants/theme";
+import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
+import { Recipe } from "@/lib/spoonacular";
 import { getMealImageUrl, type Meal } from "@/lib/utils";
-import CustomButton from "@/shared/components/custom-button";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import {
   BottomSheetBackdrop,
+  BottomSheetFlatList,
   BottomSheetModal,
-  BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import {
   forwardRef,
   useCallback,
   useImperativeHandle,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import {
   ActivityIndicator,
-  Image,
-  ListRenderItemInfo,
+  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Animated, {
+  runOnUI,
+  scrollTo,
+  useAnimatedRef,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface MealSelectionModalHandle {
@@ -35,11 +45,14 @@ export interface MealSelectionModalHandle {
 interface MealSelectionModalProps {
   title?: string;
   meals: Meal[];
-  selectedIndex: number;
-  onSelect: (index: number) => void;
+  selectedIndex?: number;
+  onSelect: (meal: Meal) => void;
   onDismiss?: () => void;
   onGenerateMore?: () => void;
   isGeneratingMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  hasMorePages?: boolean;
 }
 
 export const MealSelectionModal = forwardRef<
@@ -55,14 +68,97 @@ export const MealSelectionModal = forwardRef<
       onDismiss,
       onGenerateMore,
       isGeneratingMore,
+      onLoadMore,
+      isLoadingMore,
+      hasMorePages,
     },
     ref
   ) => {
     const internalRef = useRef<BottomSheetModal>(null);
-    const { bottom } = useSafeAreaInsets();
+    const horizontalPagerRef = useAnimatedRef<Animated.ScrollView>();
+    const scrollX = useSharedValue(0);
+    const { top, bottom } = useSafeAreaInsets();
+    const screenHeight =
+      Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
+    const screenWidth = Dimensions.get("window").width;
+    const contentWidth = screenWidth - 40; // 20 padding on each side
 
-    const snapPoints = useMemo(() => ["58%"], []);
-    const safeSelectedIndex = selectedIndex >= meals.length ? 0 : selectedIndex;
+    const [activeTab, setActiveTab] = useState<"suggestions" | "favorites">(
+      "suggestions"
+    );
+
+    const handleTabChange = useCallback(
+      async (tab: "suggestions" | "favorites") => {
+        if (tab === activeTab) {
+          return;
+        }
+        const pageIndex = tab === "suggestions" ? 0 : 1;
+        setActiveTab(tab);
+        // Use Reanimated's scrollTo for animated refs
+        runOnUI(() => {
+          "worklet";
+          scrollTo(horizontalPagerRef, pageIndex * contentWidth, 0, true);
+        })();
+        await Haptics.selectionAsync();
+      },
+      [activeTab, contentWidth, horizontalPagerRef]
+    );
+
+    const scrollHandler = useAnimatedScrollHandler({
+      onScroll: (event) => {
+        scrollX.value = event.contentOffset.x;
+      },
+    });
+
+    const handleMomentumScrollEnd = useCallback(
+      (event: any) => {
+        const { contentOffset, layoutMeasurement } = event.nativeEvent;
+        const pageIndex = Math.round(contentOffset.x / layoutMeasurement.width);
+        const newTab = pageIndex === 0 ? "suggestions" : "favorites";
+
+        if (newTab !== activeTab) {
+          setActiveTab(newTab);
+          Haptics.selectionAsync();
+        }
+      },
+      [activeTab]
+    );
+
+    const { favorites } = useFavoriteRecipes();
+
+    const favoriteMeals: Meal[] = useMemo(() => {
+      return favorites.map((recipe: Recipe) => {
+        const nutrients = recipe.nutrition?.nutrients;
+        const calories = nutrients?.find((n) => n.name === "Calories")?.amount;
+        const carbs = nutrients?.find(
+          (n) => n.name === "Carbohydrates"
+        )?.amount;
+        const protein = nutrients?.find((n) => n.name === "Protein")?.amount;
+        const fat = nutrients?.find((n) => n.name === "Fat")?.amount;
+        return {
+          id: recipe.id,
+          title: recipe.title,
+          readyInMinutes: recipe.readyInMinutes,
+          servings: recipe.servings,
+          image: recipe.image,
+          sourceUrl: recipe.sourceUrl,
+          nutrition: {
+            calories,
+            carbs,
+            protein,
+            fat,
+          },
+        };
+      });
+    }, [favorites]);
+
+    // Match IngredientModal: use 95% and fixed sizing
+    const snapPoints = useMemo(() => ["95%"], []);
+    const safeSelectedIndex = useMemo(() => {
+      if (!Array.isArray(meals) || meals.length === 0) return -1;
+      if (selectedIndex === undefined || selectedIndex === null) return -1;
+      return selectedIndex >= meals.length ? 0 : selectedIndex;
+    }, [meals, selectedIndex]);
 
     const handleBackdrop = useCallback(
       (props: any) => (
@@ -78,20 +174,65 @@ export const MealSelectionModal = forwardRef<
     useImperativeHandle(
       ref,
       () => ({
-        present: () => internalRef.current?.present(),
-        dismiss: () => internalRef.current?.dismiss(),
+        present: () => {
+          try {
+            // Validate meals prop
+            if (!Array.isArray(meals)) {
+              console.error(
+                "MealSelectionModal: meals prop is not an array",
+                meals
+              );
+              return;
+            }
+
+            // Reset to suggestions tab when modal opens
+            setActiveTab("suggestions");
+
+            // Present modal first, then reset scroll position after a short delay
+            if (internalRef.current) {
+              internalRef.current.present();
+
+              // Reset scroll position after modal is presented (give it time to mount)
+              setTimeout(() => {
+                try {
+                  if (horizontalPagerRef.current) {
+                    runOnUI(() => {
+                      "worklet";
+                      scrollTo(horizontalPagerRef, 0, 0, false);
+                    })();
+                  }
+                } catch (scrollError) {
+                  console.warn("Error resetting scroll position:", scrollError);
+                  // Non-critical error, continue
+                }
+              }, 100);
+            } else {
+              console.error("MealSelectionModal: internalRef is not available");
+            }
+          } catch (error) {
+            console.error("Error in MealSelectionModal.present:", error);
+          }
+        },
+        dismiss: () => {
+          try {
+            internalRef.current?.dismiss();
+          } catch (error) {
+            console.error("Error in MealSelectionModal.dismiss:", error);
+          }
+        },
       }),
-      []
+      [horizontalPagerRef, meals]
     );
 
     const renderMealCard = useCallback(
-      ({ item, index }: ListRenderItemInfo<Meal>) => {
-        const isSelected = index === safeSelectedIndex;
+      ({ item, index }: { item: Meal; index: number }) => {
+        const isSelected =
+          activeTab === "suggestions" && index === safeSelectedIndex;
         const imageUrl = getMealImageUrl(item);
 
         return (
           <Pressable
-            onPress={() => onSelect(index)}
+            onPress={() => onSelect(item)}
             style={({ pressed }) => [
               styles.mealCard,
               isSelected && styles.mealCardSelected,
@@ -126,43 +267,109 @@ export const MealSelectionModal = forwardRef<
           </Pressable>
         );
       },
-      [onSelect, safeSelectedIndex]
+      [onSelect, safeSelectedIndex, activeTab]
     );
 
-    const hasMeals = meals.length > 0;
-
-    const generateFooter = useMemo(() => {
-      if (!onGenerateMore) return null;
+    const renderLoadMoreFooter = useCallback(() => {
+      if (!onLoadMore || !hasMorePages) return null;
 
       return (
-        <View style={styles.generateWrapper}>
+        <View style={styles.loadMoreContainer}>
           <Pressable
-            onPress={onGenerateMore}
-            disabled={isGeneratingMore}
+            onPress={onLoadMore}
+            disabled={isLoadingMore}
             style={({ pressed }) => [
-              styles.generateCard,
-              pressed && styles.mealCardPressed,
-              isGeneratingMore && styles.generateCardDisabled,
+              styles.loadMoreButton,
+              pressed && { opacity: 0.8 },
+              isLoadingMore && styles.loadMoreButtonDisabled,
             ]}
           >
-            {isGeneratingMore ? (
-              <ActivityIndicator color={Colors.lilac[900]} />
+            {isLoadingMore ? (
+              <ActivityIndicator color={Colors.lilac[900]} size="small" />
             ) : (
               <>
-                <View style={styles.generateIconCircle}>
-                  <Ionicons
-                    name="refresh"
-                    size={18}
-                    color={Colors.lilac[900]}
-                  />
-                </View>
-                <Text style={styles.generateText}>Generate meal recipe</Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={18}
+                  color={Colors.lilac[900]}
+                />
+                <Text style={styles.loadMoreText}>Load more recipes</Text>
               </>
             )}
           </Pressable>
         </View>
       );
-    }, [onGenerateMore, isGeneratingMore]);
+    }, [onLoadMore, isLoadingMore, hasMorePages]);
+
+    const renderList = useCallback(
+      (data: Meal[], type: "suggestions" | "favorites") => {
+        const hasData = data.length > 0;
+
+        if (hasData) {
+          return (
+            <BottomSheetFlatList
+              data={data}
+              renderItem={renderMealCard}
+              keyExtractor={(item: Meal) => String(item.id)}
+              numColumns={2}
+              columnWrapperStyle={styles.columnWrapper}
+              contentContainerStyle={[
+                styles.gridContainer,
+                type === "suggestions" &&
+                  onGenerateMore && { paddingBottom: 80 },
+              ]}
+              ListFooterComponent={
+                type === "suggestions" ? renderLoadMoreFooter : undefined
+              }
+              removeClippedSubviews
+              windowSize={5}
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              updateCellsBatchingPeriod={50}
+              showsVerticalScrollIndicator={false}
+            />
+          );
+        }
+
+        return (
+          <View style={styles.emptyState}>
+            <MaterialIcons
+              name="restaurant-menu"
+              size={48}
+              color={Colors.gray[300]}
+            />
+            <Text style={styles.emptyText}>
+              {type === "favorites"
+                ? "No favorite recipes yet"
+                : "No recipes found for this meal"}
+            </Text>
+            {type === "suggestions" && onGenerateMore && (
+              <Pressable
+                onPress={onGenerateMore}
+                disabled={isGeneratingMore}
+                style={({ pressed }) => [
+                  styles.emptyAiButton,
+                  pressed && styles.mealCardPressed,
+                  isGeneratingMore && styles.generateCardDisabled,
+                ]}
+              >
+                {isGeneratingMore ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <MaterialIcons name="auto-awesome" size={18} color="#fff" />
+                    <Text style={styles.emptyAiButtonText}>
+                      Generate with AI
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            )}
+          </View>
+        );
+      },
+      [renderMealCard, renderLoadMoreFooter, onGenerateMore, isGeneratingMore]
+    );
 
     return (
       <BottomSheetModal
@@ -171,83 +378,116 @@ export const MealSelectionModal = forwardRef<
         snapPoints={snapPoints}
         backdropComponent={handleBackdrop}
         enableOverDrag={false}
+        enableDynamicSizing={false}
+        enablePanDownToClose={false}
         onDismiss={() => onDismiss?.()}
         handleIndicatorStyle={styles.handleIndicator}
       >
-        <BottomSheetView
-          style={[styles.container, { paddingBottom: bottom + 16 }]}
+        <View
+          style={[
+            styles.container,
+            { height: screenHeight, paddingBottom: bottom + 16 },
+          ]}
         >
           <View style={styles.header}>
-            <Text style={styles.title}>{title ?? "Select a meal"}</Text>
-            <Pressable onPress={() => internalRef.current?.dismiss()}>
-              <AntDesign name="close" size={20} color={Colors.text.primary} />
-            </Pressable>
+            <View style={styles.headerTop}>
+              <Text style={styles.title}>{title ?? "Select a meal"}</Text>
+              <Pressable onPress={() => internalRef.current?.dismiss()}>
+                <AntDesign name="close" size={20} color={Colors.text.primary} />
+              </Pressable>
+            </View>
+
+            <View style={styles.tabsContainer}>
+              <Pressable
+                style={[
+                  styles.tab,
+                  activeTab === "suggestions" && styles.activeTab,
+                ]}
+                onPress={() => handleTabChange("suggestions")}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === "suggestions" && styles.activeTabText,
+                  ]}
+                >
+                  Suggestions
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.tab,
+                  activeTab === "favorites" && styles.activeTab,
+                ]}
+                onPress={() => handleTabChange("favorites")}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === "favorites" && styles.activeTabText,
+                  ]}
+                >
+                  Favorites
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
-          {hasMeals ? (
-            <View style={styles.gridContainer}>
-              {meals.map((meal, index) => {
-                const isSelected = index === safeSelectedIndex;
-                const imageUrl = getMealImageUrl(meal);
+          <Animated.ScrollView
+            ref={horizontalPagerRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={scrollHandler}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            scrollEventThrottle={16}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ width: contentWidth * 2 }}
+          >
+            <View style={{ width: contentWidth, height: "100%" }}>
+              {renderList(Array.isArray(meals) ? meals : [], "suggestions")}
+            </View>
+            <View style={{ width: contentWidth, height: "100%" }}>
+              {renderList(
+                Array.isArray(favoriteMeals) ? favoriteMeals : [],
+                "favorites"
+              )}
+            </View>
+          </Animated.ScrollView>
 
-                return (
-                  <Pressable
-                    key={meal.id}
-                    onPress={() => onSelect(index)}
-                    style={({ pressed }) => [
-                      styles.mealCard,
-                      isSelected && styles.mealCardSelected,
-                      pressed && styles.mealCardPressed,
-                    ]}
-                  >
-                    {imageUrl ? (
-                      <Image
-                        source={{ uri: imageUrl }}
-                        style={styles.mealImage}
+          {/* Sticky Footer - Generate with AI */}
+          {activeTab === "suggestions" &&
+            Array.isArray(meals) &&
+            meals.length > 0 &&
+            onGenerateMore && (
+              <View style={[styles.stickyFooter, { paddingBottom: bottom }]}>
+                <Pressable
+                  onPress={onGenerateMore}
+                  disabled={isGeneratingMore}
+                  style={({ pressed }) => [
+                    styles.stickyFooterButton,
+                    pressed && { opacity: 0.9 },
+                    isGeneratingMore && styles.generateCardDisabled,
+                  ]}
+                >
+                  {isGeneratingMore ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <>
+                      <MaterialIcons
+                        name="auto-awesome"
+                        size={18}
+                        color="#fff"
                       />
-                    ) : (
-                      <View
-                        style={[styles.mealImage, styles.mealPlaceholder]}
-                      />
-                    )}
-                    <View style={styles.mealInfo}>
-                      <Text numberOfLines={2} style={styles.mealTitle}>
-                        {meal.title}
+                      <Text style={styles.stickyFooterButtonText}>
+                        Generate with AI
                       </Text>
-                      <View style={styles.mealMeta}>
-                        {meal.nutrition?.calories && (
-                          <Text style={styles.metaText}>
-                            {Math.round(meal.nutrition.calories)} cal
-                          </Text>
-                        )}
-                        {meal.readyInMinutes && (
-                          <Text style={styles.metaText}>
-                            {meal.readyInMinutes} min
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    {isSelected && (
-                      <View style={styles.checkmark}>
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No meals available</Text>
-              <CustomButton
-                containerStyle={styles.dismissButton}
-                onPress={() => internalRef.current?.dismiss()}
-              >
-                <Text style={styles.dismissText}>Close</Text>
-              </CustomButton>
-            </View>
-          )}
-        </BottomSheetView>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            )}
+        </View>
       </BottomSheetModal>
     );
   }
@@ -261,11 +501,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.select({ ios: 12, android: 4 }),
   },
+  contentContainer: {
+    flexGrow: 1,
+  },
   header: {
+    flexDirection: "column",
+    marginBottom: 20,
+    gap: 16,
+  },
+  headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    backgroundColor: Colors.gray[100],
+    padding: 4,
+    borderRadius: 12,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text.secondary,
+  },
+  activeTabText: {
+    color: Colors.text.primary,
+    fontWeight: "600",
   },
   title: {
     fontSize: 18,
@@ -273,10 +549,11 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    paddingBottom: 8,
+  },
+  columnWrapper: {
     justifyContent: "space-between",
+    marginBottom: 12,
   },
   mealCard: {
     width: "48%",
@@ -334,60 +611,82 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 16,
+    paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: 16,
     color: Colors.text.secondary,
+    textAlign: "center",
+    marginTop: 8,
   },
-  dismissButton: {
+  emptyAiButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     backgroundColor: Colors.lilac[900],
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 12,
+    marginTop: 8,
   },
-  dismissText: {
-    color: "#fff",
+  emptyAiButtonText: {
+    fontSize: 15,
     fontWeight: "600",
+    color: "#fff",
   },
   handleIndicator: {
     backgroundColor: Colors.gray[300],
   },
-  separator: {
-    width: 12,
-  },
-  generateWrapper: {
-    flex: 1,
-    marginLeft: 12,
-    paddingRight: 16,
-  },
-  generateCard: {
-    flex: 1,
-    width: 180,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.lilac[900],
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   generateCardDisabled: {
     opacity: 0.7,
   },
-  generateIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.lilac[100],
+  stickyFooter: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background.primary,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[200],
+  },
+  stickyFooterButton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.lilac[900],
+    paddingVertical: 14,
+    borderRadius: 12,
   },
-  generateText: {
-    marginTop: 12,
+  stickyFooterButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  loadMoreContainer: {
+    width: "100%",
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  loadMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.lilac[900],
+    backgroundColor: "#fff",
+  },
+  loadMoreButtonDisabled: {
+    opacity: 0.6,
+  },
+  loadMoreText: {
     fontSize: 14,
     fontWeight: "600",
     color: Colors.lilac[900],
-    textAlign: "center",
   },
 });

@@ -1,3 +1,4 @@
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { getThemeColors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -51,6 +52,7 @@ export default function AccountScreen() {
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -101,7 +103,7 @@ export default function AccountScreen() {
       if (error) throw error;
       
       await refreshProfile();
-      Alert.alert(t("account.success"), t("account.profileUpdated"));
+      setShowSuccessModal(true);
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -467,6 +469,12 @@ export default function AccountScreen() {
           </View>
         </View>
       </Modal>
+
+      <CelebrationModal
+        visible={showSuccessModal}
+        type="profile-updated"
+        onClose={() => setShowSuccessModal(false)}
+      />
     </View>
   );
 }

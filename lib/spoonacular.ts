@@ -244,6 +244,8 @@ export interface RandomRecipesFilters {
   maxReadyTime?: number;
   sort?: string;
   sortDirection?: "asc" | "desc";
+  minCalories?: number;
+  maxCalories?: number;
 }
 
 export interface IngredientSearchFilters {
@@ -300,6 +302,12 @@ export async function getRandomRecipes(
     }
     if (filters?.sortDirection) {
       params.append("sortDirection", filters.sortDirection);
+    }
+    if (filters?.minCalories != null) {
+      params.append("minCalories", filters.minCalories.toString());
+    }
+    if (filters?.maxCalories != null) {
+      params.append("maxCalories", filters.maxCalories.toString());
     }
 
     const response = await makeRateLimitedRequest(
@@ -371,6 +379,12 @@ export async function searchRecipes(
     }
     if (filters?.sortDirection) {
       params.append("sortDirection", filters.sortDirection);
+    }
+    if (filters?.minCalories != null) {
+      params.append("minCalories", filters.minCalories.toString());
+    }
+    if (filters?.maxCalories != null) {
+      params.append("maxCalories", filters.maxCalories.toString());
     }
 
     const response = await makeRateLimitedRequest(

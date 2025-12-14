@@ -8,12 +8,15 @@ interface FilterStore {
   searchQuery: string;
   minReadyTime: number | null;
   maxReadyTime: number | null;
+  minCalories: number | null;
+  maxCalories: number | null;
 
   setSelectedIngredients: (ingredients: Ingredient[]) => void;
   setSelectedCuisines: (cuisines: string[]) => void;
   setSelectedFilters: (filters: string[]) => void;
   setSearchQuery: (query: string) => void;
   setReadyTimeRange: (range: { min: number | null; max: number | null }) => void;
+  setCalorieRange: (range: { min: number | null; max: number | null }) => void;
 
   toggleFilter: (filter: string) => void;
   clearAllFilters: () => void;
@@ -26,6 +29,8 @@ export const useFilterStore = create<FilterStore>((set) => ({
   searchQuery: "",
   minReadyTime: null,
   maxReadyTime: null,
+  minCalories: null,
+  maxCalories: null,
 
   setSelectedIngredients: (ingredients) =>
     set({ selectedIngredients: ingredients }),
@@ -40,6 +45,12 @@ export const useFilterStore = create<FilterStore>((set) => ({
     set({
       minReadyTime: min,
       maxReadyTime: max,
+    }),
+
+  setCalorieRange: ({ min, max }) =>
+    set({
+      minCalories: min,
+      maxCalories: max,
     }),
 
   toggleFilter: (filter) =>
@@ -57,5 +68,7 @@ export const useFilterStore = create<FilterStore>((set) => ({
       searchQuery: "",
       minReadyTime: null,
       maxReadyTime: null,
+      minCalories: null,
+      maxCalories: null,
     }),
 }));

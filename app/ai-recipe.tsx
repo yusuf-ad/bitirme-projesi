@@ -8,6 +8,8 @@ import {
   ChipSection,
   COOKING_TIME_OPTIONS,
   CookingTimeOption,
+  DisplayCookingSkill,
+  DisplayGoal,
   IngredientSelectionModal,
   IngredientSelectionModalHandle,
   MEAL_TYPE_OPTIONS,
@@ -16,6 +18,7 @@ import {
   SelectedIngredient,
   UserPreferencesSection,
 } from "@/features/meal-plan";
+import { goalOptions } from "@/features/onboarding/sections/goals/goals-content";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import {
   resolveAllergiesFast,
@@ -24,6 +27,7 @@ import {
 import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { saveAiRecipe } from "@/lib/supabase-ai-recipes";
+import { generateAPIUrl } from "@/lib/utils";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -50,6 +54,14 @@ interface AIGeneratedRecipe extends Recipe {
 
 const INGREDIENT_IMAGE_BASE_URL =
   "https://spoonacular.com/cdn/ingredients_100x100";
+
+// Cooking skill options (matching those in cooking-skill.tsx)
+const COOKING_SKILL_OPTIONS: DisplayCookingSkill[] = [
+  { id: "beginner", emoji: "🍳", label: "Novice" },
+  { id: "basic", emoji: "🥘", label: "Basic" },
+  { id: "intermediate", emoji: "👨‍🍳", label: "Intermediate" },
+  { id: "advanced", emoji: "🍰", label: "Advanced" },
+];
 
 // Selected Ingredient Chip Component
 function SelectedIngredientChip({
@@ -126,6 +138,40 @@ export default function AiRecipe() {
     [onboardingData?.tastePreferences?.cuisine_dislikes]
   );
 
+  // Extract goals from onboarding data
+  const selectedGoalIds = useMemo(
+    () => onboardingData?.goals?.goal_ids || [],
+    [onboardingData?.goals?.goal_ids]
+  );
+
+  // Resolve goals to display format
+  const resolvedGoals: DisplayGoal[] = useMemo(
+    () =>
+      selectedGoalIds
+        .map((id) => {
+          const goal = goalOptions.find((g) => g.id === id);
+          return goal ? { id: goal.id, title: goal.title } : null;
+        })
+        .filter((g): g is DisplayGoal => g !== null),
+    [selectedGoalIds]
+  );
+
+  // Extract cooking skill from onboarding data
+  const selectedCookingSkillId = useMemo(
+    () => onboardingData?.tastePreferences?.cooking_skill_level || null,
+    [onboardingData?.tastePreferences?.cooking_skill_level]
+  );
+
+  // Resolve cooking skill to display format
+  const resolvedCookingSkill: DisplayCookingSkill | null = useMemo(
+    () =>
+      selectedCookingSkillId
+        ? COOKING_SKILL_OPTIONS.find((s) => s.id === selectedCookingSkillId) ||
+          null
+        : null,
+    [selectedCookingSkillId]
+  );
+
   // Resolve allergies and diet preferences with images
   const resolvedAllergies = useMemo(
     () => resolveAllergiesFast(selectedAllergies),
@@ -189,7 +235,10 @@ export default function AiRecipe() {
     setIsRegenerating(false);
 
     try {
-      const response = await fetch("/api/generate-recipe", {
+      // Convert goal objects to title strings for API
+      const goalTitles = resolvedGoals.map((g) => g.title.replace("\n", " "));
+
+      const response = await fetch(generateAPIUrl("/api/generate-recipe"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -203,6 +252,9 @@ export default function AiRecipe() {
           dietPreferences: selectedDietPreferences,
           cuisines: selectedCuisines,
           dislikedCuisines,
+          goals: goalTitles,
+          cookingSkill: resolvedCookingSkill?.id || null,
+          userId: userId || undefined,
         }),
       });
 
@@ -237,6 +289,8 @@ export default function AiRecipe() {
     selectedDietPreferences,
     selectedCuisines,
     dislikedCuisines,
+    resolvedGoals,
+    resolvedCookingSkill,
   ]);
 
   const handleRegenerate = useCallback(async () => {
@@ -478,6 +532,16 @@ export default function AiRecipe() {
     [isFromMealSlot]
   );
 
+  // Handle image generation completion
+  const handleImageGenerated = useCallback(
+    (imageUrl: string) => {
+      if (generatedRecipe) {
+        setGeneratedRecipe({ ...generatedRecipe, image: imageUrl });
+      }
+    },
+    [generatedRecipe]
+  );
+
   // Render generating state
   if (viewState === "generating") {
     return <AIRecipeGenerating />;
@@ -494,6 +558,7 @@ export default function AiRecipe() {
         mealSlot={params.mealSlot}
         isRegenerating={isRegenerating}
         isSaving={isSaving}
+        onImageGenerated={handleImageGenerated}
       />
     );
   }
@@ -626,6 +691,8 @@ export default function AiRecipe() {
           dietPreferences={resolvedDietPreferences}
           cuisines={selectedCuisines}
           dislikedCuisines={dislikedCuisines}
+          goals={resolvedGoals}
+          cookingSkill={resolvedCookingSkill}
         />
       </ScrollView>
 

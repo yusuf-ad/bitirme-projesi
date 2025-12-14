@@ -64,6 +64,26 @@ export function AttachMenuOverlay() {
     }, ANIMATION_DURATION);
   };
 
+  const handleShoppingListCameraPress = () => {
+    closeMenu();
+    setTimeout(() => {
+      router.push({
+        pathname: "/(add)/camera",
+        params: { destination: "shopping_list" },
+      });
+    }, ANIMATION_DURATION);
+  };
+
+  const handleShoppingListManualAddPress = () => {
+    closeMenu();
+    setTimeout(() => {
+      router.push({
+        pathname: "/(add)/manual-add",
+        params: { destination: "shopping_list" },
+      });
+    }, ANIMATION_DURATION);
+  };
+
   const handleCreateMealPlan = () => {
     closeMenu();
     setTimeout(() => {
@@ -111,7 +131,7 @@ export function AttachMenuOverlay() {
             },
             {
               icon: "sparkles-outline",
-              label: "AI Meal Plan",
+              label: "Create AI Recipe",
               onPress: handleAIPlan,
             },
             {
@@ -164,6 +184,22 @@ export function AttachMenuOverlay() {
                 closeMenu();
                 console.log("Settings");
               },
+            },
+          ],
+        };
+      case "shopping-list":
+        return {
+          title: "Add to Shopping List",
+          items: [
+            {
+              icon: "camera-outline",
+              label: "Camera",
+              onPress: handleShoppingListCameraPress,
+            },
+            {
+              icon: "add-circle-outline",
+              label: "Add Manually",
+              onPress: handleShoppingListManualAddPress,
             },
           ],
         };

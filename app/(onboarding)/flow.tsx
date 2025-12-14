@@ -413,12 +413,69 @@ export default function OnboardingFlowScreen() {
     return "Next";
   }
 
-  // Check if should show skip button (for meal-time pages)
+  // Determine skip button text
+  function getSkipButtonText(): string {
+    if (currentPage.component === "taste-allergies") {
+      return "No Allergies";
+    }
+    return "Skip";
+  }
+
+  // Handle skip action
+  async function handleSkip() {
+    if (currentPage.component === "taste-allergies") {
+      // Clear allergies and proceed
+      setSelectedAllergies([]);
+      // We can directly call handleNext logic, but handleNext checks invalid layouts?
+      // handleNext will check validity. If we clear allergies, `isNextDisabled` for allergies should handle empty?
+      // Wait, isNextDisabled currently checks `selectedAllergies.length === 0`.
+      // If I clear it, `isNextDisabled` becomes true, so I cannot "Next" from UI, but programmatically I can force next?
+      // If "No Allergies" is clicked, it implies "I am done with this step with 0 items".
+      // So I should just proceed to next page.
+      // But `handleNext` might save data.
+      // I should manually trigger navigation or data save.
+      // Let's see `handleNext`. It saves `taste` section data at end.
+      
+      // I will implement logic to allow proceeding even if empty IF it is a skip/no-allergies action?
+      // Or simply:
+      const nextPage = getNextPage(currentPage.section, currentPage.step);
+      // Save empty allergies?
+      // The context update `setSelectedAllergies([])` is sync/fast.
+      // But I need to bypass the `isNextDisabled` check if I use `handleNext`?
+      // `handleNext` doesn't check `isNextDisabled` inside it (that's for the button disabled state).
+      // So calling `handleNext()` directly works!
+      // But I should ensure `selectedAllergies` is set to [] before calling it.
+      await handleNext();
+      return;
+    }
+    
+    // Default skip (if any other pages support it)
+    handleNext();
+  }
+
+  // Determine if skip button should be disabled
+  function isSkipButtonDisabled(): boolean {
+    if (currentPage.component === "taste-allergies") {
+      return selectedAllergies.length > 0;
+    }
+    return false;
+  }
+
+  // Determine skip button style
+  function getSkipButtonStyle(): "default" | "primary" {
+    if (currentPage.component === "taste-allergies") {
+      return "primary";
+    }
+    return "default";
+  }
+
+  // Check if should show skip button (for meal-time pages and allergies)
   function shouldShowSkipButton(): boolean {
     return (
       currentPage.component === "meal-time-breakfast" ||
       currentPage.component === "meal-time-lunch" ||
-      currentPage.component === "meal-time-dinner"
+      currentPage.component === "meal-time-dinner" ||
+      currentPage.component === "taste-allergies"
     );
   }
 
@@ -427,6 +484,9 @@ export default function OnboardingFlowScreen() {
 
   // Determine background color based on section
   function getBackgroundColor(): string {
+    // Specific overrides
+    if (currentPage.component === "taste-allergies") return "#F2EEF8"; // Colors.lilac[100]
+
     const section = currentPage.section;
 
     // Goals section - Light purple/lavender
@@ -479,8 +539,10 @@ export default function OnboardingFlowScreen() {
         nextButtonText={isSaving ? "Kaydediliyor..." : getNextButtonText()}
         isNextDisabled={isNextDisabled() || isSaving}
         showSkipButton={shouldShowSkipButton()}
-        onSkip={handleNext}
-        skipButtonText="Skip"
+        onSkip={handleSkip}
+        skipButtonText={getSkipButtonText()}
+        skipButtonStyle={getSkipButtonStyle()}
+        isSkipDisabled={isSkipButtonDisabled()}
       />
     </OnboardingLayout>
   );

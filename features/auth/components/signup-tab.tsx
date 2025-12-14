@@ -7,6 +7,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -22,7 +23,10 @@ const SignupFormSchema = z.object({
     .min(8, { message: "Password must be at least 8 characters." }),
 });
 
+import { CelebrationModal } from "@/components/CelebrationModal";
+
 export function SignupTab() {
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const {
     control,
     handleSubmit,
@@ -70,10 +74,8 @@ export function SignupTab() {
         );
       }
 
-      Alert.alert("Sign up successful", "Your profile has been created!");
-
-      // Navigate to main app
-      router.replace("/(app)");
+      // Show celebration modal instead of immediate navigation
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error("Signup error:", error);
       Alert.alert(
@@ -87,95 +89,109 @@ export function SignupTab() {
     router.back();
   }
 
+  const handleModalAction = () => {
+    setShowSuccessModal(false);
+    router.replace("/(app)");
+  };
+
   return (
-    <KeyboardAwareScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      enableOnAndroid={true}
-      extraScrollHeight={20}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Back Button */}
-      <View style={styles.headerContainer}>
-        <CustomButton
-          onPress={handleBackPress}
-          containerStyle={styles.backButton}
-        >
-          <MaterialCommunityIcons
-            name="keyboard-backspace"
-            size={24}
-            color={Colors.lilac[900]}
+    <>
+      <KeyboardAwareScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Back Button */}
+        <View style={styles.headerContainer}>
+          <CustomButton
+            onPress={handleBackPress}
+            containerStyle={styles.backButton}
+          >
+            <MaterialCommunityIcons
+              name="keyboard-backspace"
+              size={24}
+              color={Colors.lilac[900]}
+            />
+          </CustomButton>
+        </View>
+
+        {/* Title */}
+        <Text style={styles.title}>Create your account</Text>
+
+        {/* Form Container */}
+        <View style={styles.formContainer}>
+          <CustomTextInput
+            control={control}
+            name="fullName"
+            label="Full name"
+            placeholder="Enter your full name"
+            autoCapitalize="words"
+            autoCorrect={false}
+            containerStyle={styles.inputContainerStyle}
+            labelStyle={styles.labelStyle}
+            error={errors.fullName?.message}
           />
-        </CustomButton>
-      </View>
-
-      {/* Title */}
-      <Text style={styles.title}>Create your account</Text>
-
-      {/* Form Container */}
-      <View style={styles.formContainer}>
-        <CustomTextInput
-          control={control}
-          name="fullName"
-          label="Full name"
-          placeholder="Enter your full name"
-          autoCapitalize="words"
-          autoCorrect={false}
-          containerStyle={styles.inputContainerStyle}
-          labelStyle={styles.labelStyle}
-          error={errors.fullName?.message}
-        />
-        <CustomTextInput
-          control={control}
-          name="email"
-          label="Email address"
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          containerStyle={styles.inputContainerStyle}
-          labelStyle={styles.labelStyle}
-          error={errors.email?.message}
-        />
-        <CustomTextInput
-          control={control}
-          name="password"
-          label="Password"
-          placeholder="Enter your password"
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-          containerStyle={styles.inputContainerStyle}
-          labelStyle={styles.labelStyle}
-          error={errors.password?.message}
-        />
-      </View>
-
-      {/* Buttons Container */}
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          containerStyle={styles.signupButton}
-          onPress={handleSubmit(handleSignup)}
-          disabled={isSubmitting}
-        >
-          <Text style={[styles.buttonText, styles.signupButtonText]}>
-            {isSubmitting ? "Creating account..." : "Sign up"}
-          </Text>
-        </CustomButton>
-
-        <View style={styles.divider} />
-        <CustomButton containerStyle={styles.googleButton}>
-          <Image
-            source={require("@/assets/icons/google-icon.svg")}
-            style={styles.googleIcon}
+          <CustomTextInput
+            control={control}
+            name="email"
+            label="Email address"
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            containerStyle={styles.inputContainerStyle}
+            labelStyle={styles.labelStyle}
+            error={errors.email?.message}
           />
-          <Text style={[styles.buttonText, styles.googleButtonText]}>
-            Sign up with Google
-          </Text>
-        </CustomButton>
-      </View>
-    </KeyboardAwareScrollView>
+          <CustomTextInput
+            control={control}
+            name="password"
+            label="Password"
+            placeholder="Enter your password"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            containerStyle={styles.inputContainerStyle}
+            labelStyle={styles.labelStyle}
+            error={errors.password?.message}
+          />
+        </View>
+
+        {/* Buttons Container */}
+        <View style={styles.buttonContainer}>
+          <CustomButton
+            containerStyle={styles.signupButton}
+            onPress={handleSubmit(handleSignup)}
+            disabled={isSubmitting}
+          >
+            <Text style={[styles.buttonText, styles.signupButtonText]}>
+              {isSubmitting ? "Creating account..." : "Sign up"}
+            </Text>
+          </CustomButton>
+
+          <View style={styles.divider} />
+          <CustomButton containerStyle={styles.googleButton}>
+            <Image
+              source={require("@/assets/icons/google-icon.svg")}
+              style={styles.googleIcon}
+            />
+            <Text style={[styles.buttonText, styles.googleButtonText]}>
+              Sign up with Google
+            </Text>
+          </CustomButton>
+        </View>
+      </KeyboardAwareScrollView>
+
+      <CelebrationModal
+        visible={showSuccessModal}
+        type="account-created"
+        onClose={() => setShowSuccessModal(false)}
+        onAction={handleModalAction}
+      />
+    </>
   );
 }
 

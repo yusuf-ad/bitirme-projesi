@@ -7,10 +7,16 @@ import {
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
+import {
+  AttachMenuOverlay,
+  AttachMenuProvider,
+  useAttachMenu,
+} from "@/shared/components/attach-menu";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import AntDesign from "@expo/vector-icons/build/AntDesign";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +26,36 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function ShoppingListFab() {
+  const { toggleMenu, isOpen, setCurrentRoute } = useAttachMenu();
+
+  useEffect(() => {
+    setCurrentRoute("shopping-list");
+  }, [setCurrentRoute]);
+
+  const plusIconStyle = useAnimatedStyle(() => {
+    const rotateValue = isOpen ? "45deg" : "0deg";
+    return {
+      transform: [{ rotate: withTiming(rotateValue, { duration: 300 }) }],
+    };
+  });
+
+  return (
+    <AnimatedPressable onPress={toggleMenu} style={styles.fab}>
+      <Animated.View style={plusIconStyle}>
+        <AntDesign name="plus" size={24} color="#FFFFFF" />
+      </Animated.View>
+    </AnimatedPressable>
+  );
+}
 
 export default function ShoppingListScreen() {
   const router = useRouter();
@@ -190,6 +225,37 @@ export default function ShoppingListScreen() {
     }
   };
 
+  const handleClearAll = () => {
+    if (shoppingListItems.length === 0) return;
+
+    Alert.alert(
+      "Clear Shopping List",
+      "Are you sure you want to delete all items from your shopping list?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await pantryService.clearShoppingListItems();
+              await fetchItems();
+            } catch (error) {
+              console.error("Failed to clear shopping list:", error);
+              Alert.alert(
+                "Error",
+                "Failed to clear shopping list. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (isMovingToPantry) {
     return (
       <ProfessionalLoadingScreen
@@ -225,9 +291,14 @@ export default function ShoppingListScreen() {
       {/* Summary bar */}
       {shoppingListItems.length > 0 && (
         <View style={styles.summaryBar}>
-          <Text style={styles.summaryText}>
-            {uncheckedItems.length} to buy • {checkedItems.length} done
-          </Text>
+          <View style={styles.summaryContent}>
+            <Text style={styles.summaryText}>
+              {uncheckedItems.length} to buy • {checkedItems.length} done
+            </Text>
+            <Pressable hitSlop={8} onPress={handleClearAll}>
+              <Feather name="trash-2" size={18} color={Colors.text.secondary} />
+            </Pressable>
+          </View>
           {checkedItems.length > 0 && (
             <Text style={styles.summaryHint}>
               Items will be added to pantry when you leave
@@ -298,6 +369,14 @@ export default function ShoppingListScreen() {
         onUpdateItem={handleUpdateItem}
         onRemoveItem={handleRemoveItem}
       />
+
+      {/* FAB and Attach Menu */}
+      <AttachMenuProvider>
+        <View style={[styles.fabContainer, { bottom: insets.bottom + 24 }]}>
+          <ShoppingListFab />
+        </View>
+        <AttachMenuOverlay />
+      </AttachMenuProvider>
     </View>
   );
 }
@@ -350,6 +429,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.primary,
     borderRadius: 12,
   },
+  summaryContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   summaryText: {
     fontSize: 14,
     fontWeight: "500",
@@ -359,5 +443,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text.secondary,
     marginTop: 4,
+  },
+  fabContainer: {
+    position: "absolute",
+    right: 24,
+    zIndex: 100,
+  },
+  fab: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#7849B6",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
 });

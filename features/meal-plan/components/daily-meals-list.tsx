@@ -46,7 +46,36 @@ const DEFAULT_MEAL_DETAILS: Record<
   },
 };
 
-export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
+
+const DEFAULT_TIMES = {
+  breakfast: { start: "07:00", end: "08:00" },
+  lunch: { start: "12:00", end: "13:00" },
+  dinner: { start: "19:00", end: "20:00" },
+};
+
+function formatTimeRange(
+  time: { hour: number; minute: number; period: "AM" | "PM" } | undefined,
+  defaultStart: string,
+  defaultEnd: string
+) {
+  if (!time) return `${defaultStart} - ${defaultEnd}`;
+  
+  const startHour = time.period === "PM" && time.hour !== 12 ? time.hour + 12 : time.period === "AM" && time.hour === 12 ? 0 : time.hour;
+  const endHour = startHour + 1; // Default duration 1 hour
+  
+  const formattedStart = `${String(startHour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
+  const formattedEnd = `${String(endHour > 23 ? 0 : endHour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
+  
+  return `${formattedStart} - ${formattedEnd}`;
+}
+
+export function DailyMealsList({ items, selectedDate, mealTimes }: DailyMealsListProps & { 
+  mealTimes?: {
+    breakfast: { hour: number; minute: number; period: "AM" | "PM" };
+    lunch: { hour: number; minute: number; period: "AM" | "PM" };
+    dinner: { hour: number; minute: number; period: "AM" | "PM" };
+  } | null 
+}) {
   const deleteMutation = useDeleteMealItem();
   const [eatenMeals, setEatenMeals] = useState<Set<number>>(new Set());
   const [shouldAnimate, setShouldAnimate] = useState(true);
@@ -82,12 +111,32 @@ export function DailyMealsList({ items, selectedDate }: DailyMealsListProps) {
     });
   };
 
+  const getMealDetails = (type: "breakfast" | "lunch" | "dinner") => {
+    const base = DEFAULT_MEAL_DETAILS[type];
+    const userTime = mealTimes?.[type];
+    
+    // Fallback defaults if no user time
+    let defaultStart = "00:00";
+    let defaultEnd = "00:00";
+    
+    switch(type) {
+        case 'breakfast': defaultStart="07:00"; defaultEnd="08:00"; break;
+        case 'lunch': defaultStart="12:00"; defaultEnd="13:00"; break;
+        case 'dinner': defaultStart="19:00"; defaultEnd="20:00"; break;
+    }
+
+    return {
+      ...base,
+      time: formatTimeRange(userTime, defaultStart, defaultEnd)
+    };
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.list}>
         {MEAL_ORDER.map((mealType, index) => {
           const item = mealsByType.get(mealType);
-          const details = DEFAULT_MEAL_DETAILS[mealType];
+          const details = getMealDetails(mealType);
           const staggerDelay = index * 100; // 100ms delay between each card
 
           if (!item) {

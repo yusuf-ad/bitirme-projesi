@@ -1,9 +1,10 @@
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { Colors } from "@/constants/theme";
 import {
-  DateMealRow,
-  fetchRecipes,
-  MealSelectionHeader,
-  MealTypeLabels,
+    DateMealRow,
+    fetchRecipes,
+    MealSelectionHeader,
+    MealTypeLabels,
 } from "@/features/meal-plan";
 import type { MealType, MealTypeOption } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
@@ -14,12 +15,11 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Button,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -52,6 +52,15 @@ export default function SelectMeals() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pendingNavigationParams, setPendingNavigationParams] = useState<any>(null);
+
+  const handleModalAction = () => {
+    setShowSuccessModal(false);
+    if (pendingNavigationParams) {
+      router.push(pendingNavigationParams);
+    }
+  };
 
   function toggleMealType(mealType: MealType) {
     setSelectedMealTypes((prev) => ({
@@ -92,7 +101,8 @@ export default function SelectMeals() {
       }
 
       // Navigate to preview with the meal plan data
-      router.push({
+      // Store the pending navigation parameters in state
+      setPendingNavigationParams({
         pathname: "/preview",
         params: {
           startDate: params.startDate as string,
@@ -100,6 +110,9 @@ export default function SelectMeals() {
           mealPlanData: JSON.stringify(mealPlanData),
         },
       });
+
+      // Show celebration modal
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error creating meal plan:", error);
     } finally {
@@ -129,41 +142,6 @@ export default function SelectMeals() {
             modifications here.
           </Text>
 
-          <Button
-            title="Test Fetch Recipes"
-            onPress={async () => {
-              const results = await fetchRecipes(
-                onboardingData,
-                pantryData,
-                selectedMealTypes
-              );
-              console.log("Fetch results:", results);
-            }}
-          />
-          <Button
-            title="go to preview"
-            onPress={() => router.push("/preview")}
-          />
-          <Button
-            title="Log Pantry Data"
-            onPress={() => {
-              console.log("=== MANUAL PANTRY LOG ===");
-              console.log("Pantry items count:", pantryData?.length || 0);
-
-              const spoonacularNames =
-                pantryData
-                  ?.map((item) => item.spoonacular_name)
-                  .filter((name) => name)
-                  .join(",") || "";
-
-              console.log("Spoonacular names:", spoonacularNames);
-              console.log(
-                "Full pantry items:",
-                JSON.stringify(pantryData, null, 2)
-              );
-            }}
-          />
-
           <MealTypeLabels mealTypes={MEAL_TYPE_OPTIONS} />
 
           <DateMealRow
@@ -191,6 +169,12 @@ export default function SelectMeals() {
           )}
         </CustomButton>
       </View>
+      <CelebrationModal
+        visible={showSuccessModal}
+        type="meal-plan-created"
+        onClose={() => setShowSuccessModal(false)}
+        onAction={handleModalAction}
+      />
     </View>
   );
 }

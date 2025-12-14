@@ -36,6 +36,7 @@ export default function CreateMealPlan() {
     startDate
   );
   const hasExistingPlan = !!mealPlanData?.plan;
+  const hasMeals = (mealPlanData?.items?.length ?? 0) > 0;
 
   const formatDateDisplay = (date: Date): { day: string; date: string } => {
     const daysOfWeek = [
@@ -131,7 +132,7 @@ export default function CreateMealPlan() {
             </View>
           </View>
 
-          {hasExistingPlan && (
+          {hasExistingPlan && hasMeals && (
             <View style={styles.warningContainer}>
               <MaterialIcons
                 name="info-outline"

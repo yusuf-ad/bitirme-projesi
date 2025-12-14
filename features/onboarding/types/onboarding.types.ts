@@ -12,6 +12,8 @@ export interface OnboardingNavigationProps {
   showSkipButton?: boolean;
   onSkip?: () => void;
   skipButtonText?: string;
+  skipButtonStyle?: "default" | "primary";
+  isSkipDisabled?: boolean;
 }
 
 export interface OnboardingLayoutProps {

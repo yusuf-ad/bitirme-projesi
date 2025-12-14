@@ -5,15 +5,15 @@ import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 interface TasteAllergiesProps {
@@ -197,142 +197,192 @@ export function TasteAllergies({
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.content, { backgroundColor: Colors.background.secondary }]}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View style={styles.headerSection}>
-        <Text style={[styles.title, { color: Colors.text.primary }]}>{title}</Text>
-        {description && (
-          <Text style={[styles.description, { color: Colors.text.secondary }]}>{description}</Text>
-        )}
-      </View>
-
-      {/* Search Bar */}
-      <View style={[styles.searchContainer, { backgroundColor: Colors.background.surface }]}>
-        <MaterialCommunityIcons name="magnify" size={20} color={Colors.text.secondary} />
-        <TextInput
-          style={[styles.searchInput, { color: Colors.text.primary }]}
-          placeholder="Search ingredients..."
-          placeholderTextColor={Colors.text.secondary}
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-        {isSearching && <ActivityIndicator size="small" color={Colors.lilac[900]} />}
-        {searchQuery.length > 0 && !isSearching && (
-          <Pressable onPress={() => handleSearch("")}>
-            <MaterialCommunityIcons name="close-circle" size={20} color={Colors.text.secondary} />
-          </Pressable>
-        )}
-      </View>
-
-      {/* Selected Items */}
-      {selectedItems.length > 0 && (
-        <View style={styles.selectedSection}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: "#EF444415" }]}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#EF4444" />
-            </View>
-            <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-              Avoiding ({selectedItems.length})
-            </Text>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.selectedChipsContainer}
-          >
-            {selectedItems.map((item, index) => {
-              const ingredientName = (item as any).name;
-              const ingredientImage = (item as any).image;
-              return (
-                <Pressable
-                  key={`selected-${index}`}
-                  onPress={() => toggleAllergy(item)}
-                  style={styles.selectedChip}
-                >
-                  {ingredientImage ? (
-                    <Image
-                      source={{ uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}` }}
-                      style={styles.selectedChipImage}
-                    />
-                  ) : (
-                    <View style={styles.selectedChipImagePlaceholder}>
-                      <MaterialCommunityIcons name="food-off" size={14} color="#EF4444" />
-                    </View>
-                  )}
-                  <Text style={styles.selectedChipLabel} numberOfLines={1}>
-                    {ingredientName}
-                  </Text>
-                  <View style={styles.removeIcon}>
-                    <MaterialCommunityIcons name="close" size={12} color="#FFFFFF" />
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Available Items */}
-      <View style={styles.availableSection}>
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionIconContainer, { backgroundColor: `${Colors.lilac[900]}15` }]}>
-            <MaterialCommunityIcons name="food-variant" size={16} color={Colors.lilac[900]} />
-          </View>
-          <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
-            {hasSearched ? "Search Results" : "Common Ingredients"}
+      <View style={[styles.cardContainer, { backgroundColor: "#FFFFFF", shadowColor: Colors.lilac[900] }]}>
+        {/* Card Header */}
+        <View style={styles.cardHeader}>
+          <Text style={[styles.cardEmoji, { backgroundColor: Colors.lilac[100] }]}>🥜</Text>
+          <Text style={[styles.cardTitle, { color: Colors.text.primary }]}>{title}</Text>
+          <Text style={[styles.cardSubtitle, { color: Colors.text.secondary }]}>
+            {description || "Select any allergies you have"}
           </Text>
         </View>
 
-        {isSearching ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.lilac[900]} />
-            <Text style={[styles.loadingText, { color: Colors.text.secondary }]}>Searching...</Text>
+        <View style={styles.cardBody}>
+          {/* Search Bar */}
+          <View style={[styles.searchContainer, { backgroundColor: Colors.background.surface }]}>
+            <MaterialCommunityIcons name="magnify" size={20} color={Colors.text.secondary} />
+            <TextInput
+              style={[styles.searchInput, { color: Colors.text.primary }]}
+              placeholder="Search ingredients..."
+              placeholderTextColor={Colors.text.secondary}
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {isSearching && <ActivityIndicator size="small" color={Colors.lilac[900]} />}
+            {searchQuery.length > 0 && !isSearching && (
+              <Pressable onPress={() => handleSearch("")}>
+                <MaterialCommunityIcons name="close-circle" size={20} color={Colors.text.secondary} />
+              </Pressable>
+            )}
           </View>
-        ) : hasSearched && displayItems.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="magnify-close" size={48} color={Colors.gray[300]} />
-            <Text style={[styles.emptyText, { color: Colors.text.secondary }]}>No ingredients found</Text>
-            <Text style={[styles.emptySubtext, { color: Colors.text.tertiary }]}>Try a different search term</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={unselectedItems}
-            renderItem={renderAllergyItem}
-            keyExtractor={(item, index) => `item-${index}-${getIngredientKey(item)}`}
-            numColumns={3}
-            scrollEnabled={false}
-            contentContainerStyle={styles.gridContent}
-            columnWrapperStyle={styles.gridRow}
-          />
-        )}
-      </View>
 
-      {/* Bottom Padding for Save Button */}
-      <View style={{ height: 100 }} />
+          {/* Selected Items */}
+          {selectedItems.length > 0 && (
+            <View style={styles.selectedSection}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionIconContainer, { backgroundColor: "#EF444415" }]}>
+                  <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#EF4444" />
+                </View>
+                <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+                  Avoiding ({selectedItems.length})
+                </Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.selectedChipsContainer}
+              >
+                {selectedItems.map((item, index) => {
+                  const ingredientName = (item as any).name;
+                  const ingredientImage = (item as any).image;
+                  return (
+                    <Pressable
+                      key={`selected-${index}`}
+                      onPress={() => toggleAllergy(item)}
+                      style={styles.selectedChip}
+                    >
+                      {ingredientImage ? (
+                        <Image
+                          source={{ uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}` }}
+                          style={styles.selectedChipImage}
+                        />
+                      ) : (
+                        <View style={styles.selectedChipImagePlaceholder}>
+                          <MaterialCommunityIcons name="food-off" size={14} color="#EF4444" />
+                        </View>
+                      )}
+                      <Text style={styles.selectedChipLabel} numberOfLines={1}>
+                        {ingredientName}
+                      </Text>
+                      <View style={styles.removeIcon}>
+                        <MaterialCommunityIcons name="close" size={12} color="#FFFFFF" />
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Available Items */}
+          <View style={styles.availableSection}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconContainer, { backgroundColor: `${Colors.lilac[900]}15` }]}>
+                <MaterialCommunityIcons name="food-variant" size={16} color={Colors.lilac[900]} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+                {hasSearched ? "Search Results" : "Common Ingredients"}
+              </Text>
+            </View>
+
+            {isSearching ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.lilac[900]} />
+                <Text style={[styles.loadingText, { color: Colors.text.secondary }]}>Searching...</Text>
+              </View>
+            ) : hasSearched && displayItems.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <MaterialCommunityIcons name="magnify-close" size={48} color={Colors.gray[300]} />
+                <Text style={[styles.emptyText, { color: Colors.text.secondary }]}>No ingredients found</Text>
+                <Text style={[styles.emptySubtext, { color: Colors.text.tertiary }]}>Try a different search term</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={unselectedItems}
+                renderItem={renderAllergyItem}
+                keyExtractor={(item, index) => `item-${index}-${getIngredientKey(item)}`}
+                numColumns={3}
+                scrollEnabled={false}
+                contentContainerStyle={styles.gridContent}
+                columnWrapperStyle={styles.gridRow}
+              />
+            )}
+          </View>
+        </View>
+
+        {/* Skip Actions */}
+        <View style={styles.actionContainer}>
+          <Pressable
+            style={styles.skipButton}
+            onPress={() => {
+              setSelectedAllergiesMap(new Map());
+              onSelectionChange?.([]);
+            }}
+          >
+            <Text style={[styles.skipButtonText, { color: Colors.text.secondary }]}>I have no allergies</Text>
+          </Pressable>
+        </View>
+      </View>
+      
+      {/* Bottom Padding */}
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 40,
     minHeight: "100%",
   },
-  headerSection: {
-    paddingHorizontal: 20,
+  cardContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 32,
+    width: "100%",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  cardHeader: {
+    alignItems: "center",
+    paddingTop: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  cardEmoji: {
+    fontSize: 48,
     marginBottom: 16,
+    width: 80,
+    height: 80,
+    textAlign: "center",
+    textAlignVertical: "center",
+    lineHeight: 80,
+    borderRadius: 40,
+    overflow: "hidden",
   },
-  title: {
-    fontSize: 22,
+  cardTitle: {
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 6,
+    marginBottom: 8,
   },
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
+  cardSubtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 24,
+    minHeight: 48,
+  },
+  cardBody: {
+    paddingBottom: 24,
   },
   searchContainer: {
     flexDirection: "row",
@@ -343,11 +393,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   searchInput: {
     flex: 1,
@@ -483,4 +528,23 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 13,
   },
+  actionContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
+    marginTop: 8,
+  },
+  skipButton: {
+    width: "100%",
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  skipButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });
+
