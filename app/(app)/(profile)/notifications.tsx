@@ -4,23 +4,48 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     Animated,
+<<<<<<< HEAD
+    Linking, Platform, Pressable,
+=======
     Linking,
     Pressable,
+>>>>>>> origin
     ScrollView,
     StyleSheet,
     Switch,
     Text,
+<<<<<<< HEAD
+    View
+=======
     View,
+>>>>>>> origin
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// Safe notification module access
+const getNotifications = () => {
+  try {
+    return require("expo-notifications");
+  } catch {
+    return null;
+  }
+};
+
+// Safe device check without native module dependency
+const isPhysicalDevice = (): boolean => {
+  try {
+    const Device = require("expo-device");
+    return Device.isDevice ?? true;
+  } catch {
+    return Platform.OS !== "web";
+  }
+};
 
 // Helper to convert 12h to 24h format
 const convertTo24Hour = (hour: number, minute: number, period: "AM" | "PM") => {
@@ -43,7 +68,8 @@ const NOTIFICATION_PREFS_KEY = "profile_notification_preferences";
 
 // Configure notification handler (wrapped in try-catch for Expo Go compatibility)
 try {
-  Notifications.setNotificationHandler({
+  const Notifications = getNotifications();
+  Notifications?.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
       shouldPlaySound: true,
@@ -134,8 +160,17 @@ export default function NotificationsScreen() {
   }, [prefs.mealReminders, expandAnim, opacityAnim]);
 
   const checkPermissionStatus = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setPermissionStatus(status);
+    try {
+      const Notifications = getNotifications();
+      if (!Notifications) {
+        setPermissionStatus("undetermined");
+        return;
+      }
+      const { status } = await Notifications.getPermissionsAsync();
+      setPermissionStatus(status);
+    } catch {
+      setPermissionStatus("undetermined");
+    }
   };
 
   const loadPreferences = async () => {
@@ -152,8 +187,14 @@ export default function NotificationsScreen() {
   };
 
   const requestPermission = async () => {
-    if (!Device.isDevice) {
+    if (!isPhysicalDevice()) {
       Alert.alert(t("notifications.physicalDeviceRequired"), t("notifications.physicalDeviceRequiredDesc"));
+      return;
+    }
+
+    const Notifications = getNotifications();
+    if (!Notifications) {
+      Alert.alert(t("notifications.notificationsLimited"), t("notifications.notificationsLimitedDesc"));
       return;
     }
 
@@ -192,6 +233,8 @@ export default function NotificationsScreen() {
     // If enabling a notification, check permission first
     if (value && permissionStatus !== "granted") {
       await requestPermission();
+      const Notifications = getNotifications();
+      if (!Notifications) return;
       const { status } = await Notifications.getPermissionsAsync();
       if (status !== "granted") {
         return; // Don't enable if permission not granted
@@ -245,6 +288,9 @@ export default function NotificationsScreen() {
   };
 
   const scheduleMealReminders = async (currentPrefs?: NotificationPreferences) => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
+    
     try {
       const prefsToUse = currentPrefs || prefs;
       
@@ -314,14 +360,12 @@ export default function NotificationsScreen() {
       });
     } catch (error) {
       console.log("Failed to schedule notifications (Expo Go limitation):", error);
-      Alert.alert(
-        "Notifications Limited",
-        "Local notifications may not work in Expo Go. Use a development build for full functionality."
-      );
     }
   };
 
   const cancelMealReminders = async () => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     try {
       await Notifications.cancelScheduledNotificationAsync("meal-reminder-breakfast");
     } catch {}
@@ -335,6 +379,8 @@ export default function NotificationsScreen() {
 
   // Schedule shopping reminder - Every Saturday at 10:00 AM
   const scheduleShoppingReminder = async () => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     try {
       await cancelShoppingReminder();
       
@@ -359,6 +405,8 @@ export default function NotificationsScreen() {
   };
 
   const cancelShoppingReminder = async () => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     try {
       await Notifications.cancelScheduledNotificationAsync("shopping-reminder");
     } catch {}
@@ -366,6 +414,8 @@ export default function NotificationsScreen() {
 
   // Schedule weekly recap - Every Sunday at 6:00 PM
   const scheduleWeeklyRecap = async () => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     try {
       await cancelWeeklyRecap();
       
@@ -390,6 +440,8 @@ export default function NotificationsScreen() {
   };
 
   const cancelWeeklyRecap = async () => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     try {
       await Notifications.cancelScheduledNotificationAsync("weekly-recap");
     } catch {}
@@ -423,6 +475,12 @@ export default function NotificationsScreen() {
 
   const handleTestNotification = async () => {
     selection();
+
+    const Notifications = getNotifications();
+    if (!Notifications) {
+      Alert.alert(t("notifications.notificationsLimited"), t("notifications.notificationsLimitedDesc"));
+      return;
+    }
 
     if (permissionStatus !== "granted") {
       await requestPermission();
