@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import CustomButton from "@/shared/components/custom-button";
-import { StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import type { PreviewFooterProps } from "./types";
 
@@ -9,16 +10,23 @@ export function PreviewFooter({
   isSaving,
   isAddingToShoppingList,
 }: PreviewFooterProps) {
+  const isDisabled = isSaving || isAddingToShoppingList;
+
   return (
     <View style={styles.footer}>
       <CustomButton
-        containerStyle={styles.saveButton}
+        containerStyle={[styles.saveButton, isDisabled && styles.saveButtonDisabled]}
         onPress={onSave}
-        disabled={isSaving || isAddingToShoppingList}
+        disabled={isDisabled}
       >
-        <Text style={styles.saveButtonText}>
-          {isSaving ? "Saving..." : "Save Meal Plan"}
-        </Text>
+        {isSaving ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <>
+            <Text style={styles.saveButtonText}>Save Meal Plan</Text>
+            <Ionicons name="checkmark-circle" size={20} color="#fff" />
+          </>
+        )}
       </CustomButton>
     </View>
   );
@@ -28,20 +36,26 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: Colors.background.primary,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.light,
   },
   saveButton: {
-    backgroundColor: Colors.lilac[900],
-    borderRadius: 12,
-    paddingVertical: 14,
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.lilac[800],
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    lineHeight: 24,
     color: "#fff",
-    textAlign: "center",
   },
 });
 

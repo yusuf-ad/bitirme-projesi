@@ -1,39 +1,74 @@
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { Colors } from "@/constants/theme";
-import {
-    DateMealRow,
-    fetchRecipes,
-    MealSelectionHeader,
-    MealTypeLabels,
-} from "@/features/meal-plan";
-import type { MealType, MealTypeOption } from "@/features/meal-plan/types";
+import { fetchRecipes } from "@/features/meal-plan";
+import type { MealType } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import CustomButton from "@/shared/components/custom-button";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
     ActivityIndicator,
-    ScrollView,
+    Dimensions,
+    FlatList,
+    Pressable,
     StyleSheet,
     Text,
     View,
+    ViewToken,
 } from "react-native";
+import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const MEAL_TYPE_OPTIONS: MealTypeOption[] = [
-  { id: "breakfast", label: "Breakfast" },
-  { id: "lunch", label: "Lunch" },
-  { id: "dinner", label: "Dinner" },
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const CARD_WIDTH = SCREEN_WIDTH - 40;
+
+interface MealStep {
+  id: MealType;
+  label: string;
+  icon: string;
+  description: string;
+  calories: string;
+  bgColor: string;
+}
+
+const MEAL_STEPS: MealStep[] = [
+  {
+    id: "breakfast",
+    label: "Breakfast",
+    icon: "🥐",
+    description: "Kickstart your day with energy.",
+    calories: "400-500 kcal",
+    bgColor: "#FFF5E6",
+  },
+  {
+    id: "lunch",
+    label: "Lunch",
+    icon: "🍝",
+    description: "Fuel your afternoon productivity.",
+    calories: "500-700 kcal",
+    bgColor: "#E8F5E9",
+  },
+  {
+    id: "dinner",
+    label: "Dinner",
+    icon: "🍽️",
+    description: "End your day satisfied.",
+    calories: "500-600 kcal",
+    bgColor: "#E3F2FD",
+  },
 ];
+
 
 export default function SelectMeals() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
   const userId = session?.user?.id;
+  const flatListRef = useRef<FlatList>(null);
 
   const { data: onboardingData } = useQuery({
     queryKey: ["onboardingProfile", userId],
@@ -43,17 +78,33 @@ export default function SelectMeals() {
 
   const { data: pantryData } = usePantryQuery();
 
-  const [selectedMealTypes, setSelectedMealTypes] = useState<
-    Record<MealType, boolean>
-  >({
-    breakfast: true,
-    lunch: true,
-    dinner: true,
+  const [currentStep, setCurrentStep] = useState(0);
+  const [selectedMealTypes, setSelectedMealTypes] = useState<Record<MealType, boolean>>({
+    breakfast: false,
+    lunch: false,
+    dinner: false,
   });
-
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pendingNavigationParams, setPendingNavigationParams] = useState<any>(null);
+
+  const selectedDate = new Date(params.startDate as string);
+  const isToday = (() => {
+    const today = new Date();
+    return (
+      selectedDate.getDate() === today.getDate() &&
+      selectedDate.getMonth() === today.getMonth() &&
+      selectedDate.getFullYear() === today.getFullYear()
+    );
+  })();
+
+  const formattedDate = selectedDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  });
+
+  const selectedCount = Object.values(selectedMealTypes).filter(Boolean).length;
 
   const handleModalAction = () => {
     setShowSuccessModal(false);
@@ -62,46 +113,60 @@ export default function SelectMeals() {
     }
   };
 
-  function toggleMealType(mealType: MealType) {
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+        setCurrentStep(viewableItems[0].index);
+      }
+    },
+    []
+  );
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
+  const scrollToIndex = useCallback((index: number) => {
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+  }, []);
+
+  const handleAddMeal = useCallback(
+    (mealId: MealType) => {
+      setSelectedMealTypes((prev) => ({
+        ...prev,
+        [mealId]: true,
+      }));
+      const currentIndex = MEAL_STEPS.findIndex((s) => s.id === mealId);
+      if (currentIndex < MEAL_STEPS.length - 1) {
+        setTimeout(() => scrollToIndex(currentIndex + 1), 250);
+      }
+    },
+    [scrollToIndex]
+  );
+
+  const handleRemoveMeal = useCallback((mealId: MealType) => {
     setSelectedMealTypes((prev) => ({
       ...prev,
-      [mealType]: !prev[mealType],
+      [mealId]: false,
     }));
-  }
+  }, []);
+
+
 
   async function handleCreateMealPlan() {
-    if (isLoading) return;
-
+    if (isLoading || selectedCount === 0) return;
     setIsLoading(true);
     try {
-      const results = await fetchRecipes(
-        onboardingData,
-        pantryData,
-        selectedMealTypes
-      );
-
+      const results = await fetchRecipes(onboardingData, pantryData, selectedMealTypes);
       if (!results || results.length === 0) {
-        console.warn("No recipes found");
         setIsLoading(false);
         return;
       }
-
-      // Transform results array into MealPlan object format
-      const mealPlanData: Record<
-        string,
-        { results: any[]; totalResults: number }
-      > = {};
-
+      const mealPlanData: Record<string, { results: any[]; totalResults: number }> = {};
       for (const result of results) {
         mealPlanData[result.mealType] = {
           results: result.results,
-          totalResults:
-            result.results[0]?.totalResults || result.results.length,
+          totalResults: result.results[0]?.totalResults || result.results.length,
         };
       }
-
-      // Navigate to preview with the meal plan data
-      // Store the pending navigation parameters in state
       setPendingNavigationParams({
         pathname: "/preview",
         params: {
@@ -110,8 +175,6 @@ export default function SelectMeals() {
           mealPlanData: JSON.stringify(mealPlanData),
         },
       });
-
-      // Show celebration modal
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Error creating meal plan:", error);
@@ -120,55 +183,148 @@ export default function SelectMeals() {
     }
   }
 
-  return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: Colors.background.primary,
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
-      ]}
-    >
-      <MealSelectionHeader />
+  const renderMealCard = useCallback(
+    ({ item, index }: { item: MealStep; index: number }) => {
+      const isSelected = selectedMealTypes[item.id];
+      const isLast = index === MEAL_STEPS.length - 1;
 
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.content}>
-          <Text style={styles.description}>
-            Below are the meals we will include in your plan. You can make any
-            modifications here.
-          </Text>
-
-          <MealTypeLabels mealTypes={MEAL_TYPE_OPTIONS} />
-
-          <DateMealRow
-            date={params.startDate as string}
-            mealTypes={MEAL_TYPE_OPTIONS}
-            selectedMealTypes={selectedMealTypes}
-            onToggleMealType={toggleMealType}
-          />
+      return (
+        <View style={styles.cardWrapper}>
+          <View style={[styles.mealCard, isSelected && styles.mealCardSelected]}>
+            <View style={[styles.mealIconWrapper, { backgroundColor: item.bgColor }]}>
+              <Text style={styles.mealEmoji}>{item.icon}</Text>
+            </View>
+            <Text style={styles.mealTitle}>{item.label}</Text>
+            <Text style={styles.mealDescription}>{item.description}</Text>
+            {isSelected ? (
+              <Pressable onPress={() => handleRemoveMeal(item.id)} style={styles.addedButton}>
+                <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                <Text style={styles.addedButtonText}>Added to Plan</Text>
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => handleAddMeal(item.id)} style={styles.addButton}>
+                <Ionicons name="add" size={16} color={Colors.green[700]} />
+                <Text style={styles.addButtonText}>Add {item.label}</Text>
+              </Pressable>
+            )}
+            <Text style={styles.caloriesText}>Recommended: {item.calories}</Text>
+            <View style={styles.skipContainer}>
+              {!isLast ? (
+                <Pressable onPress={() => scrollToIndex(index + 1)} style={styles.skipButton}>
+                  <Text style={styles.skipText}>Skip</Text>
+                </Pressable>
+              ) : (
+                <View style={styles.skipPlaceholder} />
+              )}
+            </View>
+          </View>
         </View>
-      </ScrollView>
+      );
+    },
+    [selectedMealTypes, handleAddMeal, handleRemoveMeal, scrollToIndex]
+  );
 
-      <View style={styles.footer}>
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.headerButton} hitSlop={12}>
+          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Create Meal Plan</Text>
+        <Pressable onPress={() => router.dismissTo("/")} style={styles.headerButton} hitSlop={12}>
+          <Ionicons name="close" size={22} color={Colors.gray[500]} />
+        </Pressable>
+      </Animated.View>
+
+      <View style={styles.content}>
+        <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.titleSection}>
+          <Text style={styles.mainTitle}>Build your perfect day!</Text>
+          <Text style={styles.subtitle}>Swipe to browse meals, tap to add.</Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.duration(400).delay(150)} style={styles.dateCard}>
+          <View style={styles.dateIconWrapper}>
+            <Ionicons name="calendar" size={16} color={Colors.green[600]} />
+          </View>
+          <Text style={styles.dateLabel}>{isToday ? "Today" : "Selected"}</Text>
+          <Text style={styles.dateText}>{formattedDate}</Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.duration(400).delay(200)} style={styles.progressDots}>
+          {MEAL_STEPS.map((step, index) => (
+            <Pressable key={step.id} onPress={() => scrollToIndex(index)}>
+              <View
+                style={[
+                  styles.dot,
+                  index === currentStep && styles.dotActive,
+                  selectedMealTypes[step.id] && styles.dotCompleted,
+                ]}
+              />
+            </Pressable>
+          ))}
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.duration(400).delay(250)} style={styles.carouselContainer}>
+          <FlatList
+            ref={flatListRef}
+            data={MEAL_STEPS}
+            renderItem={renderMealCard}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToAlignment="center"
+            snapToInterval={CARD_WIDTH}
+            decelerationRate="fast"
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            contentContainerStyle={styles.carouselContent}
+            getItemLayout={(_, index) => ({
+              length: CARD_WIDTH,
+              offset: CARD_WIDTH * index,
+              index,
+            })}
+          />
+        </Animated.View>
+
+
+      </View>
+
+      <Animated.View
+        entering={FadeInUp.duration(400).delay(300)}
+        style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}
+      >
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryText}>{selectedCount}/3 meals</Text>
+          <View style={styles.summaryDots}>
+            {MEAL_STEPS.map((step) => (
+              <View
+                key={step.id}
+                style={[styles.summaryDot, selectedMealTypes[step.id] && styles.summaryDotActive]}
+              />
+            ))}
+          </View>
+        </View>
         <CustomButton
           containerStyle={[
             styles.createButton,
-            isLoading && styles.createButtonDisabled,
+            (isLoading || selectedCount === 0) && styles.createButtonDisabled,
           ]}
           onPress={handleCreateMealPlan}
-          disabled={isLoading}
+          disabled={isLoading || selectedCount === 0}
         >
           {isLoading ? (
-            <ActivityIndicator color={Colors.background.primary} />
+            <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.createButtonText}>Create</Text>
+            <>
+              <Text style={styles.createButtonText}>
+                {selectedCount === 0 ? "Select meals" : "Create Plan"}
+              </Text>
+              {selectedCount > 0 && <Ionicons name="arrow-forward" size={18} color="#fff" />}
+            </>
           )}
         </CustomButton>
-      </View>
+      </Animated.View>
+
       <CelebrationModal
         visible={showSuccessModal}
         type="meal-plan-created"
@@ -179,38 +335,263 @@ export default function SelectMeals() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.background.secondary,
   },
-  scrollView: {
-    flex: 1,
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: Colors.background.primary,
+  },
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.gray[100],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.text.primary,
   },
   content: {
+    flex: 1,
     paddingHorizontal: 20,
-    paddingVertical: 20,
   },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
+  titleSection: {
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  mainTitle: {
+    fontSize: 24,
+    fontWeight: "800",
     color: Colors.text.primary,
-    marginBottom: 24,
-    fontWeight: "400",
+    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+  },
+  dateCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.background.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  dateIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: Colors.green[100],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dateLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.text.tertiary,
+  },
+  dateText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.text.primary,
+    textAlign: "right",
+  },
+  progressDots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  dot: {
+    width: 28,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: Colors.gray[200],
+  },
+  dotActive: {
+    backgroundColor: Colors.green[500],
+    width: 36,
+  },
+  dotCompleted: {
+    backgroundColor: Colors.green[400],
+  },
+  carouselContainer: {
+    flex: 1,
+    marginHorizontal: -20,
+    justifyContent: "center",
+  },
+  carouselContent: {
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  cardWrapper: {
+    width: CARD_WIDTH,
+    justifyContent: "center",
+  },
+  mealCard: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: Colors.gray[200],
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  mealCardSelected: {
+    borderColor: Colors.green[500],
+  },
+  mealIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  mealEmoji: {
+    fontSize: 32,
+  },
+  mealTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: Colors.text.primary,
+    marginBottom: 4,
+  },
+  mealDescription: {
+    fontSize: 13,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.green[100],
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    width: "100%",
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: Colors.green[400],
+  },
+  addButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.green[700],
+  },
+  addedButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.green[600],
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    width: "100%",
+    marginBottom: 10,
+  },
+  addedButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  caloriesText: {
+    fontSize: 12,
+    color: Colors.text.tertiary,
+  },
+  skipContainer: {
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  skipButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  skipPlaceholder: {
+    height: 20,
+  },
+  skipText: {
+    fontSize: 13,
+    color: Colors.text.tertiary,
+    fontWeight: "500",
   },
   footer: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingTop: 12,
+    backgroundColor: Colors.background.primary,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.light,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  summaryText: {
+    fontSize: 13,
+    color: Colors.text.secondary,
+    fontWeight: "600",
+  },
+  summaryDots: {
+    flexDirection: "row",
+    gap: 5,
+  },
+  summaryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.gray[200],
+  },
+  summaryDotActive: {
+    backgroundColor: Colors.green[500],
   },
   createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
     paddingVertical: 14,
-    backgroundColor: Colors.lilac[900],
+    backgroundColor: Colors.lilac[800],
+    borderRadius: 12,
   },
   createButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.background.primary,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
   },
   createButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.5,
   },
 });

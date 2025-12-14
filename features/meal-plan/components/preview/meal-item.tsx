@@ -2,6 +2,7 @@ import ReplaceIcon from "@/assets/icons/replace-icon";
 import { Colors } from "@/constants/theme";
 import { getMealImageUrl } from "@/lib/utils";
 import CustomButton from "@/shared/components/custom-button";
+import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -42,15 +43,22 @@ export function MealItem({
           <Text style={styles.mealTitle}>{meal.title}</Text>
           <View style={styles.mealDetails}>
             {meal.nutrition?.calories && (
-              <Text style={styles.mealDetailText}>
-                {Math.round(meal.nutrition.calories)} cal
-              </Text>
+              <View style={styles.detailBadge}>
+                <Ionicons name="flame" size={12} color="#FF8C00" />
+                <Text style={styles.detailValue}>
+                  {Math.round(meal.nutrition.calories)}
+                </Text>
+                <Text style={styles.detailUnit}>cal</Text>
+              </View>
             )}
-            <Text>|</Text>
             {meal.readyInMinutes && (
-              <Text style={styles.mealDetailText}>
-                {meal.readyInMinutes} min
-              </Text>
+              <View style={styles.detailBadge}>
+                <Ionicons name="time-outline" size={12} color={Colors.lilac[600]} />
+                <Text style={styles.detailValue}>
+                  {meal.readyInMinutes}
+                </Text>
+                <Text style={styles.detailUnit}>min</Text>
+              </View>
             )}
           </View>
           {/* Macronutrients */}
@@ -90,18 +98,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 16,
-    paddingVertical: 12,
+    gap: 12,
   },
   mealContent: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
     flex: 1,
   },
   mealImage: {
-    width: 73,
-    height: 73,
-    borderRadius: 8,
+    width: 70,
+    height: 70,
+    borderRadius: 12,
     backgroundColor: Colors.gray[200],
   },
   placeholderImage: {
@@ -109,60 +116,80 @@ const styles = StyleSheet.create({
   },
   mealInfo: {
     flex: 1,
-    gap: 6,
+    gap: 4,
   },
   mealTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    lineHeight: 24,
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 20,
     color: Colors.text.primary,
   },
   mealDetails: {
     flexDirection: "row",
-    gap: 12,
-  },
-  mealDetailText: {
-    fontSize: 12,
-    fontWeight: "400",
-    lineHeight: 18,
-    color: Colors.text.secondary,
-  },
-  replaceButton: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.lilac[900],
-    borderRadius: 8,
-  },
-  macrosContainer: {
-    flexDirection: "row",
     gap: 8,
-    marginTop: 8,
+    alignItems: "center",
   },
-  macroItem: {
+  detailBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: Colors.background.surface,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+  },
+  detailValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 14,
+    color: Colors.text.primary,
+  },
+  detailUnit: {
+    fontSize: 11,
+    fontWeight: "500",
+    lineHeight: 14,
+    color: Colors.text.tertiary,
+  },
+  replaceButton: {
+    width: 42,
+    height: 42,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: Colors.lilac[300],
+    borderRadius: 10,
+    backgroundColor: Colors.lilac[100],
+  },
+  macrosContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  macroItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    backgroundColor: Colors.lilac[100],
     borderRadius: 6,
     borderWidth: 1,
     borderColor: Colors.lilac[200],
   },
   macroLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-    lineHeight: 16,
-    color: Colors.gray[500],
+    fontSize: 10,
+    fontWeight: "600",
+    lineHeight: 12,
+    color: Colors.text.tertiary,
   },
   macroValue: {
-    fontSize: 11,
-    fontWeight: "600",
-    lineHeight: 16,
-    color: Colors.lilac[900],
+    fontSize: 10,
+    fontWeight: "700",
+    lineHeight: 12,
+    color: Colors.lilac[800],
   },
 });
 
