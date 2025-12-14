@@ -39,7 +39,10 @@ export default function MealPlanPreview() {
     handleReplaceMeal,
     handleMealPress,
     getMealForType,
-  } = useMealPlanPreview({ mealSelectionRef });
+  } = useMealPlanPreview({
+    mealSelectionRef,
+    onSaveSuccess: () => setShowSuccessModal(true),
+  });
 
   // Wrapper to show success modal only after successful saving
   const handleSaveMealPlan = useCallback(async () => {

@@ -11,7 +11,20 @@ export function OnboardingNavigation({
   showSkipButton = false,
   onSkip,
   skipButtonText = "I skip this dish",
+  skipButtonStyle = "default",
+  isSkipDisabled = false,
 }: OnboardingNavigationProps) {
+  // Determine skip button style
+  const getSkipButtonStyle = () => {
+    if (skipButtonStyle === "primary") {
+      if (isSkipDisabled) {
+        return styles.skipButtonDisabled;
+      }
+      return styles.skipButtonPrimary;
+    }
+    return styles.skipButton;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.buttonContainer}>
@@ -25,11 +38,20 @@ export function OnboardingNavigation({
 
         {showSkipButton && onSkip && (
           <CustomButton
-            containerStyle={styles.skipButton}
+            containerStyle={getSkipButtonStyle()}
             accessibilityLabel={skipButtonText}
             onPress={onSkip}
+            disabled={isSkipDisabled}
           >
-            <Text style={styles.skipText}>{skipButtonText}</Text>
+            <Text
+              style={
+                skipButtonStyle === "primary"
+                  ? styles.skipTextPrimary
+                  : styles.skipText
+              }
+            >
+              {skipButtonText}
+            </Text>
           </CustomButton>
         )}
 
@@ -84,6 +106,7 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     flex: 1,
+    width: "auto",
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingVertical: 20,
@@ -97,6 +120,38 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  skipButtonPrimary: {
+    flex: 1,
+    width: "auto",
+    backgroundColor: "#22C55E", // Green
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  skipButtonDisabled: {
+    flex: 1,
+    width: "auto",
+    backgroundColor: "#B8BCC4", // Disabled Gray
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 0,
+    elevation: 0,
+  },
   skipText: {
     fontFamily: "Inter",
     fontWeight: "600",
@@ -105,8 +160,17 @@ const styles = StyleSheet.create({
     color: "#2D3142",
     textAlign: "center",
   },
+  skipTextPrimary: {
+    fontFamily: "Inter",
+    fontWeight: "600",
+    fontSize: 15,
+    lineHeight: 20,
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
   nextButton: {
     flex: 1,
+    width: "auto",
     backgroundColor: "#2D3648",
     borderRadius: 16,
     paddingVertical: 20,
