@@ -1,14 +1,14 @@
 import { Colors, getThemeColors } from "@/constants/theme";
 import {
-    EmptyPantryState,
-    PantryCategory,
-    PantryCategoryPreview,
-    PantryItem,
-    PantryItemDetailSheet,
-    PantryScreenHeader,
-    PantrySkeleton,
-    RecipeIdeasView,
-    TabType,
+  EmptyPantryState,
+  PantryCategory,
+  PantryCategoryPreview,
+  PantryItem,
+  PantryItemDetailSheet,
+  PantryScreenHeader,
+  PantrySkeleton,
+  RecipeIdeasView,
+  TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
@@ -17,7 +17,7 @@ import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { getCommonPantryIngredients } from "@/lib/spoonacular";
 import { useTheme } from "@/providers/theme-provider";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,6 +26,7 @@ export default function PantryTab() {
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark, true); // true = content tab (lighter dark mode)
   const { t } = useLanguage();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("my-ingredients");
   const [searchQuery, setSearchQuery] = useState("");
   const [recipeSearchQuery, setRecipeSearchQuery] = useState("");
@@ -153,6 +154,14 @@ export default function PantryTab() {
     bottomSheetRef.current?.present();
   };
 
+  // Navigate to pantry items list screen with category filter
+  const handleCategoryPress = (category: string) => {
+    router.push({
+      pathname: "/pantry-items",
+      params: { category },
+    });
+  };
+
   const handleUpdateItem = async (id: string, updates: Partial<PantryItem>) => {
     try {
       if (selectedItem && selectedItem.id === id) {
@@ -180,30 +189,26 @@ export default function PantryTab() {
   };
 
   const handleClearAll = () => {
-    Alert.alert(
-      t("pantry.clearPantry"),
-      t("pantry.clearPantryConfirm"),
-      [
-        {
-          text: t("common.cancel"),
-          style: "cancel",
+    Alert.alert(t("pantry.clearPantry"), t("pantry.clearPantryConfirm"), [
+      {
+        text: t("common.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("common.clearAll"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await pantryService.clearPantryItems();
+            refetch(); // Refresh data after clearing
+          } catch (error) {
+            console.error("Failed to clear pantry:", error);
+            Alert.alert(t("common.error"), t("pantry.clearPantryConfirm"));
+            refetch(); // Revert on error
+          }
         },
-        {
-          text: t("common.clearAll"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await pantryService.clearPantryItems();
-              refetch(); // Refresh data after clearing
-            } catch (error) {
-              console.error("Failed to clear pantry:", error);
-              Alert.alert(t("common.error"), t("pantry.clearPantryConfirm"));
-              refetch(); // Revert on error
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   if (isLoading && items.length === 0) {
@@ -278,6 +283,7 @@ export default function PantryTab() {
                         key={category}
                         title={category}
                         items={categoryItems}
+                        onPress={() => handleCategoryPress(category)}
                         onItemPress={handleItemPress}
                       />
                     );
@@ -287,6 +293,7 @@ export default function PantryTab() {
                     <PantryCategoryPreview
                       title="All"
                       items={filteredPantryItems}
+                      onPress={() => handleCategoryPress("All")}
                       onItemPress={handleItemPress}
                     />
                     {PANTRY_CATEGORIES.map((category) => {
@@ -299,6 +306,7 @@ export default function PantryTab() {
                           key={category}
                           title={category}
                           items={categoryItems}
+                          onPress={() => handleCategoryPress(category)}
                           onItemPress={handleItemPress}
                         />
                       );

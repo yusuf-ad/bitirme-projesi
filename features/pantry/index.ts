@@ -4,6 +4,7 @@ export { EmptyPantryState } from "./components/empty-pantry-state";
 export { PantryCategoryPreview } from "./components/pantry-category-preview";
 export { PantryItemDetailSheet } from "./components/pantry-item-detail-sheet";
 export { PantryItemRow } from "./components/pantry-item-row";
+export { PantryItemsList } from "./components/pantry-items-list";
 export { PantryScreenHeader } from "./components/pantry-screen-header";
 export { PantrySkeleton } from "./components/pantry-skeleton";
 export { RecipeIdeasView } from "./components/recipe-ideas-view";
