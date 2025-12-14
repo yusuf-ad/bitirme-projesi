@@ -225,6 +225,37 @@ export default function ShoppingListScreen() {
     }
   };
 
+  const handleClearAll = () => {
+    if (shoppingListItems.length === 0) return;
+
+    Alert.alert(
+      "Clear Shopping List",
+      "Are you sure you want to delete all items from your shopping list?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await pantryService.clearShoppingListItems();
+              await fetchItems();
+            } catch (error) {
+              console.error("Failed to clear shopping list:", error);
+              Alert.alert(
+                "Error",
+                "Failed to clear shopping list. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (isMovingToPantry) {
     return (
       <ProfessionalLoadingScreen
@@ -260,9 +291,14 @@ export default function ShoppingListScreen() {
       {/* Summary bar */}
       {shoppingListItems.length > 0 && (
         <View style={styles.summaryBar}>
-          <Text style={styles.summaryText}>
-            {uncheckedItems.length} to buy • {checkedItems.length} done
-          </Text>
+          <View style={styles.summaryContent}>
+            <Text style={styles.summaryText}>
+              {uncheckedItems.length} to buy • {checkedItems.length} done
+            </Text>
+            <Pressable hitSlop={8} onPress={handleClearAll}>
+              <Feather name="trash-2" size={18} color={Colors.text.secondary} />
+            </Pressable>
+          </View>
           {checkedItems.length > 0 && (
             <Text style={styles.summaryHint}>
               Items will be added to pantry when you leave
@@ -392,6 +428,11 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: Colors.background.primary,
     borderRadius: 12,
+  },
+  summaryContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   summaryText: {
     fontSize: 14,

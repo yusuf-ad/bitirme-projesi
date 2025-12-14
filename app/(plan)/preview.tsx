@@ -13,7 +13,7 @@ import { MealSelectionModal } from "@/features/meal-plan/components/meal-selecti
 import { capitalizeFirst } from "@/features/meal-plan/components/preview";
 import type { MealType } from "@/lib/utils";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -22,16 +22,6 @@ export default function MealPlanPreview() {
   const insets = useSafeAreaInsets();
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-
-  const handleShoppingListAction = () => {
-    setShowSuccessModal(false);
-    router.replace("/shopping-list");
-  };
-
-  const handleHomeAction = () => {
-    setShowSuccessModal(false);
-    router.dismissTo("/");
-  };
 
   const {
     isSaving,
@@ -44,7 +34,7 @@ export default function MealPlanPreview() {
     handleMealSelect,
     handleModalDismiss,
     handleLoadMore,
-    handleSaveMealPlan,
+    handleSaveMealPlan: originalSaveMealPlan,
     handleGenerateWithAI,
     handleReplaceMeal,
     handleMealPress,
@@ -53,6 +43,26 @@ export default function MealPlanPreview() {
     mealSelectionRef,
     onSaveSuccess: () => setShowSuccessModal(true),
   });
+
+  // Wrapper to show success modal only after successful saving
+  const handleSaveMealPlan = useCallback(async () => {
+    const success = await originalSaveMealPlan();
+    if (success) {
+      setShowSuccessModal(true);
+    }
+  }, [originalSaveMealPlan]);
+
+  // Navigate to shopping list
+  const handleShoppingListAction = useCallback(() => {
+    setShowSuccessModal(false);
+    router.dismissTo("/shopping-list");
+  }, [router]);
+
+  // Navigate to home
+  const handleHomeAction = useCallback(() => {
+    setShowSuccessModal(false);
+    router.dismissTo("/");
+  }, [router]);
 
   const renderDayMeals = (mealType: MealType) => {
     const mealData = getMealForType(mealType);

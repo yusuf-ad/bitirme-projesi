@@ -56,6 +56,7 @@ function RootNavigator() {
           <Stack.Screen name="shopping-list" options={{ headerShown: false }} />
           <Stack.Screen name="ai-recipe" options={{ headerShown: false }} />
           <Stack.Screen name="ai-chat" options={{ headerShown: false }} />
+          <Stack.Screen name="pantry-items" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Show onboarding screens when logged out and not loading */}
