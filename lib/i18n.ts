@@ -263,6 +263,18 @@ const en = {
     feature1: "Meals for breakfast, lunch, and dinner",
     feature2: "Tailored to your goals and preferences",
     feature3: "Balanced proteins, fats, carbs and fiber",
+    // New empty state
+    emptyTitle: "Time to plan your",
+    emptyTitleHighlight: "delicious",
+    emptyTitleEnd: "day!",
+    emptySubtitle: "You have no meals planned for today.",
+    quickAddMeal: "Quick Add Meal",
+    discoverRecipes: "Discover Recipes",
+    generateWithAI: "Generate suggestions with AI",
+    suggestedForYou: "Suggested for You",
+    viewAll: "View All",
+    minutes: "min",
+    kcal: "kcal",
   },
   // Account
   account: {
@@ -657,6 +669,18 @@ const tr = {
     feature1: "Kahvaltı, öğle ve akşam yemekleri",
     feature2: "Hedeflerinize ve tercihlerinize göre özelleştirilmiş",
     feature3: "Dengeli protein, yağ, karbonhidrat ve lif",
+    // New empty state
+    emptyTitle: "Lezzetli",
+    emptyTitleHighlight: "lezzetli",
+    emptyTitleEnd: "gününü planla!",
+    emptySubtitle: "Bugün için planlanmış öğün yok.",
+    quickAddMeal: "Hızlı Öğün Ekle",
+    discoverRecipes: "Tarifleri Keşfet",
+    generateWithAI: "AI ile öneri oluştur",
+    suggestedForYou: "Senin İçin Öneriler",
+    viewAll: "Tümünü Gör",
+    minutes: "dk",
+    kcal: "kcal",
   },
   // Account
   account: {

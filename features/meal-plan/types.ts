@@ -5,6 +5,7 @@ export type MealType = "breakfast" | "lunch" | "dinner";
 export interface MealTypeOption {
   id: MealType;
   label: string;
+  icon?: string;
 }
 
 export interface Meal {

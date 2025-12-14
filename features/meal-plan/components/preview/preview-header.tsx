@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { PreviewHeaderProps } from "./types";
@@ -7,16 +7,12 @@ import type { PreviewHeaderProps } from "./types";
 export function PreviewHeader({ onBack, onClose }: PreviewHeaderProps) {
   return (
     <View style={styles.header}>
-      <Pressable onPress={onBack} hitSlop={8}>
-        <MaterialIcons
-          name="arrow-back"
-          size={24}
-          color={Colors.text.primary}
-        />
+      <Pressable onPress={onBack} style={styles.headerButton} hitSlop={8}>
+        <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
       </Pressable>
-      <Text style={styles.headerTitle}>Meal plan preview</Text>
-      <Pressable onPress={onClose} hitSlop={8}>
-        <Text style={styles.closeButton}>Close</Text>
+      <Text style={styles.headerTitle}>Meal Plan Preview</Text>
+      <Pressable onPress={onClose} style={styles.headerButton} hitSlop={8}>
+        <Ionicons name="close" size={22} color={Colors.gray[500]} />
       </Pressable>
     </View>
   );
@@ -29,16 +25,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: Colors.background.primary,
+  },
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.gray[100],
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
     color: Colors.text.primary,
-  },
-  closeButton: {
-    fontSize: 16,
-    color: Colors.lilac[600],
-    fontWeight: "500",
   },
 });
 

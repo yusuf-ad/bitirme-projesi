@@ -1,12 +1,12 @@
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { Colors } from "@/constants/theme";
 import {
-  EmptyMealState,
-  LoadingOverlay,
-  MealItem,
-  PreviewFooter,
-  PreviewHeader,
-  useMealPlanPreview,
+    EmptyMealState,
+    LoadingOverlay,
+    MealItem,
+    PreviewFooter,
+    PreviewHeader,
+    useMealPlanPreview,
 } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
@@ -70,19 +70,21 @@ export default function MealPlanPreview() {
     // Show empty state with "Generate with AI" button if no data
     if (!mealData) {
       return (
-        <EmptyMealState
-          key={mealType}
-          mealType={mealType}
-          onGenerateWithAI={handleGenerateWithAI}
-          onReplace={handleReplaceMeal}
-        />
+        <View key={mealType} style={styles.mealCard}>
+          <Text style={styles.mealTypeHeader}>{capitalizeFirst(mealType)}</Text>
+          <EmptyMealState
+            mealType={mealType}
+            onGenerateWithAI={handleGenerateWithAI}
+            onReplace={handleReplaceMeal}
+          />
+        </View>
       );
     }
 
     const { meal, isAiGenerated } = mealData;
 
     return (
-      <View key={mealType}>
+      <View key={mealType} style={styles.mealCard}>
         <Text style={styles.mealTypeHeader}>{capitalizeFirst(mealType)}</Text>
         <MealItem
           meal={meal}
@@ -171,26 +173,37 @@ export default function MealPlanPreview() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background.secondary,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 20,
+    gap: 12,
   },
   description: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: Colors.text.primary,
-    marginVertical: 12,
+    fontSize: 15,
+    lineHeight: 22,
+    color: Colors.text.secondary,
+    marginBottom: 4,
+  },
+  mealCard: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   mealTypeHeader: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#141217",
-    marginTop: 20,
+    color: Colors.text.primary,
+    marginBottom: 12,
   },
 });
