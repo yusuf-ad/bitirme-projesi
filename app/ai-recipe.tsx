@@ -27,8 +27,8 @@ import {
 import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { saveAiRecipe } from "@/lib/supabase-ai-recipes";
-import { generateAPIUrl } from "@/lib/utils";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
+import { generateAPIUrl } from "@/lib/utils";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -190,9 +190,9 @@ export default function AiRecipe() {
     lockedMealType || "breakfast"
   );
   const [selectedCookingTime, setSelectedCookingTime] =
-    useState<CookingTimeOption>("<15");
+    useState<CookingTimeOption>("15-29");
   const [selectedCalorieRange, setSelectedCalorieRange] =
-    useState<CalorieRangeOption>("<200");
+    useState<CalorieRangeOption>("400-599");
 
   // View state management
   const [viewState, setViewState] = useState<ViewState>("form");
@@ -291,6 +291,7 @@ export default function AiRecipe() {
     dislikedCuisines,
     resolvedGoals,
     resolvedCookingSkill,
+    userId,
   ]);
 
   const handleRegenerate = useCallback(async () => {

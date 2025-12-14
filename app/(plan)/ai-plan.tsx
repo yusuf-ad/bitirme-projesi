@@ -177,9 +177,9 @@ export default function AiPlan() {
   const [selectedMealType, setSelectedMealType] =
     useState<AIMealTypeOption>("breakfast");
   const [selectedCookingTime, setSelectedCookingTime] =
-    useState<CookingTimeOption>("<15");
+    useState<CookingTimeOption>("15-29");
   const [selectedCalorieRange, setSelectedCalorieRange] =
-    useState<CalorieRangeOption>("<200");
+    useState<CalorieRangeOption>("400-599");
 
   // View state management
   const [viewState, setViewState] = useState<ViewState>("form");

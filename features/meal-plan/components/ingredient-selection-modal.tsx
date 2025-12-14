@@ -56,7 +56,10 @@ function IngredientCard({
 }) {
   return (
     <Pressable
-      style={[styles.ingredientCard, isSelected && styles.ingredientCardSelected]}
+      style={[
+        styles.ingredientCard,
+        isSelected && styles.ingredientCardSelected,
+      ]}
       onPress={onToggle}
     >
       {imageUrl ? (
@@ -66,7 +69,9 @@ function IngredientCard({
           resizeMode="contain"
         />
       ) : (
-        <View style={[styles.ingredientImage, styles.ingredientImagePlaceholder]}>
+        <View
+          style={[styles.ingredientImage, styles.ingredientImagePlaceholder]}
+        >
           <MaterialIcons name="restaurant" size={24} color={Colors.gray[400]} />
         </View>
       )}
@@ -89,9 +94,9 @@ export const IngredientSelectionModal = forwardRef<
   const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [localSelected, setLocalSelected] = useState<Map<string, SelectedIngredient>>(
-    new Map()
-  );
+  const [localSelected, setLocalSelected] = useState<
+    Map<string, SelectedIngredient>
+  >(new Map());
 
   // Fetch pantry items
   const { data: pantryItems = [] } = usePantryQuery();
@@ -151,7 +156,10 @@ export const IngredientSelectionModal = forwardRef<
   const addManualIngredient = () => {
     if (!searchQuery.trim()) return;
 
-    const manualId = `manual-${searchQuery.trim().toLowerCase().replace(/\s+/g, "-")}`;
+    const manualId = `manual-${searchQuery
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")}`;
     const ingredient: SelectedIngredient = {
       id: manualId,
       name: searchQuery.trim(),
@@ -195,7 +203,10 @@ export const IngredientSelectionModal = forwardRef<
   // Check if manual ingredient already exists
   const manualIngredientExists = useMemo(() => {
     if (!searchQuery.trim()) return false;
-    const manualId = `manual-${searchQuery.trim().toLowerCase().replace(/\s+/g, "-")}`;
+    const manualId = `manual-${searchQuery
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")}`;
     return localSelected.has(manualId);
   }, [searchQuery, localSelected]);
 
@@ -236,8 +247,15 @@ export const IngredientSelectionModal = forwardRef<
 
         {/* Add Custom Ingredient Button - shown when typing */}
         {searchQuery.trim().length > 0 && !manualIngredientExists && (
-          <Pressable style={styles.addCustomButton} onPress={addManualIngredient}>
-            <MaterialIcons name="add-circle-outline" size={20} color={Colors.lilac[700]} />
+          <Pressable
+            style={styles.addCustomButton}
+            onPress={addManualIngredient}
+          >
+            <MaterialIcons
+              name="add-circle-outline"
+              size={20}
+              color={Colors.lilac[700]}
+            />
             <Text style={styles.addCustomButtonText}>
               Add &ldquo;{searchQuery.trim()}&rdquo; as custom ingredient
             </Text>
@@ -314,7 +332,11 @@ export const IngredientSelectionModal = forwardRef<
           {/* No Results Message */}
           {hasNoResults && (
             <View style={styles.noResultsContainer}>
-              <MaterialIcons name="search-off" size={48} color={Colors.gray[300]} />
+              <MaterialIcons
+                name="search-off"
+                size={48}
+                color={Colors.gray[300]}
+              />
               <Text style={styles.noResultsText}>
                 No ingredients found for &ldquo;{searchQuery}&rdquo;
               </Text>
@@ -325,7 +347,9 @@ export const IngredientSelectionModal = forwardRef<
           )}
 
           {/* Custom Ingredients Section - show if any manual ingredients are selected */}
-          {Array.from(localSelected.values()).some((ing) => ing.source === "manual") && (
+          {Array.from(localSelected.values()).some(
+            (ing) => ing.source === "manual"
+          ) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Custom Ingredients</Text>
               <View style={styles.customIngredientsList}>
@@ -333,12 +357,18 @@ export const IngredientSelectionModal = forwardRef<
                   .filter((ing) => ing.source === "manual")
                   .map((ing) => (
                     <View key={ing.id} style={styles.customIngredientChip}>
-                      <Text style={styles.customIngredientText}>{ing.name}</Text>
+                      <Text style={styles.customIngredientText}>
+                        {ing.name}
+                      </Text>
                       <Pressable
                         onPress={() => toggleIngredient(ing)}
                         hitSlop={8}
                       >
-                        <MaterialIcons name="close" size={16} color={Colors.gray[500]} />
+                        <MaterialIcons
+                          name="close"
+                          size={16}
+                          color={Colors.gray[500]}
+                        />
                       </Pressable>
                     </View>
                   ))}
@@ -489,7 +519,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     borderRadius: 12,
-    backgroundColor: Colors.lilac[600],
+    backgroundColor: Colors.lilac[900],
     alignItems: "center",
   },
   applyButtonText: {

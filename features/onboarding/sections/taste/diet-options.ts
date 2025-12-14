@@ -45,7 +45,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/644387-312x231.jpg" }, // Garlic Roasted Potatoes
     spoonacularDiet: "gluten-free",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=gluten-free&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=gluten-free&timeFrame=day",
     defaultMacros: {
       protein: 0.25,
       fat: 0.35,
@@ -62,7 +63,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/636230-312x231.jpg" }, // Broccoli with cheese soup
     spoonacularDiet: "ketogenic",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=ketogenic&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=ketogenic&timeFrame=day",
     defaultMacros: {
       protein: 0.2,
       fat: 0.75,
@@ -79,7 +81,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/633508-312x231.jpg" }, // Baked Cheese Manicotti
     spoonacularDiet: "vegetarian",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=vegetarian&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=vegetarian&timeFrame=day",
     defaultMacros: {
       protein: 0.2,
       fat: 0.3,
@@ -96,7 +99,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/638257-312x231.jpg" }, // Grilled Cheese
     spoonacularDiet: "lacto-vegetarian",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=lacto-vegetarian&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=lacto-vegetarian&timeFrame=day",
     defaultMacros: {
       protein: 0.2,
       fat: 0.3,
@@ -113,7 +117,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/656329-312x231.jpg" }, // Poached Eggs
     spoonacularDiet: "ovo-vegetarian",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=ovo-vegetarian&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=ovo-vegetarian&timeFrame=day",
     defaultMacros: {
       protein: 0.2,
       fat: 0.3,
@@ -147,7 +152,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/642605-312x231.jpg" }, // Faroe Island Salmon
     spoonacularDiet: "pescetarian",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=pescetarian&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=pescetarian&timeFrame=day",
     defaultMacros: {
       protein: 0.3,
       fat: 0.3,
@@ -198,7 +204,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/644387-312x231.jpg" }, // Garlic Roasted Potatoes
     spoonacularDiet: "low-fodmap",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=low-fodmap&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=low-fodmap&timeFrame=day",
     defaultMacros: {
       protein: 0.25,
       fat: 0.3,
@@ -215,7 +222,8 @@ export const DIET_OPTIONS: DietOption[] = [
     image: { uri: "https://spoonacular.com/recipeImages/655575-312x231.jpg" }, // Avocado Salad
     spoonacularDiet: "whole30",
     targetCalories: 2300,
-    sourceUrl: "https://spoonacular.com/meal-planner?diet=whole30&timeFrame=day",
+    sourceUrl:
+      "https://spoonacular.com/meal-planner?diet=whole30&timeFrame=day",
     defaultMacros: {
       protein: 0.3,
       fat: 0.4,
@@ -223,4 +231,3 @@ export const DIET_OPTIONS: DietOption[] = [
     },
   },
 ];
-
