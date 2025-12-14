@@ -7,24 +7,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-<<<<<<< HEAD
-    Linking, Platform, Pressable,
-=======
-    Linking,
-    Pressable,
->>>>>>> origin
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-<<<<<<< HEAD
-    View
-=======
-    View,
->>>>>>> origin
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -107,11 +100,12 @@ export default function NotificationsScreen() {
   const { selection } = useHaptics();
   const { t } = useLanguage();
   const onboarding = useOnboarding();
-  const [prefs, setPrefs] = useState<NotificationPreferences>(defaultNotifications);
+  const [prefs, setPrefs] =
+    useState<NotificationPreferences>(defaultNotifications);
   const [isLoaded, setIsLoaded] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<string | null>(null);
   const [isRequestingPermission, setIsRequestingPermission] = useState(false);
-  
+
   // Animation values
   const expandAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -188,19 +182,26 @@ export default function NotificationsScreen() {
 
   const requestPermission = async () => {
     if (!isPhysicalDevice()) {
-      Alert.alert(t("notifications.physicalDeviceRequired"), t("notifications.physicalDeviceRequiredDesc"));
+      Alert.alert(
+        t("notifications.physicalDeviceRequired"),
+        t("notifications.physicalDeviceRequiredDesc")
+      );
       return;
     }
 
     const Notifications = getNotifications();
     if (!Notifications) {
-      Alert.alert(t("notifications.notificationsLimited"), t("notifications.notificationsLimitedDesc"));
+      Alert.alert(
+        t("notifications.notificationsLimited"),
+        t("notifications.notificationsLimitedDesc")
+      );
       return;
     }
 
     setIsRequestingPermission(true);
     try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
       if (existingStatus !== "granted") {
@@ -216,7 +217,10 @@ export default function NotificationsScreen() {
           t("notifications.permissionRequiredDesc"),
           [
             { text: t("common.cancel"), style: "cancel" },
-            { text: t("notifications.openSettings"), onPress: () => Linking.openSettings() },
+            {
+              text: t("notifications.openSettings"),
+              onPress: () => Linking.openSettings(),
+            },
           ]
         );
       }
@@ -227,9 +231,12 @@ export default function NotificationsScreen() {
     }
   };
 
-  const updatePreference = async (key: keyof NotificationPreferences, value: boolean) => {
+  const updatePreference = async (
+    key: keyof NotificationPreferences,
+    value: boolean
+  ) => {
     selection();
-    
+
     // If enabling a notification, check permission first
     if (value && permissionStatus !== "granted") {
       await requestPermission();
@@ -242,7 +249,7 @@ export default function NotificationsScreen() {
     }
 
     let updated = { ...prefs, [key]: value };
-    
+
     // If turning on mealReminders, enable all sub-reminders
     if (key === "mealReminders" && value) {
       updated.breakfastReminder = true;
@@ -267,7 +274,7 @@ export default function NotificationsScreen() {
         await cancelMealReminders();
       }
     }
-    
+
     // Handle shopping reminders
     if (key === "shoppingReminders") {
       if (value) {
@@ -276,7 +283,7 @@ export default function NotificationsScreen() {
         await cancelShoppingReminder();
       }
     }
-    
+
     // Handle weekly recap
     if (key === "weeklyRecap") {
       if (value) {
@@ -287,13 +294,15 @@ export default function NotificationsScreen() {
     }
   };
 
-  const scheduleMealReminders = async (currentPrefs?: NotificationPreferences) => {
+  const scheduleMealReminders = async (
+    currentPrefs?: NotificationPreferences
+  ) => {
     const Notifications = getNotifications();
     if (!Notifications) return;
-    
+
     try {
       const prefsToUse = currentPrefs || prefs;
-      
+
       // Cancel all existing meal reminders first
       await cancelMealReminders();
 
@@ -301,9 +310,21 @@ export default function NotificationsScreen() {
       const { breakfastTime, lunchTime, dinnerTime } = onboarding;
 
       // Convert to 24h format
-      const breakfast24 = convertTo24Hour(breakfastTime.hour, breakfastTime.minute, breakfastTime.period);
-      const lunch24 = convertTo24Hour(lunchTime.hour, lunchTime.minute, lunchTime.period);
-      const dinner24 = convertTo24Hour(dinnerTime.hour, dinnerTime.minute, dinnerTime.period);
+      const breakfast24 = convertTo24Hour(
+        breakfastTime.hour,
+        breakfastTime.minute,
+        breakfastTime.period
+      );
+      const lunch24 = convertTo24Hour(
+        lunchTime.hour,
+        lunchTime.minute,
+        lunchTime.period
+      );
+      const dinner24 = convertTo24Hour(
+        dinnerTime.hour,
+        dinnerTime.minute,
+        dinnerTime.period
+      );
 
       // Schedule breakfast reminder if enabled
       if (prefsToUse.breakfastReminder) {
@@ -354,12 +375,21 @@ export default function NotificationsScreen() {
       }
 
       console.log("Scheduled meal reminders:", {
-        breakfast: prefsToUse.breakfastReminder ? `${breakfast24.hour}:${breakfast24.minute}` : "disabled",
-        lunch: prefsToUse.lunchReminder ? `${lunch24.hour}:${lunch24.minute}` : "disabled",
-        dinner: prefsToUse.dinnerReminder ? `${dinner24.hour}:${dinner24.minute}` : "disabled",
+        breakfast: prefsToUse.breakfastReminder
+          ? `${breakfast24.hour}:${breakfast24.minute}`
+          : "disabled",
+        lunch: prefsToUse.lunchReminder
+          ? `${lunch24.hour}:${lunch24.minute}`
+          : "disabled",
+        dinner: prefsToUse.dinnerReminder
+          ? `${dinner24.hour}:${dinner24.minute}`
+          : "disabled",
       });
     } catch (error) {
-      console.log("Failed to schedule notifications (Expo Go limitation):", error);
+      console.log(
+        "Failed to schedule notifications (Expo Go limitation):",
+        error
+      );
     }
   };
 
@@ -367,13 +397,19 @@ export default function NotificationsScreen() {
     const Notifications = getNotifications();
     if (!Notifications) return;
     try {
-      await Notifications.cancelScheduledNotificationAsync("meal-reminder-breakfast");
+      await Notifications.cancelScheduledNotificationAsync(
+        "meal-reminder-breakfast"
+      );
     } catch {}
     try {
-      await Notifications.cancelScheduledNotificationAsync("meal-reminder-lunch");
+      await Notifications.cancelScheduledNotificationAsync(
+        "meal-reminder-lunch"
+      );
     } catch {}
     try {
-      await Notifications.cancelScheduledNotificationAsync("meal-reminder-dinner");
+      await Notifications.cancelScheduledNotificationAsync(
+        "meal-reminder-dinner"
+      );
     } catch {}
   };
 
@@ -383,7 +419,7 @@ export default function NotificationsScreen() {
     if (!Notifications) return;
     try {
       await cancelShoppingReminder();
-      
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "🛒 Shopping Day!",
@@ -397,7 +433,7 @@ export default function NotificationsScreen() {
         },
         identifier: "shopping-reminder",
       });
-      
+
       console.log("Scheduled shopping reminder: Saturday 10:00 AM");
     } catch (error) {
       console.log("Failed to schedule shopping reminder:", error);
@@ -418,7 +454,7 @@ export default function NotificationsScreen() {
     if (!Notifications) return;
     try {
       await cancelWeeklyRecap();
-      
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "📊 Weekly Recap",
@@ -432,7 +468,7 @@ export default function NotificationsScreen() {
         },
         identifier: "weekly-recap",
       });
-      
+
       console.log("Scheduled weekly recap: Sunday 6:00 PM");
     } catch (error) {
       console.log("Failed to schedule weekly recap:", error);
@@ -454,9 +490,13 @@ export default function NotificationsScreen() {
     selection();
 
     const updated = { ...prefs, [key]: value };
-    
+
     // If all meal reminders are off, turn off main toggle
-    if (!updated.breakfastReminder && !updated.lunchReminder && !updated.dinnerReminder) {
+    if (
+      !updated.breakfastReminder &&
+      !updated.lunchReminder &&
+      !updated.dinnerReminder
+    ) {
       updated.mealReminders = false;
     } else {
       updated.mealReminders = true;
@@ -478,7 +518,10 @@ export default function NotificationsScreen() {
 
     const Notifications = getNotifications();
     if (!Notifications) {
-      Alert.alert(t("notifications.notificationsLimited"), t("notifications.notificationsLimitedDesc"));
+      Alert.alert(
+        t("notifications.notificationsLimited"),
+        t("notifications.notificationsLimitedDesc")
+      );
       return;
     }
 
@@ -501,7 +544,10 @@ export default function NotificationsScreen() {
         },
       });
 
-      Alert.alert("Notification Scheduled", "You'll receive a test notification in 2 seconds.");
+      Alert.alert(
+        "Notification Scheduled",
+        "You'll receive a test notification in 2 seconds."
+      );
     } catch (error) {
       console.log("Test notification failed:", error);
       Alert.alert(
@@ -512,9 +558,21 @@ export default function NotificationsScreen() {
   };
 
   // Format meal times for display
-  const breakfastTimeStr = formatTime(onboarding.breakfastTime.hour, onboarding.breakfastTime.minute, onboarding.breakfastTime.period);
-  const lunchTimeStr = formatTime(onboarding.lunchTime.hour, onboarding.lunchTime.minute, onboarding.lunchTime.period);
-  const dinnerTimeStr = formatTime(onboarding.dinnerTime.hour, onboarding.dinnerTime.minute, onboarding.dinnerTime.period);
+  const breakfastTimeStr = formatTime(
+    onboarding.breakfastTime.hour,
+    onboarding.breakfastTime.minute,
+    onboarding.breakfastTime.period
+  );
+  const lunchTimeStr = formatTime(
+    onboarding.lunchTime.hour,
+    onboarding.lunchTime.minute,
+    onboarding.lunchTime.period
+  );
+  const dinnerTimeStr = formatTime(
+    onboarding.dinnerTime.hour,
+    onboarding.dinnerTime.minute,
+    onboarding.dinnerTime.period
+  );
 
   const getPermissionStatusColor = () => {
     switch (permissionStatus) {
@@ -542,7 +600,9 @@ export default function NotificationsScreen() {
 
   if (!isLoaded) {
     return (
-      <View style={[styles.container, styles.loadingContainer, { paddingTop: top }]}>
+      <View
+        style={[styles.container, styles.loadingContainer, { paddingTop: top }]}
+      >
         <ActivityIndicator size="large" color={Colors.lilac[900]} />
       </View>
     );
@@ -564,7 +624,10 @@ export default function NotificationsScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingBottom: bottom + 100 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: bottom + 100 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Permission Status Banner */}
@@ -574,7 +637,9 @@ export default function NotificationsScreen() {
             permissionStatus === "granted" && styles.permissionBannerGranted,
             permissionStatus === "denied" && styles.permissionBannerDenied,
           ]}
-          onPress={permissionStatus !== "granted" ? requestPermission : undefined}
+          onPress={
+            permissionStatus !== "granted" ? requestPermission : undefined
+          }
           disabled={isRequestingPermission}
         >
           <View style={styles.permissionIconContainer}>
@@ -582,15 +647,21 @@ export default function NotificationsScreen() {
               <ActivityIndicator size="small" color={Colors.lilac[900]} />
             ) : (
               <MaterialCommunityIcons
-                name={permissionStatus === "granted" ? "bell-check" : "bell-off-outline"}
+                name={
+                  permissionStatus === "granted"
+                    ? "bell-check"
+                    : "bell-off-outline"
+                }
                 size={24}
-                color={permissionStatus === "granted" ? "#22C55E" : Colors.lilac[900]}
+                color={
+                  permissionStatus === "granted" ? "#22C55E" : Colors.lilac[900]
+                }
               />
             )}
           </View>
           <View style={styles.permissionTextContainer}>
             <Text style={styles.permissionTitle}>
-              {permissionStatus === "granted" 
+              {permissionStatus === "granted"
                 ? t("notifications.enabled")
                 : t("notifications.enable")}
             </Text>
@@ -600,14 +671,26 @@ export default function NotificationsScreen() {
                 : t("notifications.enableDesc")}
             </Text>
           </View>
-          <View style={[styles.permissionStatus, { backgroundColor: getPermissionStatusColor() + "20" }]}>
-            <Text style={[styles.permissionStatusText, { color: getPermissionStatusColor() }]}>
+          <View
+            style={[
+              styles.permissionStatus,
+              { backgroundColor: getPermissionStatusColor() + "20" },
+            ]}
+          >
+            <Text
+              style={[
+                styles.permissionStatusText,
+                { color: getPermissionStatusColor() },
+              ]}
+            >
               {getPermissionStatusText()}
             </Text>
           </View>
         </Pressable>
 
-        <Text style={styles.sectionLabel}>{t("notifications.notificationTypes")}</Text>
+        <Text style={styles.sectionLabel}>
+          {t("notifications.notificationTypes")}
+        </Text>
         <View style={styles.card}>
           {/* Meal Reminders with expandable sub-options */}
           <View>
@@ -616,18 +699,26 @@ export default function NotificationsScreen() {
                 <MaterialCommunityIcons
                   name="food-outline"
                   size={20}
-                  color={prefs.mealReminders ? Colors.lilac[900] : Colors.text.secondary}
+                  color={
+                    prefs.mealReminders
+                      ? Colors.lilac[900]
+                      : Colors.text.secondary
+                  }
                 />
               </View>
               <View style={styles.optionCopy}>
-                <Text style={styles.optionTitle}>{t("notifications.mealReminders")}</Text>
+                <Text style={styles.optionTitle}>
+                  {t("notifications.mealReminders")}
+                </Text>
                 <Text style={styles.optionDescription}>
                   {t("notifications.mealRemindersDesc")}
                 </Text>
               </View>
               <Switch
                 value={prefs.mealReminders}
-                onValueChange={(value) => updatePreference("mealReminders", value)}
+                onValueChange={(value) =>
+                  updatePreference("mealReminders", value)
+                }
                 trackColor={{
                   false: Colors.gray[200],
                   true: Colors.lilac[200],
@@ -635,9 +726,9 @@ export default function NotificationsScreen() {
                 thumbColor={prefs.mealReminders ? Colors.lilac[900] : "#FFFFFF"}
               />
             </View>
-            
+
             {/* Sub-options for individual meals - Animated */}
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.subOptionsContainer,
                 {
@@ -647,161 +738,205 @@ export default function NotificationsScreen() {
                   }),
                   opacity: opacityAnim,
                   overflow: "hidden",
-                }
+                },
               ]}
             >
               {/* Breakfast */}
-              <Animated.View 
+              <Animated.View
                 style={[
                   styles.subOptionRow,
                   {
-                    transform: [{
-                      translateX: expandAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-20, 0],
-                      }),
-                    }],
-                  }
+                    transform: [
+                      {
+                        translateX: expandAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0],
+                        }),
+                      },
+                    ],
+                  },
                 ]}
               >
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🍳</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>{t("mealTimes.breakfast")}</Text>
+                    <Text style={styles.subOptionTitle}>
+                      {t("mealTimes.breakfast")}
+                    </Text>
                     <Text style={styles.subOptionTime}>{breakfastTimeStr}</Text>
                   </View>
                 </View>
                 <Switch
                   value={prefs.breakfastReminder}
-                  onValueChange={(value) => updateMealReminderPreference("breakfastReminder", value)}
+                  onValueChange={(value) =>
+                    updateMealReminderPreference("breakfastReminder", value)
+                  }
                   trackColor={{
                     false: Colors.gray[200],
                     true: Colors.lilac[200],
                   }}
-                  thumbColor={prefs.breakfastReminder ? Colors.lilac[900] : "#FFFFFF"}
+                  thumbColor={
+                    prefs.breakfastReminder ? Colors.lilac[900] : "#FFFFFF"
+                  }
                 />
               </Animated.View>
-              
+
               {/* Lunch */}
-              <Animated.View 
+              <Animated.View
                 style={[
                   styles.subOptionRow,
                   {
-                    transform: [{
-                      translateX: expandAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-20, 0],
-                      }),
-                    }],
-                  }
+                    transform: [
+                      {
+                        translateX: expandAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0],
+                        }),
+                      },
+                    ],
+                  },
                 ]}
               >
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🥗</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>{t("mealTimes.lunch")}</Text>
+                    <Text style={styles.subOptionTitle}>
+                      {t("mealTimes.lunch")}
+                    </Text>
                     <Text style={styles.subOptionTime}>{lunchTimeStr}</Text>
                   </View>
                 </View>
                 <Switch
                   value={prefs.lunchReminder}
-                  onValueChange={(value) => updateMealReminderPreference("lunchReminder", value)}
+                  onValueChange={(value) =>
+                    updateMealReminderPreference("lunchReminder", value)
+                  }
                   trackColor={{
                     false: Colors.gray[200],
                     true: Colors.lilac[200],
                   }}
-                  thumbColor={prefs.lunchReminder ? Colors.lilac[900] : "#FFFFFF"}
+                  thumbColor={
+                    prefs.lunchReminder ? Colors.lilac[900] : "#FFFFFF"
+                  }
                 />
               </Animated.View>
-              
+
               {/* Dinner */}
-              <Animated.View 
+              <Animated.View
                 style={[
                   styles.subOptionRow,
                   {
-                    transform: [{
-                      translateX: expandAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-20, 0],
-                      }),
-                    }],
-                  }
+                    transform: [
+                      {
+                        translateX: expandAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0],
+                        }),
+                      },
+                    ],
+                  },
                 ]}
               >
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🍽️</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>{t("mealTimes.dinner")}</Text>
+                    <Text style={styles.subOptionTitle}>
+                      {t("mealTimes.dinner")}
+                    </Text>
                     <Text style={styles.subOptionTime}>{dinnerTimeStr}</Text>
                   </View>
                 </View>
                 <Switch
                   value={prefs.dinnerReminder}
-                  onValueChange={(value) => updateMealReminderPreference("dinnerReminder", value)}
+                  onValueChange={(value) =>
+                    updateMealReminderPreference("dinnerReminder", value)
+                  }
                   trackColor={{
                     false: Colors.gray[200],
                     true: Colors.lilac[200],
                   }}
-                  thumbColor={prefs.dinnerReminder ? Colors.lilac[900] : "#FFFFFF"}
+                  thumbColor={
+                    prefs.dinnerReminder ? Colors.lilac[900] : "#FFFFFF"
+                  }
                 />
               </Animated.View>
 
               {/* Edit times link */}
-              <Pressable 
+              <Pressable
                 style={styles.editTimesLink}
                 onPress={() => router.push("/(app)/(profile)/meal-times")}
               >
-                <MaterialCommunityIcons name="clock-edit-outline" size={16} color={Colors.lilac[900]} />
-                <Text style={styles.editTimesText}>{t("notifications.editMealTimes")}</Text>
+                <MaterialCommunityIcons
+                  name="clock-edit-outline"
+                  size={16}
+                  color={Colors.lilac[900]}
+                />
+                <Text style={styles.editTimesText}>
+                  {t("notifications.editMealTimes")}
+                </Text>
               </Pressable>
             </Animated.View>
           </View>
-          
+
           <View style={styles.divider} />
-          
+
           {/* Shopping Reminders */}
           <View style={styles.optionRow}>
             <View style={styles.optionIconContainer}>
               <MaterialCommunityIcons
                 name="cart-outline"
                 size={20}
-                color={prefs.shoppingReminders ? Colors.lilac[900] : Colors.text.secondary}
+                color={
+                  prefs.shoppingReminders
+                    ? Colors.lilac[900]
+                    : Colors.text.secondary
+                }
               />
             </View>
             <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>{t("notifications.shoppingReminders")}</Text>
+              <Text style={styles.optionTitle}>
+                {t("notifications.shoppingReminders")}
+              </Text>
               <Text style={styles.optionDescription}>
-                {prefs.shoppingReminders 
+                {prefs.shoppingReminders
                   ? t("notifications.shoppingRemindersEnabled")
                   : t("notifications.shoppingRemindersDesc")}
               </Text>
             </View>
             <Switch
               value={prefs.shoppingReminders}
-              onValueChange={(value) => updatePreference("shoppingReminders", value)}
+              onValueChange={(value) =>
+                updatePreference("shoppingReminders", value)
+              }
               trackColor={{
                 false: Colors.gray[200],
                 true: Colors.lilac[200],
               }}
-              thumbColor={prefs.shoppingReminders ? Colors.lilac[900] : "#FFFFFF"}
+              thumbColor={
+                prefs.shoppingReminders ? Colors.lilac[900] : "#FFFFFF"
+              }
             />
           </View>
-          
+
           <View style={styles.divider} />
-          
+
           {/* Weekly Recap */}
           <View style={styles.optionRow}>
             <View style={styles.optionIconContainer}>
               <MaterialCommunityIcons
                 name="calendar-week"
                 size={20}
-                color={prefs.weeklyRecap ? Colors.lilac[900] : Colors.text.secondary}
+                color={
+                  prefs.weeklyRecap ? Colors.lilac[900] : Colors.text.secondary
+                }
               />
             </View>
             <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>{t("notifications.weeklyRecap")}</Text>
+              <Text style={styles.optionTitle}>
+                {t("notifications.weeklyRecap")}
+              </Text>
               <Text style={styles.optionDescription}>
-                {prefs.weeklyRecap 
+                {prefs.weeklyRecap
                   ? t("notifications.weeklyRecapEnabled")
                   : t("notifications.weeklyRecapDesc")}
               </Text>
@@ -829,7 +964,9 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{t("notifications.testNotification")}</Text>
+              <Text style={styles.rowTitle}>
+                {t("notifications.testNotification")}
+              </Text>
               <Text style={styles.rowDescription}>
                 {t("notifications.testNotificationDesc")}
               </Text>
@@ -853,7 +990,9 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{t("notifications.systemSettings")}</Text>
+              <Text style={styles.rowTitle}>
+                {t("notifications.systemSettings")}
+              </Text>
               <Text style={styles.rowDescription}>
                 {t("notifications.systemSettingsDesc")}
               </Text>
@@ -866,14 +1005,11 @@ export default function NotificationsScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.footerText}>
-          {t("notifications.footerText")}
-        </Text>
+        <Text style={styles.footerText}>{t("notifications.footerText")}</Text>
       </ScrollView>
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
