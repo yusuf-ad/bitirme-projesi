@@ -1264,6 +1264,38 @@ constants/
 - [x] hangi gün için yapıldıysa o güne atsın
 - [x] favoriler eklenirken calori bilgisi gözükmüyor
 
+## onboarding - yunus
+
+- [] goals sayfasına description eklet
+- [] height/weight kısmı scrollable yapma androidde yarısı gözükmüyor
+- [] height/weight kısmına keyboard aware scrollview lazım
+- [] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf
+- goalsda logolara ayar çek yusuf
+- motivaayon işi - yusuf
+- [] something went wrong hatası hala devam ediyor!!!! - yusuf
+- [] quantity seçmeyi daha mantıklı yap
+
+- [] debouncing lazım her harf gönderdiğimizde istek atıyor saniye 2 istek hakkımız var onu belirt
+- [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
+- [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
+- [] diet preferences da resimlerin sağında gölge var
+- [] ana sayfada sınır ekle max 7 gün
+- [] yunusun nota bakılacak ai generatedla ilgili
+- [] frozen
+- [] statusü de kaldır
+- [] mealplane yeni yüz lazım
+- [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan
+- [] anasayfa default statei düzelt
+- [] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun
+- [] hangi tarif replacedeyse o lunchsa lunch olsun
+
+## recipes - osman
+
+- [] servings ayarlama !!!!! ÇOK ÖNEMLİ
+- [] servings için mi calori ingredient kalori felan 1 kişi için mi
+- [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
+- [] healthy ,easy badgeleri gözükmüyor
+
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
 - [ ] Meal logging system
