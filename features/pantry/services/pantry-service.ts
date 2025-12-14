@@ -112,6 +112,24 @@ export const pantryService = {
     return data as PantryItem[];
   },
 
+  async unmarkAllChecked() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
+    const { data, error } = await supabase
+      .from("pantry_items")
+      .update({ checked: false })
+      .eq("user_id", user.id)
+      .eq("status", "shopping_list")
+      .eq("checked", true)
+      .select();
+
+    if (error) throw error;
+    return data as PantryItem[];
+  },
+
   async deleteItem(id: string) {
     const { error } = await supabase.from("pantry_items").delete().eq("id", id);
 

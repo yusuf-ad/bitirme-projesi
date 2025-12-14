@@ -6,6 +6,7 @@ export { PantryItemDetailSheet } from "./components/pantry-item-detail-sheet";
 export { PantryItemRow } from "./components/pantry-item-row";
 export { PantryItemsList } from "./components/pantry-items-list";
 export { PantryScreenHeader } from "./components/pantry-screen-header";
+export { ShoppingListItemsList } from "./components/shopping-list-items-list";
 export { PantrySkeleton } from "./components/pantry-skeleton";
 export { RecipeIdeasView } from "./components/recipe-ideas-view";
 export { SearchPantryHeader } from "./components/search-pantry-header";
