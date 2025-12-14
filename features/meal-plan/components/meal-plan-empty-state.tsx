@@ -138,16 +138,16 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
             },
           ]}
         />
-        <View
-          style={[
-            styles.decorativeBlur2,
-            {
-              backgroundColor: isDark
-                ? Colors.green[600] + "15"
-                : Colors.green[300] + "30",
-            },
-          ]}
-        />
+        {!isDark && (
+          <View
+            style={[
+              styles.decorativeBlur2,
+              {
+                backgroundColor: Colors.green[300] + "30",
+              },
+            ]}
+          />
+        )}
 
         <View style={styles.heroContent}>
           <View style={styles.heroTextContainer}>
