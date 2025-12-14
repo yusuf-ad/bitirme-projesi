@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { searchIngredients } from "@/lib/spoonacular";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   BottomSheetBackdrop,
@@ -8,6 +9,8 @@ import {
 import { Image } from "expo-image";
 import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   StyleSheet,
   Switch,
   Text,
@@ -87,11 +90,81 @@ export const PantryItemDetailSheet = forwardRef<
 
   // Local state for text input (for weight-based items)
   const [inputValue, setInputValue] = useState("");
+  // Loading state for update operation
+  const [isUpdating, setIsUpdating] = useState(false);
+  // State for name editing
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
 
   // Reset input value when item changes
   useEffect(() => {
     setInputValue("");
+    setIsEditingName(false);
+    setEditedName("");
   }, [item?.id]);
+
+  // Handle name edit
+  const handleStartEditName = () => {
+    if (item) {
+      setEditedName(item.name);
+      setIsEditingName(true);
+    }
+  };
+
+  const handleNameSubmit = () => {
+    if (!item || !onUpdateItem || !editedName.trim()) {
+      setIsEditingName(false);
+      return;
+    }
+    const trimmedName = editedName.trim();
+    if (trimmedName !== item.name) {
+      onUpdateItem(item.id, { name: trimmedName });
+    }
+    setIsEditingName(false);
+  };
+
+  // Handle update from Spoonacular API
+  const handleUpdateFromSpoonacular = async () => {
+    if (!item || !onUpdateItem) return;
+
+    setIsUpdating(true);
+    try {
+      // Search for the ingredient by current name
+      const { ingredients } = await searchIngredients(item.name, 0, 1);
+
+      if (ingredients.length === 0) {
+        Alert.alert(
+          "Not Found",
+          "Could not find ingredient information. Please try a different name.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      const firstResult = ingredients[0];
+
+      // Update the item with new data from Spoonacular
+      onUpdateItem(item.id, {
+        name: firstResult.name,
+        spoonacular_id: firstResult.id,
+        spoonacular_image: firstResult.image,
+        spoonacular_name: firstResult.name,
+      });
+
+      Alert.alert("Updated", `Ingredient updated to "${firstResult.name}"`, [
+        { text: "OK" },
+      ]);
+    } catch (error) {
+      console.error("Failed to update from Spoonacular:", error);
+      Alert.alert(
+        "Update Failed",
+        "Could not update ingredient. Please try again.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // Determine if we should show weight input based on is_weight OR unit
   const showAsWeight = useMemo(() => {
@@ -197,7 +270,32 @@ export const PantryItemDetailSheet = forwardRef<
               </View>
 
               <View style={styles.titleContainer}>
-                <Text style={styles.title}>{item.name}</Text>
+                {isEditingName ? (
+                  <TextInput
+                    style={styles.titleInput}
+                    value={editedName}
+                    onChangeText={setEditedName}
+                    onBlur={handleNameSubmit}
+                    onSubmitEditing={handleNameSubmit}
+                    autoFocus
+                    returnKeyType="done"
+                    selectTextOnFocus
+                  />
+                ) : (
+                  <TouchableOpacity
+                    style={styles.titleTouchable}
+                    onPress={handleStartEditName}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.title}>{item.name}</Text>
+                    <Ionicons
+                      name="pencil"
+                      size={16}
+                      color={Colors.gray[400]}
+                      style={styles.titleEditIcon}
+                    />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   onPress={() => (ref as any)?.current?.dismiss()}
                   style={styles.closeButton}
@@ -323,8 +421,23 @@ export const PantryItemDetailSheet = forwardRef<
 
             {/* Footer Actions */}
             <View style={styles.footer}>
-              <TouchableOpacity style={[styles.footerBtn, styles.detailsBtn]}>
-                <Text style={styles.detailsBtnText}>Product Details</Text>
+              <TouchableOpacity
+                style={[
+                  styles.footerBtn,
+                  styles.updateBtn,
+                  isUpdating && styles.updateBtnDisabled,
+                ]}
+                onPress={handleUpdateFromSpoonacular}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <Ionicons name="refresh" size={20} color="white" />
+                    <Text style={styles.updateBtnText}>Update</Text>
+                  </>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -404,12 +517,31 @@ const styles = StyleSheet.create({
     marginLeft: 24,
     paddingTop: 12,
   },
+  titleTouchable: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   title: {
     fontSize: 20,
     fontWeight: "bold",
     color: Colors.gray[800],
-    flex: 1,
     textTransform: "capitalize",
+    flexShrink: 1,
+  },
+  titleEditIcon: {
+    marginTop: 2,
+  },
+  titleInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.gray[800],
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.lilac[900],
+    paddingVertical: 4,
+    paddingHorizontal: 0,
   },
   closeButton: {
     padding: 4,
@@ -537,10 +669,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  detailsBtn: {
+  updateBtn: {
     backgroundColor: Colors.lilac[900],
   },
-  detailsBtnText: {
+  updateBtnDisabled: {
+    opacity: 0.6,
+  },
+  updateBtnText: {
     color: "white",
     fontWeight: "600",
     fontSize: 16,

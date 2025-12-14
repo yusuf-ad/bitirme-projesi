@@ -109,9 +109,15 @@ export default function PantryItemsScreen() {
         >
           <Ionicons name="chevron-back" size={24} color={Colors.text.primary} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
-          {displayTitle}
-        </Text>
+        <Pressable
+          style={styles.titlePressable}
+          onPress={() => router.back()}
+          hitSlop={8}
+        >
+          <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
+            {displayTitle}
+          </Text>
+        </Pressable>
         <Text style={[styles.headerCount, { color: Colors.text.tertiary }]}>
           {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}
         </Text>
@@ -167,8 +173,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerTitle: {
+  titlePressable: {
     flex: 1,
+  },
+  headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
   },
