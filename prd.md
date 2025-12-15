@@ -1269,7 +1269,7 @@ constants/
 - [x] goals sayfasına description eklet
 - [] height/weight kısmı scrollable yapma(Düzelt) androidde yarısı gözükmüyor
 - [x] height/weight kısmına keyboard aware scrollview lazım
-- [] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf
+- [x] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf - commit - d17fb494ec3fd21f105c419810b19969515dc2bc
 - [x]goalsda logolara ayar çek
 - motivaayon işi - yusuf
 - [x] something went wrong hatası hala devam ediyor!!!! - yusuf - commit 96924d25ee19508ee39d43ada9e40538dd49f06a
