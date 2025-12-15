@@ -3,10 +3,9 @@ import { useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 
 export default function MealDetailPage() {
-  const { id, mealSlot, isAiGenerated } = useLocalSearchParams<{
+  const { id, mealSlot } = useLocalSearchParams<{
     id?: string | string[];
     mealSlot?: string;
-    isAiGenerated?: string;
   }>();
 
   const mealId = useMemo(() => {
@@ -15,14 +14,5 @@ export default function MealDetailPage() {
     return Number.isFinite(numericId) ? numericId : null;
   }, [id]);
 
-  // Convert string param to boolean
-  const isAiGeneratedBool = isAiGenerated === "true";
-
-  return (
-    <MealDetailScreen
-      mealId={mealId}
-      mealSlot={mealSlot}
-      isAiGenerated={isAiGeneratedBool}
-    />
-  );
+  return <MealDetailScreen mealId={mealId} mealSlot={mealSlot} />;
 }

@@ -6,12 +6,12 @@ import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
 import {
-    AccessibilityInfo,
-    ActivityIndicator,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  AccessibilityInfo,
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMealDetail } from "../hooks/use-meal-detail";
@@ -20,21 +20,15 @@ import { MealDetailContent } from "./meal-detail-content";
 interface MealDetailScreenProps {
   mealId: number | null;
   mealSlot?: string;
-  isAiGenerated?: boolean;
 }
 
-export function MealDetailScreen({
-  mealId,
-  mealSlot,
-  isAiGenerated,
-}: MealDetailScreenProps) {
+export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
   const router = useRouter();
   const { selection, impact } = useHaptics();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
   const { data, isPending, isRefetching, refetch, error } = useMealDetail(
-    canLoadMeal ? mealId : null,
-    isAiGenerated
+    canLoadMeal ? mealId : null
   );
 
   const { favoriteIds, toggleFavorite } = useFavoriteRecipes();
@@ -97,7 +91,7 @@ export function MealDetailScreen({
       pathname: "/(plan)/assign-meal",
       params,
     });
-  }, [data, router, macroSnapshot, mealSlot]);
+  }, [data, router, macroSnapshot, mealSlot, selection]);
 
   const renderState = () => {
     if (!canLoadMeal) {
