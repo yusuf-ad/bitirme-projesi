@@ -1,10 +1,13 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
-import { TasteAllergies, TasteDietPreferences } from "@/features/onboarding/sections/taste";
+import {
+  TasteAllergies,
+  TasteDietPreferences,
+} from "@/features/onboarding/sections/taste";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
-  resolveAllergiesFast,
+  resolveAllergiesWithImages,
   resolveDietPreferences,
   type DisplayAllergy,
   type DisplayDietPreference,
@@ -41,7 +44,9 @@ export default function AllergiesDietScreen() {
   const [allergyItems, setAllergyItems] = useState<DisplayAllergy[]>([]);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isDietEditModalVisible, setIsDietEditModalVisible] = useState(false);
-  const [tempSelectedAllergies, setTempSelectedAllergies] = useState<string[]>([]);
+  const [tempSelectedAllergies, setTempSelectedAllergies] = useState<string[]>(
+    []
+  );
   const [tempSelectedDiets, setTempSelectedDiets] = useState<string[]>([]);
 
   useEffect(() => {
@@ -51,12 +56,28 @@ export default function AllergiesDietScreen() {
 
   useEffect(() => {
     if (!onboarding.isLoading) {
+      // Resolve diet preferences (sync)
       const diets = resolveDietPreferences(onboarding.selectedDietPreferences);
       setDietItems(diets);
-      const allergies = resolveAllergiesFast(onboarding.selectedAllergies);
-      setAllergyItems(allergies);
+
+      // Resolve allergies with API fetch for unknown ingredients
+      const loadAllergies = async () => {
+        if (onboarding.selectedAllergies.length > 0) {
+          const allergies = await resolveAllergiesWithImages(
+            onboarding.selectedAllergies
+          );
+          setAllergyItems(allergies);
+        } else {
+          setAllergyItems([]);
+        }
+      };
+      loadAllergies();
     }
-  }, [onboarding.isLoading, onboarding.selectedDietPreferences, onboarding.selectedAllergies]);
+  }, [
+    onboarding.isLoading,
+    onboarding.selectedDietPreferences,
+    onboarding.selectedAllergies,
+  ]);
 
   if (onboarding.isLoading) {
     return <ProfessionalLoadingScreen />;
@@ -65,7 +86,10 @@ export default function AllergiesDietScreen() {
   const renderDietChip = ({ item }: { item: DisplayDietPreference }) => (
     <View style={[styles.chip, { backgroundColor: Colors.background.surface }]}>
       <Image source={item.image} style={styles.chipImage} />
-      <Text style={[styles.chipLabel, { color: Colors.text.primary }]} numberOfLines={1}>
+      <Text
+        style={[styles.chipLabel, { color: Colors.text.primary }]}
+        numberOfLines={1}
+      >
         {item.label}
       </Text>
     </View>
@@ -84,7 +108,10 @@ export default function AllergiesDietScreen() {
           <MaterialCommunityIcons name="food-off" size={16} color="#EF4444" />
         </View>
       )}
-      <Text style={[styles.chipLabel, styles.allergyChipLabel]} numberOfLines={1}>
+      <Text
+        style={[styles.chipLabel, styles.allergyChipLabel]}
+        numberOfLines={1}
+      >
         {item.name}
       </Text>
     </View>
@@ -98,7 +125,9 @@ export default function AllergiesDietScreen() {
 
   const handleSaveDiets = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         console.error("No user logged in");
         return;
@@ -106,7 +135,7 @@ export default function AllergiesDietScreen() {
 
       // Update local state
       onboarding.setSelectedDietPreferences(tempSelectedDiets);
-      
+
       // Save directly to Supabase
       await updateUserTastePreferences(user.id, {
         diet_preferences: tempSelectedDiets,
@@ -132,7 +161,9 @@ export default function AllergiesDietScreen() {
 
   const handleSaveAllergies = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         console.error("No user logged in");
         return;
@@ -140,7 +171,7 @@ export default function AllergiesDietScreen() {
 
       // Update local state
       onboarding.setSelectedAllergies(tempSelectedAllergies);
-      
+
       // Save directly to Supabase
       await updateUserTastePreferences(user.id, {
         allergies_dislikes: tempSelectedAllergies,
@@ -159,9 +190,16 @@ export default function AllergiesDietScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: Colors.background.secondary, paddingTop: top },
+      ]}
+    >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: Colors.background.surface }]}>
+      <View
+        style={[styles.header, { backgroundColor: Colors.background.surface }]}
+      >
         <Pressable
           onPress={() => {
             selection();
@@ -169,7 +207,11 @@ export default function AllergiesDietScreen() {
           }}
           style={styles.backButton}
         >
-          <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.text.primary} />
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={Colors.text.primary}
+          />
         </Pressable>
         <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
           {t("allergiesDiet.title")}
@@ -178,11 +220,17 @@ export default function AllergiesDietScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: bottom + 100 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: bottom + 100 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Section */}
-        <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.heroSection}>
+        <Animated.View
+          entering={FadeInUp.delay(50).springify()}
+          style={styles.heroSection}
+        >
           <LinearGradient
             colors={[Colors.lilac[100], Colors.lilac[200]]}
             style={styles.heroGradient}
@@ -193,8 +241,14 @@ export default function AllergiesDietScreen() {
                 <Text style={[styles.heroTitle, { color: Colors.lilac[900] }]}>
                   {t("allergiesDiet.heroTitle") || "Your Diet Profile"}
                 </Text>
-                <Text style={[styles.heroSubtitle, { color: Colors.text.secondary }]}>
-                  {t("allergiesDiet.heroSubtitle") || "Manage your dietary preferences and restrictions"}
+                <Text
+                  style={[
+                    styles.heroSubtitle,
+                    { color: Colors.text.secondary },
+                  ]}
+                >
+                  {t("allergiesDiet.heroSubtitle") ||
+                    "Manage your dietary preferences and restrictions"}
                 </Text>
               </View>
             </View>
@@ -202,44 +256,89 @@ export default function AllergiesDietScreen() {
         </Animated.View>
 
         {/* Stats Row */}
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.statsContainer}>
-          <View style={[styles.statChip, { backgroundColor: `${Colors.lilac[900]}12` }]}>
-            <MaterialCommunityIcons name="leaf" size={14} color={Colors.lilac[900]} />
-            <Text style={[styles.statChipValue, { color: Colors.lilac[900] }]}>{dietItems.length}</Text>
-            <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.statsContainer}
+        >
+          <View
+            style={[
+              styles.statChip,
+              { backgroundColor: `${Colors.lilac[900]}12` },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="leaf"
+              size={14}
+              color={Colors.lilac[900]}
+            />
+            <Text style={[styles.statChipValue, { color: Colors.lilac[900] }]}>
+              {dietItems.length}
+            </Text>
+            <Text
+              style={[styles.statChipLabel, { color: Colors.text.secondary }]}
+            >
               {t("allergiesDiet.diets") || "Diets"}
             </Text>
           </View>
-          
+
           <View style={[styles.statChip, { backgroundColor: "#EF444410" }]}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={14} color="#EF4444" />
-            <Text style={[styles.statChipValue, { color: "#EF4444" }]}>{allergyItems.length}</Text>
-            <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={14}
+              color="#EF4444"
+            />
+            <Text style={[styles.statChipValue, { color: "#EF4444" }]}>
+              {allergyItems.length}
+            </Text>
+            <Text
+              style={[styles.statChipLabel, { color: Colors.text.secondary }]}
+            >
               {t("allergiesDiet.allergies") || "Allergies"}
             </Text>
           </View>
         </Animated.View>
 
         {/* Diet Preferences Section */}
-        <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(150).springify()}
+          style={styles.section}
+        >
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIcon, { backgroundColor: `${Colors.lilac[900]}15` }]}>
-              <MaterialCommunityIcons name="leaf" size={18} color={Colors.lilac[900]} />
+            <View
+              style={[
+                styles.sectionIcon,
+                { backgroundColor: `${Colors.lilac[900]}15` },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="leaf"
+                size={18}
+                color={Colors.lilac[900]}
+              />
             </View>
             <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
               {t("allergiesDiet.dietPreferences")}
             </Text>
             <Pressable
               onPress={handleEditDiets}
-              style={[styles.editButton, { backgroundColor: `${Colors.lilac[900]}10` }]}
+              style={[
+                styles.editButton,
+                { backgroundColor: `${Colors.lilac[900]}10` },
+              ]}
             >
-              <MaterialCommunityIcons name="pencil" size={16} color={Colors.lilac[900]} />
-              <Text style={[styles.editButtonText, { color: Colors.lilac[900] }]}>
+              <MaterialCommunityIcons
+                name="pencil"
+                size={16}
+                color={Colors.lilac[900]}
+              />
+              <Text
+                style={[styles.editButtonText, { color: Colors.lilac[900] }]}
+              >
                 {t("common.edit") || "Edit"}
               </Text>
             </Pressable>
           </View>
-          
+
           {dietItems.length > 0 ? (
             <FlatList
               data={dietItems}
@@ -254,8 +353,14 @@ export default function AllergiesDietScreen() {
               onPress={handleEditDiets}
               style={[styles.emptyChipList, { borderColor: Colors.gray[300] }]}
             >
-              <MaterialCommunityIcons name="plus-circle-outline" size={20} color={Colors.text.secondary} />
-              <Text style={[styles.emptyChipText, { color: Colors.text.secondary }]}>
+              <MaterialCommunityIcons
+                name="plus-circle-outline"
+                size={20}
+                color={Colors.text.secondary}
+              />
+              <Text
+                style={[styles.emptyChipText, { color: Colors.text.secondary }]}
+              >
                 {t("allergiesDiet.addDiets") || "Add diet preferences"}
               </Text>
             </Pressable>
@@ -263,10 +368,19 @@ export default function AllergiesDietScreen() {
         </Animated.View>
 
         {/* Allergies Section */}
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.section}
+        >
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIcon, { backgroundColor: "#EF444415" }]}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={18} color="#EF4444" />
+            <View
+              style={[styles.sectionIcon, { backgroundColor: "#EF444415" }]}
+            >
+              <MaterialCommunityIcons
+                name="alert-circle-outline"
+                size={18}
+                color="#EF4444"
+              />
             </View>
             <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
               {t("allergiesDiet.allergiesTitle")}
@@ -276,10 +390,12 @@ export default function AllergiesDietScreen() {
               style={[styles.editButton, { backgroundColor: "#EF444410" }]}
             >
               <MaterialCommunityIcons name="pencil" size={16} color="#EF4444" />
-              <Text style={styles.editButtonText}>{t("common.edit") || "Edit"}</Text>
+              <Text style={styles.editButtonText}>
+                {t("common.edit") || "Edit"}
+              </Text>
             </Pressable>
           </View>
-          
+
           {allergyItems.length > 0 ? (
             <FlatList
               data={allergyItems}
@@ -294,8 +410,14 @@ export default function AllergiesDietScreen() {
               onPress={handleEditAllergies}
               style={[styles.emptyChipList, { borderColor: Colors.gray[300] }]}
             >
-              <MaterialCommunityIcons name="plus-circle-outline" size={20} color={Colors.text.secondary} />
-              <Text style={[styles.emptyChipText, { color: Colors.text.secondary }]}>
+              <MaterialCommunityIcons
+                name="plus-circle-outline"
+                size={20}
+                color={Colors.text.secondary}
+              />
+              <Text
+                style={[styles.emptyChipText, { color: Colors.text.secondary }]}
+              >
                 {t("allergiesDiet.addAllergies") || "Add allergies or dislikes"}
               </Text>
             </Pressable>
@@ -303,14 +425,23 @@ export default function AllergiesDietScreen() {
         </Animated.View>
 
         {/* Info Card */}
-        <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.infoCard}>
-          <LinearGradient colors={["#FEF3C7", "#FDE68A"]} style={styles.infoGradient}>
+        <Animated.View
+          entering={FadeInDown.delay(250).springify()}
+          style={styles.infoCard}
+        >
+          <LinearGradient
+            colors={["#FEF3C7", "#FDE68A"]}
+            style={styles.infoGradient}
+          >
             <View style={styles.infoContent}>
               <Text style={styles.infoEmoji}>💡</Text>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoTitle}>{t("allergiesDiet.infoTitle") || "Why this matters"}</Text>
+                <Text style={styles.infoTitle}>
+                  {t("allergiesDiet.infoTitle") || "Why this matters"}
+                </Text>
                 <Text style={styles.infoText}>
-                  {t("allergiesDiet.infoText") || "Your dietary preferences help us filter recipes and create personalized meal plans that work for you."}
+                  {t("allergiesDiet.infoText") ||
+                    "Your dietary preferences help us filter recipes and create personalized meal plans that work for you."}
                 </Text>
               </View>
             </View>
@@ -319,32 +450,74 @@ export default function AllergiesDietScreen() {
 
         {/* Empty State */}
         {dietItems.length === 0 && allergyItems.length === 0 && (
-          <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.emptyState}>
-            <View style={[styles.emptyStateIcon, { backgroundColor: Colors.lilac[100] }]}>
-              <MaterialCommunityIcons name="food-variant" size={40} color={Colors.lilac[900]} />
+          <Animated.View
+            entering={FadeInDown.delay(150).springify()}
+            style={styles.emptyState}
+          >
+            <View
+              style={[
+                styles.emptyStateIcon,
+                { backgroundColor: Colors.lilac[100] },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="food-variant"
+                size={40}
+                color={Colors.lilac[900]}
+              />
             </View>
-            <Text style={[styles.emptyStateTitle, { color: Colors.text.primary }]}>
+            <Text
+              style={[styles.emptyStateTitle, { color: Colors.text.primary }]}
+            >
               {t("allergiesDiet.noRestrictions")}
             </Text>
-            <Text style={[styles.emptyStateText, { color: Colors.text.secondary }]}>
+            <Text
+              style={[styles.emptyStateText, { color: Colors.text.secondary }]}
+            >
               {t("allergiesDiet.noRestrictionsDesc")}
             </Text>
             <Pressable
-              style={[styles.emptyStateButton, { backgroundColor: Colors.lilac[900] }]}
+              style={[
+                styles.emptyStateButton,
+                { backgroundColor: Colors.lilac[900] },
+              ]}
               onPress={() => router.push("/(onboarding)/flow")}
             >
-              <Text style={styles.emptyStateButtonText}>{t("allergiesDiet.setPreferences")}</Text>
+              <Text style={styles.emptyStateButtonText}>
+                {t("allergiesDiet.setPreferences")}
+              </Text>
             </Pressable>
           </Animated.View>
         )}
       </ScrollView>
 
       {/* Edit Modal */}
-      <Modal visible={isEditModalVisible} animationType="slide" onRequestClose={handleCloseModal}>
-        <View style={[styles.modalContainer, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
-          <View style={[styles.modalHeader, { backgroundColor: Colors.background.surface }]}>
-            <Pressable onPress={handleCloseModal} style={styles.modalCloseButton}>
-              <MaterialCommunityIcons name="close" size={24} color={Colors.text.primary} />
+      <Modal
+        visible={isEditModalVisible}
+        animationType="slide"
+        onRequestClose={handleCloseModal}
+      >
+        <View
+          style={[
+            styles.modalContainer,
+            { backgroundColor: Colors.background.secondary, paddingTop: top },
+          ]}
+        >
+          <View
+            style={[
+              styles.modalHeader,
+              { backgroundColor: Colors.background.surface },
+            ]}
+          >
+            <Pressable
+              onPress={handleCloseModal}
+              style={styles.modalCloseButton}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={24}
+                color={Colors.text.primary}
+              />
             </Pressable>
             <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
               {t("allergiesDiet.editAllergies")}
@@ -362,20 +535,46 @@ export default function AllergiesDietScreen() {
           <View style={[styles.modalFooter, { paddingBottom: bottom + 16 }]}>
             <Pressable
               onPress={handleSaveAllergies}
-              style={[styles.saveButton, { backgroundColor: Colors.lilac[900] }]}
+              style={[
+                styles.saveButton,
+                { backgroundColor: Colors.lilac[900] },
+              ]}
             >
-              <Text style={styles.saveButtonText}>{t("allergiesDiet.saveChanges")}</Text>
+              <Text style={styles.saveButtonText}>
+                {t("allergiesDiet.saveChanges")}
+              </Text>
             </Pressable>
           </View>
         </View>
       </Modal>
 
       {/* Diet Edit Modal */}
-      <Modal visible={isDietEditModalVisible} animationType="slide" onRequestClose={handleCloseDietModal}>
-        <View style={[styles.modalContainer, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
-          <View style={[styles.modalHeader, { backgroundColor: Colors.background.surface }]}>
-            <Pressable onPress={handleCloseDietModal} style={styles.modalCloseButton}>
-              <MaterialCommunityIcons name="close" size={24} color={Colors.text.primary} />
+      <Modal
+        visible={isDietEditModalVisible}
+        animationType="slide"
+        onRequestClose={handleCloseDietModal}
+      >
+        <View
+          style={[
+            styles.modalContainer,
+            { backgroundColor: Colors.background.secondary, paddingTop: top },
+          ]}
+        >
+          <View
+            style={[
+              styles.modalHeader,
+              { backgroundColor: Colors.background.surface },
+            ]}
+          >
+            <Pressable
+              onPress={handleCloseDietModal}
+              style={styles.modalCloseButton}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={24}
+                color={Colors.text.primary}
+              />
             </Pressable>
             <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
               {t("allergiesDiet.editDiets") || "Edit Diet Preferences"}
@@ -393,9 +592,14 @@ export default function AllergiesDietScreen() {
           <View style={[styles.modalFooter, { paddingBottom: bottom + 16 }]}>
             <Pressable
               onPress={handleSaveDiets}
-              style={[styles.saveButton, { backgroundColor: Colors.lilac[900] }]}
+              style={[
+                styles.saveButton,
+                { backgroundColor: Colors.lilac[900] },
+              ]}
             >
-              <Text style={styles.saveButtonText}>{t("allergiesDiet.saveChanges")}</Text>
+              <Text style={styles.saveButtonText}>
+                {t("allergiesDiet.saveChanges")}
+              </Text>
             </Pressable>
           </View>
         </View>

@@ -1,6 +1,10 @@
 import { getThemeColors } from "@/constants/theme";
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
-import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
+import {
+  getIngredientInformation,
+  searchIngredients,
+  type Ingredient,
+} from "@/lib/spoonacular";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -28,9 +32,15 @@ type AllergyItem =
   | (typeof POPULAR_INGREDIENTS)[number]
   | { name: string; image?: string };
 
-const INGREDIENT_IMAGE_BASE_URL = "https://spoonacular.com/cdn/ingredients_100x100";
+const INGREDIENT_IMAGE_BASE_URL =
+  "https://spoonacular.com/cdn/ingredients_100x100";
 
-const createFallbackAllergyItem = (key: string): AllergyItem & { _originalKey?: string } => {
+// Debounce delay for search - Spoonacular allows max 2 requests/second
+const SEARCH_DEBOUNCE_MS = 800;
+
+const createFallbackAllergyItem = (
+  key: string
+): AllergyItem & { _originalKey?: string } => {
   if (key.startsWith("name-")) {
     const formatted = key
       .replace("name-", "")
@@ -46,6 +56,35 @@ const createFallbackAllergyItem = (key: string): AllergyItem & { _originalKey?: 
   return { name: key, _originalKey: key };
 };
 
+// Helper function to safely extract ingredient display name
+const getIngredientDisplayName = (item: AllergyItem): string => {
+  // Check for name property on Ingredient type (from API)
+  if ("name" in item && typeof item.name === "string" && item.name) {
+    return item.name;
+  }
+  // Check for name on popular ingredients
+  if ("name" in item && item.name) {
+    return String(item.name);
+  }
+  // Fallback for unknown items
+  return "Unknown Ingredient";
+};
+
+// Helper function to safely extract and format ingredient image URL
+const getIngredientImageUrl = (item: AllergyItem): string | null => {
+  // Check for image property on Ingredient type (from API)
+  if ("image" in item && typeof item.image === "string" && item.image) {
+    const imagePath = item.image;
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith("http")) {
+      return imagePath;
+    }
+    // Otherwise, construct the full URL
+    return `${INGREDIENT_IMAGE_BASE_URL}/${imagePath}`;
+  }
+  return null;
+};
+
 export function TasteAllergies({
   title,
   description,
@@ -55,12 +94,14 @@ export function TasteAllergies({
   const { isDark } = useTheme();
   const Colors = getThemeColors(isDark);
 
-  const [selectedAllergiesMap, setSelectedAllergiesMap] = useState<Map<string, AllergyItem>>(new Map());
+  const [selectedAllergiesMap, setSelectedAllergiesMap] = useState<
+    Map<string, AllergyItem>
+  >(new Map());
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  
+
   // Debounce timer ref
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -72,7 +113,8 @@ export function TasteAllergies({
     if ("id" in item && typeof item.id === "number") {
       return `${item.id}`;
     }
-    const spoonacularId = (item as (typeof POPULAR_INGREDIENTS)[number]).spoonacularId;
+    const spoonacularId = (item as (typeof POPULAR_INGREDIENTS)[number])
+      .spoonacularId;
     if (typeof spoonacularId === "number") {
       return `${spoonacularId}`;
     }
@@ -99,31 +141,34 @@ export function TasteAllergies({
     }
   }, []);
 
-  // Handle text change with debounce (500ms delay)
-  const handleSearchTextChange = useCallback((query: string) => {
-    setSearchQuery(query);
-    
-    // Clear previous timer
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current);
-    }
-    
-    // If empty, reset immediately
-    if (query.trim().length === 0) {
-      setSearchResults([]);
-      setHasSearched(false);
-      setIsSearching(false);
-      return;
-    }
-    
-    // Set searching state for UI feedback
-    setIsSearching(true);
-    
-    // Debounce the API call - wait 500ms after user stops typing
-    searchDebounceRef.current = setTimeout(() => {
-      performSearch(query);
-    }, 500);
-  }, [performSearch]);
+  // Handle text change with debounce (800ms delay to respect Spoonacular rate limit)
+  const handleSearchTextChange = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+
+      // Clear previous timer
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+
+      // If empty, reset immediately
+      if (query.trim().length === 0) {
+        setSearchResults([]);
+        setHasSearched(false);
+        setIsSearching(false);
+        return;
+      }
+
+      // Set searching state for UI feedback
+      setIsSearching(true);
+
+      // Debounce the API call - respects Spoonacular rate limit (max 2 req/sec)
+      searchDebounceRef.current = setTimeout(() => {
+        performSearch(query);
+      }, SEARCH_DEBOUNCE_MS);
+    },
+    [performSearch]
+  );
 
   // Clear search function
   const clearSearch = useCallback(() => {
@@ -152,44 +197,66 @@ export function TasteAllergies({
         return;
       }
 
-      const restoredMap = new Map<string, AllergyItem>();
-      const unknownIds: string[] = [];
+      setSelectedAllergiesMap((currentMap) => {
+        const restoredMap = new Map<string, AllergyItem>();
+        const unknownIds: string[] = [];
 
-      // First pass: restore from previous map or popular ingredients
-      initialSelection.forEach((key) => {
-        const fromPopular = POPULAR_INGREDIENTS.find(
-          (ingredient) => getIngredientKey(ingredient) === key
-        );
-        if (fromPopular) {
-          restoredMap.set(key, fromPopular);
-        } else if (/^\d+$/.test(key)) {
-          // Numeric ID - need to look up
-          unknownIds.push(key);
-          restoredMap.set(key, createFallbackAllergyItem(key));
-        } else {
-          restoredMap.set(key, createFallbackAllergyItem(key));
+        // First pass: restore from current map, popular ingredients, or create fallback
+        initialSelection.forEach((key) => {
+          // First check if we already have this item in the current map (with full data)
+          const existingItem = currentMap.get(key);
+          if (existingItem && !("_originalKey" in existingItem)) {
+            // We have the full item data, keep it
+            restoredMap.set(key, existingItem);
+            return;
+          }
+
+          // Check popular ingredients
+          const fromPopular = POPULAR_INGREDIENTS.find(
+            (ingredient) => getIngredientKey(ingredient) === key
+          );
+          if (fromPopular) {
+            restoredMap.set(key, fromPopular);
+          } else if (/^\d+$/.test(key)) {
+            // Numeric ID - need to look up
+            unknownIds.push(key);
+            restoredMap.set(key, createFallbackAllergyItem(key));
+          } else {
+            restoredMap.set(key, createFallbackAllergyItem(key));
+          }
+        });
+
+        // Schedule async fetch for unknown IDs (outside state updater)
+        if (unknownIds.length > 0) {
+          fetchUnknownIngredients(unknownIds);
         }
+
+        return restoredMap;
       });
+    };
 
-      setSelectedAllergiesMap(restoredMap);
-
-      // Try to fetch names for unknown numeric IDs
-      if (unknownIds.length > 0) {
+    const fetchUnknownIngredients = async (unknownIds: string[]) => {
+      // Fetch ingredient info by ID directly from Spoonacular API
+      for (const id of unknownIds) {
         try {
-          // Search for each unknown ID to get its name
-          for (const id of unknownIds) {
-            const { ingredients } = await searchIngredients(id, 0, 5);
-            const found = ingredients.find((ing) => `${ing.id}` === id);
-            if (found) {
-              setSelectedAllergiesMap((prev) => {
-                const newMap = new Map(prev);
-                newMap.set(id, found);
-                return newMap;
-              });
-            }
+          const numericId = parseInt(id, 10);
+          if (isNaN(numericId)) continue;
+
+          const info = await getIngredientInformation(numericId);
+          if (info && info.name) {
+            const ingredientData: Ingredient = {
+              id: numericId,
+              name: info.name,
+              image: (info as any).image || undefined,
+            };
+            setSelectedAllergiesMap((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(id, ingredientData);
+              return newMap;
+            });
           }
         } catch (error) {
-          console.error("Error fetching ingredient names:", error);
+          console.error(`Error fetching ingredient ${id}:`, error);
         }
       }
     };
@@ -201,13 +268,13 @@ export function TasteAllergies({
     const key = getIngredientKey(item);
     const isCurrentlySelected = selectedAllergiesMap.has(key);
     const newMap = new Map(selectedAllergiesMap);
-    
+
     if (isCurrentlySelected) {
       newMap.delete(key);
     } else {
       newMap.set(key, item);
     }
-    
+
     setSelectedAllergiesMap(newMap);
     onSelectionChange?.(Array.from(newMap.keys()));
   };
@@ -219,25 +286,37 @@ export function TasteAllergies({
   );
 
   const renderAllergyItem = ({ item }: { item: AllergyItem }) => {
-    const ingredientName = (item as any).name;
-    const ingredientImage = (item as any).image;
+    const ingredientName = getIngredientDisplayName(item);
+    const ingredientImageUrl = getIngredientImageUrl(item);
 
     return (
       <Pressable
         onPress={() => toggleAllergy(item)}
-        style={[styles.allergyItem, { backgroundColor: Colors.background.surface }]}
+        style={[
+          styles.allergyItem,
+          { backgroundColor: Colors.background.surface },
+        ]}
       >
-        <View style={[styles.imageContainer, { backgroundColor: Colors.gray[100] }]}>
-          {ingredientImage ? (
+        <View
+          style={[styles.imageContainer, { backgroundColor: Colors.gray[100] }]}
+        >
+          {ingredientImageUrl ? (
             <Image
-              source={{ uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}` }}
+              source={{ uri: ingredientImageUrl }}
               style={styles.allergyIcon}
             />
           ) : (
-            <MaterialCommunityIcons name="food-apple-outline" size={24} color={Colors.gray[400]} />
+            <MaterialCommunityIcons
+              name="food-apple-outline"
+              size={24}
+              color={Colors.gray[400]}
+            />
           )}
         </View>
-        <Text style={[styles.allergyLabel, { color: Colors.text.primary }]} numberOfLines={2}>
+        <Text
+          style={[styles.allergyLabel, { color: Colors.text.primary }]}
+          numberOfLines={2}
+        >
           {ingredientName}
         </Text>
       </Pressable>
@@ -249,11 +328,22 @@ export function TasteAllergies({
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <View style={[styles.cardContainer, { backgroundColor: "#FFFFFF", shadowColor: Colors.lilac[900] }]}>
+      <View
+        style={[
+          styles.cardContainer,
+          { backgroundColor: "#FFFFFF", shadowColor: Colors.lilac[900] },
+        ]}
+      >
         {/* Card Header */}
         <View style={styles.cardHeader}>
-          <Text style={[styles.cardEmoji, { backgroundColor: Colors.lilac[100] }]}>🥜</Text>
-          <Text style={[styles.cardTitle, { color: Colors.text.primary }]}>{title}</Text>
+          <Text
+            style={[styles.cardEmoji, { backgroundColor: Colors.lilac[100] }]}
+          >
+            🥜
+          </Text>
+          <Text style={[styles.cardTitle, { color: Colors.text.primary }]}>
+            {title}
+          </Text>
           <Text style={[styles.cardSubtitle, { color: Colors.text.secondary }]}>
             {description || "Select any allergies you have"}
           </Text>
@@ -261,8 +351,17 @@ export function TasteAllergies({
 
         <View style={styles.cardBody}>
           {/* Search Bar */}
-          <View style={[styles.searchContainer, { backgroundColor: Colors.background.surface }]}>
-            <MaterialCommunityIcons name="magnify" size={20} color={Colors.text.secondary} />
+          <View
+            style={[
+              styles.searchContainer,
+              { backgroundColor: Colors.background.surface },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="magnify"
+              size={20}
+              color={Colors.text.secondary}
+            />
             <TextInput
               style={[styles.searchInput, { color: Colors.text.primary }]}
               placeholder="Search ingredients..."
@@ -270,10 +369,16 @@ export function TasteAllergies({
               value={searchQuery}
               onChangeText={handleSearchTextChange}
             />
-            {isSearching && <ActivityIndicator size="small" color={Colors.lilac[900]} />}
+            {isSearching && (
+              <ActivityIndicator size="small" color={Colors.lilac[900]} />
+            )}
             {searchQuery.length > 0 && !isSearching && (
               <Pressable onPress={clearSearch}>
-                <MaterialCommunityIcons name="close-circle" size={20} color={Colors.text.secondary} />
+                <MaterialCommunityIcons
+                  name="close-circle"
+                  size={20}
+                  color={Colors.text.secondary}
+                />
               </Pressable>
             )}
           </View>
@@ -282,10 +387,21 @@ export function TasteAllergies({
           {selectedItems.length > 0 && (
             <View style={styles.selectedSection}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIconContainer, { backgroundColor: "#EF444415" }]}>
-                  <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#EF4444" />
+                <View
+                  style={[
+                    styles.sectionIconContainer,
+                    { backgroundColor: "#EF444415" },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="alert-circle-outline"
+                    size={16}
+                    color="#EF4444"
+                  />
                 </View>
-                <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+                <Text
+                  style={[styles.sectionTitle, { color: Colors.text.primary }]}
+                >
                   Avoiding ({selectedItems.length})
                 </Text>
               </View>
@@ -295,29 +411,37 @@ export function TasteAllergies({
                 contentContainerStyle={styles.selectedChipsContainer}
               >
                 {selectedItems.map((item, index) => {
-                  const ingredientName = (item as any).name;
-                  const ingredientImage = (item as any).image;
+                  const ingredientName = getIngredientDisplayName(item);
+                  const ingredientImageUrl = getIngredientImageUrl(item);
                   return (
                     <Pressable
                       key={`selected-${index}`}
                       onPress={() => toggleAllergy(item)}
                       style={styles.selectedChip}
                     >
-                      {ingredientImage ? (
+                      {ingredientImageUrl ? (
                         <Image
-                          source={{ uri: `${INGREDIENT_IMAGE_BASE_URL}/${ingredientImage}` }}
+                          source={{ uri: ingredientImageUrl }}
                           style={styles.selectedChipImage}
                         />
                       ) : (
                         <View style={styles.selectedChipImagePlaceholder}>
-                          <MaterialCommunityIcons name="food-off" size={14} color="#EF4444" />
+                          <MaterialCommunityIcons
+                            name="food-off"
+                            size={14}
+                            color="#EF4444"
+                          />
                         </View>
                       )}
                       <Text style={styles.selectedChipLabel} numberOfLines={1}>
                         {ingredientName}
                       </Text>
                       <View style={styles.removeIcon}>
-                        <MaterialCommunityIcons name="close" size={12} color="#FFFFFF" />
+                        <MaterialCommunityIcons
+                          name="close"
+                          size={12}
+                          color="#FFFFFF"
+                        />
                       </View>
                     </Pressable>
                   );
@@ -329,10 +453,21 @@ export function TasteAllergies({
           {/* Available Items */}
           <View style={styles.availableSection}>
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconContainer, { backgroundColor: `${Colors.lilac[900]}15` }]}>
-                <MaterialCommunityIcons name="food-variant" size={16} color={Colors.lilac[900]} />
+              <View
+                style={[
+                  styles.sectionIconContainer,
+                  { backgroundColor: `${Colors.lilac[900]}15` },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="food-variant"
+                  size={16}
+                  color={Colors.lilac[900]}
+                />
               </View>
-              <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+              <Text
+                style={[styles.sectionTitle, { color: Colors.text.primary }]}
+              >
                 {hasSearched ? "Search Results" : "Common Ingredients"}
               </Text>
             </View>
@@ -340,19 +475,37 @@ export function TasteAllergies({
             {isSearching ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.lilac[900]} />
-                <Text style={[styles.loadingText, { color: Colors.text.secondary }]}>Searching...</Text>
+                <Text
+                  style={[styles.loadingText, { color: Colors.text.secondary }]}
+                >
+                  Searching...
+                </Text>
               </View>
             ) : hasSearched && displayItems.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <MaterialCommunityIcons name="magnify-close" size={48} color={Colors.gray[300]} />
-                <Text style={[styles.emptyText, { color: Colors.text.secondary }]}>No ingredients found</Text>
-                <Text style={[styles.emptySubtext, { color: Colors.text.tertiary }]}>Try a different search term</Text>
+                <MaterialCommunityIcons
+                  name="magnify-close"
+                  size={48}
+                  color={Colors.gray[300]}
+                />
+                <Text
+                  style={[styles.emptyText, { color: Colors.text.secondary }]}
+                >
+                  No ingredients found
+                </Text>
+                <Text
+                  style={[styles.emptySubtext, { color: Colors.text.tertiary }]}
+                >
+                  Try a different search term
+                </Text>
               </View>
             ) : (
               <FlatList
                 data={unselectedItems}
                 renderItem={renderAllergyItem}
-                keyExtractor={(item, index) => `item-${index}-${getIngredientKey(item)}`}
+                keyExtractor={(item, index) =>
+                  `item-${index}-${getIngredientKey(item)}`
+                }
                 numColumns={3}
                 scrollEnabled={false}
                 contentContainerStyle={styles.gridContent}
@@ -371,11 +524,15 @@ export function TasteAllergies({
               onSelectionChange?.([]);
             }}
           >
-            <Text style={[styles.skipButtonText, { color: Colors.text.secondary }]}>I have no allergies</Text>
+            <Text
+              style={[styles.skipButtonText, { color: Colors.text.secondary }]}
+            >
+              I have no allergies
+            </Text>
           </Pressable>
         </View>
       </View>
-      
+
       {/* Bottom Padding */}
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -596,4 +753,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

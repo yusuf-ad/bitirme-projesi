@@ -1269,11 +1269,11 @@ constants/
 - [x] goals sayfasına description eklet
 - [] height/weight kısmı scrollable yapma(Düzelt) androidde yarısı gözükmüyor
 - [x] height/weight kısmına keyboard aware scrollview lazım
-- [] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf
+- [x] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf - commit - 5c0248d7672bacc912f5e572fccda5d1d845f86f
 - [x]goalsda logolara ayar çek
 - motivaayon işi - yusuf
-- [] something went wrong hatası hala devam ediyor!!!! - yusuf
-- [] quantity seçmeyi daha mantıklı yap
+- [x] something went wrong hatası hala devam ediyor!!!! - yusuf - commit 96924d25ee19508ee39d43ada9e40538dd49f06a
+- [x] quantity seçmeyi daha mantıklı yap - yusuf - a49c11e8e0a5e2d7d876bfa06b42b2b4d1f25257
 
 - [x] debouncing lazım her harf gönderdiğimizde istek atıyor saniye 2 istek hakkımız var onu belirt
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
@@ -1281,12 +1281,12 @@ constants/
 - [x] diet preferences da resimlerin sağında gölge var
 - [] ana sayfada sınır ekle max 7 gün
 - [] yunusun nota bakılacak ai generatedla ilgili
-- [] frozen
-- [] statusü de kaldır
-- [] mealplane yeni yüz lazım
+- [x] frozen
+- [x] statusü de kaldır
+- [x] mealplane yeni yüz lazım
 - [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan
-- [] anasayfa default statei düzelt
-- [] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun
+- [x] anasayfa default statei düzelt
+- [x] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun - 3479654c18f2671f3e765d3fe2082fd1dad883aa
 - [] hangi tarif replacedeyse o lunchsa lunch olsun
 
 ## recipes - osman
@@ -1294,13 +1294,13 @@ constants/
 - [] servings ayarlama !!!!! ÇOK ÖNEMLİ
 - [] servings için mi calori ingredient kalori felan 1 kişi için mi
 - [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
-- [] healthy ,easy badgeleri gözükmüyor
+- [] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
-- [ ] Meal logging system
-- [ ] Nutrition tracking - yunus
-- [ ] Goal progress indicators - yunus
+- [x] Meal logging system
+- [x] Nutrition tracking - yunus
+- [x] Goal progress indicators - yunus
 - [x] History view - yunus
 
 ### Phase 5: Enhancements (Weeks 10-11)
@@ -1308,7 +1308,6 @@ constants/
 - [ ] OAuth integration (Google)
 - [ ] Notifications system
 - [ ] Advanced filtering
-- [ ] Recipe reviews
 - [ ] Performance optimization
 
 ### Phase 6: Testing & Refinement (Weeks 12-13)

@@ -4,18 +4,28 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetView,
+  BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
+  Pressable,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -95,12 +105,16 @@ export const PantryItemDetailSheet = forwardRef<
   // State for name editing
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
+  // State for quantity editing
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+  const quantityInputRef = useRef<TextInput>(null);
 
   // Reset input value when item changes
   useEffect(() => {
     setInputValue("");
     setIsEditingName(false);
     setEditedName("");
+    setIsEditingQuantity(false);
   }, [item?.id]);
 
   // Handle name edit
@@ -195,7 +209,10 @@ export const PantryItemDetailSheet = forwardRef<
 
   const handleQuantityChange = (delta: number) => {
     if (!item || !onUpdateItem) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newAmount = Math.max(0, item.amount + delta);
+    // Update both the item and the input value so TextInput reflects the change
+    setInputValue(String(newAmount));
     onUpdateItem(item.id, { amount: newAmount });
   };
 
@@ -206,11 +223,29 @@ export const PantryItemDetailSheet = forwardRef<
   };
 
   const handleAmountSubmit = () => {
-    if (!item || !onUpdateItem || !inputValue) return;
-    const newAmount = parseFloat(inputValue);
+    if (!item || !onUpdateItem) {
+      setIsEditingQuantity(false);
+      return;
+    }
+    const valueToSubmit = inputValue || String(item.amount);
+    const newAmount = parseFloat(valueToSubmit);
     if (!isNaN(newAmount) && newAmount >= 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onUpdateItem(item.id, { amount: newAmount });
-      setInputValue("");
+    }
+    setInputValue("");
+    setIsEditingQuantity(false);
+  };
+
+  const handleStartEditQuantity = () => {
+    if (item) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setInputValue(String(item.amount));
+      setIsEditingQuantity(true);
+      // Focus the input after a short delay to ensure it's rendered
+      setTimeout(() => {
+        quantityInputRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -246,224 +281,238 @@ export const PantryItemDetailSheet = forwardRef<
       backgroundStyle={{ borderRadius: 32 }}
       handleIndicatorStyle={{ backgroundColor: Colors.gray[300], width: 40 }}
     >
-      <BottomSheetView
-        style={[styles.container, { paddingBottom: insets.bottom + 16 }]}
+      <BottomSheetScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.container,
+          { paddingBottom: insets.bottom + 16 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {item ? (
-          <>
-            {/* Header / Title */}
-            <View style={styles.header}>
-              <View style={styles.imageContainer}>
-                <Image
-                  source={{
-                    uri: `https://spoonacular.com/cdn/ingredients_250x250/${item.spoonacular_image}`,
-                  }}
-                  style={styles.image}
-                  contentFit="contain"
-                  transition={200}
-                />
-                <View style={styles.imageBadge}>
-                  <Text style={styles.imageBadgeText}>
-                    {formatBadgeAmount(item.amount, item.unit)}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.contentWrapper}>
+            {item ? (
+              <>
+                {/* Header / Title */}
+                <View style={styles.header}>
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={{
+                        uri: `https://spoonacular.com/cdn/ingredients_250x250/${item.spoonacular_image}`,
+                      }}
+                      style={styles.image}
+                      contentFit="contain"
+                      transition={200}
+                    />
+                    <View style={styles.imageBadge}>
+                      <Text style={styles.imageBadgeText}>
+                        {formatBadgeAmount(item.amount, item.unit)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.titleContainer}>
+                    {isEditingName ? (
+                      <TextInput
+                        style={styles.titleInput}
+                        value={editedName}
+                        onChangeText={setEditedName}
+                        onBlur={handleNameSubmit}
+                        onSubmitEditing={handleNameSubmit}
+                        autoFocus
+                        returnKeyType="done"
+                        selectTextOnFocus
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.titleTouchable}
+                        onPress={handleStartEditName}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.title}>{item.name}</Text>
+                        <Ionicons
+                          name="pencil"
+                          size={16}
+                          color={Colors.gray[400]}
+                          style={styles.titleEditIcon}
+                        />
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => (ref as any)?.current?.dismiss()}
+                      style={styles.closeButton}
+                    >
+                      <Ionicons
+                        name="close"
+                        size={24}
+                        color={Colors.gray[600]}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Quantity Section - Prominent and Easy to Find */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.quantitySection,
+                    pressed && styles.quantitySectionPressed,
+                  ]}
+                  onPress={handleStartEditQuantity}
+                  accessibilityLabel="Edit quantity"
+                  accessibilityHint="Tap to change the quantity of this item"
+                >
+                  <View style={styles.quantitySectionLeft}>
+                    <Text style={styles.quantitySectionLabel}>Quantity</Text>
+                    <Text style={styles.quantitySectionHint}>Tap to edit</Text>
+                  </View>
+
+                  {isEditingQuantity ? (
+                    // Editing mode: show input with controls
+                    <View style={styles.quantityEditContainer}>
+                      {!showAsWeight && (
+                        <TouchableOpacity
+                          onPress={() => handleQuantityChange(-1)}
+                          style={styles.quantityEditBtn}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Ionicons
+                            name="remove"
+                            size={20}
+                            color={Colors.lilac[900]}
+                          />
+                        </TouchableOpacity>
+                      )}
+                      <TextInput
+                        ref={quantityInputRef}
+                        style={styles.quantityEditInput}
+                        value={inputValue}
+                        onChangeText={handleAmountInputChange}
+                        onBlur={handleAmountSubmit}
+                        onSubmitEditing={handleAmountSubmit}
+                        keyboardType="decimal-pad"
+                        returnKeyType="done"
+                        selectTextOnFocus
+                      />
+                      <TouchableOpacity
+                        onPress={handleUnitCycle}
+                        style={styles.unitBadge}
+                      >
+                        <Text style={styles.unitBadgeText}>{item.unit}</Text>
+                      </TouchableOpacity>
+                      {!showAsWeight && (
+                        <TouchableOpacity
+                          onPress={() => handleQuantityChange(1)}
+                          style={styles.quantityEditBtn}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Ionicons
+                            name="add"
+                            size={20}
+                            color={Colors.lilac[900]}
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ) : (
+                    // Display mode: show value with edit icon
+                    <View style={styles.quantityDisplayContainer}>
+                      <View style={styles.quantityValueContainer}>
+                        <Text style={styles.quantityDisplayValue}>
+                          {showAsWeight ? item.amount : Math.round(item.amount)}
+                        </Text>
+                        <Text style={styles.quantityDisplayUnit}>
+                          {item.unit}
+                        </Text>
+                      </View>
+                      <View style={styles.quantityEditIcon}>
+                        <Ionicons
+                          name="pencil"
+                          size={16}
+                          color={Colors.lilac[900]}
+                        />
+                      </View>
+                    </View>
+                  )}
+                </Pressable>
+
+                <View style={styles.divider} />
+
+                {/* Days Old Row */}
+                <View style={styles.row}>
+                  <Text style={styles.rowLabel}>Days in pantry</Text>
+                  <Text style={styles.rowValue}>{daysOld} days</Text>
+                </View>
+
+                <View style={styles.divider} />
+
+                {/* Added Date */}
+                <View style={styles.row}>
+                  <Text style={styles.rowLabel}>Added on</Text>
+                  <Text style={styles.rowValue}>
+                    {formatAddedDate(item.created_at)}
                   </Text>
                 </View>
-              </View>
 
-              <View style={styles.titleContainer}>
-                {isEditingName ? (
-                  <TextInput
-                    style={styles.titleInput}
-                    value={editedName}
-                    onChangeText={setEditedName}
-                    onBlur={handleNameSubmit}
-                    onSubmitEditing={handleNameSubmit}
-                    autoFocus
-                    returnKeyType="done"
-                    selectTextOnFocus
-                  />
-                ) : (
-                  <TouchableOpacity
-                    style={styles.titleTouchable}
-                    onPress={handleStartEditName}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.title}>{item.name}</Text>
-                    <Ionicons
-                      name="pencil"
-                      size={16}
-                      color={Colors.gray[400]}
-                      style={styles.titleEditIcon}
-                    />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  onPress={() => (ref as any)?.current?.dismiss()}
-                  style={styles.closeButton}
-                >
-                  <Ionicons name="close" size={24} color={Colors.gray[600]} />
-                </TouchableOpacity>
-              </View>
-            </View>
+                <View style={styles.divider} />
 
-            {/* Stats Row */}
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <View
-                  style={[styles.statusBadge, { backgroundColor: "#10B981" }]}
-                >
-                  <Text style={styles.statusText}>GOOD</Text>
+                {/* Categories */}
+                <View style={styles.row}>
+                  <Text style={styles.rowLabel}>Categories</Text>
+                  <Text style={styles.categoryValue}>
+                    {item.category.toUpperCase()}
+                  </Text>
                 </View>
-                <Text style={styles.statLabel}>STATUS</Text>
-              </View>
 
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{daysOld}</Text>
-                <Text style={styles.statLabel}>DAYS OLD</Text>
-              </View>
+                <View style={{ flex: 1 }} />
 
-              <View style={styles.statItem}>
-                {showAsWeight ? (
-                  // Weight-based items: show text input
-                  <View style={styles.quantityInputContainer}>
-                    <TextInput
-                      style={styles.quantityInput}
-                      value={inputValue || String(item.amount)}
-                      onChangeText={handleAmountInputChange}
-                      onBlur={handleAmountSubmit}
-                      onSubmitEditing={handleAmountSubmit}
-                      keyboardType="decimal-pad"
-                      placeholder={String(item.amount)}
-                      returnKeyType="done"
-                    />
-                    <TouchableOpacity onPress={handleUnitCycle}>
-                      <Text style={styles.unitText}>{item.unit}</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  // Count-based items: show +/- buttons
-                  <View style={styles.quantityControl}>
-                    <TouchableOpacity
-                      onPress={() => handleQuantityChange(-1)}
-                      style={styles.quantityBtn}
-                    >
-                      <Ionicons
-                        name="remove"
-                        size={20}
-                        color={Colors.lilac[900]}
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>
-                      {Math.round(item.amount)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => handleQuantityChange(1)}
-                      style={styles.quantityBtn}
-                    >
-                      <Ionicons
-                        name="add"
-                        size={20}
-                        color={Colors.lilac[900]}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )}
-                <TouchableOpacity
-                  onPress={handleUnitCycle}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <Text style={styles.statLabel}>QUANTITY</Text>
-                  <Ionicons name="pencil" size={12} color={Colors.gray[500]} />
-                </TouchableOpacity>
-              </View>
-            </View>
+                {/* Footer Actions */}
+                <View style={styles.footer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.footerBtn,
+                      styles.updateBtn,
+                      isUpdating && styles.updateBtnDisabled,
+                    ]}
+                    onPress={handleUpdateFromSpoonacular}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <>
+                        <Ionicons name="refresh" size={20} color="white" />
+                        <Text style={styles.updateBtnText}>Update</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
 
-            <View style={styles.divider} />
-
-            {/* Added Date */}
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>
-                Added on {formatAddedDate(item.created_at)}
-              </Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Frozen Toggle */}
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Frozen</Text>
-              <Switch
-                trackColor={{
-                  false: Colors.gray[200],
-                  true: Colors.lilac[900],
-                }}
-                thumbColor={"white"}
-                // value={item.frozen} // Need to add frozen to type
-                value={false}
-                onValueChange={() => {}}
-              />
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Categories */}
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Categories</Text>
-              <Text style={styles.categoryValue}>
-                {item.category.toUpperCase()}
-              </Text>
-            </View>
-
-            <View style={{ flex: 1 }} />
-
-            {/* Footer Actions */}
-            <View style={styles.footer}>
-              <TouchableOpacity
-                style={[
-                  styles.footerBtn,
-                  styles.updateBtn,
-                  isUpdating && styles.updateBtnDisabled,
-                ]}
-                onPress={handleUpdateFromSpoonacular}
-                disabled={isUpdating}
-              >
-                {isUpdating ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Ionicons name="refresh" size={20} color="white" />
-                    <Text style={styles.updateBtnText}>Update</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.footerBtn, styles.removeBtn]}
-                onPress={() => {
-                  onRemoveItem?.(item.id);
-                  (ref as any)?.current?.dismiss();
+                  <TouchableOpacity
+                    style={[styles.footerBtn, styles.removeBtn]}
+                    onPress={() => {
+                      onRemoveItem?.(item.id);
+                      (ref as any)?.current?.dismiss();
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                    <Text style={styles.removeBtnText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <View
+                style={{
+                  height: 300,
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                <Text style={styles.removeBtnText}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : (
-          <View
-            style={{
-              height: 300,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            {/* Empty state or loading state if needed, usually this won't be seen for long */}
+                {/* Empty state or loading state if needed */}
+              </View>
+            )}
           </View>
-        )}
-      </BottomSheetView>
+        </TouchableWithoutFeedback>
+      </BottomSheetScrollView>
     </BottomSheetModal>
   );
 });
@@ -471,10 +520,16 @@ export const PantryItemDetailSheet = forwardRef<
 PantryItemDetailSheet.displayName = "PantryItemDetailSheet";
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 12, // Added top padding to prevent badge cutoff
+  },
+  contentWrapper: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -546,85 +601,98 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  statsRow: {
+  // Quantity Section Styles
+  quantitySection: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  statItem: {
     alignItems: "center",
-    gap: 8,
+    backgroundColor: Colors.lilac[100],
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: Colors.lilac[200],
+    minHeight: 72,
   },
-  statLabel: {
-    fontSize: 10,
-    color: Colors.gray[500],
+  quantitySectionPressed: {
+    backgroundColor: Colors.lilac[100],
+    borderColor: Colors.lilac[400],
+  },
+  quantitySectionLeft: {
+    gap: 4,
+  },
+  quantitySectionLabel: {
+    fontSize: 16,
     fontWeight: "600",
-    letterSpacing: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  statusText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "bold",
     color: Colors.gray[800],
   },
-  quantityControl: {
+  quantitySectionHint: {
+    fontSize: 12,
+    color: Colors.gray[400],
+  },
+  quantityDisplayContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: Colors.lilac[900],
-    borderRadius: 24,
-    height: 40,
-    padding: 4,
-    minWidth: 100, // Ensure minimum width to prevent squashing
+    gap: 12,
   },
-  quantityBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    padding: 4,
+  quantityValueContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+  },
+  quantityDisplayValue: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.lilac[900],
+  },
+  quantityDisplayUnit: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.gray[500],
+  },
+  quantityEditIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.lilac[100],
     justifyContent: "center",
     alignItems: "center",
-    flexShrink: 0, // Prevent button from shrinking
   },
-  quantityInputContainer: {
+  quantityEditContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: Colors.lilac[900],
-    borderRadius: 24,
-    height: 40,
-    paddingHorizontal: 16,
-    minWidth: 100,
     gap: 8,
+    backgroundColor: "white",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 2,
+    borderColor: Colors.lilac[900],
   },
-  quantityInput: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
+  quantityEditBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.lilac[100],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quantityEditInput: {
+    fontSize: 24,
+    fontWeight: "bold",
     color: Colors.lilac[900],
     textAlign: "center",
-    padding: 0,
+    minWidth: 60,
+    padding: 4,
   },
-  unitText: {
+  unitBadge: {
+    backgroundColor: Colors.lilac[100],
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  unitBadgeText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.gray[600],
-  },
-  quantityText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginHorizontal: 12,
     color: Colors.lilac[900],
   },
   divider: {
@@ -640,6 +708,11 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontSize: 16,
     color: Colors.gray[800],
+    fontWeight: "500",
+  },
+  rowValue: {
+    fontSize: 16,
+    color: Colors.gray[600],
     fontWeight: "500",
   },
   actionLink: {

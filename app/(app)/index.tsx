@@ -10,19 +10,19 @@ import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Platform,
-    RefreshControl,
-    StyleSheet,
-    View,
+  ActivityIndicator,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  View,
 } from "react-native";
 import Animated, {
-    FadeIn,
-    FadeInDown,
-    FadeOut,
-    Layout,
-    useAnimatedStyle,
-    withTiming,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  Layout,
+  useAnimatedStyle,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -72,6 +72,10 @@ export default function MealplanTab() {
     : undefined;
 
   function handleCreateMealPlan() {
+    // Safety check: prevent navigation for past dates
+    if (isPastDate) {
+      return;
+    }
     router.push({
       pathname: "/(plan)/create",
       params: { date: selectedDate.toISOString() },
@@ -88,11 +92,11 @@ export default function MealplanTab() {
   const hasPlan = !!data?.plan;
 
   // Check if selected date is in the past
-  const today = useMemo(() => {
+  const today = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
-  }, []);
+  })();
   const isPastDate = selectedDate < today;
 
   // Calculate total calories from meal plan items
@@ -197,7 +201,11 @@ export default function MealplanTab() {
                 exiting={FadeOut.duration(300)}
                 layout={Layout.springify()}
               >
-                <DailyMealsList items={data!.items} selectedDate={selectedDate} mealTimes={mealTimes} />
+                <DailyMealsList
+                  items={data!.items}
+                  selectedDate={selectedDate}
+                  mealTimes={mealTimes}
+                />
               </Animated.View>
             ) : isPastDate ? (
               // Show empty meal slots for past dates
@@ -207,7 +215,11 @@ export default function MealplanTab() {
                 exiting={FadeOut.duration(300)}
                 layout={Layout.springify()}
               >
-                <DailyMealsList items={[]} selectedDate={selectedDate} mealTimes={mealTimes} />
+                <DailyMealsList
+                  items={[]}
+                  selectedDate={selectedDate}
+                  mealTimes={mealTimes}
+                />
               </Animated.View>
             ) : (
               // No meals: show create prompt with smooth transition

@@ -546,6 +546,20 @@ export function useMealPlanPreview({
       return false;
     }
 
+    // Check if plan start date is in the past
+    const normalizedStartDate = new Date(planStartDate);
+    normalizedStartDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (normalizedStartDate < today) {
+      Alert.alert(
+        "Cannot save to past date",
+        "You can only save meal plans for today or future dates."
+      );
+      return false;
+    }
+
     setIsSaving(true);
 
     try {

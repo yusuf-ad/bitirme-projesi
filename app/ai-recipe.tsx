@@ -303,6 +303,24 @@ export default function AiRecipe() {
   const handleSaveRecipe = useCallback(async () => {
     if (!generatedRecipe || !userId) return;
 
+    // Get date from params or use today
+    const dateString =
+      params.selectedDate || new Date().toISOString().split("T")[0];
+    
+    // Check if date is in the past
+    const selectedDateObj = new Date(dateString);
+    selectedDateObj.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDateObj < today) {
+      Alert.alert(
+        "Cannot save to past date",
+        "You can only save meals to today or future dates."
+      );
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -352,9 +370,7 @@ export default function AiRecipe() {
         }
       }
 
-      // Get date from params or use today
-      const dateString =
-        params.selectedDate || new Date().toISOString().split("T")[0];
+      // Use the dateString already defined above
       const mealType = selectedMealType;
 
       console.log("handleSaveRecipe - params:", params);
