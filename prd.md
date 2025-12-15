@@ -1273,7 +1273,7 @@ constants/
 - [x]goalsda logolara ayar çek
 - motivaayon işi - yusuf
 - [x] something went wrong hatası hala devam ediyor!!!! - yusuf - commit 96924d25ee19508ee39d43ada9e40538dd49f06a
-- [x] quantity seçmeyi daha mantıklı yap
+- [x] quantity seçmeyi daha mantıklı yap - yusuf - a49c11e8e0a5e2d7d876bfa06b42b2b4d1f25257
 
 - [x] debouncing lazım her harf gönderdiğimizde istek atıyor saniye 2 istek hakkımız var onu belirt
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
