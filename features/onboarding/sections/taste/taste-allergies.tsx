@@ -3,7 +3,7 @@ import { POPULAR_INGREDIENTS } from "@/lib/constants";
 import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -60,6 +60,9 @@ export function TasteAllergies({
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  
+  // Debounce timer ref
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getIngredientKey = useCallback((item: AllergyItem) => {
     // Check for _originalKey first (for fallback items)
@@ -76,8 +79,8 @@ export function TasteAllergies({
     return `name-${(item as any).name?.toLowerCase?.() ?? "unknown"}`;
   }, []);
 
-  const handleSearch = useCallback(async (query: string) => {
-    setSearchQuery(query);
+  // Perform actual API search
+  const performSearch = useCallback(async (query: string) => {
     if (query.trim().length === 0) {
       setSearchResults([]);
       setHasSearched(false);
@@ -94,6 +97,52 @@ export function TasteAllergies({
     } finally {
       setIsSearching(false);
     }
+  }, []);
+
+  // Handle text change with debounce (500ms delay)
+  const handleSearchTextChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    
+    // Clear previous timer
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    
+    // If empty, reset immediately
+    if (query.trim().length === 0) {
+      setSearchResults([]);
+      setHasSearched(false);
+      setIsSearching(false);
+      return;
+    }
+    
+    // Set searching state for UI feedback
+    setIsSearching(true);
+    
+    // Debounce the API call - wait 500ms after user stops typing
+    searchDebounceRef.current = setTimeout(() => {
+      performSearch(query);
+    }, 500);
+  }, [performSearch]);
+
+  // Clear search function
+  const clearSearch = useCallback(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    setSearchQuery("");
+    setSearchResults([]);
+    setHasSearched(false);
+    setIsSearching(false);
+  }, []);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -219,11 +268,11 @@ export function TasteAllergies({
               placeholder="Search ingredients..."
               placeholderTextColor={Colors.text.secondary}
               value={searchQuery}
-              onChangeText={handleSearch}
+              onChangeText={handleSearchTextChange}
             />
             {isSearching && <ActivityIndicator size="small" color={Colors.lilac[900]} />}
             {searchQuery.length > 0 && !isSearching && (
-              <Pressable onPress={() => handleSearch("")}>
+              <Pressable onPress={clearSearch}>
                 <MaterialCommunityIcons name="close-circle" size={20} color={Colors.text.secondary} />
               </Pressable>
             )}

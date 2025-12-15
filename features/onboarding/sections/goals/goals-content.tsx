@@ -1,8 +1,14 @@
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface GoalsContentProps {
   title: string;
@@ -15,42 +21,58 @@ export const goalOptions = [
   {
     id: "healthy-eating",
     title: "Eat healthy",
-    icon: require("@/assets/icons/carrot-icon.svg"),
+    description: "Balanced meals for better health",
+    emoji: "🥗",
+    gradient: ["#E8F5E9", "#C8E6C9"],
   },
   {
     id: "learn-cooking",
     title: "Learn to cook",
-    icon: require("@/assets/icons/chef-icon.svg"),
+    description: "Master new cooking skills",
+    emoji: "👨‍🍳",
+    gradient: ["#FFF3E0", "#FFE0B2"],
   },
   {
     id: "lose-weight",
     title: "Lose weight",
-    icon: require("@/assets/icons/scale-icon.svg"),
+    description: "Calorie-controlled recipes",
+    emoji: "⚖️",
+    gradient: ["#E3F2FD", "#BBDEFB"],
   },
   {
     id: "gain-weight",
     title: "Gain weight",
-    icon: require("@/assets/icons/weight-icon.svg"),
+    description: "High-calorie nutritious meals",
+    emoji: "💪",
+    gradient: ["#FCE4EC", "#F8BBD9"],
   },
   {
     id: "try-recipes",
-    title: "Try new\nrecipes",
-    icon: require("@/assets/icons/recipe-icon.svg"),
+    title: "Try new recipes",
+    description: "Explore diverse cuisines",
+    emoji: "📖",
+    gradient: ["#F3E5F5", "#E1BEE7"],
   },
   {
     id: "stay-on-diet",
-    title: "Stick to\nyour diet",
-    icon: require("@/assets/icons/diet-icon.svg"),
+    title: "Stick to diet",
+    description: "Stay consistent with your plan",
+    emoji: "🎯",
+    gradient: ["#E0F7FA", "#B2EBF2"],
   },
   {
     id: "build-muscle",
     title: "Build muscle",
-    icon: require("@/assets/icons/muscle-icon.svg"),
+    description: "Protein-rich meal plans",
+    emoji: "🏋️",
+    gradient: ["#FFEBEE", "#FFCDD2"],
   },
   {
     id: "save-time",
-    title: "Save\ntime",
-    icon: require("@/assets/icons/time-icon.svg"),
+    title: "Save time",
+    description: "Quick & easy recipes",
+    emoji: "⏰",
+    gradient: ["#FFFDE7", "#FFF9C4"],
   },
 ];
 
@@ -59,7 +81,6 @@ export const conflictingGoals: Record<string, string[]> = {
   "lose-weight": ["gain-weight"],
   "gain-weight": ["lose-weight"],
 };
-
 
 export function GoalsContent({
   title,
@@ -72,12 +93,10 @@ export function GoalsContent({
 
   function toggleGoal(goalId: string) {
     let newSelection: string[];
-    
+
     if (selectedGoals.includes(goalId)) {
-      // Deselect the goal
       newSelection = selectedGoals.filter((id) => id !== goalId);
     } else {
-      // Select the goal and remove any conflicting goals
       const conflictingGoalIds = conflictingGoals[goalId] || [];
       newSelection = [
         ...selectedGoals.filter((id) => !conflictingGoalIds.includes(id)),
@@ -164,7 +183,13 @@ export function GoalsContent({
 }
 
 interface GoalOptionProps {
-  option: { id: string; title: string; icon: any };
+  option: {
+    id: string;
+    title: string;
+    description: string;
+    emoji: string;
+    gradient: string[];
+  };
   isSelected: boolean;
   onPress: () => void;
 }
@@ -172,26 +197,53 @@ interface GoalOptionProps {
 function GoalOption({ option, isSelected, onPress }: GoalOptionProps) {
   return (
     <Pressable
-      style={[styles.option, isSelected && styles.optionSelected]}
+      style={({ pressed }) => [
+        styles.optionWrapper,
+        pressed && styles.optionPressed,
+      ]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
     >
-      {isSelected && (
-        <View style={styles.checkmarkBadge}>
-          <Ionicons
-            name="checkmark-circle"
-            size={24}
-            color={Colors.green[900]}
-          />
-        </View>
-      )}
+      <LinearGradient
+        colors={option.gradient as [string, string]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.option, isSelected && styles.optionSelected]}
+      >
+        {/* Selection indicator */}
+        {isSelected && (
+          <View style={styles.checkmarkBadge}>
+            <View style={styles.checkmarkInner}>
+              <Ionicons
+                name="checkmark"
+                size={14}
+                color="#FFFFFF"
+              />
+            </View>
+          </View>
+        )}
 
-      <Text style={styles.optionText}>{option.title}</Text>
-      <View style={styles.iconPlaceholder} />
-      <View style={styles.iconContainer}>
-        <Image source={option.icon} style={styles.icon} contentFit="contain" />
-      </View>
+        {/* Content */}
+        <View style={styles.contentWrapper}>
+          <View style={styles.textWrapper}>
+            <Text
+              style={[styles.optionText, isSelected && styles.optionTextSelected]}
+              numberOfLines={2}
+            >
+              {option.title}
+            </Text>
+            <Text style={styles.descriptionText} numberOfLines={2}>
+              {option.description}
+            </Text>
+          </View>
+
+          {/* Emoji Icon */}
+          <View style={styles.emojiContainer}>
+            <Text style={styles.emoji}>{option.emoji}</Text>
+          </View>
+        </View>
+      </LinearGradient>
     </Pressable>
   );
 }
@@ -201,80 +253,124 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   textContainer: {
-    paddingHorizontal: 27,
+    paddingHorizontal: 24,
   },
   scrollContainer: {
     flex: 1,
-    paddingHorizontal: 27,
-    marginTop: 42,
+    paddingHorizontal: 20,
+    marginTop: 32,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
   title: {
     fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 32,
-    lineHeight: 40,
-    color: "#2D3142",
-    marginBottom: 16,
-    maxWidth: 344,
+    fontWeight: "700",
+    fontSize: 28,
+    lineHeight: 36,
+    color: "#1A1D26",
+    marginBottom: 12,
+    letterSpacing: -0.5,
   },
   description: {
     fontFamily: "Inter",
     fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#5D6270",
-    maxWidth: 317,
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#6B7280",
+    maxWidth: 300,
   },
   optionsContainer: {
-    gap: 12,
+    gap: 14,
   },
   row: {
     flexDirection: "row",
-    gap: 12,
+    gap: 14,
+  },
+  optionWrapper: {
+    flex: 1,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  optionPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
   option: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-    borderRadius: 12,
-    padding: 12,
-    paddingHorizontal: 16,
-    minHeight: 140,
-    justifyContent: "space-between",
-    borderWidth: 3,
+    borderRadius: 20,
+    padding: 16,
+    minHeight: 130,
+    borderWidth: 2.5,
     borderColor: "transparent",
-    position: "relative",
+    overflow: "hidden",
   },
   optionSelected: {
-    borderColor: Colors.green[900],
+    borderColor: Colors.green[600],
+    shadowColor: Colors.green[600],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  contentWrapper: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  textWrapper: {
+    flex: 1,
   },
   optionText: {
     fontFamily: "Inter",
-    fontWeight: "500",
-    fontSize: 20,
-    lineHeight: 24.2,
-    color: "#000000",
+    fontWeight: "600",
+    fontSize: 16,
+    lineHeight: 20,
+    color: "#1A1D26",
+    marginBottom: 4,
   },
-  iconPlaceholder: {
-    flex: 1,
+  optionTextSelected: {
+    color: Colors.green[800],
   },
-  iconContainer: {
+  descriptionText: {
+    fontFamily: "Inter",
+    fontWeight: "400",
+    fontSize: 11,
+    lineHeight: 15,
+    color: "#6B7280",
+    opacity: 0.85,
+  },
+  emojiContainer: {
     alignSelf: "flex-end",
-    width: 156,
-    height: 54,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  icon: {
-    width: "100%",
-    height: "100%",
+  emoji: {
+    fontSize: 28,
   },
   checkmarkBadge: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     zIndex: 10,
-    backgroundColor: "#FFFFFF",
+  },
+  checkmarkInner: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
+    backgroundColor: Colors.green[600],
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.green[600],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

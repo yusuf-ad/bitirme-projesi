@@ -96,9 +96,6 @@ export function TasteDietPreferences({
             <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
           </View>
         )}
-
-        {/* Gradient Overlay on Right */}
-        <View style={styles.imageGradient} />
       </Pressable>
     );
   };
@@ -239,14 +236,6 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     marginLeft: "auto",
-  },
-  imageGradient: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 40,
-    backgroundColor: "rgba(0, 0, 0, 0.15)",
   },
   selectionCheckmark: {
     position: "absolute",
