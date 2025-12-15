@@ -1272,8 +1272,8 @@ constants/
 - [] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf
 - [x]goalsda logolara ayar çek
 - motivaayon işi - yusuf
-- [] something went wrong hatası hala devam ediyor!!!! - yusuf
-- [] quantity seçmeyi daha mantıklı yap
+- [x] something went wrong hatası hala devam ediyor!!!! - yusuf - commit 96924d25ee19508ee39d43ada9e40538dd49f06a
+- [x] quantity seçmeyi daha mantıklı yap
 
 - [x] debouncing lazım her harf gönderdiğimizde istek atıyor saniye 2 istek hakkımız var onu belirt
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
