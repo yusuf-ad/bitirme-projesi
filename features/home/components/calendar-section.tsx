@@ -25,11 +25,11 @@ export default function CalendarSection({
   userRegistrationDate,
 }: CalendarSectionProps) {
   const ref = useRef<FlatList>(null);
-  const today = useMemo(() => {
+  const today = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
-  }, []);
+  })();
 
   const calendarDays = useMemo(
     () => generateCalendarDays(userRegistrationDate),

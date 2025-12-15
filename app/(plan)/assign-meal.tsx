@@ -157,11 +157,11 @@ export default function AssignMealScreen() {
     }
   }, [params.recipe]);
 
-  const today = useMemo(() => {
+  const today = (() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     return now;
-  }, []);
+  })();
 
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [selectedMealType, setSelectedMealType] = useState<MealSlot>(() => {

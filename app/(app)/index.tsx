@@ -92,11 +92,11 @@ export default function MealplanTab() {
   const hasPlan = !!data?.plan;
 
   // Check if selected date is in the past
-  const today = useMemo(() => {
+  const today = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
-  }, []);
+  })();
   const isPastDate = selectedDate < today;
 
   // Calculate total calories from meal plan items
