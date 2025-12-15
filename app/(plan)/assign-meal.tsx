@@ -166,7 +166,11 @@ export default function AssignMealScreen() {
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [selectedMealType, setSelectedMealType] = useState<MealSlot>(() => {
     const mealSlotParam = params.mealSlot;
-    if (mealSlotParam === "breakfast" || mealSlotParam === "lunch" || mealSlotParam === "dinner") {
+    if (
+      mealSlotParam === "breakfast" ||
+      mealSlotParam === "lunch" ||
+      mealSlotParam === "dinner"
+    ) {
       return mealSlotParam;
     }
     return "breakfast";
@@ -237,6 +241,17 @@ export default function AssignMealScreen() {
       Alert.alert(
         "Sign in required",
         "You need to sign in to save meals to your plan."
+      );
+      return;
+    }
+
+    // Check if selected date is in the past
+    const normalizedSelectedDate = new Date(selectedDate);
+    normalizedSelectedDate.setHours(0, 0, 0, 0);
+    if (normalizedSelectedDate < today) {
+      Alert.alert(
+        "Cannot add to past date",
+        "You can only add meals to today or future dates."
       );
       return;
     }

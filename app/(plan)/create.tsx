@@ -8,7 +8,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
     FadeIn,
     FadeInDown,
@@ -34,6 +34,10 @@ export default function CreateMealPlan() {
     if (params?.date) {
       const d = new Date(params.date);
       d.setHours(0, 0, 0, 0);
+      // If param date is in the past, default to today
+      if (d < today) {
+        return new Date(today);
+      }
       return d;
     }
     return new Date(today);
@@ -48,6 +52,13 @@ export default function CreateMealPlan() {
   );
   const hasExistingPlan = !!mealPlanData?.plan;
   const hasMeals = (mealPlanData?.items?.length ?? 0) > 0;
+
+  // Check if selected date is in the past
+  const isPastDate = useMemo(() => {
+    const normalizedStartDate = new Date(startDate);
+    normalizedStartDate.setHours(0, 0, 0, 0);
+    return normalizedStartDate < today;
+  }, [startDate]);
 
   // Quick select - next 7 days
   const quickDateOptions = useMemo((): QuickDateOption[] => {
@@ -139,15 +150,44 @@ export default function CreateMealPlan() {
   };
 
   const handleStartDateSelect = (date: Date) => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    
+    // Prevent selecting past dates
+    if (normalized < today) {
+      Alert.alert(
+        "Invalid date",
+        "You can only create meal plans for today or future dates."
+      );
+      return;
+    }
+    
     setStartDate(date);
     startDateModalRef.current?.close();
   };
 
   const handleQuickSelect = useCallback((date: Date) => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    
+    // Prevent selecting past dates (safety check)
+    if (normalized < today) {
+      return;
+    }
+    
     setStartDate(date);
   }, []);
 
   const handleNext = () => {
+    // Prevent navigation if past date selected (safety check)
+    if (isPastDate) {
+      Alert.alert(
+        "Invalid date",
+        "You can only create meal plans for today or future dates."
+      );
+      return;
+    }
+    
     router.push({
       pathname: "/(plan)/select-meals",
       params: {
@@ -326,7 +366,11 @@ export default function CreateMealPlan() {
         entering={FadeInUp.duration(400).delay(650)}
         style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}
       >
-        <CustomButton containerStyle={styles.nextButton} onPress={handleNext}>
+        <CustomButton 
+          containerStyle={[styles.nextButton, isPastDate && styles.nextButtonDisabled]} 
+          onPress={handleNext}
+          disabled={isPastDate}
+        >
           <Text style={styles.nextButtonText}>Continue</Text>
           <Ionicons name="arrow-forward" size={20} color="#fff" />
         </CustomButton>
@@ -582,6 +626,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: Colors.lilac[800],
     borderRadius: 14,
+  },
+  nextButtonDisabled: {
+    opacity: 0.5,
   },
   nextButtonText: {
     fontSize: 17,

@@ -3,6 +3,7 @@ import { useHaptics } from "@/hooks/useHaptics";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { useMemo } from "react";
 import {
     ImageSourcePropType,
     Pressable,
@@ -32,7 +33,17 @@ export function EmptyMealSlot({
 }: EmptyMealSlotProps) {
   const { impact } = useHaptics();
 
+  // Check if date is in the past
+  const isPastDate = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const normalizedSelectedDate = new Date(selectedDate);
+    normalizedSelectedDate.setHours(0, 0, 0, 0);
+    return normalizedSelectedDate < today;
+  }, [selectedDate]);
+
   const handlePress = async () => {
+    if (isPastDate) return;
     impact();
     router.push({
       pathname: "/(app)/recipes",
@@ -41,6 +52,7 @@ export function EmptyMealSlot({
   };
 
   const handleOpenAiRecipe = async () => {
+    if (isPastDate) return;
     impact();
     // Format date as YYYY-MM-DD without UTC conversion
     const year = selectedDate.getFullYear();
@@ -63,9 +75,11 @@ export function EmptyMealSlot({
       <Pressable
         style={({ pressed }) => [
           styles.container,
-          pressed && styles.containerPressed,
+          pressed && !isPastDate && styles.containerPressed,
+          isPastDate && styles.containerDisabled,
         ]}
         onPress={handlePress}
+        disabled={isPastDate}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -79,14 +93,16 @@ export function EmptyMealSlot({
             </View>
           </View>
 
-          <Pressable style={styles.aiButton} onPress={handleOpenAiRecipe}>
-            <MaterialIcons
-              name="auto-awesome"
-              size={18}
-              color={Colors.lilac[900]}
-            />
-            <Text style={styles.aiButtonText}>AI</Text>
-          </Pressable>
+          {!isPastDate && (
+            <Pressable style={styles.aiButton} onPress={handleOpenAiRecipe}>
+              <MaterialIcons
+                name="auto-awesome"
+                size={18}
+                color={Colors.lilac[900]}
+              />
+              <Text style={styles.aiButtonText}>AI</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Empty State Content - Static */}
@@ -95,9 +111,13 @@ export function EmptyMealSlot({
             <View style={styles.emptyIconContainer}>
               <Text style={styles.emptyIcon}>🍽️</Text>
             </View>
-            <Text style={styles.emptyTitle}>{mealType} not added yet</Text>
+            <Text style={styles.emptyTitle}>
+              {isPastDate ? `No ${mealType.toLowerCase()} recorded` : `${mealType} not added yet`}
+            </Text>
             <Text style={styles.emptyDescription}>
-              Tap to add a meal from the recipes page
+              {isPastDate 
+                ? "You can only view past meals"
+                : "Tap to add a meal from the recipes page"}
             </Text>
           </View>
         </View>
@@ -120,6 +140,9 @@ const styles = StyleSheet.create({
   containerPressed: {
     opacity: 0.7,
     borderColor: Colors.lilac[500],
+  },
+  containerDisabled: {
+    opacity: 0.5,
   },
   header: {
     flexDirection: "row",

@@ -1269,7 +1269,7 @@ constants/
 - [x] goals sayfasına description eklet
 - [] height/weight kısmı scrollable yapma(Düzelt) androidde yarısı gözükmüyor
 - [x] height/weight kısmına keyboard aware scrollview lazım
-- [x] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf - commit - d17fb494ec3fd21f105c419810b19969515dc2bc
+- [x] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf - commit - 5c0248d7672bacc912f5e572fccda5d1d845f86f
 - [x]goalsda logolara ayar çek
 - motivaayon işi - yusuf
 - [x] something went wrong hatası hala devam ediyor!!!! - yusuf - commit 96924d25ee19508ee39d43ada9e40538dd49f06a
@@ -1285,7 +1285,7 @@ constants/
 - [x] statusü de kaldır
 - [x] mealplane yeni yüz lazım
 - [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan
-- [] anasayfa default statei düzelt
+- [x] anasayfa default statei düzelt
 - [] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun
 - [] hangi tarif replacedeyse o lunchsa lunch olsun
 
@@ -1298,9 +1298,9 @@ constants/
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
-- [ ] Meal logging system
-- [ ] Nutrition tracking - yunus
-- [ ] Goal progress indicators - yunus
+- [x] Meal logging system
+- [x] Nutrition tracking - yunus
+- [x] Goal progress indicators - yunus
 - [x] History view - yunus
 
 ### Phase 5: Enhancements (Weeks 10-11)
@@ -1308,7 +1308,6 @@ constants/
 - [ ] OAuth integration (Google)
 - [ ] Notifications system
 - [ ] Advanced filtering
-- [ ] Recipe reviews
 - [ ] Performance optimization
 
 ### Phase 6: Testing & Refinement (Weeks 12-13)
