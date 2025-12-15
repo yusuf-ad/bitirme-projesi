@@ -1,8 +1,7 @@
-import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, G, Path } from "react-native-svg";
 
 interface BodyGenderProps {
   title: string;
@@ -15,17 +14,23 @@ const genderOptions = [
   {
     id: "male",
     title: "Male",
-    IconComponent: MaleIcon,
+    emoji: "👨",
+    gradient: ["#E3F2FD", "#BBDEFB"],
+    accentColor: "#1976D2",
   },
   {
     id: "female",
     title: "Female",
-    IconComponent: FemaleIcon,
+    emoji: "👩",
+    gradient: ["#FCE4EC", "#F8BBD9"],
+    accentColor: "#C2185B",
   },
   {
     id: "prefer-not-to-say",
     title: "Prefer not to say",
-    IconComponent: PrivacyIcon,
+    emoji: "🙂",
+    gradient: ["#F3E5F5", "#E1BEE7"],
+    accentColor: "#7B1FA2",
   },
 ];
 
@@ -76,102 +81,65 @@ interface GenderOptionProps {
   option: {
     id: string;
     title: string;
-    IconComponent: React.ComponentType;
+    emoji: string;
+    gradient: string[];
+    accentColor: string;
   };
   isSelected: boolean;
   onPress: () => void;
 }
 
 function GenderOption({ option, isSelected, onPress }: GenderOptionProps) {
-  const { IconComponent } = option;
-
   return (
     <Pressable
-      style={styles.optionWrapper}
+      style={({ pressed }) => [
+        styles.optionWrapper,
+        pressed && styles.optionPressed,
+      ]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
     >
-      <View style={styles.option}>
-        <Text style={styles.optionText}>{option.title}</Text>
-        <View style={styles.iconContainer}>
-          <IconComponent />
-        </View>
-      </View>
-      {isSelected && (
-        <View style={styles.checkmarkContainer}>
-          <View style={styles.checkmarkCircle}>
-            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+      <LinearGradient
+        colors={option.gradient as [string, string]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          styles.option,
+          isSelected && {
+            borderColor: option.accentColor,
+            shadowColor: option.accentColor,
+          },
+        ]}
+      >
+        {/* Selection indicator */}
+        {isSelected && (
+          <View
+            style={[
+              styles.checkmarkBadge,
+              { backgroundColor: option.accentColor },
+            ]}
+          >
+            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
           </View>
+        )}
+
+        {/* Content */}
+        <View style={styles.contentWrapper}>
+          <View style={styles.emojiContainer}>
+            <Text style={styles.emoji}>{option.emoji}</Text>
+          </View>
+          <Text
+            style={[
+              styles.optionText,
+              isSelected && { color: option.accentColor },
+            ]}
+          >
+            {option.title}
+          </Text>
         </View>
-      )}
+      </LinearGradient>
     </Pressable>
-  );
-}
-
-// Custom Icon Components
-function MaleIcon() {
-  return (
-    <Svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-      <Circle
-        cx="24"
-        cy="18"
-        r="6"
-        fill="#008CF8"
-        stroke="#006BB8"
-        strokeWidth="1.5"
-      />
-      <Path
-        d="M24 26C19.5 26 16.5 29 16.5 33V39H31.5V33C31.5 29 28.5 26 24 26Z"
-        fill="#008CF8"
-        stroke="#006BB8"
-        strokeWidth="1.5"
-      />
-    </Svg>
-  );
-}
-
-function FemaleIcon() {
-  return (
-    <Svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-      <Circle
-        cx="24"
-        cy="18"
-        r="6"
-        fill="#DA50FF"
-        stroke="#B030D0"
-        strokeWidth="1.5"
-      />
-      <Path
-        d="M24 26C19.5 26 16.5 29 16.5 33V39H31.5V33C31.5 29 28.5 26 24 26Z"
-        fill="#DA50FF"
-        stroke="#B030D0"
-        strokeWidth="1.5"
-      />
-    </Svg>
-  );
-}
-
-function PrivacyIcon() {
-  return (
-    <Svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-      <G>
-        <Path
-          d="M15 20C15 20 16.5 17 24 17C31.5 17 33 20 33 20V21.5C33 21.5 33 24 30 24H18C15 24 15 21.5 15 21.5V20Z"
-          fill="#548A6A"
-          stroke="#3D6B4F"
-          strokeWidth="1.5"
-        />
-        <Path
-          d="M19.5 22.5H28.5V25.5C28.5 25.5 28.5 28.5 24 28.5C19.5 28.5 19.5 25.5 19.5 25.5V22.5Z"
-          fill="#548A6A"
-          stroke="#3D6B4F"
-          strokeWidth="1.5"
-        />
-        <Circle cx="21" cy="21" r="1.5" fill="#1A1A1A" />
-        <Circle cx="27" cy="21" r="1.5" fill="#1A1A1A" />
-      </G>
-    </Svg>
   );
 }
 
@@ -180,81 +148,99 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   textContainer: {
-    paddingHorizontal: 11,
+    paddingHorizontal: 24,
   },
   scrollContainer: {
     flex: 1,
-    paddingHorizontal: 11,
-    marginTop: 262,
+    paddingHorizontal: 20,
+    marginTop: 48,
   },
   scrollContent: {
-    paddingVertical: 20,
+    paddingBottom: 24,
   },
   title: {
     fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 32,
-    lineHeight: 40,
-    color: "#2D3142",
+    fontWeight: "700",
+    fontSize: 28,
+    lineHeight: 36,
+    color: "#1A1D26",
     marginBottom: 12,
+    letterSpacing: -0.5,
   },
   description: {
     fontFamily: "Inter",
     fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#5D6270",
-    maxWidth: 371,
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#6B7280",
+    maxWidth: 300,
   },
   optionsContainer: {
-    gap: 12,
-    marginBottom: 33,
+    gap: 16,
   },
   optionWrapper: {
-    position: "relative",
+    borderRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  optionPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
   },
   option: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    borderRadius: 24,
+    padding: 24,
+    minHeight: 100,
+    borderWidth: 3,
+    borderColor: "transparent",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  contentWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 20,
+  },
+  emojiContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  emoji: {
+    fontSize: 36,
   },
   optionText: {
     fontFamily: "Inter",
-    fontWeight: "500",
+    fontWeight: "600",
     fontSize: 20,
-    lineHeight: 24.2,
-    color: Colors.text.primary,
+    color: "#1A1D26",
+    flex: 1,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkmarkContainer: {
+  checkmarkBadge: {
     position: "absolute",
-    top: -8,
-    right: -8,
-    zIndex: 10,
-  },
-  checkmarkCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#2D3E50",
-    justifyContent: "center",
+    top: 12,
+    right: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 3,
   },
 });

@@ -1,14 +1,24 @@
 import { useHaptics } from "@/hooks/useHaptics";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRef, useState } from "react";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 
 type HeightUnit = "cm" | "ft";
@@ -20,6 +30,11 @@ interface BodyHeightProps {
   initialValue?: number;
   initialUnit?: HeightUnit;
 }
+
+const MIN_HEIGHT_CM = 100;
+const MAX_HEIGHT_CM = 250;
+const MIN_HEIGHT_FT = 3.3; // ~100cm
+const MAX_HEIGHT_FT = 8.2; // ~250cm
 
 export function BodyHeight({
   title,
@@ -33,377 +48,416 @@ export function BodyHeight({
   const [unit, setUnit] = useState<HeightUnit>(initialUnit);
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(initialValue.toString());
-
-  // Gesture handler for draggable drop icon - HORIZONTAL like weight
-  const translateX = useSharedValue(0);
-  const startX = useSharedValue(0);
+  const inputRef = useRef<TextInput>(null);
   const scale = useSharedValue(1);
 
-  function updateHeight(newHeight: number) {
-    const clampedHeight = Math.max(100, Math.min(250, newHeight));
-    setHeight(clampedHeight);
-    onValueChange?.(clampedHeight, unit);
-    impact(Haptics.ImpactFeedbackStyle.Light);
+  const minHeight = unit === "cm" ? MIN_HEIGHT_CM : MIN_HEIGHT_FT;
+  const maxHeight = unit === "cm" ? MAX_HEIGHT_CM : MAX_HEIGHT_FT;
+  const stepSize = unit === "cm" ? 1 : 0.1;
+
+  function handleIncrement() {
+    if (height < maxHeight) {
+      impact(Haptics.ImpactFeedbackStyle.Light);
+      const newHeight = unit === "cm" 
+        ? Math.min(maxHeight, height + 1)
+        : Math.min(maxHeight, Math.round((height + 0.1) * 10) / 10);
+      setHeight(newHeight);
+      setInputValue(formatHeight(newHeight));
+      onValueChange?.(newHeight, unit);
+      animateValue();
+    }
   }
 
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      startX.value = translateX.value;
-      scale.value = withSpring(1.2);
-    })
-    .onUpdate((event) => {
-      translateX.value = startX.value + event.translationX;
+  function handleDecrement() {
+    if (height > minHeight) {
+      impact(Haptics.ImpactFeedbackStyle.Light);
+      const newHeight = unit === "cm"
+        ? Math.max(minHeight, height - 1)
+        : Math.max(minHeight, Math.round((height - 0.1) * 10) / 10);
+      setHeight(newHeight);
+      setInputValue(formatHeight(newHeight));
+      onValueChange?.(newHeight, unit);
+      animateValue();
+    }
+  }
 
-      // Calculate new height based on drag distance
-      const dragDistance = translateX.value;
-      const heightChange = Math.round(dragDistance / 20); // 20px = 1cm (daha az hassas)
-      const newHeight = height + heightChange;
-
-      if (heightChange !== 0) {
-        runOnJS(updateHeight)(newHeight);
-      }
-    })
-    .onEnd(() => {
-      translateX.value = withSpring(0);
+  function animateValue() {
+    scale.value = withSpring(1.1, { damping: 10 }, () => {
       scale.value = withSpring(1);
-      startX.value = 0;
     });
+  }
 
-  const animatedDropStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { scale: scale.value }],
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
   }));
 
   function handleEdit() {
     setIsEditing(true);
-    setInputValue(height.toString());
+    setInputValue(formatHeight(height));
+    setTimeout(() => inputRef.current?.focus(), 100);
   }
 
   function handleBlur() {
-    const parsedHeight = parseInt(inputValue, 10);
-    if (!isNaN(parsedHeight) && parsedHeight > 0) {
-      setHeight(parsedHeight);
-      onValueChange?.(parsedHeight, unit);
+    const parsedHeight = parseFloat(inputValue);
+    if (!isNaN(parsedHeight) && parsedHeight >= minHeight && parsedHeight <= maxHeight) {
+      const newHeight = unit === "cm" ? Math.round(parsedHeight) : Math.round(parsedHeight * 10) / 10;
+      setHeight(newHeight);
+      onValueChange?.(newHeight, unit);
     } else {
-      setInputValue(height.toString());
+      setInputValue(formatHeight(height));
     }
     setIsEditing(false);
   }
 
   function handleChangeText(text: string) {
-    // Only allow numbers
-    const numericText = text.replace(/[^0-9]/g, "");
-    setInputValue(numericText);
+    // Allow numbers and decimal point for ft
+    const regex = unit === "cm" ? /[^0-9]/g : /[^0-9.]/g;
+    const cleanedText = text.replace(regex, "");
+    setInputValue(cleanedText);
   }
 
   function handleUnitChange(newUnit: HeightUnit) {
-    setUnit(newUnit);
+    if (newUnit === unit) return;
+    impact(Haptics.ImpactFeedbackStyle.Medium);
+    
     // Convert height value when switching units
-    // This is a simplified conversion, you might want to add more precise logic
-    onValueChange?.(height, newUnit);
+    let convertedHeight: number;
+    if (newUnit === "ft") {
+      // cm to ft
+      convertedHeight = Math.round((height / 30.48) * 10) / 10;
+    } else {
+      // ft to cm
+      convertedHeight = Math.round(height * 30.48);
+    }
+    
+    setUnit(newUnit);
+    setHeight(convertedHeight);
+    setInputValue(formatHeight(convertedHeight, newUnit));
+    onValueChange?.(convertedHeight, newUnit);
+  }
+
+  function formatHeight(value: number, targetUnit?: HeightUnit): string {
+    const u = targetUnit || unit;
+    return u === "cm" ? Math.round(value).toString() : value.toFixed(1);
+  }
+
+  function dismissKeyboard() {
+    Keyboard.dismiss();
+    if (isEditing) {
+      handleBlur();
+    }
   }
 
   return (
-    <View style={styles.content}>
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        {description && <Text style={styles.description}>{description}</Text>}
-      </View>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          <View style={styles.content}>
+            {/* Header */}
+            <View style={styles.textContainer}>
+              <Text style={styles.title}>{title}</Text>
+              {description && <Text style={styles.description}>{description}</Text>}
+            </View>
 
-      <View style={styles.inputContainer}>
-        {/* Unit Toggle - Now on top */}
-        <View style={styles.unitToggleContainer}>
-          <Pressable
-            style={[
-              styles.unitButton,
-              styles.unitButtonLeft,
-              unit === "cm" && styles.unitButtonActive,
-            ]}
-            onPress={() => handleUnitChange("cm")}
-          >
-            <Text
-              style={[
-                styles.unitButtonText,
-                unit === "cm" && styles.unitButtonTextActive,
-              ]}
-            >
-              Cm
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.unitButton,
-              styles.unitButtonRight,
-              unit === "ft" && styles.unitButtonActive,
-            ]}
-            onPress={() => handleUnitChange("ft")}
-          >
-            <Text
-              style={[
-                styles.unitButtonText,
-                unit === "ft" && styles.unitButtonTextActive,
-              ]}
-            >
-              Ft/In
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* Display Box with yellow/orange background */}
-        <View style={styles.displayWrapper}>
-          {/* Main Display */}
-          {isEditing ? (
-            <View style={styles.displayInnerContainer}>
-              <TextInput
-                style={styles.input}
-                value={inputValue}
-                onChangeText={handleChangeText}
-                onBlur={handleBlur}
-                keyboardType="number-pad"
-                autoFocus
-                maxLength={3}
-                selectTextOnFocus
-              />
-              <Pressable onPress={handleBlur} style={styles.editButton}>
-                <MaterialCommunityIcons
-                  name="pencil"
-                  size={24}
-                  color="#2D3142"
-                />
+            {/* Unit Toggle */}
+            <View style={styles.unitToggleContainer}>
+              <Pressable
+                style={[
+                  styles.unitButton,
+                  styles.unitButtonLeft,
+                  unit === "cm" && styles.unitButtonActive,
+                ]}
+                onPress={() => handleUnitChange("cm")}
+              >
+                <Text
+                  style={[
+                    styles.unitButtonText,
+                    unit === "cm" && styles.unitButtonTextActive,
+                  ]}
+                >
+                  Cm
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.unitButton,
+                  styles.unitButtonRight,
+                  unit === "ft" && styles.unitButtonActive,
+                ]}
+                onPress={() => handleUnitChange("ft")}
+              >
+                <Text
+                  style={[
+                    styles.unitButtonText,
+                    unit === "ft" && styles.unitButtonTextActive,
+                  ]}
+                >
+                  Ft
+                </Text>
               </Pressable>
             </View>
-          ) : (
-            <View style={styles.displayInnerContainer}>
-              <View style={styles.displayBox}>
-                <Text style={styles.displayText}>{height}</Text>
+
+            {/* Main Card */}
+            <LinearGradient
+              colors={["#E8F4FD", "#D4E8F8"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardGradient}
+            >
+              {/* Height Icon */}
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons
+                  name="human-male-height"
+                  size={48}
+                  color="#3B82F6"
+                />
               </View>
-              <Pressable onPress={handleEdit} style={styles.editButton}>
-                <MaterialCommunityIcons
-                  name="pencil"
-                  size={24}
-                  color="#2D3142"
-                />
-              </Pressable>
-            </View>
-          )}
 
-          {/* Ruler Scale - Vertical */}
-          <View style={styles.rulerContainer}>
-            {/* Ruler marks - vertical layout */}
-            <View style={styles.rulerMarks}>
-              {Array.from({ length: 21 }, (_, i) => {
-                const value = height - 10 + i;
-                const isMajorMark = i % 10 === 0;
-                const isMidMark = i % 5 === 0 && !isMajorMark;
-                const isCenter = i === 10;
+              {/* Selector */}
+              <View style={styles.selectorContainer}>
+                <Pressable
+                  onPress={handleDecrement}
+                  disabled={height <= minHeight}
+                  style={({ pressed }) => [
+                    styles.button,
+                    height <= minHeight && styles.buttonDisabled,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name="remove"
+                    size={32}
+                    color={height <= minHeight ? "#CBD5E1" : "#3B82F6"}
+                  />
+                </Pressable>
 
-                return (
-                  <View key={i} style={styles.markContainer}>
-                    {isMajorMark && (
-                      <Text style={styles.markLabel}>{value}</Text>
+                <Pressable onPress={handleEdit}>
+                  <Animated.View style={[styles.valueContainer, animatedStyle]}>
+                    {isEditing ? (
+                      <TextInput
+                        ref={inputRef}
+                        style={styles.valueInput}
+                        value={inputValue}
+                        onChangeText={handleChangeText}
+                        onBlur={handleBlur}
+                        keyboardType={unit === "cm" ? "number-pad" : "decimal-pad"}
+                        maxLength={unit === "cm" ? 3 : 4}
+                        selectTextOnFocus
+                        autoFocus
+                      />
+                    ) : (
+                      <Text style={styles.valueText}>{formatHeight(height)}</Text>
                     )}
-                    <View
-                      style={[
-                        styles.mark,
-                        isMidMark && styles.midMark,
-                        isMajorMark && styles.majorMark,
-                        isCenter && styles.currentMark,
-                      ]}
-                    />
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        </View>
+                    <Text style={styles.unitLabel}>{unit}</Text>
+                  </Animated.View>
+                </Pressable>
 
-        {/* Draggable Water drop icon */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.dropContainer, animatedDropStyle]}>
-            <MaterialCommunityIcons
-              name="water-outline"
-              size={56}
-              color="#2D3648"
-            />
-          </Animated.View>
-        </GestureDetector>
-      </View>
-    </View>
+                <Pressable
+                  onPress={handleIncrement}
+                  disabled={height >= maxHeight}
+                  style={({ pressed }) => [
+                    styles.button,
+                    height >= maxHeight && styles.buttonDisabled,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name="add"
+                    size={32}
+                    color={height >= maxHeight ? "#CBD5E1" : "#3B82F6"}
+                  />
+                </Pressable>
+              </View>
+
+              {/* Info Text */}
+              <Text style={styles.infoText}>
+                Tap the value to type directly
+              </Text>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
+  keyboardAvoid: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
   textContainer: {
-    paddingHorizontal: 27,
+    marginBottom: 24,
   },
   title: {
     fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 32,
-    lineHeight: 40,
-    color: "#2D3142",
-    marginBottom: 16,
-    maxWidth: 344,
+    fontWeight: "700",
+    fontSize: 28,
+    lineHeight: 36,
+    color: "#1A1D26",
+    marginBottom: 12,
+    letterSpacing: -0.5,
   },
   description: {
     fontFamily: "Inter",
     fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#5D6270",
-    maxWidth: 317,
-  },
-  inputContainer: {
-    alignItems: "center",
-    marginTop: 60,
-    paddingHorizontal: 20,
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#6B7280",
+    maxWidth: 300,
   },
   unitToggleContainer: {
     flexDirection: "row",
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
-    width: "100%",
-    maxWidth: 400,
     marginBottom: 32,
+    backgroundColor: "#F1F5F9",
   },
   unitButton: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E8E9EB",
   },
   unitButtonLeft: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
   },
   unitButtonRight: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
   },
   unitButtonActive: {
-    backgroundColor: "#2D3648",
+    backgroundColor: "#3B82F6",
   },
   unitButtonText: {
     fontFamily: "Inter",
-    fontWeight: "500",
+    fontWeight: "600",
     fontSize: 16,
-    lineHeight: 24,
-    color: "#2D3142",
+    color: "#64748B",
   },
   unitButtonTextActive: {
     color: "#FFFFFF",
   },
-  displayWrapper: {
-    backgroundColor: "#F2C94C",
-    borderRadius: 24,
+  cardGradient: {
+    borderRadius: 28,
     padding: 32,
     width: "100%",
-    maxWidth: 480,
-    minHeight: 380,
-    justifyContent: "space-between",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  displayInnerContainer: {
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  selectorContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    marginBottom: 40,
+    width: "100%",
+    gap: 20,
+    marginBottom: 24,
   },
-  displayBox: {
+  button: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonPressed: {
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    transform: [{ scale: 0.95 }],
+  },
+  buttonDisabled: {
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+  },
+  valueContainer: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 48,
+    borderRadius: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 40,
     minWidth: 160,
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  displayText: {
+  valueText: {
     fontFamily: "Inter",
     fontWeight: "700",
-    fontSize: 48,
-    lineHeight: 56,
-    color: "#2D3142",
+    fontSize: 52,
+    lineHeight: 60,
+    color: "#1A1D26",
+    letterSpacing: -1,
   },
-  editButton: {
-    padding: 8,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 48,
-    minWidth: 160,
+  valueInput: {
     fontFamily: "Inter",
     fontWeight: "700",
-    fontSize: 48,
-    lineHeight: 56,
-    color: "#2D3142",
+    fontSize: 52,
+    lineHeight: 60,
+    color: "#1A1D26",
+    letterSpacing: -1,
     textAlign: "center",
+    minWidth: 100,
+    padding: 0,
   },
-  rulerContainer: {
-    width: "100%",
-    marginTop: 20,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  rulerMarks: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    height: 100,
-  },
-  markContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 2,
-  },
-  mark: {
-    width: 1.5,
-    height: 16,
-    backgroundColor: "#2D3142",
-    opacity: 0.25,
-  },
-  midMark: {
-    height: 24,
-    width: 2,
-    opacity: 0.4,
-  },
-  majorMark: {
-    height: 36,
-    width: 2.5,
-    opacity: 0.7,
-  },
-  currentMark: {
-    height: 48,
-    width: 3.5,
-    backgroundColor: "#2D3648",
-    opacity: 1,
-  },
-  markLabel: {
+  unitLabel: {
     fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 12,
-    lineHeight: 16,
-    color: "#2D3142",
-    marginBottom: 6,
-    opacity: 0.8,
+    fontWeight: "500",
+    fontSize: 16,
+    color: "#64748B",
+    marginTop: 4,
+    textTransform: "uppercase",
   },
-  dropContainer: {
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 20,
+  infoText: {
+    fontFamily: "Inter",
+    fontWeight: "400",
+    fontSize: 14,
+    color: "#64748B",
+    textAlign: "center",
   },
 });

@@ -1266,19 +1266,19 @@ constants/
 
 ## onboarding - yunus
 
-- [] goals sayfasına description eklet
-- [] height/weight kısmı scrollable yapma androidde yarısı gözükmüyor
-- [] height/weight kısmına keyboard aware scrollview lazım
+- [x] goals sayfasına description eklet
+- [] height/weight kısmı scrollable yapma(Düzelt) androidde yarısı gözükmüyor
+- [x] height/weight kısmına keyboard aware scrollview lazım
 - [] allergies syafasında search ettiğimiz malzeme ismi gözükmüyor item #id gibi gözüküyor - yusuf
-- goalsda logolara ayar çek yusuf
+- [x]goalsda logolara ayar çek
 - motivaayon işi - yusuf
 - [] something went wrong hatası hala devam ediyor!!!! - yusuf
 - [] quantity seçmeyi daha mantıklı yap
 
-- [] debouncing lazım her harf gönderdiğimizde istek atıyor saniye 2 istek hakkımız var onu belirt
+- [x] debouncing lazım her harf gönderdiğimizde istek atıyor saniye 2 istek hakkımız var onu belirt
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
-- [] diet preferences da resimlerin sağında gölge var
+- [x] diet preferences da resimlerin sağında gölge var
 - [] ana sayfada sınır ekle max 7 gün
 - [] yunusun nota bakılacak ai generatedla ilgili
 - [] frozen

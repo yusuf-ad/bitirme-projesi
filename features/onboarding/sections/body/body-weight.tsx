@@ -1,14 +1,24 @@
 import { useHaptics } from "@/hooks/useHaptics";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRef, useState } from "react";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 
 type WeightUnit = "kg" | "lbs";
@@ -20,6 +30,11 @@ interface BodyWeightProps {
   initialValue?: number;
   initialUnit?: WeightUnit;
 }
+
+const MIN_WEIGHT_KG = 30;
+const MAX_WEIGHT_KG = 300;
+const MIN_WEIGHT_LBS = 66; // ~30kg
+const MAX_WEIGHT_LBS = 661; // ~300kg
 
 export function BodyWeight({
   title,
@@ -33,375 +48,403 @@ export function BodyWeight({
   const [unit, setUnit] = useState<WeightUnit>(initialUnit);
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(initialValue.toString());
-
-  // Gesture handler for draggable drop icon
-  const translateX = useSharedValue(0);
-  const startX = useSharedValue(0);
+  const inputRef = useRef<TextInput>(null);
   const scale = useSharedValue(1);
 
-  function updateWeight(newWeight: number) {
-    const clampedWeight = Math.max(30, Math.min(300, newWeight));
-    setWeight(clampedWeight);
-    onValueChange?.(clampedWeight, unit);
-    impact(Haptics.ImpactFeedbackStyle.Light);
+  const minWeight = unit === "kg" ? MIN_WEIGHT_KG : MIN_WEIGHT_LBS;
+  const maxWeight = unit === "kg" ? MAX_WEIGHT_KG : MAX_WEIGHT_LBS;
+
+  function handleIncrement() {
+    if (weight < maxWeight) {
+      impact(Haptics.ImpactFeedbackStyle.Light);
+      const newWeight = Math.min(maxWeight, weight + 1);
+      setWeight(newWeight);
+      setInputValue(newWeight.toString());
+      onValueChange?.(newWeight, unit);
+      animateValue();
+    }
   }
 
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      startX.value = translateX.value;
-      scale.value = withSpring(1.2);
-    })
-    .onUpdate((event) => {
-      translateX.value = startX.value + event.translationX;
+  function handleDecrement() {
+    if (weight > minWeight) {
+      impact(Haptics.ImpactFeedbackStyle.Light);
+      const newWeight = Math.max(minWeight, weight - 1);
+      setWeight(newWeight);
+      setInputValue(newWeight.toString());
+      onValueChange?.(newWeight, unit);
+      animateValue();
+    }
+  }
 
-      // Calculate new weight based on drag distance
-      const dragDistance = translateX.value;
-      const weightChange = Math.round(dragDistance / 20); // 20px = 1kg (daha az hassas)
-      const newWeight = weight + weightChange;
-
-      if (weightChange !== 0) {
-        runOnJS(updateWeight)(newWeight);
-      }
-    })
-    .onEnd(() => {
-      translateX.value = withSpring(0);
+  function animateValue() {
+    scale.value = withSpring(1.1, { damping: 10 }, () => {
       scale.value = withSpring(1);
-      startX.value = 0;
     });
+  }
 
-  const animatedDropStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { scale: scale.value }],
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
   }));
 
   function handleEdit() {
     setIsEditing(true);
-    setInputValue(weight.toString());
+    setInputValue(Math.round(weight).toString());
+    setTimeout(() => inputRef.current?.focus(), 100);
   }
 
   function handleBlur() {
     const parsedWeight = parseInt(inputValue, 10);
-    if (!isNaN(parsedWeight) && parsedWeight > 0) {
+    if (!isNaN(parsedWeight) && parsedWeight >= minWeight && parsedWeight <= maxWeight) {
       setWeight(parsedWeight);
       onValueChange?.(parsedWeight, unit);
     } else {
-      setInputValue(weight.toString());
+      setInputValue(Math.round(weight).toString());
     }
     setIsEditing(false);
   }
 
   function handleChangeText(text: string) {
-    // Only allow numbers
     const numericText = text.replace(/[^0-9]/g, "");
     setInputValue(numericText);
   }
 
   function handleUnitChange(newUnit: WeightUnit) {
-    setUnit(newUnit);
+    if (newUnit === unit) return;
+    impact(Haptics.ImpactFeedbackStyle.Medium);
+    
     // Convert weight value when switching units
-    // This is a simplified conversion, you might want to add more precise logic
-    onValueChange?.(weight, newUnit);
+    let convertedWeight: number;
+    if (newUnit === "lbs") {
+      // kg to lbs
+      convertedWeight = Math.round(weight * 2.20462);
+    } else {
+      // lbs to kg
+      convertedWeight = Math.round(weight / 2.20462);
+    }
+    
+    setUnit(newUnit);
+    setWeight(convertedWeight);
+    setInputValue(convertedWeight.toString());
+    onValueChange?.(convertedWeight, newUnit);
+  }
+
+  function dismissKeyboard() {
+    Keyboard.dismiss();
+    if (isEditing) {
+      handleBlur();
+    }
   }
 
   return (
-    <View style={styles.content}>
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        {description && <Text style={styles.description}>{description}</Text>}
-      </View>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          <View style={styles.content}>
+            {/* Header */}
+            <View style={styles.textContainer}>
+              <Text style={styles.title}>{title}</Text>
+              {description && <Text style={styles.description}>{description}</Text>}
+            </View>
 
-      <View style={styles.inputContainer}>
-        {/* Unit Toggle - Now on top */}
-        <View style={styles.unitToggleContainer}>
-          <Pressable
-            style={[
-              styles.unitButton,
-              styles.unitButtonLeft,
-              unit === "kg" && styles.unitButtonActive,
-            ]}
-            onPress={() => handleUnitChange("kg")}
-          >
-            <Text
-              style={[
-                styles.unitButtonText,
-                unit === "kg" && styles.unitButtonTextActive,
-              ]}
-            >
-              Kg
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.unitButton,
-              styles.unitButtonRight,
-              unit === "lbs" && styles.unitButtonActive,
-            ]}
-            onPress={() => handleUnitChange("lbs")}
-          >
-            <Text
-              style={[
-                styles.unitButtonText,
-                unit === "lbs" && styles.unitButtonTextActive,
-              ]}
-            >
-              Lbs
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* Display Box with yellow/orange background */}
-        <View style={styles.displayWrapper}>
-          {/* Main Display */}
-          {isEditing ? (
-            <View style={styles.displayInnerContainer}>
-              <TextInput
-                style={styles.input}
-                value={inputValue}
-                onChangeText={handleChangeText}
-                onBlur={handleBlur}
-                keyboardType="number-pad"
-                autoFocus
-                maxLength={3}
-                selectTextOnFocus
-              />
-              <Pressable onPress={handleBlur} style={styles.editButton}>
-                <MaterialCommunityIcons
-                  name="pencil"
-                  size={24}
-                  color="#2D3142"
-                />
+            {/* Unit Toggle */}
+            <View style={styles.unitToggleContainer}>
+              <Pressable
+                style={[
+                  styles.unitButton,
+                  styles.unitButtonLeft,
+                  unit === "kg" && styles.unitButtonActive,
+                ]}
+                onPress={() => handleUnitChange("kg")}
+              >
+                <Text
+                  style={[
+                    styles.unitButtonText,
+                    unit === "kg" && styles.unitButtonTextActive,
+                  ]}
+                >
+                  Kg
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.unitButton,
+                  styles.unitButtonRight,
+                  unit === "lbs" && styles.unitButtonActive,
+                ]}
+                onPress={() => handleUnitChange("lbs")}
+              >
+                <Text
+                  style={[
+                    styles.unitButtonText,
+                    unit === "lbs" && styles.unitButtonTextActive,
+                  ]}
+                >
+                  Lbs
+                </Text>
               </Pressable>
             </View>
-          ) : (
-            <View style={styles.displayInnerContainer}>
-              <View style={styles.displayBox}>
-                <Text style={styles.displayText}>{weight}</Text>
+
+            {/* Main Card */}
+            <LinearGradient
+              colors={["#FEF3C7", "#FDE68A"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardGradient}
+            >
+              {/* Weight Icon */}
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons
+                  name="scale-bathroom"
+                  size={48}
+                  color="#F59E0B"
+                />
               </View>
-              <Pressable onPress={handleEdit} style={styles.editButton}>
-                <MaterialCommunityIcons
-                  name="pencil"
-                  size={24}
-                  color="#2D3142"
-                />
-              </Pressable>
-            </View>
-          )}
 
-          {/* Ruler Scale */}
-          <View style={styles.rulerContainer}>
-            {/* Ruler marks */}
-            <View style={styles.rulerMarks}>
-              {Array.from({ length: 41 }, (_, i) => {
-                const value = weight - 20 + i;
-                const isMajorMark = i % 10 === 0;
-                const isMidMark = i % 5 === 0 && !isMajorMark;
-                const isCenter = i === 20;
+              {/* Selector */}
+              <View style={styles.selectorContainer}>
+                <Pressable
+                  onPress={handleDecrement}
+                  disabled={weight <= minWeight}
+                  style={({ pressed }) => [
+                    styles.button,
+                    weight <= minWeight && styles.buttonDisabled,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name="remove"
+                    size={32}
+                    color={weight <= minWeight ? "#CBD5E1" : "#F59E0B"}
+                  />
+                </Pressable>
 
-                return (
-                  <View key={i} style={styles.markContainer}>
-                    <View
-                      style={[
-                        styles.mark,
-                        isMidMark && styles.midMark,
-                        isMajorMark && styles.majorMark,
-                        isCenter && styles.currentMark,
-                      ]}
-                    />
-                    {isMajorMark && (
-                      <Text style={styles.markLabel}>{value}</Text>
+                <Pressable onPress={handleEdit}>
+                  <Animated.View style={[styles.valueContainer, animatedStyle]}>
+                    {isEditing ? (
+                      <TextInput
+                        ref={inputRef}
+                        style={styles.valueInput}
+                        value={inputValue}
+                        onChangeText={handleChangeText}
+                        onBlur={handleBlur}
+                        keyboardType="number-pad"
+                        maxLength={3}
+                        selectTextOnFocus
+                        autoFocus
+                      />
+                    ) : (
+                      <Text style={styles.valueText}>{Math.round(weight)}</Text>
                     )}
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        </View>
+                    <Text style={styles.unitLabel}>{unit}</Text>
+                  </Animated.View>
+                </Pressable>
 
-        {/* Draggable Water drop icon */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.dropContainer, animatedDropStyle]}>
-            <MaterialCommunityIcons
-              name="water-outline"
-              size={56}
-              color="#2D3648"
-            />
-          </Animated.View>
-        </GestureDetector>
-      </View>
-    </View>
+                <Pressable
+                  onPress={handleIncrement}
+                  disabled={weight >= maxWeight}
+                  style={({ pressed }) => [
+                    styles.button,
+                    weight >= maxWeight && styles.buttonDisabled,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name="add"
+                    size={32}
+                    color={weight >= maxWeight ? "#CBD5E1" : "#F59E0B"}
+                  />
+                </Pressable>
+              </View>
+
+              {/* Info Text */}
+              <Text style={styles.infoText}>
+                Tap the value to type directly
+              </Text>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
+  keyboardAvoid: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
   textContainer: {
-    paddingHorizontal: 27,
+    marginBottom: 24,
   },
   title: {
     fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 32,
-    lineHeight: 40,
-    color: "#2D3142",
-    marginBottom: 16,
-    maxWidth: 344,
+    fontWeight: "700",
+    fontSize: 28,
+    lineHeight: 36,
+    color: "#1A1D26",
+    marginBottom: 12,
+    letterSpacing: -0.5,
   },
   description: {
     fontFamily: "Inter",
     fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#5D6270",
-    maxWidth: 317,
-  },
-  inputContainer: {
-    alignItems: "center",
-    marginTop: 60,
-    paddingHorizontal: 20,
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#6B7280",
+    maxWidth: 300,
   },
   unitToggleContainer: {
     flexDirection: "row",
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
-    width: "100%",
-    maxWidth: 400,
     marginBottom: 32,
+    backgroundColor: "#FEF3C7",
   },
   unitButton: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E8E9EB",
   },
   unitButtonLeft: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
   },
   unitButtonRight: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
   },
   unitButtonActive: {
-    backgroundColor: "#2D3648",
+    backgroundColor: "#F59E0B",
   },
   unitButtonText: {
     fontFamily: "Inter",
-    fontWeight: "500",
+    fontWeight: "600",
     fontSize: 16,
-    lineHeight: 24,
-    color: "#2D3142",
+    color: "#92400E",
   },
   unitButtonTextActive: {
     color: "#FFFFFF",
   },
-  displayWrapper: {
-    backgroundColor: "#F2C94C",
-    borderRadius: 24,
+  cardGradient: {
+    borderRadius: 28,
     padding: 32,
     width: "100%",
-    maxWidth: 480,
-    minHeight: 380,
-    justifyContent: "space-between",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  displayInnerContainer: {
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  selectorContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    marginBottom: 40,
+    width: "100%",
+    gap: 20,
+    marginBottom: 24,
   },
-  displayBox: {
+  button: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonPressed: {
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    transform: [{ scale: 0.95 }],
+  },
+  buttonDisabled: {
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+  },
+  valueContainer: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 48,
+    borderRadius: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 40,
     minWidth: 160,
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  displayText: {
+  valueText: {
     fontFamily: "Inter",
     fontWeight: "700",
-    fontSize: 48,
-    lineHeight: 56,
-    color: "#2D3142",
+    fontSize: 52,
+    lineHeight: 60,
+    color: "#1A1D26",
+    letterSpacing: -1,
   },
-  editButton: {
-    padding: 8,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 48,
-    minWidth: 160,
+  valueInput: {
     fontFamily: "Inter",
     fontWeight: "700",
-    fontSize: 48,
-    lineHeight: 56,
-    color: "#2D3142",
+    fontSize: 52,
+    lineHeight: 60,
+    color: "#1A1D26",
+    letterSpacing: -1,
     textAlign: "center",
+    minWidth: 100,
+    padding: 0,
   },
-  rulerContainer: {
-    width: "100%",
-    marginTop: 20,
-    paddingHorizontal: 8,
-  },
-  rulerMarks: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    height: 100,
-  },
-  markContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    minWidth: 2,
-  },
-  mark: {
-    width: 1.5,
-    height: 16,
-    backgroundColor: "#2D3142",
-    opacity: 0.25,
-  },
-  midMark: {
-    height: 24,
-    width: 2,
-    opacity: 0.4,
-  },
-  majorMark: {
-    height: 36,
-    width: 2.5,
-    opacity: 0.7,
-  },
-  currentMark: {
-    height: 48,
-    width: 3.5,
-    backgroundColor: "#2D3648",
-    opacity: 1,
-  },
-  markLabel: {
+  unitLabel: {
     fontFamily: "Inter",
-    fontWeight: "600",
-    fontSize: 12,
-    lineHeight: 16,
-    color: "#2D3142",
-    marginTop: 6,
-    opacity: 0.8,
+    fontWeight: "500",
+    fontSize: 16,
+    color: "#92400E",
+    marginTop: 4,
+    textTransform: "uppercase",
   },
-  dropContainer: {
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 20,
+  infoText: {
+    fontFamily: "Inter",
+    fontWeight: "400",
+    fontSize: 14,
+    color: "#92400E",
+    textAlign: "center",
   },
 });

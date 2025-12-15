@@ -7,7 +7,6 @@ import {
 import { useLanguage } from "@/hooks/useLanguage";
 import { useOnboarding } from "@/providers/onboarding-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -131,11 +130,7 @@ export default function GoalsMetricsScreen() {
                       isSelected && styles.goalIconCircleSelected,
                     ]}
                   >
-                    <Image
-                      source={option.icon}
-                      style={styles.goalIcon}
-                      contentFit="contain"
-                    />
+                    <Text style={styles.goalEmoji}>{option.emoji}</Text>
                     {isEditing && isSelected && (
                       <View style={styles.checkmarkBadge}>
                         <MaterialCommunityIcons
@@ -253,9 +248,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0EDFF",
     borderColor: Colors.lilac[400],
   },
-  goalIcon: {
-    width: 56,
-    height: 56,
+  goalEmoji: {
+    fontSize: 32,
   },
   checkmarkBadge: {
     position: "absolute",

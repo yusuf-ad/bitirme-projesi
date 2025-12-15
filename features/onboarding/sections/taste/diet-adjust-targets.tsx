@@ -4,12 +4,14 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-    Pressable,
-    StyleSheet,
-    Text,
-    View
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDietSummary } from "../../hooks/use-diet-summary";
 import { DIET_OPTIONS } from "./diet-options";
 
 interface DietAdjustTargetsProps {
@@ -44,7 +46,14 @@ export function DietAdjustTargetsScreen({
     ? onboarding.dietNutritionTargets[dietId]
     : undefined;
 
-  // Initialize state with saved values or calculated defaults (grams)
+  // Fetch real nutrition data from Spoonacular API
+  const { data: apiNutrients, isLoading: isLoadingNutrients } = useDietSummary({
+    spoonacularDiet: diet?.spoonacularDiet || undefined,
+    targetCalories: diet?.targetCalories,
+    enabled: !!diet && !savedTarget, // Only fetch if no saved target
+  });
+
+  // Initialize state with saved values, API values, or calculated defaults (grams)
   const [protein, setProtein] = useState(() => {
     if (savedTarget?.protein) return savedTarget.protein;
     const cals = diet?.targetCalories ?? 2200;
@@ -66,20 +75,30 @@ export function DietAdjustTargetsScreen({
     return Math.round((cals * percent) / 4);
   });
 
-  // Re-sync if dietId changes (though usually this screen is for one diet)
+  // Update state when API data arrives
+  useEffect(() => {
+    if (apiNutrients && !savedTarget) {
+      setProtein(Math.round(apiNutrients.protein));
+      setFat(Math.round(apiNutrients.fat));
+      setCarb(Math.round(apiNutrients.carbohydrates));
+    }
+  }, [apiNutrients, savedTarget]);
+
+  // Re-sync if dietId changes or savedTarget exists
   useEffect(() => {
     if (!diet) return;
     if (savedTarget) {
       setProtein(savedTarget.protein);
       setFat(savedTarget.fat);
       setCarb(savedTarget.carbs);
-    } else {
+    } else if (!apiNutrients) {
+      // Fallback to calculated defaults if API hasn't loaded yet
       const cals = diet.targetCalories;
       setProtein(Math.round((cals * diet.defaultMacros.protein) / 4));
       setFat(Math.round((cals * diet.defaultMacros.fat) / 9));
       setCarb(Math.round((cals * diet.defaultMacros.carbohydrates) / 4));
     }
-  }, [dietId, savedTarget, diet]);
+  }, [dietId, savedTarget, diet, apiNutrients]);
 
   // Calculate total calories from grams
   const calculatedCalories = Math.round(protein * 4 + fat * 9 + carb * 4);
@@ -158,10 +177,16 @@ export function DietAdjustTargetsScreen({
 
       {/* Calculated Calories Display */}
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Calculated Calories</Text>
-        <Text style={styles.calorieDisplay}>
-          {calculatedCalories} <Text style={styles.calorieUnit}>kcal</Text>
+        <Text style={styles.cardLabel}>
+          {isLoadingNutrients ? "Loading from API..." : "Calculated Calories"}
         </Text>
+        {isLoadingNutrients ? (
+          <ActivityIndicator size="large" color="#6366F1" style={{ marginVertical: 12 }} />
+        ) : (
+          <Text style={styles.calorieDisplay}>
+            {calculatedCalories} <Text style={styles.calorieUnit}>kcal</Text>
+          </Text>
+        )}
       </View>
 
       <View style={styles.macrosContainer}>
