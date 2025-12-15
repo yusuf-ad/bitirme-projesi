@@ -1286,7 +1286,7 @@ constants/
 - [x] mealplane yeni yüz lazım
 - [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan
 - [x] anasayfa default statei düzelt
-- [] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun
+- [x] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun - 3479654c18f2671f3e765d3fe2082fd1dad883aa
 - [] hangi tarif replacedeyse o lunchsa lunch olsun
 
 ## recipes - osman
@@ -1294,7 +1294,7 @@ constants/
 - [] servings ayarlama !!!!! ÇOK ÖNEMLİ
 - [] servings için mi calori ingredient kalori felan 1 kişi için mi
 - [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
-- [] healthy ,easy badgeleri gözükmüyor
+- [] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
