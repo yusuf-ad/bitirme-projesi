@@ -82,19 +82,24 @@ export default function CalendarSection({
       style={styles.calendarScrollView}
       contentContainerStyle={styles.calendarContent}
       keyExtractor={(item) => item.date.toISOString()}
-      renderItem={({ item, index: itemIndex }) => (
-        <CalendarDay
-          day={item.day}
-          dayOfWeek={item.dayOfWeek}
-          isSelected={selectedIndex === itemIndex}
-          isToday={isSameDay(item.date, today)}
-          onPress={() => {
-            const normalizedDate = new Date(item.date);
-            normalizedDate.setHours(0, 0, 0, 0);
-            onDateSelect(normalizedDate);
-          }}
-        />
-      )}
+      renderItem={({ item, index: itemIndex }) => {
+        const normalizedItemDate = new Date(item.date);
+        normalizedItemDate.setHours(0, 0, 0, 0);
+        const isPast = normalizedItemDate < today;
+        
+        return (
+          <CalendarDay
+            day={item.day}
+            dayOfWeek={item.dayOfWeek}
+            isSelected={selectedIndex === itemIndex}
+            isToday={isSameDay(item.date, today)}
+            isPast={isPast}
+            onPress={() => {
+              onDateSelect(normalizedItemDate);
+            }}
+          />
+        );
+      }}
     />
   );
 }

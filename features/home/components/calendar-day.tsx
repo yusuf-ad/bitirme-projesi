@@ -6,6 +6,7 @@ interface CalendarDayProps extends PressableProps {
   dayOfWeek: string;
   isSelected?: boolean;
   isToday?: boolean;
+  isPast?: boolean;
   onPress?: () => void;
 }
 
@@ -14,23 +15,35 @@ export default function CalendarDay({
   dayOfWeek,
   isSelected = false,
   isToday = false,
+  isPast = false,
   onPress,
   ...props
 }: CalendarDayProps) {
   const isTodayButNotSelected = isToday && !isSelected;
+  const isPastButNotSelected = isPast && !isSelected;
 
   return (
     <Pressable
       onPress={onPress}
       style={[
         styles.container,
+        isPastButNotSelected && styles.pastContainer,
         isSelected && styles.selectedContainer,
+        isSelected && isPast && styles.selectedPastContainer,
         isTodayButNotSelected && styles.todayContainer,
       ]}
       {...props}
     >
-      <Text style={[styles.day, isSelected && styles.selectedText]}>{day}</Text>
-      <Text style={[styles.dayOfWeek, isSelected && styles.selectedText]}>
+      <Text style={[
+        styles.day, 
+        isSelected && styles.selectedText,
+        isPastButNotSelected && styles.pastText,
+      ]}>{day}</Text>
+      <Text style={[
+        styles.dayOfWeek, 
+        isSelected && styles.selectedText,
+        isPastButNotSelected && styles.pastText,
+      ]}>
         {dayOfWeek}
       </Text>
     </Pressable>
@@ -54,6 +67,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lilac[900],
     opacity: 1,
   },
+  selectedPastContainer: {
+    backgroundColor: Colors.gray[400],
+    opacity: 1,
+  },
+  pastContainer: {
+    backgroundColor: Colors.gray[100],
+    opacity: 0.6,
+  },
   todayContainer: {
     backgroundColor: Colors.lilac[100],
     opacity: 1,
@@ -76,5 +97,8 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     color: Colors.background.primary,
+  },
+  pastText: {
+    color: Colors.gray[400],
   },
 });
