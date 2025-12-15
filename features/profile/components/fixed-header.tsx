@@ -10,6 +10,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Extrapolation,
   interpolate,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -27,7 +28,7 @@ const THRESHOLD_110 = SCROLL_THRESHOLD * 1.1;
 const THRESHOLD_120 = SCROLL_THRESHOLD * 1.2;
 
 interface FixedHeaderProps {
-  scrollY: Animated.SharedValue<number>;
+  scrollY: SharedValue<number>;
   scrollViewRef: React.RefObject<Animated.ScrollView | null>;
 }
 
@@ -219,12 +220,12 @@ export const FixedHeader = React.memo(function FixedHeader({
   }, [toggleTheme]);
 
   const initials = useMemo(
-    () => getUserInitials(profile, session),
+    () => getUserInitials(profile, session ?? null),
     [profile?.full_name, session?.user?.email]
   );
 
   const displayName = useMemo(
-    () => getUserDisplayName(profile, session),
+    () => getUserDisplayName(profile, session ?? null),
     [profile?.full_name, session?.user?.email]
   );
 
