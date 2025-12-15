@@ -1,5 +1,9 @@
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
-import { searchIngredients, type Ingredient } from "@/lib/spoonacular";
+import {
+  getIngredientInformation,
+  searchIngredients,
+  type Ingredient,
+} from "@/lib/spoonacular";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AllergyItem } from "../types";
 import {
@@ -144,21 +148,28 @@ export function useAllergySearch({
     };
 
     const fetchUnknownIngredients = async (unknownIds: string[]) => {
-      try {
-        // Search for each unknown ID to get its name
-        for (const id of unknownIds) {
-          const { ingredients } = await searchIngredients(id, 0, 5);
-          const found = ingredients.find((ing) => `${ing.id}` === id);
-          if (found) {
+      // Fetch ingredient info by ID directly from Spoonacular API
+      for (const id of unknownIds) {
+        try {
+          const numericId = parseInt(id, 10);
+          if (isNaN(numericId)) continue;
+
+          const info = await getIngredientInformation(numericId);
+          if (info && info.name) {
+            const ingredientData: Ingredient = {
+              id: numericId,
+              name: info.name,
+              image: (info as any).image || undefined,
+            };
             setSelectedAllergiesMap((prev) => {
               const newMap = new Map(prev);
-              newMap.set(id, found);
+              newMap.set(id, ingredientData);
               return newMap;
             });
           }
+        } catch (error) {
+          console.error(`Error fetching ingredient ${id}:`, error);
         }
-      } catch (error) {
-        console.error("Error fetching ingredient names:", error);
       }
     };
 

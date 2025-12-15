@@ -1281,9 +1281,9 @@ constants/
 - [x] diet preferences da resimlerin sağında gölge var
 - [] ana sayfada sınır ekle max 7 gün
 - [] yunusun nota bakılacak ai generatedla ilgili
-- [] frozen
-- [] statusü de kaldır
-- [] mealplane yeni yüz lazım
+- [x] frozen
+- [x] statusü de kaldır
+- [x] mealplane yeni yüz lazım
 - [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan
 - [] anasayfa default statei düzelt
 - [] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun
