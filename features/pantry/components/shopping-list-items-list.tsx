@@ -1,10 +1,9 @@
 import { Colors } from "@/constants/theme";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { Feather } from "@expo/vector-icons";
-import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { memo, useCallback, useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { PantryItem } from "../types";
 
 interface ShoppingListItemsListProps {
@@ -272,18 +271,13 @@ export function ShoppingListItemsList({
   const getItemType = useCallback((item: ListItem) => item.type, []);
 
   return (
-    <FlashList
+     <FlatList
       data={listData}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      getItemType={getItemType}
-      overrideItemLayout={(layout, item) => {
-        if (item.type === "s") layout.span = 40;
-        else if (item.type === "c") layout.span = 32;
-        else layout.span = 72;
-      }}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
+      style={{ flex: 1 }}
     />
   );
 }
@@ -306,7 +300,7 @@ const styles = StyleSheet.create({
     color: Colors.lilac[900],
   },
   sectionCount: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "500",
     color: Colors.text.tertiary,
   },
@@ -318,7 +312,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   categoryTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -331,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lilac[100],
   },
   categoryCount: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "600",
     color: Colors.lilac[700],
   },
