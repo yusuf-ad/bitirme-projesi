@@ -855,6 +855,11 @@ constants/
 - [x] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun - 3479654c18f2671f3e765d3fe2082fd1dad883aa
 - [x] height/weight kısmı scrollable yapma(Düzelt) androidde yarısı gözükmüyor
 - [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan - yusuf
+- [] var olan mealplan de üstüne yazsın
+- [] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
+- [] yunusun hologram sayfası
+- [] anasayfa animasyonu
+- [] scanresults sayfasının tasarımını düzelt
 
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde

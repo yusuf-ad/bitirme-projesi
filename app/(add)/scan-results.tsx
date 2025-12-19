@@ -430,7 +430,7 @@ export default function ScanResults() {
                         ID: {item.spoonacularId}
                       </Text>
                     )}
-                  </View>
+                  </View>np
 
                   {/* Quantity Controls */}
                   <View style={styles.quantityControls}>
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
   row: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
     gap: 12,
     padding: 12,
