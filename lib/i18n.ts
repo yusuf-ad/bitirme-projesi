@@ -270,7 +270,7 @@ const en = {
     emptySubtitle: "You have no meals planned for today.",
     quickAddMeal: "Quick Add Meal",
     discoverRecipes: "Discover Recipes",
-    generateWithAI: "Generate suggestions with AI",
+    generateWithAI: "Generate recipes with AI",
     suggestedForYou: "Suggested for You",
     viewAll: "View All",
     minutes: "min",

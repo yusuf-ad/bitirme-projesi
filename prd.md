@@ -810,7 +810,6 @@ constants/
 - [x] Recipe search and display - yusuf
 
 - [x] Ingredient management (CRUD operations) - yusuf
-- [ ] Fix error states - yunus
 - [x] Recipe detail scroll header (sticky header) - osman
 - [x] Onboarding veri hatası - yunus
 - [x] spoonaculardaki diet tipleri kullanılacak ve sadece 1 diet tipi seçilme özelliği eklencek. - yunus
@@ -827,8 +826,6 @@ constants/
 - [x] Shopping list generation - yusuf
 - [x] Shopping list management - yusuf
 - [x] Yemek eklenince shopping listeye otomatik ekleme - yusuf
-- [ ] servings ayarlama - osman
-
 - [x] Multiple conflicting goals? If user selects both lose-weight and gain-weight, how should we prioritize? / Recommend prioritizing the first selected goal or showing a warning.
 
 - [x] hep aynı mealler üretilyor düzelt
@@ -854,25 +851,70 @@ constants/
 - [x] anasayfa default statei düzelt
 - [x] geçmiş tarihlerde yemek eklemeyi kaldır sadece gösterme silme olsun - 3479654c18f2671f3e765d3fe2082fd1dad883aa
 - [x] height/weight kısmı scrollable yapma(Düzelt) androidde yarısı gözükmüyor
-- [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan - yusuf
-- [] var olan mealplan de üstüne yazsın
-- [] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
-- [] yunusun hologram sayfası
-- [] anasayfa animasyonu
-- [] scanresults sayfasının tasarımını düzelt
 
+### global
+
+- [] Fix error states - yunus
+- [] tanıtım tutorialı tarzı bir şey eklensin bu en son yapılacak!!!
+
+### onboarding
+
+1. dive in butonu androidde geri butonunun gerisinde kalıyor
+2. çok abartı bir animasyon var age, height,weight  adult olayı ne onu açıkla
+3. günde kaç öğün yiyorsa onun saati alınsın yoksa default olan kullanılsın hep aynı soruyu soruyuor hoca
+4. cuisines de mutfak resimleri gitmiş düzeltilsin.
+5. dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
+6. adjust targetsta yüzdelik olarak verilsin.
+7. cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün.
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
-- [] ana sayfada sınır ekle max 7 gün
+
+### ana sayfa
+
+- [] anasayfa animasyonu
+- [] ana sayfada sınır ekle max 7 gün ??? yunusa sor bunu
 - [] yunusun nota bakılacak ai generatedla ilgili
 - [] hangi tarif replacedeyse o lunchsa lunch olsun
 
-## recipes - osman
+### meal plan
+
+- [] var olan mealplan de üstüne yazsın
+- [] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
+- [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan - yusuf
+
+
+### recipes
+
+1. select ingredients altta kalıyor 
+2. alerji scrollable degil
+3. search recipes inputuna hepsini sil butonu eklenbilir
+
+
+### recipes - osman
 
 - [] servings ayarlama !!!!! ÇOK ÖNEMLİ
 - [] servings için mi calori ingredient kalori felan 1 kişi için mi
+- [] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
 - [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
 - [] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
+- [] spoonaculardeki filter tagleri kullanılsın healthy veg vs. diye
+
+
+### pantry
+
+1. prefill deki olayın kg litresini felan düzelt
+2. update butonu kaldır onun yerine eğer resim yoksa update butonu çıksın
+- [] scanresults sayfasının tasarımını düzelt
+
+
+### profile
+
+1. statusbarın rengiyle farklı header kötü duruyor orası.
+- [] yunusun hologram sayfası
+- [] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
+
+
+
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
