@@ -4,21 +4,21 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRef, useState } from "react";
 import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 
 type WeightUnit = "kg" | "lbs";
@@ -77,7 +77,7 @@ export function BodyWeight({
   }
 
   function animateValue() {
-    scale.value = withSpring(1.1, { damping: 10 }, () => {
+    scale.value = withSpring(1.03, { damping: 15 }, () => {
       scale.value = withSpring(1);
     });
   }

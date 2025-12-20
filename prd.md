@@ -860,8 +860,8 @@ constants/
 
 ### onboarding
 
-- [] dive in butonu androidde geri butonunun gerisinde kalıyor
-- [] çok abartı bir animasyon var age, height,weight adult olarak yazılmış ne onu açıkla
+- [x] dive in butonu androidde geri butonunun gerisinde kalıyor
+- [x] çok abartı bir animasyon var age, height,weight adult olayı ne onu açıkla
 - [] günde kaç öğün yiyorsa onun saati alınsın yoksa default olan kullanılsın hep aynı soruyu soruyuor hoca
 - [] cuisines de mutfak resimleri gitmiş düzeltilsin.
 - [] dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!

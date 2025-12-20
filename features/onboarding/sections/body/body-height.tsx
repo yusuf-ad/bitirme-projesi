@@ -82,7 +82,7 @@ export function BodyHeight({
   }
 
   function animateValue() {
-    scale.value = withSpring(1.1, { damping: 10 }, () => {
+    scale.value = withSpring(1.03, { damping: 15 }, () => {
       scale.value = withSpring(1);
     });
   }
