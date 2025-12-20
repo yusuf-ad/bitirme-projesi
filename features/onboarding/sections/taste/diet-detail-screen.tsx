@@ -4,18 +4,16 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
-    ActivityIndicator,
     Image,
     Linking,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
-import { useDietSummary } from "../../hooks/use-diet-summary";
 import { DIET_OPTIONS, DietOption } from "./diet-options";
 
 interface DietDetailScreenProps {
@@ -48,102 +46,68 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
     ? onboarding.dietNutritionTargets[dietOption.id]
     : undefined;
 
-  const { data, isLoading, isError, refetch } = useDietSummary({
-    spoonacularDiet: dietOption?.spoonacularDiet,
-    targetCalories: savedTarget?.calories ?? dietOption?.targetCalories,
-    enabled: Boolean(dietOption),
-  });
+  // Determine target values: saved user override OR default options
+  const targetSource = savedTarget || {
+    calories: dietOption?.targetCalories ?? 2200,
+    protein: dietOption?.defaultMacros.protein ?? 0.25,
+    fat: dietOption?.defaultMacros.fat ?? 0.3,
+    carbs: dietOption?.defaultMacros.carbohydrates ?? 0.45,
+  };
 
   const macroBreakdown = useMemo(() => {
-    if (!dietOption) {
-      return null;
-    }
+    if (!dietOption) return null;
 
-    // If user has saved targets (grams), use them directly
+    let calories = 0;
+    let pGrams = 0;
+    let fGrams = 0;
+    let cGrams = 0;
+
     if (savedTarget) {
-      const { calories, protein, fat, carbs } = savedTarget;
+      // Case 1: Custom saved targets (in grams)
+      pGrams = savedTarget.protein;
+      fGrams = savedTarget.fat;
+      cGrams = savedTarget.carbs;
+      calories = savedTarget.calories;
+    } else {
+      // Case 2: Defaults (percentages -> grams)
+      const tCals = dietOption.targetCalories;
+      const ratios = dietOption.defaultMacros;
       
-      const macros = [
-        {
-          key: "protein" as const,
-          label: "Protein",
-          color: MACRO_COLORS.protein,
-          grams: protein,
-        },
-        {
-          key: "fat" as const,
-          label: "Fat",
-          color: MACRO_COLORS.fat,
-          grams: fat,
-        },
-        {
-          key: "carbohydrates" as const,
-          label: "Carb",
-          color: MACRO_COLORS.carbohydrates,
-          grams: carbs,
-        },
-      ];
-
-      // Calculate percentages for the donut chart
-      const totalGrams = protein + fat + carbs;
-      const macrosWithPercentages = macros.map(m => ({
-        ...m,
-        percentage: totalGrams > 0 ? (m.grams / totalGrams) * 100 : 0
-      }));
-
-      return { calories, macros: macrosWithPercentages };
+      pGrams = Math.round((tCals * ratios.protein) / MACRO_CALORIES.protein);
+      fGrams = Math.round((tCals * ratios.fat) / MACRO_CALORIES.fat);
+      cGrams = Math.round((tCals * ratios.carbohydrates) / MACRO_CALORIES.carbohydrates);
+      calories = tCals;
     }
 
-    // Fallback: Calculate grams from default percentages
-    const targetCalories = dietOption.targetCalories;
-    const fallbackRatios = dietOption.defaultMacros;
-
-    const fallbackGrams = {
-      protein: Math.round((targetCalories * fallbackRatios.protein) / MACRO_CALORIES.protein),
-      fat: Math.round((targetCalories * fallbackRatios.fat) / MACRO_CALORIES.fat),
-      carbohydrates: Math.round((targetCalories * fallbackRatios.carbohydrates) / MACRO_CALORIES.carbohydrates),
-    };
-
-    // Use API data if available, otherwise fallback grams
     const macros = [
       {
         key: "protein" as const,
         label: "Protein",
-        grams: data?.protein ?? fallbackGrams.protein,
         color: MACRO_COLORS.protein,
+        grams: pGrams,
       },
       {
         key: "fat" as const,
         label: "Fat",
-        grams: data?.fat ?? fallbackGrams.fat,
         color: MACRO_COLORS.fat,
+        grams: fGrams,
       },
       {
         key: "carbohydrates" as const,
         label: "Carb",
-        grams: data?.carbohydrates ?? fallbackGrams.carbohydrates,
         color: MACRO_COLORS.carbohydrates,
+        grams: cGrams,
       },
     ];
 
-    const totalGrams = macros.reduce((sum, m) => sum + m.grams, 0);
-    const macrosWithPercentages = macros.map(m => ({
+    const totalGrams = pGrams + fGrams + cGrams;
+    const macrosWithPercentages = macros.map((m) => ({
       ...m,
-      percentage: totalGrams > 0 ? (m.grams / totalGrams) * 100 : 0
+      percentage: totalGrams > 0 ? (m.grams / totalGrams) * 100 : 0,
     }));
 
-    const totalCalories =
-      data?.calories ??
-      macros.reduce(
-        (sum, macro) => sum + macro.grams * MACRO_CALORIES[macro.key],
-        0
-      );
-
-    return {
-      calories: totalCalories,
-      macros: macrosWithPercentages,
-    };
-  }, [data, dietOption, savedTarget]);
+    return { calories, macros: macrosWithPercentages };
+  }, [dietOption, savedTarget]);
 
   const handleBack = async () => {
     selection();
@@ -199,7 +163,6 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
               <CalorieDonut
                 calories={macroBreakdown.calories}
                 macros={macroBreakdown.macros}
-                isLoading={isLoading}
               />
               <View style={styles.legendContainer}>
                 {macroBreakdown.macros.map((macro) => (
@@ -226,23 +189,6 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
             </View>
           )}
         </View>
-
-        {isError && (
-          <Pressable
-            style={styles.retryBanner}
-            onPress={async () => {
-              selection();
-              refetch();
-            }}
-          >
-            <MaterialCommunityIcons
-              name="refresh"
-              size={18}
-              color="#8B5CF6"
-            />
-            <Text style={styles.retryText}>Retry Spoonacular request</Text>
-          </Pressable>
-        )}
 
         <Pressable
           style={styles.adjustButton}
@@ -305,10 +251,9 @@ interface CalorieDonutProps {
     percentage: number;
     color: string;
   }[];
-  isLoading: boolean;
 }
 
-function CalorieDonut({ calories, macros, isLoading }: CalorieDonutProps) {
+function CalorieDonut({ calories, macros }: CalorieDonutProps) {
   const radius = 70;
   const strokeWidth = 18;
   const circumference = 2 * Math.PI * radius;
@@ -348,16 +293,10 @@ function CalorieDonut({ calories, macros, isLoading }: CalorieDonutProps) {
       </Svg>
 
       <View style={styles.chartCenter}>
-        {isLoading ? (
-          <ActivityIndicator color="#111827" />
-        ) : (
-          <>
-            <Text style={styles.calorieValue}>
-              {Math.round(calories)}{" "}
-              <Text style={styles.calorieUnit}>kcal/day</Text>
-            </Text>
-          </>
-        )}
+        <Text style={styles.calorieValue}>
+          {Math.round(calories)}{" "}
+          <Text style={styles.calorieUnit}>kcal/day</Text>
+        </Text>
       </View>
     </View>
   );

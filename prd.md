@@ -865,11 +865,12 @@ constants/
 - [x] günde kaç öğün yiyorsa onun saati alınsın yoksa default olan kullanılsın hep aynı soruyu soruyuor hoca
 - [x] cuisines de mutfak resimleri gitmiş düzeltilsin.
 - [] dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
-- [] adjust targetsta yüzdelik olarak verilsin.
+- [x] adjust targetsta yüzdelik olarak verilsin.
 - [] cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün. -yusuf
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
 - console logları sil!
+- [] Forget Password Sayfasını düzelt
 
 ### ana sayfa
 
