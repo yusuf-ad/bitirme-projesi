@@ -860,12 +860,12 @@ constants/
 ### onboarding
 
 - [] dive in butonu androidde geri butonunun gerisinde kalıyor
-- [] çok abartı bir animasyon var age, height,weight adult olayı ne onu açıkla
+- [] çok abartı bir animasyon var age, height,weight adult olarak yazılmış ne onu açıkla
 - [] günde kaç öğün yiyorsa onun saati alınsın yoksa default olan kullanılsın hep aynı soruyu soruyuor hoca
 - [] cuisines de mutfak resimleri gitmiş düzeltilsin.
 - [] dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
 - [] adjust targetsta yüzdelik olarak verilsin.
-- [] cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün.
+- [] cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün. -yusuf
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
 - console logları sil!
@@ -876,7 +876,7 @@ constants/
 - [] ana sayfada sınır ekle max 7 gün ??? yunusa sor bunu
 - [] yunusun nota bakılacak ai generatedla ilgili
 - [] hangi tarif replacedeyse o lunchsa lunch olsun
-- [] kaç öğün seçildiyse o öğünler gözüksün
+- [] onboardingte kaç öğün seçildiyse o öğünler gözüksün
 
 ### meal plan
 
@@ -901,10 +901,21 @@ constants/
 
 - [x] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
 - [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
+- [] select ingredients altta kalıyor - yusuf
+- [] alerji scrollable degil - yusuf
+- [] search recipes inputuna hepsini sil butonu eklenebilir 
+- [] snacks seçeneğini kaldır generate with ai da - yusuf
+- [] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
+- [] scroll ederken yüklenme skeletonu gözükmüyor - yusuf
+
+### recipes - osman
+
+- [] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.- yusuf
+- [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor! - yusuf
 - [x] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
 - [x] spoonaculardeki filter tagleri kullanılsın healthy veg vs. diye
 
-### pantry
+### pantry - yusuf
 
 - [] prefill deki olayın kg litresini felan düzelt
 - [] update butonu kaldır onun yerine eğer resim yoksa update butonu çıksın
