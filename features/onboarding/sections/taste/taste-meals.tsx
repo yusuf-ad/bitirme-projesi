@@ -107,6 +107,18 @@ export function TasteMeals({
         {description && <Text style={styles.description}>{description}</Text>}
       </View>
 
+      {/* Info Alert */}
+      <View style={styles.infoAlert}>
+        <MaterialCommunityIcons
+          name="information-outline"
+          size={18}
+          color="#6B7280"
+        />
+        <Text style={styles.infoText}>
+          You'll only set times for the meals you select. Default times will be used for meals you don't choose.
+        </Text>
+      </View>
+
       {/* Meals Grid */}
       <View style={styles.cardsContainer}>
         {mealOptions.map((meal) => renderMealCard(meal))}
@@ -173,6 +185,26 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 24,
     paddingHorizontal: 15,
+  },
+  infoAlert: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginHorizontal: 15,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: "#9CA3AF",
+  },
+  infoText: {
+    flex: 1,
+    fontFamily: "Inter",
+    fontWeight: "400",
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#6B7280",
   },
   mealCard: {
     flexDirection: "row",
