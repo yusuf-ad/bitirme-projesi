@@ -5,27 +5,27 @@ import { Recipe } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
 import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
 import {
-    Ionicons,
-    MaterialCommunityIcons,
-    MaterialIcons,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -434,9 +434,7 @@ export function AIRecipePreview({
       </ScrollView>
 
       {/* Footer Actions */}
-      <View
-        style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}
-      >
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Pressable
           style={styles.regenerateButton}
           onPress={handleRegenerate}
@@ -682,7 +680,7 @@ const styles = StyleSheet.create({
   },
   instructionsSection: {
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingVertical: 24,
   },
   instructionsList: {
     gap: 16,

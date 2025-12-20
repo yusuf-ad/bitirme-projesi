@@ -634,7 +634,7 @@ export default function AiPlan() {
       </ScrollView>
 
       {/* Footer with Generate Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <CustomButton
           containerStyle={styles.generateButton}
           onPress={handleGenerateRecipe}

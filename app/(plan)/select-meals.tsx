@@ -11,16 +11,20 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-    ViewToken,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  ViewToken,
 } from "react-native";
-import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -62,7 +66,6 @@ const MEAL_STEPS: MealStep[] = [
   },
 ];
 
-
 export default function SelectMeals() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -79,14 +82,17 @@ export default function SelectMeals() {
   const { data: pantryData } = usePantryQuery();
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedMealTypes, setSelectedMealTypes] = useState<Record<MealType, boolean>>({
+  const [selectedMealTypes, setSelectedMealTypes] = useState<
+    Record<MealType, boolean>
+  >({
     breakfast: false,
     lunch: false,
     dinner: false,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [pendingNavigationParams, setPendingNavigationParams] = useState<any>(null);
+  const [pendingNavigationParams, setPendingNavigationParams] =
+    useState<any>(null);
 
   const selectedDate = new Date(params.startDate as string);
   const isToday = (() => {
@@ -122,7 +128,9 @@ export default function SelectMeals() {
     []
   );
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({
+    viewAreaCoveragePercentThreshold: 50,
+  }).current;
 
   const scrollToIndex = useCallback((index: number) => {
     flatListRef.current?.scrollToIndex({ index, animated: true });
@@ -149,22 +157,28 @@ export default function SelectMeals() {
     }));
   }, []);
 
-
-
   async function handleCreateMealPlan() {
     if (isLoading || selectedCount === 0) return;
     setIsLoading(true);
     try {
-      const results = await fetchRecipes(onboardingData, pantryData, selectedMealTypes);
+      const results = await fetchRecipes(
+        onboardingData,
+        pantryData,
+        selectedMealTypes
+      );
       if (!results || results.length === 0) {
         setIsLoading(false);
         return;
       }
-      const mealPlanData: Record<string, { results: any[]; totalResults: number }> = {};
+      const mealPlanData: Record<
+        string,
+        { results: any[]; totalResults: number }
+      > = {};
       for (const result of results) {
         mealPlanData[result.mealType] = {
           results: result.results,
-          totalResults: result.results[0]?.totalResults || result.results.length,
+          totalResults:
+            result.results[0]?.totalResults || result.results.length,
         };
       }
       setPendingNavigationParams({
@@ -190,27 +204,45 @@ export default function SelectMeals() {
 
       return (
         <View style={styles.cardWrapper}>
-          <View style={[styles.mealCard, isSelected && styles.mealCardSelected]}>
-            <View style={[styles.mealIconWrapper, { backgroundColor: item.bgColor }]}>
+          <View
+            style={[styles.mealCard, isSelected && styles.mealCardSelected]}
+          >
+            <View
+              style={[
+                styles.mealIconWrapper,
+                { backgroundColor: item.bgColor },
+              ]}
+            >
               <Text style={styles.mealEmoji}>{item.icon}</Text>
             </View>
             <Text style={styles.mealTitle}>{item.label}</Text>
             <Text style={styles.mealDescription}>{item.description}</Text>
             {isSelected ? (
-              <Pressable onPress={() => handleRemoveMeal(item.id)} style={styles.addedButton}>
+              <Pressable
+                onPress={() => handleRemoveMeal(item.id)}
+                style={styles.addedButton}
+              >
                 <Ionicons name="checkmark-circle" size={16} color="#fff" />
                 <Text style={styles.addedButtonText}>Added to Plan</Text>
               </Pressable>
             ) : (
-              <Pressable onPress={() => handleAddMeal(item.id)} style={styles.addButton}>
+              <Pressable
+                onPress={() => handleAddMeal(item.id)}
+                style={styles.addButton}
+              >
                 <Ionicons name="add" size={16} color={Colors.green[700]} />
                 <Text style={styles.addButtonText}>Add {item.label}</Text>
               </Pressable>
             )}
-            <Text style={styles.caloriesText}>Recommended: {item.calories}</Text>
+            <Text style={styles.caloriesText}>
+              Recommended: {item.calories}
+            </Text>
             <View style={styles.skipContainer}>
               {!isLast ? (
-                <Pressable onPress={() => scrollToIndex(index + 1)} style={styles.skipButton}>
+                <Pressable
+                  onPress={() => scrollToIndex(index + 1)}
+                  style={styles.skipButton}
+                >
                   <Text style={styles.skipText}>Skip</Text>
                 </Pressable>
               ) : (
@@ -225,24 +257,48 @@ export default function SelectMeals() {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          backgroundColor: Colors.background.primary,
+        },
+      ]}
+    >
       <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerButton} hitSlop={12}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.headerButton}
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>Create Meal Plan</Text>
-        <Pressable onPress={() => router.dismissTo("/")} style={styles.headerButton} hitSlop={12}>
+        <Pressable
+          onPress={() => router.dismissTo("/")}
+          style={styles.headerButton}
+          hitSlop={12}
+        >
           <Ionicons name="close" size={22} color={Colors.gray[500]} />
         </Pressable>
       </Animated.View>
 
       <View style={styles.content}>
-        <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.titleSection}>
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(100)}
+          style={styles.titleSection}
+        >
           <Text style={styles.mainTitle}>Build your perfect day!</Text>
-          <Text style={styles.subtitle}>Swipe to browse meals, tap to add.</Text>
+          <Text style={styles.subtitle}>
+            Swipe to browse meals, tap to add.
+          </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(400).delay(150)} style={styles.dateCard}>
+        <Animated.View
+          entering={FadeInUp.duration(400).delay(150)}
+          style={styles.dateCard}
+        >
           <View style={styles.dateIconWrapper}>
             <Ionicons name="calendar" size={16} color={Colors.green[600]} />
           </View>
@@ -250,7 +306,10 @@ export default function SelectMeals() {
           <Text style={styles.dateText}>{formattedDate}</Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(400).delay(200)} style={styles.progressDots}>
+        <Animated.View
+          entering={FadeInUp.duration(400).delay(200)}
+          style={styles.progressDots}
+        >
           {MEAL_STEPS.map((step, index) => (
             <Pressable key={step.id} onPress={() => scrollToIndex(index)}>
               <View
@@ -264,7 +323,10 @@ export default function SelectMeals() {
           ))}
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(400).delay(250)} style={styles.carouselContainer}>
+        <Animated.View
+          entering={FadeInUp.duration(400).delay(250)}
+          style={styles.carouselContainer}
+        >
           <FlatList
             ref={flatListRef}
             data={MEAL_STEPS}
@@ -285,13 +347,12 @@ export default function SelectMeals() {
             })}
           />
         </Animated.View>
-
-
       </View>
 
+      {/* footer */}
       <Animated.View
         entering={FadeInUp.duration(400).delay(300)}
-        style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}
+        style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}
       >
         <View style={styles.summaryRow}>
           <Text style={styles.summaryText}>{selectedCount}/3 meals</Text>
@@ -299,7 +360,10 @@ export default function SelectMeals() {
             {MEAL_STEPS.map((step) => (
               <View
                 key={step.id}
-                style={[styles.summaryDot, selectedMealTypes[step.id] && styles.summaryDotActive]}
+                style={[
+                  styles.summaryDot,
+                  selectedMealTypes[step.id] && styles.summaryDotActive,
+                ]}
               />
             ))}
           </View>
@@ -319,7 +383,9 @@ export default function SelectMeals() {
               <Text style={styles.createButtonText}>
                 {selectedCount === 0 ? "Select meals" : "Create Plan"}
               </Text>
-              {selectedCount > 0 && <Ionicons name="arrow-forward" size={18} color="#fff" />}
+              {selectedCount > 0 && (
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              )}
             </>
           )}
         </CustomButton>
@@ -335,7 +401,6 @@ export default function SelectMeals() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -348,6 +413,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     backgroundColor: Colors.background.primary,
+    borderColor: Colors.lilac[100],
+    borderBottomWidth: 1,
   },
   headerButton: {
     width: 36,
@@ -548,10 +615,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    backgroundColor: Colors.background.primary,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: Colors.border.light,
+    backgroundColor: Colors.background.primary,
   },
   summaryRow: {
     flexDirection: "row",
@@ -581,15 +648,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
+    gap: 8,
+    paddingVertical: 16,
     backgroundColor: Colors.lilac[800],
-    borderRadius: 12,
+    borderRadius: 14,
   },
   createButtonText: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "700",
     color: "#fff",
+    letterSpacing: -0.2,
   },
   createButtonDisabled: {
     opacity: 0.5,

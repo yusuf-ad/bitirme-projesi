@@ -15,7 +15,10 @@ export function PreviewFooter({
   return (
     <View style={styles.footer}>
       <CustomButton
-        containerStyle={[styles.saveButton, isDisabled && styles.saveButtonDisabled]}
+        containerStyle={[
+          styles.saveButton,
+          isDisabled && styles.saveButtonDisabled,
+        ]}
         onPress={onSave}
         disabled={isDisabled}
       >
@@ -34,8 +37,9 @@ export function PreviewFooter({
 
 const styles = StyleSheet.create({
   footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
     backgroundColor: Colors.background.primary,
     borderTopWidth: 1,
     borderTopColor: Colors.border.light,
@@ -47,15 +51,15 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.lilac[800],
     borderRadius: 14,
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   saveButtonDisabled: {
     opacity: 0.6,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
     color: "#fff",
+    letterSpacing: -0.2,
   },
 });
-

@@ -868,6 +868,7 @@ constants/
 7. cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün.
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
+- console logları sil!
 
 ### ana sayfa
 
@@ -875,19 +876,23 @@ constants/
 - [] ana sayfada sınır ekle max 7 gün ??? yunusa sor bunu
 - [] yunusun nota bakılacak ai generatedla ilgili
 - [] hangi tarif replacedeyse o lunchsa lunch olsun
+- [] kaç öğün seçildiyse o öğünler gözüksün
 
 ### meal plan
 
 - [] var olan mealplan de üstüne yazsın
 - [] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
 - [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan - yusuf
-
-
+ 
 ### recipes
 
 1. select ingredients altta kalıyor 
 2. alerji scrollable degil
 3. search recipes inputuna hepsini sil butonu eklenbilir
+- [] sentry gibi hata raporlama sistemi ekle
+- [] snacks seçeneğini kaldır generate with ai da
+- [] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
+- [] scroll ederken yüklenme skeletonu gözükmüyor
 
 
 ### recipes - osman
@@ -898,7 +903,6 @@ constants/
 - [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
 - [] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
 - [] spoonaculardeki filter tagleri kullanılsın healthy veg vs. diye
-
 
 ### pantry
 
@@ -912,9 +916,7 @@ constants/
 1. statusbarın rengiyle farklı header kötü duruyor orası.
 - [] yunusun hologram sayfası
 - [] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
-
-
-
+- dark mode tam uyumlu değil!!
 
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
@@ -924,14 +926,12 @@ constants/
 - [x] History view - yunus
 
 ### Phase 5: Enhancements (Weeks 10-11)
-
-- [ ] OAuth integration (Google)
-- [ ] Notifications system
-- [ ] Advanced filtering
-- [ ] Performance optimization
-
 ### Phase 6: Testing & Refinement (Weeks 12-13)
 
+- [ ] OAuth integration (Google)
+- [x] Notifications system
+- [ ] Advanced filtering
+- [ ] Performance optimization
 - [ ] Comprehensive testing
 - [ ] Bug fixes
 - [ ] UI/UX polish
