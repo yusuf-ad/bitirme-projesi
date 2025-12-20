@@ -2,24 +2,24 @@ import { Colors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
-    BottomSheetBackdrop,
-    BottomSheetModal,
-    BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { forwardRef, useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-    Easing,
-    FadeIn,
-    FadeInDown,
-    FadeInUp,
-    FadeOut,
-    interpolateColor,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  FadeOut,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 
 interface MealActionModalProps {
@@ -89,7 +89,12 @@ export const MealActionModal = forwardRef<
         ref.current.dismiss();
       }
       onReplace?.();
-      router.push("/(app)/recipes");
+      // Convert mealType to lowercase for mealSlot parameter (e.g., "Lunch" -> "lunch")
+      const mealSlot = mealType.toLowerCase();
+      router.push({
+        pathname: "/(app)/recipes",
+        params: { mealSlot },
+      });
     };
 
     const handleDelete = async () => {

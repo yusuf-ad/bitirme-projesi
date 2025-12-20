@@ -172,6 +172,17 @@ export interface Recipe {
     amount: number;
     unit: string;
   }[];
+  // Used when fillIngredients is true
+  usedIngredients?: {
+    id: number;
+    name: string;
+    image: string;
+  }[];
+  missedIngredients?: {
+    id: number;
+    name: string;
+    image: string;
+  }[];
 }
 
 export interface ExtendedIngredient {
@@ -279,6 +290,7 @@ export async function getRandomRecipes(
       sort: filters?.sort ?? "random",
       addRecipeInformation: "true",
       addRecipeNutrition: "true",
+      fillIngredients: "true",
     });
 
     // Filtreleri ekle
@@ -353,6 +365,7 @@ export async function searchRecipes(
       number: number.toString(),
       addRecipeInformation: "true",
       addRecipeNutrition: "true",
+      fillIngredients: "true",
     });
 
     // Add filters

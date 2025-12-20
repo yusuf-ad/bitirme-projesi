@@ -450,8 +450,8 @@ function MessageBubble({
         backgroundColor: isUser
           ? "rgba(255,255,255,0.2)"
           : isDark
-          ? "rgba(255,255,255,0.1)"
-          : "rgba(0,0,0,0.08)",
+            ? "rgba(255,255,255,0.1)"
+            : "rgba(0,0,0,0.08)",
         color: textColor,
         paddingHorizontal: 6,
         paddingVertical: 2,
@@ -462,8 +462,8 @@ function MessageBubble({
         backgroundColor: isUser
           ? "rgba(255,255,255,0.15)"
           : isDark
-          ? "rgba(255,255,255,0.08)"
-          : "rgba(0,0,0,0.05)",
+            ? "rgba(255,255,255,0.08)"
+            : "rgba(0,0,0,0.05)",
         borderRadius: 8,
         padding: 12,
         marginVertical: 8,
@@ -756,17 +756,17 @@ export default function AIChatScreen() {
           styles.container,
           { backgroundColor: colors.background.primary },
         ]}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {/* Header with gradient */}
         <LinearGradient
           colors={
             isDark
               ? [
-                  ContentDarkColors.background.secondary,
-                  colors.background.primary,
-                ]
+                ContentDarkColors.background.secondary,
+                colors.background.primary,
+              ]
               : [colors.lilac[100], colors.background.primary]
           }
           style={[styles.headerGradient, { paddingTop: insets.top }]}
@@ -931,8 +931,8 @@ export default function AIChatScreen() {
                   inputText.trim() && !isLoading
                     ? [colors.lilac[600], colors.lilac[800]]
                     : isDark
-                    ? [colors.gray[600], colors.gray[700]]
-                    : [colors.gray[300], colors.gray[400]]
+                      ? [colors.gray[600], colors.gray[700]]
+                      : [colors.gray[300], colors.gray[400]]
                 }
                 style={styles.sendButtonGradient}
               >

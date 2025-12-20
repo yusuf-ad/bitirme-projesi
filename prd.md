@@ -889,6 +889,18 @@ constants/
 
 ### recipes
 
+- [] select ingredients altta kalıyor
+- [] alerji scrollable degil
+- [x] search recipes inputuna hepsini sil butonu eklenbilir
+
+- [x] snacks seçeneğini kaldır generate with ai da
+- [x] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
+- [x] scroll ederken yüklenme skeletonu gözükmüyor
+
+### recipes - osman
+
+- [x] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
+- [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
 - [] select ingredients altta kalıyor - yusuf
 - [] alerji scrollable degil - yusuf
 - [] search recipes inputuna hepsini sil butonu eklenebilir 

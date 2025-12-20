@@ -6,6 +6,8 @@ export type IngredientItem = Ingredient | PopularIngredient;
 
 export interface IngredientModalProps {
   onIngredientsSelect?: (ingredients: Ingredient[]) => void;
+  initialSelectedIngredients?: Ingredient[];
+  onClearAll?: () => void;
 }
 
 export interface DisplayAllergy {
