@@ -1,7 +1,7 @@
 import { Colors, getThemeColors } from "@/constants/theme";
 import {
-    SuggestedRecipe,
-    useSuggestedRecipes,
+  SuggestedRecipe,
+  useSuggestedRecipes,
 } from "@/hooks/use-suggested-recipes";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/providers/theme-provider";
@@ -11,14 +11,14 @@ import { router } from "expo-router";
 import { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
-    Easing,
-    FadeInDown,
-    FadeInRight,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSpring,
-    withTiming,
+  Easing,
+  FadeInDown,
+  FadeInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
 interface MealPlanEmptyStateProps {
@@ -261,9 +261,7 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
             style={[
               styles.secondaryButtonText,
               {
-                color: isDark
-                  ? ThemeColors.text.primary
-                  : Colors.text.primary,
+                color: isDark ? ThemeColors.text.primary : Colors.text.primary,
               },
             ]}
           >
@@ -318,9 +316,7 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
             style={[
               styles.suggestedTitle,
               {
-                color: isDark
-                  ? ThemeColors.text.primary
-                  : Colors.text.primary,
+                color: isDark ? ThemeColors.text.primary : Colors.text.primary,
               },
             ]}
           >
@@ -370,7 +366,6 @@ export function MealPlanEmptyState({ onCreatePress }: MealPlanEmptyStateProps) {
     </View>
   );
 }
-
 
 // Skeleton Card Component
 interface RecipeCardSkeletonProps {
@@ -647,6 +642,7 @@ const styles = StyleSheet.create({
   heroImage: {
     width: "100%",
     height: "100%",
+    borderRadius: 8,
   },
   // Action Buttons
   actionButtonsContainer: {

@@ -306,13 +306,13 @@ export default function AiRecipe() {
     // Get date from params or use today
     const dateString =
       params.selectedDate || new Date().toISOString().split("T")[0];
-    
+
     // Check if date is in the past
     const selectedDateObj = new Date(dateString);
     selectedDateObj.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     if (selectedDateObj < today) {
       Alert.alert(
         "Cannot save to past date",
@@ -714,7 +714,7 @@ export default function AiRecipe() {
       </ScrollView>
 
       {/* Footer with Generate Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <CustomButton
           containerStyle={styles.generateButton}
           onPress={handleGenerateRecipe}

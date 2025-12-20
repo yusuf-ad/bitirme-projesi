@@ -1,7 +1,7 @@
 import {
-    fetchMoreRecipes,
-    mealPlanIngredientsService,
-    MealPlanItemRecord,
+  fetchMoreRecipes,
+  mealPlanIngredientsService,
+  MealPlanItemRecord,
 } from "@/features/meal-plan";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
@@ -10,7 +10,13 @@ import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { createMealItem, Meal, MealPlan, MealType } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Alert } from "react-native";
 
 import { formatDate, normalizeDateParam } from "./preview-utils";
@@ -551,7 +557,7 @@ export function useMealPlanPreview({
     normalizedStartDate.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     if (normalizedStartDate < today) {
       Alert.alert(
         "Cannot save to past date",
@@ -581,34 +587,23 @@ export function useMealPlanPreview({
       if (existingPlans && existingPlans.length > 0) {
         const existingPlanId = existingPlans[0].id;
 
-        // Check if this plan has items
-        const { data: existingItems, error: itemsCheckError } = await supabase
+        // Automatically overwrite: Delete existing items first, then the plan itself
+        const { error: deleteItemsError } = await supabase
           .from("meal_plan_items")
-          .select("id")
-          .eq("meal_plan_id", existingPlanId)
-          .limit(1);
+          .delete()
+          .eq("meal_plan_id", existingPlanId);
 
-        if (itemsCheckError) {
-          throw itemsCheckError;
+        if (deleteItemsError) {
+          throw deleteItemsError;
         }
 
-        if (existingItems && existingItems.length > 0) {
-          Alert.alert(
-            "Meal plan already exists",
-            "You already have a meal plan with recipes for this date range."
-          );
-          return false;
-        }
-
-        // Plan exists but has no items - delete it and create new one
-        console.log("Deleting orphaned meal plan:", existingPlanId);
-        const { error: deleteError } = await supabase
+        const { error: deletePlanError } = await supabase
           .from("meal_plans")
           .delete()
           .eq("id", existingPlanId);
 
-        if (deleteError) {
-          throw deleteError;
+        if (deletePlanError) {
+          throw deletePlanError;
         }
       }
 

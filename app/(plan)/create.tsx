@@ -1,3 +1,4 @@
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { Colors } from "@/constants/theme";
 import { DateModal } from "@/features/meal-plan/components/date-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
@@ -7,12 +8,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Animated, {
-    FadeIn,
-    FadeInDown,
-    FadeInUp
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -44,6 +53,7 @@ export default function CreateMealPlan() {
   })();
 
   const [startDate, setStartDate] = useState<Date>(initialStartDate);
+  const [showOverwriteModal, setShowOverwriteModal] = useState(false);
 
   const { session } = useAuthContext();
   const { data: mealPlanData } = useMealPlansQuery(
@@ -152,7 +162,7 @@ export default function CreateMealPlan() {
   const handleStartDateSelect = (date: Date) => {
     const normalized = new Date(date);
     normalized.setHours(0, 0, 0, 0);
-    
+
     // Prevent selecting past dates
     if (normalized < today) {
       Alert.alert(
@@ -161,7 +171,7 @@ export default function CreateMealPlan() {
       );
       return;
     }
-    
+
     setStartDate(date);
     startDateModalRef.current?.close();
   };
@@ -169,12 +179,12 @@ export default function CreateMealPlan() {
   const handleQuickSelect = useCallback((date: Date) => {
     const normalized = new Date(date);
     normalized.setHours(0, 0, 0, 0);
-    
+
     // Prevent selecting past dates (safety check)
     if (normalized < today) {
       return;
     }
-    
+
     setStartDate(date);
   }, []);
 
@@ -187,7 +197,13 @@ export default function CreateMealPlan() {
       );
       return;
     }
-    
+
+    // Show confirmation if there's an existing meal plan with meals
+    if (hasExistingPlan && hasMeals) {
+      setShowOverwriteModal(true);
+      return;
+    }
+
     router.push({
       pathname: "/(plan)/select-meals",
       params: {
@@ -202,10 +218,11 @@ export default function CreateMealPlan() {
         styles.container,
         {
           paddingTop: insets.top,
-          paddingBottom: insets.bottom,
+          backgroundColor: Colors.background.primary,
         },
       ]}
     >
+      <StatusBar style="dark" />
       {/* Header */}
       <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
         <Pressable
@@ -252,14 +269,13 @@ export default function CreateMealPlan() {
           style={styles.selectedDateSection}
         >
           <Text style={styles.sectionLabel}>SELECTED DATE</Text>
-          <Pressable onPress={handleStartDatePress} style={styles.selectedDateCard}>
+          <Pressable
+            onPress={handleStartDatePress}
+            style={styles.selectedDateCard}
+          >
             <View style={styles.dateCardLeft}>
               <View style={styles.calendarIconWrapper}>
-                <Ionicons
-                  name="calendar"
-                  size={24}
-                  color={Colors.lilac[700]}
-                />
+                <Ionicons name="calendar" size={24} color={Colors.lilac[700]} />
               </View>
               <View style={styles.dateInfo}>
                 {startDateDisplay.label ? (
@@ -364,10 +380,13 @@ export default function CreateMealPlan() {
       {/* Footer */}
       <Animated.View
         entering={FadeInUp.duration(400).delay(650)}
-        style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}
+        style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}
       >
-        <CustomButton 
-          containerStyle={[styles.nextButton, isPastDate && styles.nextButtonDisabled]} 
+        <CustomButton
+          containerStyle={[
+            styles.nextButton,
+            isPastDate && styles.nextButtonDisabled,
+          ]}
           onPress={handleNext}
           disabled={isPastDate}
         >
@@ -381,6 +400,26 @@ export default function CreateMealPlan() {
         dateType="start"
         currentDate={startDate}
         onDateSelect={handleStartDateSelect}
+      />
+
+      <ConfirmationModal
+        visible={showOverwriteModal}
+        onClose={() => setShowOverwriteModal(false)}
+        onConfirm={() => {
+          setShowOverwriteModal(false);
+          router.push({
+            pathname: "/(plan)/select-meals",
+            params: {
+              startDate: startDate.toISOString(),
+            },
+          });
+        }}
+        title="Overwrite Existing Plan?"
+        description="A meal plan already exists for this date. Creating a new one will replace it."
+        confirmText="Continue"
+        cancelText="Cancel"
+        confirmStyle="destructive"
+        icon="swap-horizontal"
       />
     </View>
   );
@@ -398,6 +437,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     backgroundColor: Colors.background.primary,
+    borderColor: Colors.lilac[100],
+    borderBottomWidth: 1,
   },
   headerButton: {
     width: 40,

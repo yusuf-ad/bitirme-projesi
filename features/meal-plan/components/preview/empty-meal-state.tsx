@@ -16,7 +16,6 @@ export function EmptyMealState({
 
   return (
     <View>
-      <Text style={styles.mealTypeHeader}>{mealTypeLabel}</Text>
       <View style={styles.skeletonMealItem}>
         {/* Skeleton Image */}
         <View style={styles.skeletonImage}>
@@ -48,12 +47,6 @@ export function EmptyMealState({
 }
 
 const styles = StyleSheet.create({
-  mealTypeHeader: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#141217",
-    marginTop: 20,
-  },
   skeletonMealItem: {
     flexDirection: "row",
     alignItems: "center",

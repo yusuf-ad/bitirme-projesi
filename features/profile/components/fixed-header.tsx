@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -16,6 +16,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import switchTheme from "react-native-theme-switch-animation";
 
 const HEADER_HEIGHT = 60;
 const SCROLL_THRESHOLD = 100;
@@ -70,6 +71,9 @@ export const FixedHeader = React.memo(function FixedHeader({
 
   // Memoize theme colors to prevent recalculation
   const Colors = useMemo(() => getThemeColors(isDark), [isDark]);
+
+  // Ref for theme toggle button to get position for circular reveal
+  const themeButtonRef = useRef<View>(null);
 
   // Scroll to top animation values
   const scrollToTopScale = useSharedValue(1);
@@ -215,8 +219,34 @@ export const FixedHeader = React.memo(function FixedHeader({
   }, [t]);
 
   const handleThemeToggle = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    toggleTheme();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Measure the button position to start circular animation from its center
+    themeButtonRef.current?.measure((
+      _x: number,
+      _y: number,
+      width: number,
+      height: number,
+      pageX: number,
+      pageY: number
+    ) => {
+      const cx = pageX + width / 2;
+      const cy = pageY + height / 2;
+      
+      switchTheme({
+        switchThemeFunction: () => {
+          toggleTheme();
+        },
+        animationConfig: {
+          type: 'circular',
+          duration: 500,
+          startingPoint: {
+            cx,
+            cy,
+          },
+        },
+      });
+    });
   }, [toggleTheme]);
 
   const initials = useMemo(
@@ -278,6 +308,7 @@ export const FixedHeader = React.memo(function FixedHeader({
           }
         >
           <View
+            ref={themeButtonRef}
             style={[
               styles.iconButtonCircle,
               { backgroundColor: iconButtonBgColor },

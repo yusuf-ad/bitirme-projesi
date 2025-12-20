@@ -431,20 +431,12 @@ export default function AiPlan() {
     const mealType = selectedMealType as "breakfast" | "lunch" | "dinner";
 
     // Parse existing meal plan data if provided
-    let baseMealPlan = {
-      breakfast: { results: [], totalResults: 0 },
-      lunch: { results: [], totalResults: 0 },
-      dinner: { results: [], totalResults: 0 },
-    };
+    // Parse existing meal plan data if provided
+    let baseMealPlan: Record<string, any> = {};
 
     if (params.existingMealPlanData) {
       try {
-        const existing = JSON.parse(params.existingMealPlanData as string);
-        baseMealPlan = {
-          breakfast: existing.breakfast || { results: [], totalResults: 0 },
-          lunch: existing.lunch || { results: [], totalResults: 0 },
-          dinner: existing.dinner || { results: [], totalResults: 0 },
-        };
+        baseMealPlan = JSON.parse(params.existingMealPlanData as string);
       } catch (e) {
         console.error("Error parsing existing meal plan data:", e);
       }
@@ -634,7 +626,7 @@ export default function AiPlan() {
       </ScrollView>
 
       {/* Footer with Generate Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <CustomButton
           containerStyle={styles.generateButton}
           onPress={handleGenerateRecipe}

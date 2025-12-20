@@ -1,10 +1,9 @@
 import { Colors } from "@/constants/theme";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
 import { Feather } from "@expo/vector-icons";
-import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { memo, useCallback, useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { PantryItem } from "../types";
 
 interface ShoppingListItemsListProps {
@@ -18,29 +17,43 @@ interface ShoppingListItemsListProps {
 function getBadgeContent(amount: number, unit: string): string {
   const unitLower = (unit || "").toLowerCase();
   if (unitLower === "g" || unitLower === "gram" || unitLower === "grams") {
-    return amount >= 1000 ? `${(amount / 1000).toFixed(1)}kg` : `${Math.round(amount)}g`;
+    return amount >= 1000
+      ? `${(amount / 1000).toFixed(1)}kg`
+      : `${Math.round(amount)}g`;
   }
-  if (unitLower === "ml" || unitLower === "milliliter" || unitLower === "milliliters") {
-    return amount >= 1000 ? `${(amount / 1000).toFixed(1)}l` : `${Math.round(amount)}ml`;
+  if (
+    unitLower === "ml" ||
+    unitLower === "milliliter" ||
+    unitLower === "milliliters"
+  ) {
+    return amount >= 1000
+      ? `${(amount / 1000).toFixed(1)}l`
+      : `${Math.round(amount)}ml`;
   }
   if (unitLower === "l" || unitLower === "liter" || unitLower === "liters") {
     return `${amount.toFixed(1)}l`;
   }
-  if (unitLower === "kg" || unitLower === "kilogram" || unitLower === "kilograms") {
+  if (
+    unitLower === "kg" ||
+    unitLower === "kilogram" ||
+    unitLower === "kilograms"
+  ) {
     return `${amount.toFixed(1)}kg`;
   }
   return String(Math.round(amount));
 }
 
 // Group items by category
-function groupByCategory(items: PantryItem[]): Array<{ category: string; items: PantryItem[] }> {
+function groupByCategory(
+  items: PantryItem[]
+): { category: string; items: PantryItem[] }[] {
   const map = new Map<string, PantryItem[]>();
   for (const item of items) {
     const cat = item.category || "Other";
     if (!map.has(cat)) map.set(cat, []);
     map.get(cat)!.push(item);
   }
-  const result: Array<{ category: string; items: PantryItem[] }> = [];
+  const result: { category: string; items: PantryItem[] }[] = [];
   for (const cat of PANTRY_CATEGORIES) {
     const catItems = map.get(cat);
     if (catItems?.length) result.push({ category: cat, items: catItems });
@@ -85,13 +98,22 @@ const ItemCard = memo(
           onPress={() => onToggle(id)}
           hitSlop={8}
         >
-          {checked && <Feather name="check" size={14} color={Colors.lilac[900]} />}
+          {checked && (
+            <Feather name="check" size={14} color={Colors.lilac[900]} />
+          )}
         </Pressable>
 
         <Pressable style={styles.itemContent} onPress={() => onToggle(id)}>
-          <View style={[styles.imageContainer, checked && styles.imageContainerChecked]}>
+          <View
+            style={[
+              styles.imageContainer,
+              checked && styles.imageContainerChecked,
+            ]}
+          >
             <Image
-              source={{ uri: `https://spoonacular.com/cdn/ingredients_100x100/${image}` }}
+              source={{
+                uri: `https://spoonacular.com/cdn/ingredients_100x100/${image}`,
+              }}
               style={styles.itemImage}
               contentFit="contain"
               cachePolicy="memory-disk"
@@ -102,16 +124,25 @@ const ItemCard = memo(
           </View>
 
           <View style={styles.itemInfo}>
-            <Text style={[styles.itemName, checked && styles.itemNameChecked]} numberOfLines={2}>
+            <Text
+              style={[styles.itemName, checked && styles.itemNameChecked]}
+              numberOfLines={2}
+            >
               {name}
             </Text>
             {recipeName ? (
-              <Text style={styles.itemRecipe} numberOfLines={1}>{recipeName}</Text>
+              <Text style={styles.itemRecipe} numberOfLines={1}>
+                {recipeName}
+              </Text>
             ) : null}
           </View>
         </Pressable>
 
-        <Pressable style={styles.editButton} onPress={() => onEdit(id)} hitSlop={12}>
+        <Pressable
+          style={styles.editButton}
+          onPress={() => onEdit(id)}
+          hitSlop={12}
+        >
           <Feather name="edit-2" size={16} color={Colors.gray[400]} />
         </Pressable>
       </View>
@@ -125,7 +156,13 @@ const ItemCard = memo(
 );
 
 // Section header
-const SectionHeader = memo(function SectionHeader({ title, count }: { title: string; count: number }) {
+const SectionHeader = memo(function SectionHeader({
+  title,
+  count,
+}: {
+  title: string;
+  count: number;
+}) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -135,7 +172,13 @@ const SectionHeader = memo(function SectionHeader({ title, count }: { title: str
 });
 
 // Category header
-const CategoryHeader = memo(function CategoryHeader({ title, count }: { title: string; count: number }) {
+const CategoryHeader = memo(function CategoryHeader({
+  title,
+  count,
+}: {
+  title: string;
+  count: number;
+}) {
   return (
     <View style={styles.categoryHeader}>
       <Text style={styles.categoryTitle}>{title}</Text>
@@ -161,9 +204,19 @@ export function ShoppingListItemsList({
     const data: ListItem[] = [];
 
     if (checkedItems.length > 0) {
-      data.push({ type: "s", t: "Purchased", c: checkedItems.length, k: "s-p" });
+      data.push({
+        type: "s",
+        t: "Purchased",
+        c: checkedItems.length,
+        k: "s-p",
+      });
       for (const { category, items } of groupByCategory(checkedItems)) {
-        data.push({ type: "c", t: category, c: items.length, k: `cp-${category}` });
+        data.push({
+          type: "c",
+          t: category,
+          c: items.length,
+          k: `cp-${category}`,
+        });
         for (const item of items) {
           data.push({ type: "i", d: item, k: item.id });
         }
@@ -173,7 +226,12 @@ export function ShoppingListItemsList({
     if (uncheckedItems.length > 0) {
       data.push({ type: "s", t: "To Buy", c: uncheckedItems.length, k: "s-t" });
       for (const { category, items } of groupByCategory(uncheckedItems)) {
-        data.push({ type: "c", t: category, c: items.length, k: `ct-${category}` });
+        data.push({
+          type: "c",
+          t: category,
+          c: items.length,
+          k: `ct-${category}`,
+        });
         for (const item of items) {
           data.push({ type: "i", d: item, k: item.id });
         }
@@ -198,7 +256,7 @@ export function ShoppingListItemsList({
               amount={item.d.amount}
               unit={item.d.unit}
               checked={item.d.checked}
-              image={item.d.spoonacular_image}
+              image={item.d.spoonacular_image || ""}
               recipeName={item.d.recipe_name}
               onToggle={onToggleItem}
               onEdit={onEditItem}
@@ -213,19 +271,13 @@ export function ShoppingListItemsList({
   const getItemType = useCallback((item: ListItem) => item.type, []);
 
   return (
-    <FlashList
+     <FlatList
       data={listData}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      getItemType={getItemType}
-      estimatedItemSize={72}
-      overrideItemLayout={(layout, item) => {
-        if (item.type === "s") layout.size = 40;
-        else if (item.type === "c") layout.size = 32;
-        else layout.size = 72;
-      }}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
+      style={{ flex: 1 }}
     />
   );
 }
@@ -248,7 +300,7 @@ const styles = StyleSheet.create({
     color: Colors.lilac[900],
   },
   sectionCount: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "500",
     color: Colors.text.tertiary,
   },
@@ -260,7 +312,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   categoryTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -273,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lilac[100],
   },
   categoryCount: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "600",
     color: Colors.lilac[700],
   },
@@ -282,7 +334,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 10,
     borderRadius: 14,
-    backgroundColor: Colors.background.surface,
+    backgroundColor: Colors.background.primary,
     marginVertical: 3,
   },
   itemCardChecked: {
@@ -311,17 +363,20 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#Ffff",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: Colors.lilac[300],
   },
   imageContainerChecked: {
     opacity: 0.6,
   },
   itemImage: {
-    width: 36,
-    height: 36,
+    width: "85%",
+    objectFit: "contain",
+    height: "85%",
   },
   amountBadge: {
     position: "absolute",

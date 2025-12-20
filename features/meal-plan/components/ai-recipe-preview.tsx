@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/theme";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { useHaptics } from "@/hooks/useHaptics";
 import { Recipe } from "@/lib/spoonacular";
 import CustomButton from "@/shared/components/custom-button";
@@ -69,6 +70,8 @@ export function AIRecipePreview({
 }: AIRecipePreviewProps) {
   const insets = useSafeAreaInsets();
   const { impact } = useHaptics();
+  const { session } = useAuthContext();
+  const userId = session?.user?.id;
 
   // Image generation state
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
@@ -105,6 +108,12 @@ export function AIRecipePreview({
       const ingredientNames =
         recipe.extendedIngredients?.slice(0, 6).map((ing) => ing.name) || [];
 
+      // Get user ID from prop or context (we need to pass it from parent or use context here)
+      // Since this component might be used where we don't want to couple to auth context directly,
+      // let's try to get it from context if not available in some other way.
+      // Ideally this component should receive userId as prop, but for now let's use the hook.
+      // We need to import useAuthContext for this to work.
+
       const response = await fetch("/api/generate-recipe-image", {
         method: "POST",
         headers: {
@@ -115,6 +124,7 @@ export function AIRecipePreview({
           title: recipe.title,
           summary: recipe.summary,
           ingredients: ingredientNames,
+          userId: userId, // Pass userId to enable Supabase Storage upload
         }),
       });
 
@@ -424,9 +434,7 @@ export function AIRecipePreview({
       </ScrollView>
 
       {/* Footer Actions */}
-      <View
-        style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}
-      >
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Pressable
           style={styles.regenerateButton}
           onPress={handleRegenerate}
@@ -672,7 +680,7 @@ const styles = StyleSheet.create({
   },
   instructionsSection: {
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingVertical: 24,
   },
   instructionsList: {
     gap: 16,

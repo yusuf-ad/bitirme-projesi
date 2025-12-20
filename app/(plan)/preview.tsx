@@ -1,12 +1,12 @@
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { Colors } from "@/constants/theme";
 import {
-    EmptyMealState,
-    LoadingOverlay,
-    MealItem,
-    PreviewFooter,
-    PreviewHeader,
-    useMealPlanPreview,
+  EmptyMealState,
+  LoadingOverlay,
+  MealItem,
+  PreviewFooter,
+  PreviewHeader,
+  useMealPlanPreview,
 } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
@@ -24,6 +24,7 @@ export default function MealPlanPreview() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const {
+    mealPlan,
     isSaving,
     isAddingToShoppingList,
     activeMealType,
@@ -65,6 +66,13 @@ export default function MealPlanPreview() {
   }, [router]);
 
   const renderDayMeals = (mealType: MealType) => {
+    // Check if this meal type exists in the plan
+    // We use a more robust check since mealPlan might have string keys
+    const planData = (mealPlan as any)?.[mealType];
+    if (!planData) {
+      return null;
+    }
+
     const mealData = getMealForType(mealType);
 
     // Show empty state with "Generate with AI" button if no data
@@ -104,6 +112,7 @@ export default function MealPlanPreview() {
         {
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
+          backgroundColor: Colors.background.primary,
         },
       ]}
     >
