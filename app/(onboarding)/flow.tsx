@@ -89,8 +89,79 @@ export default function OnboardingFlowScreen() {
     onboarding.loadOnboardingData();
   }, []);
 
+  // Helper function to get previous selected meal time page
+  function getPreviousSelectedMealPage(currentMealComponent: string): { section: string; step: number } | null {
+    const mealOrder = ["breakfast", "lunch", "dinner"];
+    const mealSteps: Record<string, number> = { breakfast: 2, lunch: 3, dinner: 4 };
+    
+    const currentMealIndex = mealOrder.findIndex(m => currentMealComponent.includes(m));
+    
+    for (let i = currentMealIndex - 1; i >= 0; i--) {
+      if (selectedMeals.includes(mealOrder[i])) {
+        return {
+          section: "meal-time",
+          step: mealSteps[mealOrder[i]],
+        };
+      }
+    }
+    return null; // No previous selected meals
+  }
+
   function handleBack() {
     const previousPage = getPreviousPage(currentPage.section, currentPage.step);
+
+    // Handle meal-time page back navigation (skip unselected meals)
+    const isMealTimePage = 
+      currentPage.component === "meal-time-breakfast" ||
+      currentPage.component === "meal-time-lunch" ||
+      currentPage.component === "meal-time-dinner";
+
+    if (isMealTimePage) {
+      const prevMealPage = getPreviousSelectedMealPage(currentPage.component);
+      if (prevMealPage) {
+        router.push({
+          pathname: "/(onboarding)/flow",
+          params: {
+            section: prevMealPage.section,
+            step: prevMealPage.step.toString(),
+          },
+        });
+        return;
+      } else {
+        // No previous selected meals, go back to taste-meals page
+        router.push({
+          pathname: "/(onboarding)/flow",
+          params: { section: "meal-time", step: "1" },
+        });
+        return;
+      }
+    }
+
+    // Handle going back from taste section to last selected meal time page
+    if (currentPage.section === "taste" && currentPage.step === 0) {
+      // Find last selected meal
+      const mealOrder = ["dinner", "lunch", "breakfast"]; // reverse order
+      const mealSteps: Record<string, number> = { breakfast: 2, lunch: 3, dinner: 4 };
+      
+      for (const meal of mealOrder) {
+        if (selectedMeals.includes(meal)) {
+          router.push({
+            pathname: "/(onboarding)/flow",
+            params: {
+              section: "meal-time",
+              step: mealSteps[meal].toString(),
+            },
+          });
+          return;
+        }
+      }
+      // No meals selected, go to taste-meals
+      router.push({
+        pathname: "/(onboarding)/flow",
+        params: { section: "meal-time", step: "1" },
+      });
+      return;
+    }
 
     if (previousPage) {
       router.push({
@@ -104,6 +175,26 @@ export default function OnboardingFlowScreen() {
       // Go back to welcome screen (index)
       router.push("/(onboarding)");
     }
+  }
+
+  // Helper function to get next selected meal time page
+  function getNextSelectedMealPage(currentMealComponent: string | null): { section: string; step: number } | null {
+    const mealOrder = ["breakfast", "lunch", "dinner"];
+    const mealSteps: Record<string, number> = { breakfast: 2, lunch: 3, dinner: 4 };
+    
+    const currentMealIndex = currentMealComponent 
+      ? mealOrder.findIndex(m => currentMealComponent.includes(m))
+      : -1;
+    
+    for (let i = currentMealIndex + 1; i < mealOrder.length; i++) {
+      if (selectedMeals.includes(mealOrder[i])) {
+        return {
+          section: "meal-time",
+          step: mealSteps[mealOrder[i]],
+        };
+      }
+    }
+    return null; // No more selected meals
   }
 
   async function handleNext() {
@@ -125,6 +216,76 @@ export default function OnboardingFlowScreen() {
           pathname: "/(onboarding)/diet/adjust",
           params,
         });
+        return;
+      }
+    }
+
+    // Handle dynamic meal time navigation
+    if (currentPage.component === "taste-meals") {
+      // Set default times for unselected meals
+      if (!selectedMeals.includes("breakfast")) {
+        setBreakfastTime({ hour: 10, minute: 0, period: "AM" });
+      }
+      if (!selectedMeals.includes("lunch")) {
+        setLunchTime({ hour: 2, minute: 30, period: "PM" });
+      }
+      if (!selectedMeals.includes("dinner")) {
+        setDinnerTime({ hour: 6, minute: 0, period: "PM" });
+      }
+
+      // Navigate to first selected meal time page
+      const nextMealPage = getNextSelectedMealPage(null);
+      if (nextMealPage) {
+        router.push({
+          pathname: "/(onboarding)/flow",
+          params: {
+            section: nextMealPage.section,
+            step: nextMealPage.step.toString(),
+          },
+        });
+        return;
+      } else {
+        // No meals selected (shouldn't happen due to validation), go to taste section
+        router.push({
+          pathname: "/(onboarding)/flow",
+          params: { section: "taste", step: "0" },
+        });
+        return;
+      }
+    }
+
+    // Handle meal-time page navigation (skip unselected meals)
+    const isMealTimePage = 
+      currentPage.component === "meal-time-breakfast" ||
+      currentPage.component === "meal-time-lunch" ||
+      currentPage.component === "meal-time-dinner";
+
+    if (isMealTimePage) {
+      const nextMealPage = getNextSelectedMealPage(currentPage.component);
+      if (nextMealPage) {
+        router.push({
+          pathname: "/(onboarding)/flow",
+          params: {
+            section: nextMealPage.section,
+            step: nextMealPage.step.toString(),
+          },
+        });
+        return;
+      } else {
+        // No more selected meals, save and go to taste section
+        try {
+          setIsSaving(true);
+          await onboarding.saveMealTimes();
+          setIsSaving(false);
+          router.push({
+            pathname: "/(onboarding)/flow",
+            params: { section: "taste", step: "0" },
+          });
+        } catch (error) {
+          setIsSaving(false);
+          console.error("Error saving meal times:", error);
+          Alert.alert("❌ Hata", "Veriler kaydedilemedi. Lütfen tekrar deneyin.");
+        }
         return;
       }
     }
