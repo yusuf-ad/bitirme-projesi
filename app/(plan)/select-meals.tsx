@@ -166,21 +166,28 @@ export default function SelectMeals() {
         pantryData,
         selectedMealTypes
       );
-      if (!results || results.length === 0) {
-        setIsLoading(false);
-        return;
-      }
+
       const mealPlanData: Record<
         string,
         { results: any[]; totalResults: number }
       > = {};
-      for (const result of results) {
-        mealPlanData[result.mealType] = {
-          results: result.results,
-          totalResults:
-            result.results[0]?.totalResults || result.results.length,
-        };
-      }
+
+      // Initialize plan data for ONLY selected meal types
+      (Object.keys(selectedMealTypes) as MealType[]).forEach((type) => {
+        if (selectedMealTypes[type]) {
+          // Find if we have fetched results for this type
+          const resultForType = results?.find((r) => r.mealType === type);
+
+          mealPlanData[type] = {
+            results: resultForType?.results || [],
+            totalResults:
+              resultForType?.results[0]?.totalResults ||
+              resultForType?.results?.length ||
+              0,
+          };
+        }
+      });
+
       setPendingNavigationParams({
         pathname: "/preview",
         params: {

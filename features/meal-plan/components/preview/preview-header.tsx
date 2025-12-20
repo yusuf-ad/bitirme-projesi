@@ -26,6 +26,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: Colors.background.primary,
+
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lilac[100],
   },
   headerButton: {
     width: 36,
@@ -41,4 +44,3 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
 });
-
