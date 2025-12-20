@@ -859,14 +859,13 @@ constants/
 
 ### onboarding
 
-1. dive in butonu androidde geri butonunun gerisinde kalıyor
-2. çok abartı bir animasyon var age, height,weight adult olayı ne onu açıkla
-3. günde kaç öğün yiyorsa onun saati alınsın yoksa default olan kullanılsın hep aynı soruyu soruyuor hoca
-4. cuisines de mutfak resimleri gitmiş düzeltilsin.
-5. dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
-6. adjust targetsta yüzdelik olarak verilsin.
-7. cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün.
-
+- [] dive in butonu androidde geri butonunun gerisinde kalıyor
+- [] çok abartı bir animasyon var age, height,weight adult olayı ne onu açıkla
+- [] günde kaç öğün yiyorsa onun saati alınsın yoksa default olan kullanılsın hep aynı soruyu soruyuor hoca
+- [] cuisines de mutfak resimleri gitmiş düzeltilsin.
+- [] dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
+- [] adjust targetsta yüzdelik olarak verilsin.
+- [] cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün.
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
 - console logları sil!
@@ -883,23 +882,23 @@ constants/
 
 - [x] var olan mealplan de üstüne yazsın
 - [x] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
-- [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan - yusuf
+- [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan osman hataları düzeltince ekle - yusuf
+- [] sentry gibi hata raporlama sistemi ekle
+- [] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
+- [] servings için mi calori ingredient kalori felan 1 kişi için mi
 
 ### recipes
 
-1. select ingredients altta kalıyor
-2. alerji scrollable degil
-3. search recipes inputuna hepsini sil butonu eklenbilir
+- [] select ingredients altta kalıyor
+- [] alerji scrollable degil
+- [] search recipes inputuna hepsini sil butonu eklenbilir
 
-- [] sentry gibi hata raporlama sistemi ekle
 - [] snacks seçeneğini kaldır generate with ai da
 - [] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
 - [] scroll ederken yüklenme skeletonu gözükmüyor
 
 ### recipes - osman
 
-- [] servings ayarlama !!!!! ÇOK ÖNEMLİ
-- [] servings için mi calori ingredient kalori felan 1 kişi için mi
 - [] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
 - [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
 - [] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
@@ -907,15 +906,13 @@ constants/
 
 ### pantry
 
-1. prefill deki olayın kg litresini felan düzelt
-2. update butonu kaldır onun yerine eğer resim yoksa update butonu çıksın
-
+- [] prefill deki olayın kg litresini felan düzelt
+- [] update butonu kaldır onun yerine eğer resim yoksa update butonu çıksın
 - [] scanresults sayfasının tasarımını düzelt
 
 ### profile
 
-1. statusbarın rengiyle farklı header kötü duruyor orası.
-
+- [] statusbarın rengiyle farklı header kötü duruyor orası.
 - [] yunusun hologram sayfası
 - [] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
 - dark mode tam uyumlu değil!!
