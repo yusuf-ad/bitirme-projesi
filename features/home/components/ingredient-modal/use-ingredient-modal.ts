@@ -7,11 +7,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSharedValue, withTiming } from "react-native-reanimated";
 import { DisplayAllergy, IngredientItem, PopularIngredient } from "./types";
 
-export const useIngredientModal = () => {
+export interface UseIngredientModalOptions {
+  initialSelectedIngredients?: Ingredient[];
+}
+
+export const useIngredientModal = (options: UseIngredientModalOptions = {}) => {
+  const { initialSelectedIngredients = [] } = options;
   const onboarding = useOnboarding();
+
+  // Convert initial ingredients to Map
+  const buildInitialMap = useCallback((ingredients: Ingredient[]): Map<string, IngredientItem> => {
+    const map = new Map<string, IngredientItem>();
+    ingredients.forEach((ing) => {
+      const key = `${ing.id}`;
+      map.set(key, ing);
+    });
+    return map;
+  }, []);
+
   const [selectedIngredients, setSelectedIngredients] = useState<
     Map<string, IngredientItem>
-  >(new Map());
+  >(() => buildInitialMap(initialSelectedIngredients));
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -28,6 +44,9 @@ export const useIngredientModal = () => {
     onboarding.loadOnboardingData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Note: We don't sync from initialSelectedIngredients after mount
+  // because changes flow one-way: modal -> filter-store via onIngredientsSelect
 
   // Load user allergies when modal opens
   useEffect(() => {

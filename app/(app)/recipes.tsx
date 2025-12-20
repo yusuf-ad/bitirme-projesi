@@ -105,6 +105,7 @@ export default function HomeTab() {
   const {
     recipes,
     isLoading: loading,
+    isFetchingNextPage,
     hasMore,
     error,
     fetchNextPage,
@@ -114,7 +115,7 @@ export default function HomeTab() {
     ingredients: memoizedIngredients,
     cuisines: memoizedCuisines,
     quickFilters: memoizedFilters,
-    
+
     pageSize: 10,
     minReadyTime,
     maxReadyTime,
@@ -152,6 +153,10 @@ export default function HomeTab() {
     },
     [setSelectedIngredients]
   );
+
+  const handleClearIngredients = useCallback(() => {
+    setSelectedIngredients([]);
+  }, [setSelectedIngredients]);
 
   const handleCuisinesSelect = useCallback(
     (cuisines: string[]) => {
@@ -310,6 +315,7 @@ export default function HomeTab() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onFilterPress={() => { }}
+            isSearching={loading && searchQuery.length > 0}
           />
 
           <FilterChips
@@ -363,8 +369,13 @@ export default function HomeTab() {
             }
           >
             <View style={styles.discoverContainer}>
+              {/* Initial loading state - show full grid of skeletons */}
+              {loading && recipes.length === 0 && <LoadingState count={6} />}
+
+              {/* Empty state - no recipes and not loading */}
               {recipes.length === 0 && !loading && <EmptyState />}
 
+              {/* Recipe grid */}
               {recipes.length > 0 && (
                 <RecipeGrid
                   recipes={recipes}
@@ -373,11 +384,12 @@ export default function HomeTab() {
                 />
               )}
 
-              {loading && <LoadingState />}
+              {/* Pagination loading - show fewer skeletons at bottom */}
+              {isFetchingNextPage && <LoadingState count={2} />}
 
               {error && !loading && <ErrorState onRetry={handleRefresh} />}
 
-              {!hasMore && recipes.length > 0 && <EndMessage />}
+              {!hasMore && recipes.length > 0 && !isFetchingNextPage && <EndMessage />}
             </View>
           </ScrollView>
         </View>
@@ -438,6 +450,8 @@ export default function HomeTab() {
       <IngredientModal
         ref={ingredientModalRef}
         onIngredientsSelect={handleIngredientsSelect}
+        initialSelectedIngredients={selectedIngredients}
+        onClearAll={handleClearIngredients}
       />
       <CuisineModal
         ref={cuisineModalRef}

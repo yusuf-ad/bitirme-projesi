@@ -7,7 +7,6 @@ export type MealTypeOption =
   | "breakfast"
   | "lunch"
   | "dinner"
-  | "snacks"
   | "surprise";
 export type CookingTimeOption = "<15" | "15-29" | "30-60" | "open";
 export type CalorieRangeOption =
@@ -29,7 +28,6 @@ export const MEAL_TYPE_OPTIONS: ChipOption<MealTypeOption>[] = [
   { id: "breakfast", label: "Breakfast", emoji: "🔍" },
   { id: "lunch", label: "Lunch", emoji: "🥗" },
   { id: "dinner", label: "Dinner", emoji: "🍲" },
-  { id: "snacks", label: "Snacks", emoji: "🧀" },
   { id: "surprise", label: "Surprise Me", emoji: "👀" },
 ];
 
