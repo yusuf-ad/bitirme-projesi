@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   goalsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     rowGap: 20,
   },
   goalItem: {

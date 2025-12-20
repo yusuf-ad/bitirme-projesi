@@ -3,11 +3,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 interface GoalsContentProps {
