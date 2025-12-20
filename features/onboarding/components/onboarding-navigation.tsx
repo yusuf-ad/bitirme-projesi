@@ -1,6 +1,7 @@
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingNavigationProps } from "../types/onboarding.types";
 
 export function OnboardingNavigation({
@@ -25,9 +26,16 @@ export function OnboardingNavigation({
     return styles.skipButton;
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
-      <View style={styles.buttonContainer}>
+      <View
+        style={[
+          styles.buttonContainer,
+          { paddingBottom: 32 + insets.bottom },
+        ]}
+      >
         <CustomButton
           containerStyle={styles.backButton}
           accessibilityLabel="Go Back"

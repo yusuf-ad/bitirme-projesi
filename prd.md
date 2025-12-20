@@ -856,6 +856,7 @@ constants/
 
 - [] Fix error states - yunus
 - [] tanıtım tutorialı tarzı bir şey eklensin bu en son yapılacak!!!
+- [] AI Chatte androidde chat keybordunun altına kayıplı keyboardaware scrollview lazım
 
 ### onboarding
 
@@ -927,7 +928,7 @@ constants/
 - [] yunusun hologram sayfası
 - [] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
 - dark mode tam uyumlu değil!!
-
+- [x] goals and metrics sayfasında ikonlar dağınık düzelt
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
 - [x] Meal logging system
