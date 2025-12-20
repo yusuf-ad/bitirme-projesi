@@ -23,75 +23,47 @@ const cuisineDescriptions: Record<string, { description: string; image: any }> =
   {
     american: {
       description: "Classic comfort food",
-      image: {
-        uri: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-american.png"),
     },
     asian: {
       description: "Stir-fry, noodles & spices",
-      image: {
-        uri: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-asian.png"),
     },
     chinese: {
       description: "Wok-fired & flavorful",
-      image: {
-        uri: "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-chinese.png"),
     },
     french: {
       description: "Elegant & sophisticated",
-      image: {
-        uri: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-french.png"),
     },
     greek: {
       description: "Mediterranean classics",
-      image: {
-        uri: "https://images.unsplash.com/photo-1539136788836-5699e78bfc75?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-greek.png"),
     },
     indian: {
       description: "Spicy & aromatic",
-      image: {
-        uri: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-indian.png"),
     },
     italian: {
       description: "Pasta, risotto, pizza",
-      image: {
-        uri: "https://images.unsplash.com/photo-1498579150354-977475b7ea0b?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-italian.png"),
     },
     japanese: {
       description: "Delicate & precise",
-      image: {
-        uri: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-japanese.png"),
     },
     mediterranean: {
       description: "Fresh, healthy & colorful",
-      image: {
-        uri: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-mediterranean.png"),
     },
     mexican: {
       description: "Bold & vibrant",
-      image: {
-        uri: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-mexican.png"),
     },
-    middleeastern: {
+    "middle eastern": {
       description: "Aromatic & flavorful",
-      image: {
-        uri: "https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=800&q=80",
-      },
-    },
-    thai: {
-      description: "Sweet, sour & spicy",
-      image: {
-        uri: "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=800&q=80",
-      },
+      image: require("@/assets/images/cuisine-middle-eastern.png"),
     },
   };
 
@@ -99,9 +71,10 @@ const cuisineOptions = POPULAR_CUISINES.map((cuisine) => ({
   id: cuisine.id,
   label: cuisine.name,
   description:
-    cuisineDescriptions[cuisine.id]?.description || "Delicious cuisine",
+    cuisineDescriptions[cuisine.id.toLowerCase()]?.description ||
+    "Delicious cuisine",
   image:
-    cuisineDescriptions[cuisine.id]?.image ||
+    cuisineDescriptions[cuisine.id.toLowerCase()]?.image ||
     require("@/assets/images/grilled-chicken.png"),
 }));
 
