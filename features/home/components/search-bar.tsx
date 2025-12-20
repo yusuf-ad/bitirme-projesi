@@ -1,19 +1,23 @@
 import { Colors } from "@/constants/theme";
 import { useFilterStore } from "@/lib/stores/filter-store";
 import { Ionicons } from "@expo/vector-icons";
+import AntDesign from "@expo/vector-icons/AntDesign";
 import { useEffect } from "react";
-import { Platform, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 interface SearchBarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onFilterPress: () => void;
+  isSearching?: boolean;
 }
 
 export function SearchBar({
   searchQuery,
   onSearchChange,
   onFilterPress,
+  isSearching = false,
 }: SearchBarProps) {
   const { selectedIngredients, selectedCuisines } = useFilterStore();
 
@@ -41,6 +45,21 @@ export function SearchBar({
           value={searchQuery}
           onChangeText={onSearchChange}
         />
+        {isSearching && (
+          <Animated.View entering={FadeIn} exiting={FadeOut}>
+            <ActivityIndicator size="small" color={Colors.lilac[500]} />
+          </Animated.View>
+        )}
+        {searchQuery.length > 0 && !isSearching && (
+          <Animated.View entering={FadeIn} exiting={FadeOut}>
+            <Pressable
+              onPress={() => onSearchChange("")}
+              style={styles.clearButton}
+            >
+              <AntDesign name="close-circle" size={18} color={Colors.gray[400]} />
+            </Pressable>
+          </Animated.View>
+        )}
       </View>
     </View>
   );
@@ -79,4 +98,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text.primary,
   },
+  clearButton: {
+    padding: 4,
+  },
 });
+

@@ -1,11 +1,11 @@
 import { Colors } from "@/constants/theme";
 import {
-    BottomSheetBackdrop,
-    BottomSheetFlatList,
-    BottomSheetModal,
-    BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetFlatList,
+  BottomSheetModal,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import React, { forwardRef, useCallback, useMemo } from "react";
+import React, { forwardRef, useCallback, useEffect, useMemo } from "react";
 import { Dimensions, Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -24,7 +24,7 @@ import { useIngredientModal } from "./use-ingredient-modal";
 export const IngredientModal = forwardRef<
   BottomSheetModal,
   IngredientModalProps
->(({ onIngredientsSelect }, ref) => {
+>(({ onIngredientsSelect, initialSelectedIngredients, onClearAll }, ref) => {
   const { top } = useSafeAreaInsets();
   const {
     searchQuery,
@@ -42,10 +42,22 @@ export const IngredientModal = forwardRef<
     searchResults,
     getIngredientKey,
     toggleIngredient,
-    handleClearAll,
+    handleClearAll: hookClearAll,
     handleScroll,
     getIngredientsToSend,
-  } = useIngredientModal();
+  } = useIngredientModal({ initialSelectedIngredients });
+
+  // Wrap clear handler to also notify parent
+  const handleClearAll = useCallback(() => {
+    hookClearAll();
+    onClearAll?.();
+  }, [hookClearAll, onClearAll]);
+
+  // Auto-sync selected items to filter-store whenever they change
+  useEffect(() => {
+    const ingredientsToSend = getIngredientsToSend();
+    onIngredientsSelect?.(ingredientsToSend);
+  }, [selectedItems, getIngredientsToSend, onIngredientsSelect]);
 
   const screenHeight =
     Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);

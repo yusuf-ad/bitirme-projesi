@@ -891,18 +891,18 @@ constants/
 
 - [] select ingredients altta kalıyor
 - [] alerji scrollable degil
-- [] search recipes inputuna hepsini sil butonu eklenbilir
+- [x] search recipes inputuna hepsini sil butonu eklenbilir
 
-- [] snacks seçeneğini kaldır generate with ai da
-- [] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
-- [] scroll ederken yüklenme skeletonu gözükmüyor
+- [x] snacks seçeneğini kaldır generate with ai da
+- [x] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
+- [x] scroll ederken yüklenme skeletonu gözükmüyor
 
 ### recipes - osman
 
-- [] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
+- [x] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
 - [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
-- [] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
-- [] spoonaculardeki filter tagleri kullanılsın healthy veg vs. diye
+- [x] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
+- [x] spoonaculardeki filter tagleri kullanılsın healthy veg vs. diye
 
 ### pantry
 
