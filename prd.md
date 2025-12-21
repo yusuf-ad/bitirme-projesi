@@ -898,8 +898,8 @@ constants/
 ### recipes - osman
 
 - [x] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
-- [] select ingredients altta kalıyor - yusuf
-- [] alerji scrollable degil - yusuf
+- [x] select ingredients altta kalıyor - yusuf
+- [x] alerji scrollable degil - yusuf
 - [x] search recipes inputuna hepsini sil butonu eklenebilir
 - [x] snacks seçeneğini kaldır generate with ai da - yusuf
 - [x] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
