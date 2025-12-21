@@ -1,28 +1,32 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import {
-  DisplayAllergy,
-  DisplayDietPreference,
+    DisplayAllergy,
+    DisplayDietPreference,
 } from "@/lib/allergies-diet-helpers";
+import { useTheme } from "@/providers/theme-provider";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { InfoChip } from "./ai-generator-chips";
 
 // Allergy Card Component with image
 function AllergyCard({ allergy }: { allergy: DisplayAllergy }) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+
   return (
     <View style={styles.allergyCard}>
       {allergy.imageUrl ? (
         <Image
           source={{ uri: allergy.imageUrl }}
-          style={styles.allergyImage}
+          style={[styles.allergyImage, { backgroundColor: themeColors.background.surface, borderColor: isDark ? "rgba(220, 38, 38, 0.3)" : Colors.semantic.error.light }]}
           resizeMode="contain"
         />
       ) : (
-        <View style={[styles.allergyImage, styles.allergyImagePlaceholder]}>
-          <MaterialIcons name="no-food" size={20} color={Colors.gray[400]} />
+        <View style={[styles.allergyImage, styles.allergyImagePlaceholder, { backgroundColor: themeColors.background.surface, borderColor: isDark ? "rgba(220, 38, 38, 0.3)" : Colors.semantic.error.light }]}>
+          <MaterialIcons name="no-food" size={20} color={isDark ? themeColors.text.tertiary : Colors.gray[400]} />
         </View>
       )}
-      <Text style={styles.allergyName} numberOfLines={2}>
+      <Text style={[styles.allergyName, { color: themeColors.text.primary }]} numberOfLines={2}>
         {allergy.name}
       </Text>
     </View>
@@ -31,6 +35,9 @@ function AllergyCard({ allergy }: { allergy: DisplayAllergy }) {
 
 // Diet Preference Card Component with image
 function DietCard({ diet }: { diet: DisplayDietPreference }) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+
   const imageSource =
     typeof diet.image === "object" && "uri" in diet.image
       ? diet.image
@@ -38,8 +45,8 @@ function DietCard({ diet }: { diet: DisplayDietPreference }) {
 
   return (
     <View style={styles.dietCard}>
-      <Image source={imageSource} style={styles.dietImage} resizeMode="cover" />
-      <Text style={styles.dietName} numberOfLines={2}>
+      <Image source={imageSource} style={[styles.dietImage, { backgroundColor: themeColors.background.secondary }]} resizeMode="cover" />
+      <Text style={[styles.dietName, { color: themeColors.text.primary }]} numberOfLines={2}>
         {diet.label}
       </Text>
     </View>
@@ -76,6 +83,9 @@ export function UserPreferencesSection({
   goals = [],
   cookingSkill,
 }: UserPreferencesSectionProps) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+
   const hasPreferences =
     allergies.length > 0 ||
     dietPreferences.length > 0 ||
@@ -88,19 +98,19 @@ export function UserPreferencesSection({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Your Preferences</Text>
-      <Text style={styles.sectionSubtitle}>Based on your profile settings</Text>
+      <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Your Preferences</Text>
+      <Text style={[styles.sectionSubtitle, { color: themeColors.text.secondary }]}>Based on your profile settings</Text>
 
       {/* Goals */}
       {goals.length > 0 && (
         <View style={styles.preferenceGroup}>
-          <Text style={styles.preferenceLabel}>Your Goals</Text>
+          <Text style={[styles.preferenceLabel, { color: themeColors.text.secondary }]}>Your Goals</Text>
           <View style={styles.infoChipsContainer}>
             {goals.map((goal) => (
               <InfoChip
                 key={goal.id}
                 label={goal.title.replace("\n", " ")}
-                variant="positive"
+                // variant="positive" // Removed variant="positive" as it is not defined in InfoChip props in ai-generator-chips.tsx, defaulting to "default"
               />
             ))}
           </View>
@@ -110,10 +120,16 @@ export function UserPreferencesSection({
       {/* Cooking Skill */}
       {cookingSkill && (
         <View style={styles.preferenceGroup}>
-          <Text style={styles.preferenceLabel}>Cooking Skill</Text>
-          <View style={styles.cookingSkillChip}>
+          <Text style={[styles.preferenceLabel, { color: themeColors.text.secondary }]}>Cooking Skill</Text>
+          <View style={[
+            styles.cookingSkillChip, 
+            { 
+              backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100],
+              borderColor: isDark ? themeColors.accent.lilac : Colors.lilac[300]
+            }
+          ]}>
             <Text style={styles.cookingSkillEmoji}>{cookingSkill.emoji}</Text>
-            <Text style={styles.cookingSkillLabel}>{cookingSkill.label}</Text>
+            <Text style={[styles.cookingSkillLabel, { color: isDark ? themeColors.accent.lilac : Colors.lilac[900] }]}>{cookingSkill.label}</Text>
           </View>
         </View>
       )}
@@ -121,7 +137,7 @@ export function UserPreferencesSection({
       {/* Allergies */}
       {allergies.length > 0 && (
         <View style={styles.preferenceGroup}>
-          <Text style={styles.preferenceLabel}>Allergies & Dislikes</Text>
+          <Text style={[styles.preferenceLabel, { color: themeColors.text.secondary }]}>Allergies & Dislikes</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -137,7 +153,7 @@ export function UserPreferencesSection({
       {/* Diet Preferences */}
       {dietPreferences.length > 0 && (
         <View style={styles.preferenceGroup}>
-          <Text style={styles.preferenceLabel}>Diet</Text>
+          <Text style={[styles.preferenceLabel, { color: themeColors.text.secondary }]}>Diet</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -153,7 +169,7 @@ export function UserPreferencesSection({
       {/* Cuisines */}
       {cuisines.length > 0 && (
         <View style={styles.preferenceGroup}>
-          <Text style={styles.preferenceLabel}>Favorite Cuisines</Text>
+          <Text style={[styles.preferenceLabel, { color: themeColors.text.secondary }]}>Favorite Cuisines</Text>
           <View style={styles.infoChipsContainer}>
             {cuisines.map((cuisine) => (
               <InfoChip key={cuisine} label={cuisine} />
@@ -165,7 +181,7 @@ export function UserPreferencesSection({
       {/* Disliked Cuisines */}
       {dislikedCuisines.length > 0 && (
         <View style={styles.preferenceGroup}>
-          <Text style={styles.preferenceLabel}>Disliked Cuisines</Text>
+          <Text style={[styles.preferenceLabel, { color: themeColors.text.secondary }]}>Disliked Cuisines</Text>
           <View style={styles.infoChipsContainer}>
             {dislikedCuisines.map((cuisine) => (
               <InfoChip key={cuisine} label={cuisine} variant="negative" />
@@ -184,11 +200,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text.primary,
   },
   sectionSubtitle: {
     fontSize: 13,
-    color: Colors.text.secondary,
     marginTop: -8,
   },
   preferenceGroup: {
@@ -197,7 +211,6 @@ const styles = StyleSheet.create({
   preferenceLabel: {
     fontSize: 13,
     fontWeight: "500",
-    color: Colors.text.secondary,
   },
   infoChipsContainer: {
     flexDirection: "row",
@@ -216,9 +229,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: Colors.background.surface,
     borderWidth: 2,
-    borderColor: Colors.semantic.error.light,
   },
   allergyImagePlaceholder: {
     justifyContent: "center",
@@ -227,7 +238,6 @@ const styles = StyleSheet.create({
   allergyName: {
     fontSize: 12,
     fontWeight: "500",
-    color: Colors.text.primary,
     textAlign: "center",
   },
   dietCard: {
@@ -239,12 +249,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: 60,
     borderRadius: 8,
-    backgroundColor: Colors.gray[200],
   },
   dietName: {
     fontSize: 12,
     fontWeight: "500",
-    color: Colors.text.primary,
     textAlign: "center",
   },
   cookingSkillChip: {
@@ -253,11 +261,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: Colors.lilac[100],
     borderRadius: 99,
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderColor: Colors.lilac[300],
   },
   cookingSkillEmoji: {
     fontSize: 18,
@@ -265,6 +271,5 @@ const styles = StyleSheet.create({
   cookingSkillLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.lilac[900],
   },
 });

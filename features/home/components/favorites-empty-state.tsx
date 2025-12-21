@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -10,26 +11,39 @@ interface FavoritesEmptyStateProps {
 
 export function FavoritesEmptyState({ onExplore }: FavoritesEmptyStateProps) {
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
   
   const handleExplorePress = async () => {
     await Haptics.selectionAsync();
     onExplore();
   };
 
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
+
   return (
-    <View style={styles.container}>
-      <View style={styles.iconWrapper}>
-        <Ionicons name="heart-outline" size={32} color={Colors.lilac[900]} />
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor: themeColors.background.surface,
+        borderColor: isDark ? themeColors.border.light : Colors.lilac[200],
+      }
+    ]}>
+      <View style={[
+        styles.iconWrapper, 
+        { backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100] }
+      ]}>
+        <Ionicons name="heart-outline" size={32} color={accentColor} />
       </View>
 
-      <Text style={styles.title}>{t("recipes.noFavorites")}</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.title, { color: themeColors.text.primary }]}>{t("recipes.noFavorites")}</Text>
+      <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
         {t("recipes.noFavoritesDesc")}
       </Text>
 
       <Pressable
         onPress={handleExplorePress}
-        style={styles.ctaButton}
+        style={[styles.ctaButton, { backgroundColor: accentColor }]}
         android_ripple={{ color: Colors.lilac[700] }}
         accessibilityRole="button"
         accessibilityLabel={t("recipes.returnToDiscover")}
@@ -46,11 +60,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 32,
     paddingHorizontal: 24,
-    backgroundColor: Colors.background.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
-    shadowColor: Colors.background.dark,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -61,33 +73,30 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 999,
-    backgroundColor: Colors.lilac[100],
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text.primary,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 14,
-    color: Colors.text.secondary,
     textAlign: "center",
     lineHeight: 20,
   },
   ctaButton: {
     marginTop: 8,
-    backgroundColor: Colors.lilac[900],
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 999,
   },
   ctaText: {
-    color: Colors.background.surface,
+    color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 14,
   },
 });
+
 

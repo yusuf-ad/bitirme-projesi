@@ -1,18 +1,20 @@
 import { CelebrationModal } from "@/components/CelebrationModal";
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import {
-  EmptyMealState,
-  LoadingOverlay,
-  MealItem,
-  PreviewFooter,
-  PreviewHeader,
-  useMealPlanPreview,
+    EmptyMealState,
+    LoadingOverlay,
+    MealItem,
+    PreviewFooter,
+    PreviewHeader,
+    useMealPlanPreview,
 } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
 import { capitalizeFirst } from "@/features/meal-plan/components/preview";
 import type { MealType } from "@/lib/utils";
+import { useTheme } from "@/providers/theme-provider";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +24,8 @@ export default function MealPlanPreview() {
   const insets = useSafeAreaInsets();
   const mealSelectionRef = useRef<MealSelectionModalHandle>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
 
   const {
     mealPlan,
@@ -78,8 +82,8 @@ export default function MealPlanPreview() {
     // Show empty state with "Generate with AI" button if no data
     if (!mealData) {
       return (
-        <View key={mealType} style={styles.mealCard}>
-          <Text style={styles.mealTypeHeader}>{capitalizeFirst(mealType)}</Text>
+        <View key={mealType} style={[styles.mealCard, { backgroundColor: themeColors.background.surface }]}>
+          <Text style={[styles.mealTypeHeader, { color: themeColors.text.primary }]}>{capitalizeFirst(mealType)}</Text>
           <EmptyMealState
             mealType={mealType}
             onGenerateWithAI={handleGenerateWithAI}
@@ -92,8 +96,8 @@ export default function MealPlanPreview() {
     const { meal, isAiGenerated } = mealData;
 
     return (
-      <View key={mealType} style={styles.mealCard}>
-        <Text style={styles.mealTypeHeader}>{capitalizeFirst(mealType)}</Text>
+      <View key={mealType} style={[styles.mealCard, { backgroundColor: themeColors.background.surface }]}>
+        <Text style={[styles.mealTypeHeader, { color: themeColors.text.primary }]}>{capitalizeFirst(mealType)}</Text>
         <MealItem
           meal={meal}
           mealType={mealType}
@@ -112,10 +116,11 @@ export default function MealPlanPreview() {
         {
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
-          backgroundColor: Colors.background.primary,
+          backgroundColor: themeColors.background.primary,
         },
       ]}
     >
+      <StatusBar style={isDark ? "light" : "dark"} />
       {/* Header */}
       <PreviewHeader
         onBack={() => router.back()}
@@ -127,7 +132,7 @@ export default function MealPlanPreview() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.description}>
+        <Text style={[styles.description, { color: themeColors.text.secondary }]}>
           Here are the recipes we&apos;ve chosen for your meal plan. Feel free
           to swap out any that you don&apos;t like!
         </Text>
@@ -182,7 +187,6 @@ export default function MealPlanPreview() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -196,11 +200,9 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 15,
     lineHeight: 22,
-    color: Colors.text.secondary,
     marginBottom: 4,
   },
   mealCard: {
-    backgroundColor: Colors.background.primary,
     borderRadius: 16,
     padding: 16,
     shadowColor: "#000",
@@ -212,7 +214,7 @@ const styles = StyleSheet.create({
   mealTypeHeader: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text.primary,
     marginBottom: 12,
   },
 });
+

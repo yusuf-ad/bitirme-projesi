@@ -1,24 +1,25 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { PantryItem } from "@/features/pantry/types";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
+import { useTheme } from "@/providers/theme-provider";
 import { MaterialIcons } from "@expo/vector-icons";
 import {
-  forwardRef,
-  useCallback,
-  useImperativeHandle,
-  useMemo,
-  useState,
+    forwardRef,
+    useCallback,
+    useImperativeHandle,
+    useMemo,
+    useState,
 } from "react";
 import {
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -54,6 +55,9 @@ function IngredientCard({
   isSelected: boolean;
   onToggle: () => void;
 }) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+
   return (
     <Pressable
       style={[
@@ -65,21 +69,21 @@ function IngredientCard({
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
-          style={styles.ingredientImage}
+          style={[styles.ingredientImage, { backgroundColor: themeColors.background.surface }]}
           resizeMode="contain"
         />
       ) : (
         <View
-          style={[styles.ingredientImage, styles.ingredientImagePlaceholder]}
+          style={[styles.ingredientImage, styles.ingredientImagePlaceholder, { borderColor: isDark ? themeColors.border.light : Colors.gray[200] }]}
         >
-          <MaterialIcons name="restaurant" size={24} color={Colors.gray[400]} />
+          <MaterialIcons name="restaurant" size={24} color={isDark ? themeColors.text.tertiary : Colors.gray[400]} />
         </View>
       )}
-      <Text style={styles.ingredientName} numberOfLines={2}>
+      <Text style={[styles.ingredientName, { color: themeColors.text.primary }]} numberOfLines={2}>
         {name}
       </Text>
       {isSelected && (
-        <View style={styles.selectedBadge}>
+        <View style={[styles.selectedBadge, { borderColor: themeColors.background.primary }]}>
           <MaterialIcons name="check" size={14} color="#fff" />
         </View>
       )}
@@ -92,6 +96,8 @@ export const IngredientSelectionModal = forwardRef<
   IngredientSelectionModalProps
 >(({ selectedIngredients, onApply }, ref) => {
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
   const [visible, setVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [localSelected, setLocalSelected] = useState<
@@ -217,22 +223,28 @@ export const IngredientSelectionModal = forwardRef<
       presentationStyle="pageSheet"
       onRequestClose={dismiss}
     >
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background.primary }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Search by Ingredients</Text>
+          <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>Search by Ingredients</Text>
           <Pressable onPress={dismiss} style={styles.closeButton}>
-            <MaterialIcons name="close" size={24} color={Colors.text.primary} />
+            <MaterialIcons name="close" size={24} color={themeColors.text.primary} />
           </Pressable>
         </View>
 
         {/* Search Input */}
-        <View style={styles.searchContainer}>
-          <MaterialIcons name="search" size={20} color={Colors.gray[400]} />
+        <View style={[
+          styles.searchContainer, 
+          { 
+            backgroundColor: themeColors.background.surface,
+            borderColor: isDark ? themeColors.border.light : Colors.gray[200]
+          }
+        ]}>
+          <MaterialIcons name="search" size={20} color={isDark ? themeColors.text.tertiary : Colors.gray[400]} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: themeColors.text.primary }]}
             placeholder="What's in your pantry"
-            placeholderTextColor={Colors.gray[400]}
+            placeholderTextColor={isDark ? themeColors.text.tertiary : Colors.gray[400]}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={addManualIngredient}
@@ -240,7 +252,7 @@ export const IngredientSelectionModal = forwardRef<
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery("")}>
-              <MaterialIcons name="close" size={18} color={Colors.gray[400]} />
+              <MaterialIcons name="close" size={18} color={isDark ? themeColors.text.tertiary : Colors.gray[400]} />
             </Pressable>
           )}
         </View>
@@ -248,15 +260,21 @@ export const IngredientSelectionModal = forwardRef<
         {/* Add Custom Ingredient Button - shown when typing */}
         {searchQuery.trim().length > 0 && !manualIngredientExists && (
           <Pressable
-            style={styles.addCustomButton}
+            style={[
+              styles.addCustomButton,
+              { 
+                backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100],
+                borderColor: isDark ? themeColors.accent.lilac : Colors.lilac[300]
+              }
+            ]}
             onPress={addManualIngredient}
           >
             <MaterialIcons
               name="add-circle-outline"
               size={20}
-              color={Colors.lilac[700]}
+              color={isDark ? themeColors.accent.lilac : Colors.lilac[700]}
             />
-            <Text style={styles.addCustomButtonText}>
+            <Text style={[styles.addCustomButtonText, { color: isDark ? themeColors.accent.lilac : Colors.lilac[700] }]}>
               Add &ldquo;{searchQuery.trim()}&rdquo; as custom ingredient
             </Text>
           </Pressable>
@@ -271,7 +289,7 @@ export const IngredientSelectionModal = forwardRef<
           {/* My Pantry Section */}
           {filteredPantryItems.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>My Pantry</Text>
+              <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>My Pantry</Text>
               <View style={styles.ingredientsGrid}>
                 {filteredPantryItems.map((item) => {
                   const ingredientId = `pantry-${item.id}`;
@@ -302,7 +320,7 @@ export const IngredientSelectionModal = forwardRef<
 
           {/* Popular Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Popular</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Popular</Text>
             <View style={styles.ingredientsGrid}>
               {filteredPopularIngredients.map((item) => {
                 const imageUrl = item.image
@@ -335,12 +353,12 @@ export const IngredientSelectionModal = forwardRef<
               <MaterialIcons
                 name="search-off"
                 size={48}
-                color={Colors.gray[300]}
+                color={isDark ? themeColors.text.tertiary : Colors.gray[300]}
               />
-              <Text style={styles.noResultsText}>
+              <Text style={[styles.noResultsText, { color: themeColors.text.secondary }]}>
                 No ingredients found for &ldquo;{searchQuery}&rdquo;
               </Text>
-              <Text style={styles.noResultsSubtext}>
+              <Text style={[styles.noResultsSubtext, { color: themeColors.text.tertiary }]}>
                 Tap the button above to add it as a custom ingredient
               </Text>
             </View>
@@ -351,13 +369,19 @@ export const IngredientSelectionModal = forwardRef<
             (ing) => ing.source === "manual"
           ) && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Custom Ingredients</Text>
+              <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Custom Ingredients</Text>
               <View style={styles.customIngredientsList}>
                 {Array.from(localSelected.values())
                   .filter((ing) => ing.source === "manual")
                   .map((ing) => (
-                    <View key={ing.id} style={styles.customIngredientChip}>
-                      <Text style={styles.customIngredientText}>
+                    <View key={ing.id} style={[
+                      styles.customIngredientChip,
+                      { 
+                        backgroundColor: isDark ? "rgba(76, 175, 80, 0.2)" : Colors.green[100],
+                        borderColor: isDark ? Colors.green[400] : Colors.green[400]
+                      }
+                    ]}>
+                      <Text style={[styles.customIngredientText, { color: isDark ? Colors.green[300] : Colors.green[900] }]}>
                         {ing.name}
                       </Text>
                       <Pressable
@@ -367,7 +391,7 @@ export const IngredientSelectionModal = forwardRef<
                         <MaterialIcons
                           name="close"
                           size={16}
-                          color={Colors.gray[500]}
+                          color={isDark ? Colors.green[300] : Colors.gray[500]}
                         />
                       </Pressable>
                     </View>
@@ -378,11 +402,11 @@ export const IngredientSelectionModal = forwardRef<
         </ScrollView>
 
         {/* Footer */}
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-          <Pressable style={styles.clearButton} onPress={handleClearAll}>
-            <Text style={styles.clearButtonText}>Clear All</Text>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12, borderTopColor: isDark ? themeColors.border.light : Colors.gray[200] }]}>
+          <Pressable style={[styles.clearButton, { backgroundColor: isDark ? themeColors.background.surface : Colors.gray[100] }]} onPress={handleClearAll}>
+            <Text style={[styles.clearButtonText, { color: themeColors.text.primary }]}>Clear All</Text>
           </Pressable>
-          <Pressable style={styles.applyButton} onPress={handleApply}>
+          <Pressable style={[styles.applyButton, { backgroundColor: isDark ? themeColors.accent.lilac : Colors.lilac[900] }]} onPress={handleApply}>
             <Text style={styles.applyButtonText}>
               Apply{localSelected.size > 0 ? ` (${localSelected.size})` : ""}
             </Text>

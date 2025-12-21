@@ -11,13 +11,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    FlatList,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -265,6 +265,7 @@ export default function TastePreferencesScreen() {
               style={[
                 styles.actionButton,
                 styles.dislikeButton,
+                { backgroundColor: isDark ? Colors.background.surface : "#FFFFFF" },
                 isDisliked && styles.dislikeButtonActive,
               ]}
               onPress={() => toggleCuisine(item.id, false)}
@@ -280,6 +281,7 @@ export default function TastePreferencesScreen() {
               style={[
                 styles.actionButton,
                 styles.likeButton,
+                { backgroundColor: isDark ? Colors.background.surface : "#FFFFFF" },
                 isLiked && styles.likeButtonActive,
               ]}
               onPress={() => toggleCuisine(item.id, true)}
@@ -336,13 +338,13 @@ export default function TastePreferencesScreen() {
         {/* Hero Section */}
         <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.heroSection}>
           <LinearGradient
-            colors={[Colors.lilac[100], Colors.lilac[200]]}
+            colors={isDark ? [Colors.lilac[900], Colors.background.tertiary] : [Colors.lilac[100], Colors.lilac[200]]}
             style={styles.heroGradient}
           >
             <View style={styles.heroContent}>
               <Text style={styles.heroEmoji}>🍽️</Text>
               <View style={styles.heroTextContainer}>
-                <Text style={[styles.heroTitle, { color: Colors.lilac[900] }]}>
+                <Text style={[styles.heroTitle, { color: isDark ? Colors.lilac[100] : Colors.lilac[900] }]}>
                   {t("tastePreferencesPage.heroTitle") || "Your Taste Profile"}
                 </Text>
                 <Text style={[styles.heroSubtitle, { color: Colors.text.secondary }]}>
@@ -357,15 +359,15 @@ export default function TastePreferencesScreen() {
                 <Text style={[styles.progressLabel, { color: Colors.text.secondary }]}>
                   {t("tastePreferencesPage.progress") || "Progress"}
                 </Text>
-                <Text style={[styles.progressValue, { color: Colors.lilac[900] }]}>
+                <Text style={[styles.progressValue, { color: isDark ? Colors.lilac[300] : Colors.lilac[900] }]}>
                   {Math.round(progress)}%
                 </Text>
               </View>
-              <View style={[styles.progressBar, { backgroundColor: "rgba(255,255,255,0.5)" }]}>
+              <View style={[styles.progressBar, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.5)" }]}>
                 <View 
                   style={[
                     styles.progressFill, 
-                    { width: `${progress}%`, backgroundColor: Colors.lilac[900] }
+                    { width: `${progress}%`, backgroundColor: isDark ? Colors.lilac[400] : Colors.lilac[900] }
                   ]} 
                 />
               </View>
@@ -375,21 +377,21 @@ export default function TastePreferencesScreen() {
 
         {/* Stats Row */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.statsContainer}>
-          <View style={[styles.statChip, { backgroundColor: `${Colors.lilac[900]}12` }]}>
-            <MaterialCommunityIcons name="heart" size={14} color={Colors.lilac[900]} />
-            <Text style={[styles.statChipValue, { color: Colors.lilac[900] }]}>{likedCuisines.length}</Text>
+          <View style={[styles.statChip, { backgroundColor: isDark ? "rgba(124, 58, 237, 0.2)" : `${Colors.lilac[900]}12` }]}>
+            <MaterialCommunityIcons name="heart" size={14} color={isDark ? Colors.lilac[300] : Colors.lilac[900]} />
+            <Text style={[styles.statChipValue, { color: isDark ? Colors.lilac[300] : Colors.lilac[900] }]}>{likedCuisines.length}</Text>
             <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>{t("common.liked")}</Text>
           </View>
           
-          <View style={[styles.statChip, { backgroundColor: "#E6394610" }]}>
-            <MaterialCommunityIcons name="close-circle" size={14} color="#E63946" />
-            <Text style={[styles.statChipValue, { color: "#E63946" }]}>{dislikedCuisines.length}</Text>
+          <View style={[styles.statChip, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#E6394610" }]}>
+            <MaterialCommunityIcons name="close-circle" size={14} color={isDark ? "#F87171" : "#E63946"} />
+            <Text style={[styles.statChipValue, { color: isDark ? "#F87171" : "#E63946" }]}>{dislikedCuisines.length}</Text>
             <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>{t("common.disliked")}</Text>
           </View>
           
-          <View style={[styles.statChip, { backgroundColor: "#22C55E10" }]}>
-            <MaterialCommunityIcons name="help-circle-outline" size={14} color="#22C55E" />
-            <Text style={[styles.statChipValue, { color: "#22C55E" }]}>
+          <View style={[styles.statChip, { backgroundColor: isDark ? "rgba(34, 197, 94, 0.2)" : "#22C55E10" }]}>
+            <MaterialCommunityIcons name="help-circle-outline" size={14} color={isDark ? "#4ADE80" : "#22C55E"} />
+            <Text style={[styles.statChipValue, { color: isDark ? "#4ADE80" : "#22C55E" }]}>
               {cuisineOptions.length - likedCuisines.length - dislikedCuisines.length}
             </Text>
             <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>
@@ -434,7 +436,7 @@ export default function TastePreferencesScreen() {
                 style={[
                   styles.dot,
                   {
-                    backgroundColor: index === currentIndex ? Colors.lilac[900] : Colors.gray[300],
+                    backgroundColor: index === currentIndex ? Colors.lilac[900] : (isDark ? Colors.gray[700] : Colors.gray[300]),
                     width: index === currentIndex ? 20 : 6,
                   },
                 ]}
@@ -446,16 +448,16 @@ export default function TastePreferencesScreen() {
         {/* Tip Card */}
         <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.tipCard}>
           <LinearGradient
-            colors={["#FEF3C7", "#FDE68A"]}
+            colors={isDark ? [Colors.gray[700], Colors.gray[800]] : ["#FEF3C7", "#FDE68A"]}
             style={styles.tipGradient}
           >
             <View style={styles.tipContent}>
               <Text style={styles.tipEmoji}>💡</Text>
               <View style={styles.tipTextContainer}>
-                <Text style={styles.tipTitle}>
+                <Text style={[styles.tipTitle, isDark && { color: Colors.text.primary }]}>
                   {t("tastePreferencesPage.tipTitle") || "Pro Tip"}
                 </Text>
-                <Text style={styles.tipText}>
+                <Text style={[styles.tipText, isDark && { color: Colors.text.secondary }]}>
                   {t("tastePreferencesPage.tipText") || "The more cuisines you rate, the better we can personalize your meal suggestions!"}
                 </Text>
               </View>

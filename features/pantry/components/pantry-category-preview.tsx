@@ -1,13 +1,14 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Image } from "expo-image";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { PantryItem } from "../types";
 
@@ -24,6 +25,9 @@ export function PantryCategoryPreview({
   onPress,
   onItemPress,
 }: PantryCategoryPreviewProps) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
   if (items.length === 0) return null;
 
   const getBadgeContent = (item: PantryItem) => {
@@ -64,6 +68,11 @@ export function PantryCategoryPreview({
     return Math.round(item.amount).toString();
   };
 
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
+  const imageBackground = isDark ? themeColors.background.tertiary : themeColors.background.surface;
+  const borderColor = isDark ? themeColors.border.light : Colors.lilac[100];
+  const badgeBackground = isDark ? themeColors.accent.lilac : Colors.lilac[700];
+
   return (
     <View>
       <TouchableOpacity
@@ -71,7 +80,7 @@ export function PantryCategoryPreview({
         onPress={onPress}
         activeOpacity={0.7}
       >
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: accentColor }]}>{title}</Text>
         <View style={styles.headerRight}>
           <View
             style={{
@@ -80,9 +89,9 @@ export function PantryCategoryPreview({
               gap: 4,
             }}
           >
-            <Text style={styles.count}>{items.length} ITEMS</Text>
+            <Text style={[styles.count, { color: themeColors.text.tertiary }]}>{items.length} ITEMS</Text>
 
-            <Entypo name="chevron-right" size={16} color="black" />
+            <Entypo name="chevron-right" size={16} color={themeColors.text.primary} />
           </View>
         </View>
       </TouchableOpacity>
@@ -95,10 +104,16 @@ export function PantryCategoryPreview({
         {items.map((item, index) => (
           <CustomButton
             key={`${item.spoonacular_id || item.id}-${index}`}
-            containerStyle={styles.itemContainer}
+            containerStyle={[
+              styles.itemContainer,
+              { backgroundColor: imageBackground, borderColor }
+            ]}
             onPress={() => onItemPress?.(item)}
           >
-            <View style={styles.imageWrapper}>
+            <View style={[
+              styles.imageWrapper,
+              { backgroundColor: imageBackground, borderColor }
+            ]}>
               <Image
                 source={{
                   uri: `https://spoonacular.com/cdn/ingredients_100x100/${item.spoonacular_image}`,
@@ -107,7 +122,10 @@ export function PantryCategoryPreview({
                 contentFit="contain"
                 transition={200}
               />
-              <View style={styles.badge}>
+              <View style={[
+                styles.badge,
+                { backgroundColor: badgeBackground, borderColor: imageBackground }
+              ]}>
                 <Text style={styles.badgeText}>{getBadgeContent(item)}</Text>
               </View>
             </View>
@@ -129,7 +147,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "bold",
-    color: Colors.lilac[900],
   },
   headerRight: {
     flexDirection: "row",
@@ -138,14 +155,12 @@ const styles = StyleSheet.create({
   },
   count: {
     fontSize: 12,
-    color: Colors.gray[500],
     fontWeight: "500",
     letterSpacing: 0.5,
   },
   arrow: {
     width: 16,
     height: 16,
-    tintColor: Colors.gray[400],
   },
   listContent: {
     gap: 12,
@@ -154,23 +169,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 16,
-    // backgroundColor: "#F8F9FA", // Light gray background
-    backgroundColor: Colors.background.surface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.lilac[100],
   },
   imageWrapper: {
     width: 80,
     height: 80,
     borderRadius: 16,
-    // backgroundColor: "#F8F9FA", // Light gray background
-    backgroundColor: Colors.background.surface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.lilac[100],
   },
   image: {
     width: 50,
@@ -180,7 +189,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 6,
     right: 6,
-    backgroundColor: Colors.lilac[700], // Green color
     minWidth: 24,
     height: 24,
     paddingHorizontal: 4,
@@ -188,11 +196,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: Colors.background.surface,
   },
   badgeText: {
-    color: Colors.background.surface,
+    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "bold",
   },
 });
+

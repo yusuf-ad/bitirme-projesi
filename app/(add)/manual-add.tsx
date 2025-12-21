@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PantryCategory } from "@/features/pantry/types";
 import { generateAPIUrl } from "@/lib/utils";
@@ -5,13 +6,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -455,7 +456,7 @@ export default function ManualAdd() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: Colors.background.primary },
   scrollView: { flex: 1 },
   header: {
     height: 56,
@@ -484,7 +485,7 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 12,
     borderRadius: 16,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.surface,
     borderWidth: 1,
     borderColor: "#e5e7eb",
     shadowColor: "#000",
@@ -621,7 +622,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     color: "#111",
     fontWeight: "600",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.surface,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -645,7 +646,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.surface,
     borderTopWidth: 1,
     borderTopColor: "#f3f4f6",
     paddingHorizontal: 16,

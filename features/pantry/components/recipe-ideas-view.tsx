@@ -1,26 +1,27 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { LoadingState } from "@/features/home";
 import { RecipeCard } from "@/features/home/components/recipe-card";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { MEAL_TYPES } from "@/lib/constants";
 import { getIngredientInformation, Recipe } from "@/lib/spoonacular";
 import {
-  ComplexSearchOptions,
-  searchRecipesComplex,
+    ComplexSearchOptions,
+    searchRecipesComplex,
 } from "@/lib/spoonacular-complex-search";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
+import { useTheme } from "@/providers/theme-provider";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PantryItem } from "../types";
@@ -55,6 +56,8 @@ export function RecipeIdeasView({
   const insets = useSafeAreaInsets();
   const { session } = useAuthContext();
   const userId = session?.user?.id;
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
 
   const [selectedFilter, setSelectedFilter] = useState<MealTypeFilter>("all");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -63,6 +66,9 @@ export function RecipeIdeasView({
   // Cache allergy names to avoid refetching
   const allergyNamesCache = useRef<string[]>([]);
   const lastAllergyIds = useRef<string[]>([]);
+
+  // Theme colors
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
 
   // Fetch onboarding data for user preferences
   const { data: onboardingData } = useQuery({
@@ -280,8 +286,8 @@ export function RecipeIdeasView({
     if (!isFetchingNextPage) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={Colors.lilac[900]} />
-        <Text style={styles.loadingMoreText}>Loading more recipes...</Text>
+        <ActivityIndicator size="small" color={accentColor} />
+        <Text style={[styles.loadingMoreText, { color: themeColors.text.secondary }]}>Loading more recipes...</Text>
       </View>
     );
   };
@@ -289,7 +295,7 @@ export function RecipeIdeasView({
   if (pantryItems.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
+        <Text style={[styles.emptyText, { color: themeColors.text.secondary }]}>
           Add ingredients to your pantry to get recipe ideas!
         </Text>
       </View>
@@ -303,7 +309,7 @@ export function RecipeIdeasView({
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.filterScrollView}
-        contentContainerStyle={styles.filterContainer}
+        contentContainerStyle={[styles.filterContainer, { borderBottomColor: themeColors.border.light }]}
         bounces={false}
       >
         {FILTER_OPTIONS.map((filter) => (
@@ -311,13 +317,21 @@ export function RecipeIdeasView({
             key={filter.value}
             style={[
               styles.filterButton,
-              selectedFilter === filter.value && styles.filterButtonActive,
+              { 
+                backgroundColor: themeColors.background.surface,
+                borderColor: themeColors.border.light,
+              },
+              selectedFilter === filter.value && { 
+                backgroundColor: accentColor,
+                borderColor: accentColor,
+              },
             ]}
             onPress={() => setSelectedFilter(filter.value)}
           >
             <Text
               style={[
                 styles.filterText,
+                { color: themeColors.text.secondary },
                 selectedFilter === filter.value && styles.filterTextActive,
               ]}
             >
@@ -354,7 +368,7 @@ export function RecipeIdeasView({
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={Colors.lilac[900]}
+              tintColor={accentColor}
             />
           }
         />
@@ -372,7 +386,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   banner: {
-    backgroundColor: Colors.lilac[900],
     borderRadius: 12,
     padding: 16,
   },
@@ -389,7 +402,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingBottom: 20,
     width: "100%",
-    borderBottomColor: Colors.lilac[400],
     borderBottomWidth: 1,
     gap: 4,
   },
@@ -398,18 +410,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     height: 36,
-    backgroundColor: Colors.background.surface,
     borderWidth: 1,
-    borderColor: Colors.gray[200],
-  },
-  filterButtonActive: {
-    backgroundColor: Colors.lilac[900],
-    borderColor: Colors.lilac[900],
   },
   filterText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.text.secondary,
   },
   filterTextActive: {
     color: "#FFFFFF",
@@ -442,7 +447,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.text.secondary,
     textAlign: "center",
   },
   footerLoader: {
@@ -453,6 +457,6 @@ const styles = StyleSheet.create({
   },
   loadingMoreText: {
     fontSize: 14,
-    color: Colors.text.secondary,
   },
 });
+

@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { PANTRY_CATEGORIES } from "@/lib/constants";
+import { useTheme } from "@/providers/theme-provider";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { memo, useCallback, useMemo } from "react";
@@ -66,7 +67,10 @@ function groupByCategory(
   return result;
 }
 
-// Simple item card - NO hooks inside, NO animations
+// Theme colors type
+type ThemeColorsType = ReturnType<typeof getThemeColors>;
+
+// Simple item card - NO hooks inside, theme passed as props
 const ItemCard = memo(
   function ItemCard({
     id,
@@ -78,6 +82,9 @@ const ItemCard = memo(
     recipeName,
     onToggle,
     onEdit,
+    isDark,
+    themeColors,
+    accentColor,
   }: {
     id: string;
     name: string;
@@ -88,18 +95,35 @@ const ItemCard = memo(
     recipeName?: string;
     onToggle: (id: string) => void;
     onEdit: (id: string) => void;
+    isDark: boolean;
+    themeColors: ThemeColorsType;
+    accentColor: string;
   }) {
     const badge = getBadgeContent(amount, unit);
 
     return (
-      <View style={[styles.itemCard, checked && styles.itemCardChecked]}>
+      <View style={[
+        styles.itemCard, 
+        { backgroundColor: themeColors.background.surface },
+        checked && styles.itemCardChecked
+      ]}>
         <Pressable
-          style={[styles.checkbox, checked && styles.checkboxChecked]}
+          style={[
+            styles.checkbox, 
+            { 
+              borderColor: isDark ? themeColors.border.light : Colors.lilac[300],
+              backgroundColor: "transparent",
+            },
+            checked && { 
+              backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100],
+              borderColor: accentColor,
+            }
+          ]}
           onPress={() => onToggle(id)}
           hitSlop={8}
         >
           {checked && (
-            <Feather name="check" size={14} color={Colors.lilac[900]} />
+            <Feather name="check" size={14} color={accentColor} />
           )}
         </Pressable>
 
@@ -107,6 +131,10 @@ const ItemCard = memo(
           <View
             style={[
               styles.imageContainer,
+              { 
+                backgroundColor: isDark ? themeColors.background.tertiary : "#FFFFFF",
+                borderColor: isDark ? themeColors.border.light : Colors.lilac[300],
+              },
               checked && styles.imageContainerChecked,
             ]}
           >
@@ -118,20 +146,30 @@ const ItemCard = memo(
               contentFit="contain"
               cachePolicy="memory-disk"
             />
-            <View style={styles.amountBadge}>
+            <View style={[
+              styles.amountBadge,
+              { 
+                backgroundColor: accentColor,
+                borderColor: themeColors.background.surface,
+              }
+            ]}>
               <Text style={styles.amountBadgeText}>{badge}</Text>
             </View>
           </View>
 
           <View style={styles.itemInfo}>
             <Text
-              style={[styles.itemName, checked && styles.itemNameChecked]}
+              style={[
+                styles.itemName, 
+                { color: themeColors.text.primary },
+                checked && styles.itemNameChecked
+              ]}
               numberOfLines={2}
             >
               {name}
             </Text>
             {recipeName ? (
-              <Text style={styles.itemRecipe} numberOfLines={1}>
+              <Text style={[styles.itemRecipe, { color: accentColor }]} numberOfLines={1}>
                 {recipeName}
               </Text>
             ) : null}
@@ -143,7 +181,7 @@ const ItemCard = memo(
           onPress={() => onEdit(id)}
           hitSlop={12}
         >
-          <Feather name="edit-2" size={16} color={Colors.gray[400]} />
+          <Feather name="edit-2" size={16} color={themeColors.text.tertiary} />
         </Pressable>
       </View>
     );
@@ -152,21 +190,26 @@ const ItemCard = memo(
     prev.id === next.id &&
     prev.checked === next.checked &&
     prev.name === next.name &&
-    prev.amount === next.amount
+    prev.amount === next.amount &&
+    prev.isDark === next.isDark
 );
 
 // Section header
 const SectionHeader = memo(function SectionHeader({
   title,
   count,
+  accentColor,
+  themeColors,
 }: {
   title: string;
   count: number;
+  accentColor: string;
+  themeColors: ThemeColorsType;
 }) {
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionCount}>{count}</Text>
+      <Text style={[styles.sectionTitle, { color: accentColor }]}>{title}</Text>
+      <Text style={[styles.sectionCount, { color: themeColors.text.tertiary }]}>{count}</Text>
     </View>
   );
 });
@@ -175,15 +218,24 @@ const SectionHeader = memo(function SectionHeader({
 const CategoryHeader = memo(function CategoryHeader({
   title,
   count,
+  isDark,
+  themeColors,
+  accentColor,
 }: {
   title: string;
   count: number;
+  isDark: boolean;
+  themeColors: ThemeColorsType;
+  accentColor: string;
 }) {
   return (
     <View style={styles.categoryHeader}>
-      <Text style={styles.categoryTitle}>{title}</Text>
-      <View style={styles.categoryBadge}>
-        <Text style={styles.categoryCount}>{count}</Text>
+      <Text style={[styles.categoryTitle, { color: themeColors.text.secondary }]}>{title}</Text>
+      <View style={[
+        styles.categoryBadge,
+        { backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100] }
+      ]}>
+        <Text style={[styles.categoryCount, { color: accentColor }]}>{count}</Text>
       </View>
     </View>
   );
@@ -200,6 +252,10 @@ export function ShoppingListItemsList({
   onToggleItem,
   onEditItem,
 }: ShoppingListItemsListProps) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
+
   const listData = useMemo(() => {
     const data: ListItem[] = [];
 
@@ -245,9 +301,24 @@ export function ShoppingListItemsList({
     ({ item }: { item: ListItem }) => {
       switch (item.type) {
         case "s":
-          return <SectionHeader title={item.t} count={item.c} />;
+          return (
+            <SectionHeader 
+              title={item.t} 
+              count={item.c} 
+              accentColor={accentColor}
+              themeColors={themeColors}
+            />
+          );
         case "c":
-          return <CategoryHeader title={item.t} count={item.c} />;
+          return (
+            <CategoryHeader 
+              title={item.t} 
+              count={item.c}
+              isDark={isDark}
+              themeColors={themeColors}
+              accentColor={accentColor}
+            />
+          );
         case "i":
           return (
             <ItemCard
@@ -260,15 +331,17 @@ export function ShoppingListItemsList({
               recipeName={item.d.recipe_name}
               onToggle={onToggleItem}
               onEdit={onEditItem}
+              isDark={isDark}
+              themeColors={themeColors}
+              accentColor={accentColor}
             />
           );
       }
     },
-    [onToggleItem, onEditItem]
+    [onToggleItem, onEditItem, isDark, themeColors, accentColor]
   );
 
   const keyExtractor = useCallback((item: ListItem) => item.k, []);
-  const getItemType = useCallback((item: ListItem) => item.type, []);
 
   return (
      <FlatList
@@ -297,12 +370,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: Colors.lilac[900],
   },
   sectionCount: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.text.tertiary,
   },
   categoryHeader: {
     flexDirection: "row",
@@ -316,25 +387,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: Colors.text.secondary,
   },
   categoryBadge: {
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 8,
-    backgroundColor: Colors.lilac[100],
   },
   categoryCount: {
     fontSize: 12,
     fontWeight: "600",
-    color: Colors.lilac[700],
   },
   itemCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
     borderRadius: 14,
-    backgroundColor: Colors.background.primary,
     marginVertical: 3,
   },
   itemCardChecked: {
@@ -345,14 +412,9 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: Colors.lilac[300],
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.lilac[100],
-    borderColor: Colors.lilac[600],
   },
   itemContent: {
     flex: 1,
@@ -363,12 +425,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 10,
-    backgroundColor: "#Ffff",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
     borderWidth: 1,
-    borderColor: Colors.lilac[300],
   },
   imageContainerChecked: {
     opacity: 0.6,
@@ -389,8 +449,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#FFF",
-    backgroundColor: Colors.lilac[700],
   },
   amountBadgeText: {
     color: "#FFF",
@@ -404,7 +462,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     textTransform: "capitalize",
-    color: Colors.text.primary,
   },
   itemNameChecked: {
     textDecorationLine: "line-through",
@@ -416,9 +473,9 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.3,
     marginTop: 2,
-    color: Colors.lilac[700],
   },
   editButton: {
     padding: 6,
   },
 });
+

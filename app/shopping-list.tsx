@@ -1,15 +1,16 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import {
-  PantryItem,
-  PantryItemDetailSheet,
-  ShoppingListItemsList,
+    PantryItem,
+    PantryItemDetailSheet,
+    ShoppingListItemsList,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
+import { useTheme } from "@/providers/theme-provider";
 import {
-  AttachMenuOverlay,
-  AttachMenuProvider,
-  useAttachMenu,
+    AttachMenuOverlay,
+    AttachMenuProvider,
+    useAttachMenu,
 } from "@/shared/components/attach-menu";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/build/AntDesign";
@@ -17,16 +18,16 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  useAnimatedStyle,
-  withTiming,
+    useAnimatedStyle,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -58,6 +59,10 @@ function ShoppingListFab() {
 export default function ShoppingListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[700];
+
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMovingToPantry, setIsMovingToPantry] = useState(false);
@@ -254,6 +259,7 @@ export default function ShoppingListScreen() {
         styles.container,
         {
           paddingTop: insets.top,
+          backgroundColor: themeColors.background.secondary,
         },
       ]}
     >
@@ -264,16 +270,16 @@ export default function ShoppingListScreen() {
           onPress={handleBackPress}
           hitSlop={12}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.text.primary} />
+          <Ionicons name="chevron-back" size={24} color={themeColors.text.primary} />
         </Pressable>
         <Pressable
           style={styles.titlePressable}
           onPress={handleBackPress}
           hitSlop={8}
         >
-          <Text style={styles.headerTitle}>Groceries</Text>
+          <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>Groceries</Text>
         </Pressable>
-        <Text style={styles.headerCount}>
+        <Text style={[styles.headerCount, { color: themeColors.text.tertiary }]}>
           {shoppingListItems.length}{" "}
           {shoppingListItems.length === 1 ? "item" : "items"}
         </Text>
@@ -281,35 +287,35 @@ export default function ShoppingListScreen() {
 
       {/* Summary bar - simplified */}
       {shoppingListItems.length > 0 && (
-        <View style={styles.summaryBar}>
+        <View style={[styles.summaryBar, { backgroundColor: themeColors.background.surface }]}>
           <View style={styles.summaryContent}>
-            <Text style={styles.summaryText}>
+            <Text style={[styles.summaryText, { color: themeColors.text.primary }]}>
               {checkedItems.length} purchased • {uncheckedItems.length} to buy
             </Text>
             <View style={styles.summaryActions}>
               {/* Mark all / Unmark all button */}
               {uncheckedItems.length > 0 && (
                 <Pressable hitSlop={8} onPress={handleMarkAll}>
-                  <Text style={styles.actionButtonText}>Mark all</Text>
+                  <Text style={[styles.actionButtonText, { color: accentColor }]}>Mark all</Text>
                 </Pressable>
               )}
               {checkedItems.length > 0 && (
                 <Pressable hitSlop={8} onPress={handleUnmarkAll}>
-                  <Text style={styles.actionButtonText}>Unmark all</Text>
+                  <Text style={[styles.actionButtonText, { color: accentColor }]}>Unmark all</Text>
                 </Pressable>
               )}
               <Pressable hitSlop={8} onPress={handleClearAll}>
                 <Feather
                   name="trash-2"
                   size={18}
-                  color={Colors.text.secondary}
+                  color={themeColors.text.secondary}
                 />
               </Pressable>
             </View>
           </View>
           {/* Save to pantry button */}
           {checkedItems.length > 0 && (
-            <Pressable style={styles.saveButton} onPress={handleSaveToPantry}>
+            <Pressable style={[styles.saveButton, { backgroundColor: accentColor }]} onPress={handleSaveToPantry}>
               <Feather name="check-circle" size={18} color="#FFFFFF" />
               <Text style={styles.saveButtonText}>Save to Pantry</Text>
             </Pressable>
@@ -320,13 +326,13 @@ export default function ShoppingListScreen() {
       {/* Content */}
       {isLoading && items.length === 0 ? (
         <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={Colors.lilac[600]} />
-          <Text style={styles.loadingText}>Loading items...</Text>
+          <ActivityIndicator size="large" color={accentColor} />
+          <Text style={[styles.loadingText, { color: themeColors.text.tertiary }]}>Loading items...</Text>
         </View>
       ) : shoppingListItems.length === 0 ? (
         <View style={styles.emptyState}>
-          <Feather name="shopping-cart" size={48} color={Colors.gray[400]} />
-          <Text style={styles.emptyText}>Your shopping list is empty</Text>
+          <Feather name="shopping-cart" size={48} color={themeColors.text.tertiary} />
+          <Text style={[styles.emptyText, { color: themeColors.text.tertiary }]}>Your shopping list is empty</Text>
         </View>
       ) : (
         <ShoppingListItemsList
@@ -360,7 +366,6 @@ export default function ShoppingListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -382,12 +387,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: Colors.text.primary,
   },
   headerCount: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.text.tertiary,
   },
   loadingState: {
     flex: 1,
@@ -398,7 +401,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.text.tertiary,
   },
   emptyState: {
     flex: 1,
@@ -408,13 +410,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.gray[500],
   },
   summaryBar: {
     marginHorizontal: 16,
     marginBottom: 8,
     padding: 12,
-    backgroundColor: Colors.background.primary,
     borderRadius: 12,
   },
   summaryContent: {
@@ -425,7 +425,6 @@ const styles = StyleSheet.create({
   summaryText: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.text.primary,
   },
   summaryActions: {
     flexDirection: "row",
@@ -435,14 +434,12 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 13,
     fontWeight: "600",
-    color: Colors.lilac[700],
   },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: Colors.lilac[700],
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -475,3 +472,4 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 });
+

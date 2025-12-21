@@ -1,22 +1,25 @@
-import { Colors } from "@/constants/theme";
+import { Colors as StaticColors, getThemeColors } from "@/constants/theme";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useMemo } from "react";
 import {
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Linking,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SupportFeedbackScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
 
   const contactOptions = useMemo(
     () => [
@@ -47,7 +50,7 @@ export default function SupportFeedbackScreen() {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: Colors.background.primary }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
@@ -56,7 +59,7 @@ export default function SupportFeedbackScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("support.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("support.title")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -65,15 +68,15 @@ export default function SupportFeedbackScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: bottom + 32 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroCard}>
-          <Text style={styles.heroTitle}>{t("support.needHelp")}</Text>
-          <Text style={styles.heroDescription}>
+        <View style={[styles.heroCard, { backgroundColor: isDark ? Colors.lilac[900] + "20" : StaticColors.lilac[100] }]}>
+          <Text style={[styles.heroTitle, { color: Colors.text.primary }]}>{t("support.needHelp")}</Text>
+          <Text style={[styles.heroDescription, { color: Colors.text.secondary }]}>
             {t("support.responseTime")}
           </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>{t("support.contactUs")}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("support.contactUs")}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           {contactOptions.map((option, index) => (
             <View key={option.id}>
               <Pressable
@@ -83,7 +86,7 @@ export default function SupportFeedbackScreen() {
                   option.action();
                 }}
               >
-                <View style={styles.iconWrapper}>
+                <View style={[styles.iconWrapper, { backgroundColor: isDark ? Colors.background.tertiary : "#F4F4F7" }]}>
                   <MaterialCommunityIcons
                     name={option.icon as keyof typeof MaterialCommunityIcons.glyphMap}
                     size={20}
@@ -91,8 +94,8 @@ export default function SupportFeedbackScreen() {
                   />
                 </View>
                 <View style={styles.rowCopy}>
-                  <Text style={styles.rowTitle}>{option.title}</Text>
-                  <Text style={styles.rowDescription}>{option.description}</Text>
+                  <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>{option.title}</Text>
+                  <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>{option.description}</Text>
                 </View>
                 <MaterialCommunityIcons
                   name="chevron-right"
@@ -100,18 +103,18 @@ export default function SupportFeedbackScreen() {
                   color={Colors.text.secondary}
                 />
               </Pressable>
-              {index < contactOptions.length - 1 && <View style={styles.divider} />}
+              {index < contactOptions.length - 1 && <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#EFEFEF" }]} />}
             </View>
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>{t("support.resources")}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("support.resources")}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           <Pressable
             style={styles.listRow}
             onPress={() => Linking.openURL("https://plannedeat.app/help")}
           >
-            <View style={styles.iconWrapper}>
+            <View style={[styles.iconWrapper, { backgroundColor: isDark ? Colors.background.tertiary : "#F4F4F7" }]}>
               <MaterialCommunityIcons
                 name="book-open-variant"
                 size={20}
@@ -119,8 +122,8 @@ export default function SupportFeedbackScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{t("support.helpCenter")}</Text>
-              <Text style={styles.rowDescription}>
+              <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>{t("support.helpCenter")}</Text>
+              <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
                 {t("support.helpCenterDesc")}
               </Text>
             </View>
@@ -130,12 +133,12 @@ export default function SupportFeedbackScreen() {
               color={Colors.text.secondary}
             />
           </Pressable>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#EFEFEF" }]} />
           <Pressable
             style={styles.listRow}
             onPress={() => Linking.openURL("https://status.plannedeat.app")}
           >
-            <View style={styles.iconWrapper}>
+            <View style={[styles.iconWrapper, { backgroundColor: isDark ? Colors.background.tertiary : "#F4F4F7" }]}>
               <MaterialCommunityIcons
                 name="pulse"
                 size={20}
@@ -143,8 +146,8 @@ export default function SupportFeedbackScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{t("support.serviceStatus")}</Text>
-              <Text style={styles.rowDescription}>
+              <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>{t("support.serviceStatus")}</Text>
+              <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
                 {t("support.serviceStatusDesc")}
               </Text>
             </View>
@@ -163,7 +166,6 @@ export default function SupportFeedbackScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -178,7 +180,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -188,7 +189,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   heroCard: {
-    backgroundColor: Colors.lilac[100],
     borderRadius: 16,
     padding: 20,
     gap: 6,
@@ -196,21 +196,17 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text.primary,
   },
   heroDescription: {
     fontSize: 14,
-    color: Colors.text.secondary,
   },
   sectionLabel: {
     fontSize: 12,
     letterSpacing: 1,
     fontWeight: "600",
     textTransform: "uppercase",
-    color: Colors.text.secondary,
   },
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -225,7 +221,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#F4F4F7",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -235,16 +230,12 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
     marginBottom: 2,
   },
   rowDescription: {
     fontSize: 13,
-    color: Colors.text.secondary,
   },
   divider: {
     height: 1,
-    backgroundColor: "#EFEFEF",
   },
 });
-

@@ -1,34 +1,35 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import {
-  AIMealTypeOption,
-  AIRecipeGenerating,
-  AIRecipePreview,
-  CALORIE_RANGE_OPTIONS,
-  CalorieRangeOption,
-  ChipSection,
-  COOKING_TIME_OPTIONS,
-  CookingTimeOption,
-  DisplayCookingSkill,
-  DisplayGoal,
-  IngredientSelectionModal,
-  IngredientSelectionModalHandle,
-  MEAL_TYPE_OPTIONS,
-  mealPlanIngredientsService,
-  MealPlanItemRecord,
-  SelectedIngredient,
-  UserPreferencesSection,
+    AIMealTypeOption,
+    AIRecipeGenerating,
+    AIRecipePreview,
+    CALORIE_RANGE_OPTIONS,
+    CalorieRangeOption,
+    ChipSection,
+    COOKING_TIME_OPTIONS,
+    CookingTimeOption,
+    DisplayCookingSkill,
+    DisplayGoal,
+    IngredientSelectionModal,
+    IngredientSelectionModalHandle,
+    MEAL_TYPE_OPTIONS,
+    mealPlanIngredientsService,
+    MealPlanItemRecord,
+    SelectedIngredient,
+    UserPreferencesSection,
 } from "@/features/meal-plan";
 import { goalOptions } from "@/features/onboarding/sections/goals/goals-content";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import {
-  resolveAllergiesFast,
-  resolveDietPreferences,
+    resolveAllergiesFast,
+    resolveDietPreferences,
 } from "@/lib/allergies-diet-helpers";
 import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { saveAiRecipe } from "@/lib/supabase-ai-recipes";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { generateAPIUrl } from "@/lib/utils";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -36,13 +37,13 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -67,16 +68,26 @@ const COOKING_SKILL_OPTIONS: DisplayCookingSkill[] = [
 function SelectedIngredientChip({
   ingredient,
   onRemove,
+  themeColors,
+  isDark,
 }: {
   ingredient: SelectedIngredient;
   onRemove: () => void;
+  themeColors: any;
+  isDark: boolean;
 }) {
   const imageUrl = ingredient.image
     ? `${INGREDIENT_IMAGE_BASE_URL}/${ingredient.image}`
     : undefined;
 
   return (
-    <View style={styles.selectedIngredientChip}>
+    <View style={[
+      styles.selectedIngredientChip,
+      { 
+        backgroundColor: isDark ? themeColors.background.tertiary : Colors.lilac[100], 
+        borderColor: isDark ? themeColors.border.light : Colors.lilac[200] 
+      }
+    ]}>
       {imageUrl && (
         <Image
           source={{ uri: imageUrl }}
@@ -84,11 +95,11 @@ function SelectedIngredientChip({
           resizeMode="contain"
         />
       )}
-      <Text style={styles.selectedIngredientName} numberOfLines={1}>
+      <Text style={[styles.selectedIngredientName, { color: themeColors.text.primary }]} numberOfLines={1}>
         {ingredient.name}
       </Text>
       <Pressable onPress={onRemove} hitSlop={8}>
-        <MaterialIcons name="close" size={16} color={Colors.gray[500]} />
+        <MaterialIcons name="close" size={16} color={themeColors.text.secondary} />
       </Pressable>
     </View>
   );
@@ -97,6 +108,9 @@ function SelectedIngredientChip({
 export default function AiRecipe() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
   const params = useLocalSearchParams<{
     mealSlot?: string;
     selectedDate?: string;
@@ -489,7 +503,7 @@ export default function AiRecipe() {
           fat_per_serving: fat,
           ready_in_minutes: recipeToSave.readyInMinutes ?? null,
           meal_date: dateString,
-          meal_type: (mealType === "snacks" ? "snack" : mealType) as any,
+          meal_type: ((mealType as unknown as string) === "snacks" ? "snack" : mealType) as any,
           is_ai_generated: true,
         };
 
@@ -589,19 +603,19 @@ export default function AiRecipe() {
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top, paddingBottom: insets.bottom },
+        { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: themeColors.background.primary },
       ]}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: themeColors.border.light }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialIcons
             name="arrow-back"
             size={24}
-            color={Colors.text.primary}
+            color={themeColors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>AI Recipe Generator</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>AI Recipe Generator</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -613,7 +627,7 @@ export default function AiRecipe() {
         {/* Key Ingredients Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>
               Key Ingredients <Text style={styles.required}>*</Text>
             </Text>
             {selectedIngredients.length > 0 && (
@@ -636,6 +650,8 @@ export default function AiRecipe() {
                     key={ingredient.id}
                     ingredient={ingredient}
                     onRemove={() => handleRemoveIngredient(ingredient.id)}
+                    themeColors={themeColors}
+                    isDark={isDark}
                   />
                 ))}
               </ScrollView>
@@ -644,11 +660,17 @@ export default function AiRecipe() {
 
           {/* Add Ingredients Button */}
           <Pressable
-            style={styles.addIngredientsButton}
+            style={[
+              styles.addIngredientsButton,
+              { 
+                borderColor: isDark ? themeColors.border.light : Colors.lilac[300],
+                backgroundColor: isDark ? themeColors.background.surface : "#fff" 
+              }
+            ]}
             onPress={handleOpenIngredientModal}
           >
-            <MaterialIcons name="add" size={20} color={Colors.lilac[700]} />
-            <Text style={styles.addIngredientsButtonText}>
+            <MaterialIcons name="add" size={20} color={isDark ? themeColors.accent.lilac : Colors.lilac[700]} />
+            <Text style={[styles.addIngredientsButtonText, { color: isDark ? themeColors.text.primary : Colors.lilac[700] }]}>
               {selectedIngredients.length > 0
                 ? "Add More Ingredients"
                 : "Select Ingredients from Pantry"}
@@ -659,19 +681,25 @@ export default function AiRecipe() {
         {/* Meal Type Section - Locked when from meal slot */}
         {isFromMealSlot ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Meal Type</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Meal Type</Text>
             <View style={styles.lockedMealTypeContainer}>
-              <View style={styles.lockedMealTypeChip}>
+              <View style={[
+                  styles.lockedMealTypeChip,
+                  { 
+                    backgroundColor: isDark ? themeColors.background.tertiary : Colors.gray[100],
+                    borderColor: isDark ? themeColors.border.light : Colors.gray[200]
+                  }
+                ]}>
                 <Text style={styles.lockedMealTypeEmoji}>
                   {mealTypeOptions[0]?.emoji || "🍽️"}
                 </Text>
-                <Text style={styles.lockedMealTypeText}>
+                <Text style={[styles.lockedMealTypeText, { color: themeColors.text.secondary }]}>
                   {mealTypeOptions[0]?.label || lockedMealType || "Meal"}
                 </Text>
                 <MaterialIcons
                   name="lock"
                   size={14}
-                  color={Colors.gray[400]}
+                  color={themeColors.text.tertiary}
                   style={styles.lockIcon}
                 />
               </View>
@@ -714,7 +742,7 @@ export default function AiRecipe() {
       </ScrollView>
 
       {/* Footer with Generate Button */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16, borderTopColor: themeColors.border.light, backgroundColor: themeColors.background.primary }]}>
         <CustomButton
           containerStyle={styles.generateButton}
           onPress={handleGenerateRecipe}

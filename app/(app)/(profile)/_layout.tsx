@@ -1,8 +1,18 @@
+import { getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import { Stack } from "expo-router";
 
 export default function ProfileLayout() {
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
+
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack 
+      screenOptions={{ 
+        headerShown: false,
+        contentStyle: { backgroundColor: Colors.background.primary }
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="account" options={{ headerShown: false }} />
       <Stack.Screen name="allergies-diet" options={{ headerShown: false }} />

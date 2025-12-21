@@ -197,7 +197,7 @@ export default function UnitsNutritionScreen() {
       style={[styles.container, { backgroundColor: Colors.background.secondary, paddingTop: top }]}
     >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: Colors.background.surface }]}>
+      <View style={[styles.header, { backgroundColor: Colors.background.surface, borderBottomColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }]}>
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();

@@ -1,8 +1,10 @@
+import { getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useTheme } from "@/providers/theme-provider";
 import {
-    BottomSheetBackdrop,
-    BottomSheetModal,
-    BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import WheelPicker from "@quidone/react-native-wheel-picker";
 import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
@@ -79,6 +81,8 @@ export const DateModal = forwardRef<BottomSheetModal, DateModalProps>(
       onDateSelect,
     } = props;
     const { selection } = useHaptics();
+    const { isDark } = useTheme();
+    const themeColors = getThemeColors(isDark, true);
 
     // Generate date options based on dateType
     const dateOptions = useMemo((): DateOption[] => {
@@ -158,13 +162,20 @@ export const DateModal = forwardRef<BottomSheetModal, DateModalProps>(
         snapPoints={["40%"]}
         enablePanDownToClose
         enableContentPanningGesture={false}
+        backgroundStyle={{ backgroundColor: themeColors.background.primary }}
+        handleIndicatorStyle={{ backgroundColor: themeColors.text.tertiary }}
       >
-        <BottomSheetView style={styles.contentContainer}>
+        <BottomSheetView style={[styles.contentContainer, { backgroundColor: themeColors.background.primary }]}>
           <WheelPicker
             data={dateOptions}
             value={dateOptions[selectedIndex]?.value as any}
             onValueChanged={handleDateChange}
             enableScrollByTapOnItem={true}
+            itemTextStyle={{ 
+              color: themeColors.text.primary,
+              fontSize: 18,
+              fontWeight: "500",
+            }}
           />
         </BottomSheetView>
       </BottomSheetModal>
@@ -183,3 +194,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+

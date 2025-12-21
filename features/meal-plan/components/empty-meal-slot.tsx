@@ -1,15 +1,16 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useMemo } from "react";
 import {
-    ImageSourcePropType,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -32,6 +33,9 @@ export function EmptyMealSlot({
   onMealAdded,
 }: EmptyMealSlotProps) {
   const { impact } = useHaptics();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
 
   // Check if date is in the past
   const isPastDate = useMemo(() => {
@@ -75,32 +79,45 @@ export function EmptyMealSlot({
       <Pressable
         style={({ pressed }) => [
           styles.container,
-          pressed && !isPastDate && styles.containerPressed,
+          { 
+            backgroundColor: themeColors.background.surface,
+            borderColor: isDark ? themeColors.border.light : Colors.lilac[200],
+          },
+          pressed && !isPastDate && [styles.containerPressed, { borderColor: accentColor }],
           isPastDate && styles.containerDisabled,
         ]}
         onPress={handlePress}
         disabled={isPastDate}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: isDark ? themeColors.border.light : Colors.lilac[200] }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <View style={styles.mealIconContainer}>
+            <View style={[styles.mealIconContainer, { borderColor: isDark ? themeColors.border.light : Colors.lilac[200], backgroundColor: isDark ? themeColors.background.tertiary : "#F3F3F3" }]}>
               <Image source={mealIcon} style={styles.mealIcon} />
             </View>
             <View style={styles.mealInfo}>
-              <Text style={styles.mealType}>{mealType}</Text>
-              <Text style={styles.mealTime}>{mealTime}</Text>
+              <Text style={[styles.mealType, { color: themeColors.text.primary }]}>{mealType}</Text>
+              <Text style={[styles.mealTime, { color: themeColors.text.tertiary }]}>{mealTime}</Text>
             </View>
           </View>
 
           {!isPastDate && (
-            <Pressable style={styles.aiButton} onPress={handleOpenAiRecipe}>
+            <Pressable 
+              style={[
+                styles.aiButton, 
+                { 
+                  borderColor: isDark ? accentColor : Colors.lilac[300],
+                  backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100],
+                }
+              ]} 
+              onPress={handleOpenAiRecipe}
+            >
               <MaterialIcons
                 name="auto-awesome"
                 size={18}
-                color={Colors.lilac[900]}
+                color={accentColor}
               />
-              <Text style={styles.aiButtonText}>AI</Text>
+              <Text style={[styles.aiButtonText, { color: accentColor }]}>AI</Text>
             </Pressable>
           )}
         </View>
@@ -108,13 +125,16 @@ export function EmptyMealSlot({
         {/* Empty State Content - Static */}
         <View style={styles.emptyContentWrapper}>
           <View style={styles.emptyContent}>
-            <View style={styles.emptyIconContainer}>
+            <View style={[
+              styles.emptyIconContainer,
+              { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100] }
+            ]}>
               <Text style={styles.emptyIcon}>🍽️</Text>
             </View>
-            <Text style={styles.emptyTitle}>
+            <Text style={[styles.emptyTitle, { color: themeColors.text.primary }]}>
               {isPastDate ? `No ${mealType.toLowerCase()} recorded` : `${mealType} not added yet`}
             </Text>
-            <Text style={styles.emptyDescription}>
+            <Text style={[styles.emptyDescription, { color: themeColors.text.secondary }]}>
               {isPastDate 
                 ? "You can only view past meals"
                 : "Tap to add a meal from the recipes page"}
@@ -131,15 +151,12 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingBottom: 16,
-    backgroundColor: Colors.background.surface,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
     borderRadius: 12,
     borderStyle: "dashed",
   },
   containerPressed: {
     opacity: 0.7,
-    borderColor: Colors.lilac[500],
   },
   containerDisabled: {
     opacity: 0.5,
@@ -150,14 +167,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.lilac[200],
   },
   mealIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
     justifyContent: "center",
     alignItems: "center",
   },
@@ -173,14 +188,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 14,
     lineHeight: 21,
-    color: Colors.text.primary,
   },
   mealTime: {
     fontFamily: "Inter",
     fontWeight: "500",
     fontSize: 12,
     lineHeight: 21,
-    color: Colors.gray[400],
   },
   emptyContentWrapper: {
     minHeight: 160,
@@ -194,7 +207,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.lilac[100],
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
@@ -206,14 +218,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontWeight: "600",
     fontSize: 14,
-    color: Colors.text.primary,
     textAlign: "center",
   },
   emptyDescription: {
     fontFamily: "Inter",
     fontWeight: "400",
     fontSize: 12,
-    color: Colors.text.secondary,
     textAlign: "center",
     maxWidth: 240,
   },
@@ -225,12 +235,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.lilac[300],
-    backgroundColor: Colors.lilac[100],
   },
   aiButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: Colors.lilac[900],
   },
 });
+

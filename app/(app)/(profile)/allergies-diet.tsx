@@ -1,16 +1,16 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
 import {
-  TasteAllergies,
-  TasteDietPreferences,
+    TasteAllergies,
+    TasteDietPreferences,
 } from "@/features/onboarding/sections/taste";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
-  resolveAllergiesWithImages,
-  resolveDietPreferences,
-  type DisplayAllergy,
-  type DisplayDietPreference,
+    resolveAllergiesWithImages,
+    resolveDietPreferences,
+    type DisplayAllergy,
+    type DisplayDietPreference,
 } from "@/lib/allergies-diet-helpers";
 import { supabase } from "@/lib/supabase";
 import { updateUserTastePreferences } from "@/lib/supabase-onboarding";
@@ -21,14 +21,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -96,7 +96,16 @@ export default function AllergiesDietScreen() {
   );
 
   const renderAllergyChip = ({ item }: { item: DisplayAllergy }) => (
-    <View style={[styles.chip, styles.allergyChip]}>
+    <View
+      style={[
+        styles.chip,
+        styles.allergyChip,
+        {
+          backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+          borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
+        },
+      ]}
+    >
       {item.imageUrl ? (
         <Image
           source={{ uri: item.imageUrl }}
@@ -104,12 +113,25 @@ export default function AllergiesDietScreen() {
           defaultSource={require("@/assets/images/empty-pantry.png")}
         />
       ) : (
-        <View style={styles.allergyChipIcon}>
-          <MaterialCommunityIcons name="food-off" size={16} color="#EF4444" />
+        <View
+          style={[
+            styles.allergyChipIcon,
+            { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2" },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name="food-off"
+            size={16}
+            color={isDark ? "#F87171" : "#EF4444"}
+          />
         </View>
       )}
       <Text
-        style={[styles.chipLabel, styles.allergyChipLabel]}
+        style={[
+          styles.chipLabel,
+          styles.allergyChipLabel,
+          { color: isDark ? "#FCA5A5" : "#DC2626" },
+        ]}
         numberOfLines={1}
       >
         {item.name}
@@ -193,7 +215,7 @@ export default function AllergiesDietScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: Colors.background.secondary, paddingTop: top },
+        { backgroundColor: Colors.background.primary, paddingTop: top },
       ]}
     >
       {/* Header */}
@@ -232,19 +254,19 @@ export default function AllergiesDietScreen() {
           style={styles.heroSection}
         >
           <LinearGradient
-            colors={[Colors.lilac[100], Colors.lilac[200]]}
+            colors={isDark ? [Colors.lilac[900], Colors.background.tertiary] : [Colors.lilac[100], Colors.lilac[200]]}
             style={styles.heroGradient}
           >
             <View style={styles.heroContent}>
               <Text style={styles.heroEmoji}>🥗</Text>
               <View style={styles.heroTextContainer}>
-                <Text style={[styles.heroTitle, { color: Colors.lilac[900] }]}>
+                <Text style={[styles.heroTitle, { color: isDark ? Colors.lilac[100] : Colors.lilac[900] }]}>
                   {t("allergiesDiet.heroTitle") || "Your Diet Profile"}
                 </Text>
                 <Text
                   style={[
                     styles.heroSubtitle,
-                    { color: Colors.text.secondary },
+                    { color: isDark ? Colors.lilac[200] : Colors.text.secondary },
                   ]}
                 >
                   {t("allergiesDiet.heroSubtitle") ||
@@ -263,15 +285,15 @@ export default function AllergiesDietScreen() {
           <View
             style={[
               styles.statChip,
-              { backgroundColor: `${Colors.lilac[900]}12` },
+              { backgroundColor: isDark ? Colors.lilac[900] + "40" : `${Colors.lilac[900]}12` },
             ]}
           >
             <MaterialCommunityIcons
               name="leaf"
               size={14}
-              color={Colors.lilac[900]}
+              color={isDark ? Colors.lilac[300] : Colors.lilac[900]}
             />
-            <Text style={[styles.statChipValue, { color: Colors.lilac[900] }]}>
+            <Text style={[styles.statChipValue, { color: isDark ? Colors.lilac[300] : Colors.lilac[900] }]}>
               {dietItems.length}
             </Text>
             <Text
@@ -281,7 +303,7 @@ export default function AllergiesDietScreen() {
             </Text>
           </View>
 
-          <View style={[styles.statChip, { backgroundColor: "#EF444410" }]}>
+          <View style={[styles.statChip, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#EF444410" }]}>
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={14}
@@ -307,13 +329,13 @@ export default function AllergiesDietScreen() {
             <View
               style={[
                 styles.sectionIcon,
-                { backgroundColor: `${Colors.lilac[900]}15` },
+                { backgroundColor: isDark ? Colors.lilac[900] + "40" : `${Colors.lilac[900]}15` },
               ]}
             >
               <MaterialCommunityIcons
                 name="leaf"
                 size={18}
-                color={Colors.lilac[900]}
+                color={isDark ? Colors.lilac[300] : Colors.lilac[900]}
               />
             </View>
             <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
@@ -323,16 +345,16 @@ export default function AllergiesDietScreen() {
               onPress={handleEditDiets}
               style={[
                 styles.editButton,
-                { backgroundColor: `${Colors.lilac[900]}10` },
+                { backgroundColor: isDark ? Colors.lilac[900] + "40" : `${Colors.lilac[900]}10` },
               ]}
             >
               <MaterialCommunityIcons
                 name="pencil"
                 size={16}
-                color={Colors.lilac[900]}
+                color={isDark ? Colors.lilac[300] : Colors.lilac[900]}
               />
               <Text
-                style={[styles.editButtonText, { color: Colors.lilac[900] }]}
+                style={[styles.editButtonText, { color: isDark ? Colors.lilac[300] : Colors.lilac[900] }]}
               >
                 {t("common.edit") || "Edit"}
               </Text>
@@ -351,7 +373,7 @@ export default function AllergiesDietScreen() {
           ) : (
             <Pressable
               onPress={handleEditDiets}
-              style={[styles.emptyChipList, { borderColor: Colors.gray[300] }]}
+              style={[styles.emptyChipList, { borderColor: isDark ? Colors.gray[700] : Colors.gray[300] }]}
             >
               <MaterialCommunityIcons
                 name="plus-circle-outline"
@@ -374,7 +396,7 @@ export default function AllergiesDietScreen() {
         >
           <View style={styles.sectionHeader}>
             <View
-              style={[styles.sectionIcon, { backgroundColor: "#EF444415" }]}
+              style={[styles.sectionIcon, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#EF444415" }]}
             >
               <MaterialCommunityIcons
                 name="alert-circle-outline"
@@ -387,7 +409,7 @@ export default function AllergiesDietScreen() {
             </Text>
             <Pressable
               onPress={handleEditAllergies}
-              style={[styles.editButton, { backgroundColor: "#EF444410" }]}
+              style={[styles.editButton, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#EF444410" }]}
             >
               <MaterialCommunityIcons name="pencil" size={16} color="#EF4444" />
               <Text style={styles.editButtonText}>
@@ -408,7 +430,7 @@ export default function AllergiesDietScreen() {
           ) : (
             <Pressable
               onPress={handleEditAllergies}
-              style={[styles.emptyChipList, { borderColor: Colors.gray[300] }]}
+              style={[styles.emptyChipList, { borderColor: isDark ? Colors.gray[700] : Colors.gray[300] }]}
             >
               <MaterialCommunityIcons
                 name="plus-circle-outline"
@@ -430,16 +452,16 @@ export default function AllergiesDietScreen() {
           style={styles.infoCard}
         >
           <LinearGradient
-            colors={["#FEF3C7", "#FDE68A"]}
+            colors={isDark ? [Colors.gray[700], Colors.gray[800]] : ["#FEF3C7", "#FDE68A"]}
             style={styles.infoGradient}
           >
             <View style={styles.infoContent}>
               <Text style={styles.infoEmoji}>💡</Text>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoTitle}>
+                <Text style={[styles.infoTitle, isDark && { color: Colors.text.primary }]}>
                   {t("allergiesDiet.infoTitle") || "Why this matters"}
                 </Text>
-                <Text style={styles.infoText}>
+                <Text style={[styles.infoText, isDark && { color: Colors.text.secondary }]}>
                   {t("allergiesDiet.infoText") ||
                     "Your dietary preferences help us filter recipes and create personalized meal plans that work for you."}
                 </Text>

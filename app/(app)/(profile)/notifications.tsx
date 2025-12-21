@@ -1,23 +1,24 @@
-import { Colors } from "@/constants/theme";
+import { Colors as StaticColors, getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Linking,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -99,6 +100,8 @@ export default function NotificationsScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { selection } = useHaptics();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
   const onboarding = useOnboarding();
   const [prefs, setPrefs] =
     useState<NotificationPreferences>(defaultNotifications);
@@ -609,8 +612,8 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
-      <View style={styles.header}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: Colors.background.primary }]}>
+      <View style={[styles.header, { backgroundColor: Colors.background.surface, borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "#E5E5E5" }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
             name="arrow-left"
@@ -618,7 +621,7 @@ export default function NotificationsScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("notifications.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("notifications.title")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -634,15 +637,16 @@ export default function NotificationsScreen() {
         <Pressable
           style={[
             styles.permissionBanner,
-            permissionStatus === "granted" && styles.permissionBannerGranted,
-            permissionStatus === "denied" && styles.permissionBannerDenied,
+            { backgroundColor: isDark ? (permissionStatus === "granted" ? "rgba(34, 197, 94, 0.15)" : permissionStatus === "denied" ? "rgba(239, 68, 68, 0.15)" : Colors.lilac[900] + "20") : undefined },
+            !isDark && permissionStatus === "granted" && styles.permissionBannerGranted,
+            !isDark && permissionStatus === "denied" && styles.permissionBannerDenied,
           ]}
           onPress={
             permissionStatus !== "granted" ? requestPermission : undefined
           }
           disabled={isRequestingPermission}
         >
-          <View style={styles.permissionIconContainer}>
+          <View style={[styles.permissionIconContainer, { backgroundColor: isDark ? Colors.background.surface : "#FFFFFF" }]}>
             {isRequestingPermission ? (
               <ActivityIndicator size="small" color={Colors.lilac[900]} />
             ) : (
@@ -660,7 +664,7 @@ export default function NotificationsScreen() {
             )}
           </View>
           <View style={styles.permissionTextContainer}>
-            <Text style={styles.permissionTitle}>
+            <Text style={[styles.permissionTitle, { color: Colors.text.primary }]}>
               {permissionStatus === "granted"
                 ? t("notifications.enabled")
                 : t("notifications.enable")}
@@ -688,14 +692,14 @@ export default function NotificationsScreen() {
           </View>
         </Pressable>
 
-        <Text style={styles.sectionLabel}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>
           {t("notifications.notificationTypes")}
         </Text>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           {/* Meal Reminders with expandable sub-options */}
           <View>
             <View style={styles.optionRow}>
-              <View style={styles.optionIconContainer}>
+              <View style={[styles.optionIconContainer, { backgroundColor: isDark ? Colors.background.tertiary : "#F5F5F5" }]}>
                 <MaterialCommunityIcons
                   name="food-outline"
                   size={20}
@@ -707,10 +711,10 @@ export default function NotificationsScreen() {
                 />
               </View>
               <View style={styles.optionCopy}>
-                <Text style={styles.optionTitle}>
+                <Text style={[styles.optionTitle, { color: Colors.text.primary }]}>
                   {t("notifications.mealReminders")}
                 </Text>
-                <Text style={styles.optionDescription}>
+                <Text style={[styles.optionDescription, { color: Colors.text.secondary }]}>
                   {t("notifications.mealRemindersDesc")}
                 </Text>
               </View>
@@ -720,8 +724,8 @@ export default function NotificationsScreen() {
                   updatePreference("mealReminders", value)
                 }
                 trackColor={{
-                  false: Colors.gray[200],
-                  true: Colors.lilac[200],
+                  false: isDark ? Colors.gray[700] : Colors.gray[200],
+                  true: isDark ? Colors.lilac[700] : Colors.lilac[200],
                 }}
                 thumbColor={prefs.mealReminders ? Colors.lilac[900] : "#FFFFFF"}
               />
@@ -738,6 +742,8 @@ export default function NotificationsScreen() {
                   }),
                   opacity: opacityAnim,
                   overflow: "hidden",
+                  backgroundColor: isDark ? Colors.background.secondary : "#FAFAFA",
+                  borderTopColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0",
                 },
               ]}
             >
@@ -760,10 +766,10 @@ export default function NotificationsScreen() {
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🍳</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>
+                    <Text style={[styles.subOptionTitle, { color: Colors.text.primary }]}>
                       {t("mealTimes.breakfast")}
                     </Text>
-                    <Text style={styles.subOptionTime}>{breakfastTimeStr}</Text>
+                    <Text style={[styles.subOptionTime, { color: Colors.lilac[900] }]}>{breakfastTimeStr}</Text>
                   </View>
                 </View>
                 <Switch
@@ -772,8 +778,8 @@ export default function NotificationsScreen() {
                     updateMealReminderPreference("breakfastReminder", value)
                   }
                   trackColor={{
-                    false: Colors.gray[200],
-                    true: Colors.lilac[200],
+                    false: isDark ? Colors.gray[700] : Colors.gray[200],
+                    true: isDark ? Colors.lilac[700] : Colors.lilac[200],
                   }}
                   thumbColor={
                     prefs.breakfastReminder ? Colors.lilac[900] : "#FFFFFF"
@@ -800,10 +806,10 @@ export default function NotificationsScreen() {
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🥗</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>
+                    <Text style={[styles.subOptionTitle, { color: Colors.text.primary }]}>
                       {t("mealTimes.lunch")}
                     </Text>
-                    <Text style={styles.subOptionTime}>{lunchTimeStr}</Text>
+                    <Text style={[styles.subOptionTime, { color: Colors.lilac[900] }]}>{lunchTimeStr}</Text>
                   </View>
                 </View>
                 <Switch
@@ -812,8 +818,8 @@ export default function NotificationsScreen() {
                     updateMealReminderPreference("lunchReminder", value)
                   }
                   trackColor={{
-                    false: Colors.gray[200],
-                    true: Colors.lilac[200],
+                    false: isDark ? Colors.gray[700] : Colors.gray[200],
+                    true: isDark ? Colors.lilac[700] : Colors.lilac[200],
                   }}
                   thumbColor={
                     prefs.lunchReminder ? Colors.lilac[900] : "#FFFFFF"
@@ -840,10 +846,10 @@ export default function NotificationsScreen() {
                 <View style={styles.subOptionLeft}>
                   <Text style={styles.mealEmoji}>🍽️</Text>
                   <View>
-                    <Text style={styles.subOptionTitle}>
+                    <Text style={[styles.subOptionTitle, { color: Colors.text.primary }]}>
                       {t("mealTimes.dinner")}
                     </Text>
-                    <Text style={styles.subOptionTime}>{dinnerTimeStr}</Text>
+                    <Text style={[styles.subOptionTime, { color: Colors.lilac[900] }]}>{dinnerTimeStr}</Text>
                   </View>
                 </View>
                 <Switch
@@ -852,8 +858,8 @@ export default function NotificationsScreen() {
                     updateMealReminderPreference("dinnerReminder", value)
                   }
                   trackColor={{
-                    false: Colors.gray[200],
-                    true: Colors.lilac[200],
+                    false: isDark ? Colors.gray[700] : Colors.gray[200],
+                    true: isDark ? Colors.lilac[700] : Colors.lilac[200],
                   }}
                   thumbColor={
                     prefs.dinnerReminder ? Colors.lilac[900] : "#FFFFFF"
@@ -863,7 +869,7 @@ export default function NotificationsScreen() {
 
               {/* Edit times link */}
               <Pressable
-                style={styles.editTimesLink}
+                style={[styles.editTimesLink, { borderTopColor: isDark ? "rgba(255,255,255,0.05)" : "#EEEEEE" }]}
                 onPress={() => router.push("/(app)/(profile)/meal-times")}
               >
                 <MaterialCommunityIcons
@@ -871,18 +877,18 @@ export default function NotificationsScreen() {
                   size={16}
                   color={Colors.lilac[900]}
                 />
-                <Text style={styles.editTimesText}>
+                <Text style={[styles.editTimesText, { color: Colors.lilac[900] }]}>
                   {t("notifications.editMealTimes")}
                 </Text>
               </Pressable>
             </Animated.View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0" }]} />
 
           {/* Shopping Reminders */}
           <View style={styles.optionRow}>
-            <View style={styles.optionIconContainer}>
+            <View style={[styles.optionIconContainer, { backgroundColor: isDark ? Colors.background.tertiary : "#F5F5F5" }]}>
               <MaterialCommunityIcons
                 name="cart-outline"
                 size={20}
@@ -894,10 +900,10 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>
+              <Text style={[styles.optionTitle, { color: Colors.text.primary }]}>
                 {t("notifications.shoppingReminders")}
               </Text>
-              <Text style={styles.optionDescription}>
+              <Text style={[styles.optionDescription, { color: Colors.text.secondary }]}>
                 {prefs.shoppingReminders
                   ? t("notifications.shoppingRemindersEnabled")
                   : t("notifications.shoppingRemindersDesc")}
@@ -909,8 +915,8 @@ export default function NotificationsScreen() {
                 updatePreference("shoppingReminders", value)
               }
               trackColor={{
-                false: Colors.gray[200],
-                true: Colors.lilac[200],
+                false: isDark ? Colors.gray[700] : Colors.gray[200],
+                true: isDark ? Colors.lilac[700] : Colors.lilac[200],
               }}
               thumbColor={
                 prefs.shoppingReminders ? Colors.lilac[900] : "#FFFFFF"
@@ -918,11 +924,11 @@ export default function NotificationsScreen() {
             />
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0" }]} />
 
           {/* Weekly Recap */}
           <View style={styles.optionRow}>
-            <View style={styles.optionIconContainer}>
+            <View style={[styles.optionIconContainer, { backgroundColor: isDark ? Colors.background.tertiary : "#F5F5F5" }]}>
               <MaterialCommunityIcons
                 name="calendar-week"
                 size={20}
@@ -932,10 +938,10 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>
+              <Text style={[styles.optionTitle, { color: Colors.text.primary }]}>
                 {t("notifications.weeklyRecap")}
               </Text>
-              <Text style={styles.optionDescription}>
+              <Text style={[styles.optionDescription, { color: Colors.text.secondary }]}>
                 {prefs.weeklyRecap
                   ? t("notifications.weeklyRecapEnabled")
                   : t("notifications.weeklyRecapDesc")}
@@ -945,18 +951,18 @@ export default function NotificationsScreen() {
               value={prefs.weeklyRecap}
               onValueChange={(value) => updatePreference("weeklyRecap", value)}
               trackColor={{
-                false: Colors.gray[200],
-                true: Colors.lilac[200],
+                false: isDark ? Colors.gray[700] : Colors.gray[200],
+                true: isDark ? Colors.lilac[700] : Colors.lilac[200],
               }}
               thumbColor={prefs.weeklyRecap ? Colors.lilac[900] : "#FFFFFF"}
             />
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>{t("notifications.actions")}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("notifications.actions")}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           <Pressable style={styles.listRow} onPress={handleTestNotification}>
-            <View style={styles.rowIconContainer}>
+            <View style={[styles.rowIconContainer, { backgroundColor: isDark ? Colors.lilac[900] + "20" : "#F0EDFF" }]}>
               <MaterialCommunityIcons
                 name="bell-ring-outline"
                 size={20}
@@ -964,10 +970,10 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>
+              <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>
                 {t("notifications.testNotification")}
               </Text>
-              <Text style={styles.rowDescription}>
+              <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
                 {t("notifications.testNotificationDesc")}
               </Text>
             </View>
@@ -977,12 +983,12 @@ export default function NotificationsScreen() {
               color={Colors.text.secondary}
             />
           </Pressable>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0" }]} />
           <Pressable
             style={styles.listRow}
             onPress={() => Linking.openSettings()}
           >
-            <View style={styles.rowIconContainer}>
+            <View style={[styles.rowIconContainer, { backgroundColor: isDark ? Colors.lilac[900] + "20" : "#F0EDFF" }]}>
               <MaterialCommunityIcons
                 name="cog-outline"
                 size={20}
@@ -990,10 +996,10 @@ export default function NotificationsScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>
+              <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>
                 {t("notifications.systemSettings")}
               </Text>
-              <Text style={styles.rowDescription}>
+              <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
                 {t("notifications.systemSettingsDesc")}
               </Text>
             </View>
@@ -1005,7 +1011,7 @@ export default function NotificationsScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.footerText}>{t("notifications.footerText")}</Text>
+        <Text style={[styles.footerText, { color: StaticColors.text.secondary }]}>{t("notifications.footerText")}</Text>
       </ScrollView>
     </View>
   );
@@ -1014,7 +1020,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    // backgroundColor: StaticColors.background.secondary, // Dynamic in render
   },
   loadingContainer: {
     justifyContent: "center",
@@ -1026,9 +1032,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    // backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
+    // borderBottomColor: "#E5E5E5",
   },
   backButton: {
     padding: 4,
@@ -1036,7 +1042,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -1048,16 +1054,16 @@ const styles = StyleSheet.create({
   permissionBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0EDFF",
+    // backgroundColor: "#F0EDFF",
     borderRadius: 16,
     padding: 16,
     gap: 12,
   },
   permissionBannerGranted: {
-    backgroundColor: "#ECFDF5",
+    // backgroundColor: "#ECFDF5", // Handled inline
   },
   permissionBannerDenied: {
-    backgroundColor: "#FEF2F2",
+    // backgroundColor: "#FEF2F2", // Handled inline
   },
   permissionIconContainer: {
     width: 44,
@@ -1073,12 +1079,12 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
     marginBottom: 2,
   },
   permissionDescription: {
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     lineHeight: 16,
   },
   permissionStatus: {
@@ -1095,11 +1101,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: "600",
     textTransform: "uppercase",
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     marginTop: 8,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    // backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 4,
@@ -1119,7 +1125,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
+    // backgroundColor: "#F5F5F5",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1129,12 +1135,12 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
     marginBottom: 2,
   },
   optionDescription: {
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     lineHeight: 16,
   },
   divider: {
@@ -1143,13 +1149,13 @@ const styles = StyleSheet.create({
     marginLeft: 48,
   },
   subOptionsContainer: {
-    backgroundColor: "#FAFAFA",
+    // backgroundColor: "#FAFAFA",
     marginHorizontal: -16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 4,
     borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
+    // borderTopColor: "#F0F0F0",
   },
   subOptionRow: {
     flexDirection: "row",
@@ -1171,11 +1177,11 @@ const styles = StyleSheet.create({
   subOptionTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   subOptionTime: {
     fontSize: 12,
-    color: Colors.lilac[900],
+    color: StaticColors.lilac[900],
     fontWeight: "500",
     marginTop: 1,
   },
@@ -1187,12 +1193,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginTop: 8,
     borderTopWidth: 1,
-    borderTopColor: "#EEEEEE",
+    // borderTopColor: "#EEEEEE",
   },
   editTimesText: {
     fontSize: 13,
     fontWeight: "600",
-    color: Colors.lilac[900],
+    color: StaticColors.lilac[900],
   },
   listRow: {
     flexDirection: "row",
@@ -1204,7 +1210,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F0EDFF",
+    // backgroundColor: "#F0EDFF",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1214,17 +1220,17 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
     marginBottom: 2,
   },
   rowDescription: {
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     lineHeight: 16,
   },
   footerText: {
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     textAlign: "center",
     lineHeight: 18,
     marginTop: 8,

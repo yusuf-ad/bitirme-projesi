@@ -1,10 +1,11 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  FadeIn,
-  FadeOut,
-  LinearTransition,
+    FadeIn,
+    FadeOut,
+    LinearTransition,
 } from "react-native-reanimated";
 import { PantryItem } from "../types";
 
@@ -23,6 +24,11 @@ export function PantryItemRow({
   showCheckbox = true,
   showRecipe = true,
 }: PantryItemRowProps) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
+
   return (
     <Animated.View
       style={styles.itemRow}
@@ -36,10 +42,20 @@ export function PantryItemRow({
           style={styles.checkboxContainer}
         >
           <View
-            style={[styles.checkbox, item.checked && styles.checkboxChecked]}
+            style={[
+              styles.checkbox, 
+              { 
+                borderColor: isDark ? themeColors.border.light : Colors.lilac[300],
+                backgroundColor: themeColors.background.surface,
+              },
+              item.checked && { 
+                backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100],
+                borderColor: accentColor,
+              }
+            ]}
           >
             {item.checked && (
-              <Feather name="check" size={18} color={Colors.lilac[900]} />
+              <Feather name="check" size={18} color={accentColor} />
             )}
           </View>
         </Pressable>
@@ -48,25 +64,29 @@ export function PantryItemRow({
       <Pressable
         style={styles.itemContent}
         onPress={() => onToggle(item.id)}
-        android_ripple={{ color: Colors.lilac[100] }}
+        android_ripple={{ color: isDark ? "rgba(191, 90, 242, 0.1)" : Colors.lilac[100] }}
         hitSlop={4}
       >
-        <Text style={[styles.itemName, item.checked && styles.itemNameChecked]}>
+        <Text style={[
+          styles.itemName, 
+          { color: themeColors.text.primary },
+          item.checked && { color: themeColors.text.tertiary, textDecorationLine: "line-through" }
+        ]}>
           {item.name}
         </Text>
         {item.amount ? (
-          <Text style={styles.itemAmount}>
+          <Text style={[styles.itemAmount, { color: accentColor }]}>
             {item.amount} {item.unit}
           </Text>
         ) : null}
         {showRecipe && item.recipe_name ? (
-          <Text style={styles.itemRecipe}>{item.recipe_name}</Text>
+          <Text style={[styles.itemRecipe, { color: accentColor }]}>{item.recipe_name}</Text>
         ) : null}
       </Pressable>
 
       {onEdit && (
         <Pressable style={styles.editButton} onPress={() => onEdit(item.id)}>
-          <Feather name="edit-2" size={18} color={Colors.gray[300]} />
+          <Feather name="edit-2" size={18} color={themeColors.text.tertiary} />
         </Pressable>
       )}
     </Animated.View>
@@ -88,14 +108,8 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: Colors.lilac[300],
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.background.surface,
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.lilac[100],
-    borderColor: Colors.lilac[600],
   },
   itemContent: {
     flex: 1,
@@ -103,23 +117,16 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 15,
-    color: Colors.purple[800],
     fontWeight: "400",
     lineHeight: 20,
     textTransform: "capitalize",
   },
-  itemNameChecked: {
-    color: Colors.gray[400],
-    textDecorationLine: "line-through",
-  },
   itemAmount: {
     fontSize: 12,
-    color: Colors.lilac[600],
     fontWeight: "500",
   },
   itemRecipe: {
     fontSize: 11,
-    color: Colors.lilac[700],
     textTransform: "uppercase",
     letterSpacing: 0.5,
     fontWeight: "500",
@@ -128,3 +135,4 @@ const styles = StyleSheet.create({
     padding: 6,
   },
 });
+

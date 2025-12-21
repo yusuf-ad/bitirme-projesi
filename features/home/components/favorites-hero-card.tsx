@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View } from "react-native";
@@ -10,14 +11,20 @@ interface FavoritesHeroCardProps {
 
 export function FavoritesHeroCard({ favoriteCount }: FavoritesHeroCardProps) {
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true);
+  
+  const gradientColors = isDark
+    ? [Colors.accent.lilac, "#9B4DCA"] as const
+    : [Colors.lilac[900], Colors.lilac[700]] as const;
   
   return (
     <LinearGradient
-      colors={[Colors.lilac[900], Colors.lilac[700]]}
+      colors={gradientColors}
       style={styles.container}
     >
       <View style={styles.iconBadge}>
-        <Ionicons name="heart" size={20} color={Colors.background.surface} />
+        <Ionicons name="heart" size={20} color="#FFFFFF" />
       </View>
 
       <View style={styles.textWrapper}>
@@ -63,7 +70,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   title: {
-    color: Colors.background.surface,
+    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "700",
     lineHeight: 24,
@@ -74,3 +81,4 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+

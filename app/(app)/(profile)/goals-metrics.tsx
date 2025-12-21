@@ -1,21 +1,22 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
-import { Colors } from "@/constants/theme";
+import { Colors as StaticColors, getThemeColors } from "@/constants/theme";
 import {
-  conflictingGoals,
-  goalOptions,
+    conflictingGoals,
+    goalOptions,
 } from "@/features/onboarding/sections/goals/goals-content";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Dimensions,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Dimensions,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,6 +26,8 @@ export default function GoalsMetricsScreen() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
   const [isEditing, setIsEditing] = useState(false);
   const [localGoals, setLocalGoals] = useState<string[]>([]);
 
@@ -64,9 +67,15 @@ export default function GoalsMetricsScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: Colors.background.primary }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[
+          styles.header, 
+          { 
+              backgroundColor: Colors.background.surface,
+              borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : Colors.border.light 
+          }
+      ]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
             name="arrow-left"
@@ -74,7 +83,7 @@ export default function GoalsMetricsScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("goals.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("goals.title")}</Text>
         <Pressable
           onPress={isEditing ? handleSave : () => setIsEditing(true)}
           style={styles.editButton}
@@ -93,14 +102,14 @@ export default function GoalsMetricsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Goals Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: Colors.background.surface }]}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons
               name="target"
               size={20}
               color={Colors.lilac[900]}
             />
-            <Text style={styles.sectionTitle}>{t("goals.yourGoals")}</Text>
+            <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>{t("goals.yourGoals")}</Text>
           </View>
 
           <View style={styles.goalsGrid}>
@@ -127,12 +136,13 @@ export default function GoalsMetricsScreen() {
                   <View
                     style={[
                       styles.goalIconCircle,
-                      isSelected && styles.goalIconCircleSelected,
+                      { backgroundColor: isDark ? Colors.background.secondary : "#F5F5F5" },
+                      isSelected && { backgroundColor: isDark ? Colors.lilac[900] + "20" : "#F0EDFF", borderColor: Colors.lilac[400] },
                     ]}
                   >
                     <Text style={styles.goalEmoji}>{option.emoji}</Text>
                     {isEditing && isSelected && (
-                      <View style={styles.checkmarkBadge}>
+                      <View style={[styles.checkmarkBadge, { backgroundColor: Colors.background.surface }]}>
                         <MaterialCommunityIcons
                           name="check-circle"
                           size={18}
@@ -144,7 +154,8 @@ export default function GoalsMetricsScreen() {
                   <Text
                     style={[
                       styles.goalTitle,
-                      isSelected && styles.goalTitleSelected,
+                      { color: Colors.text.secondary },
+                      isSelected && { color: Colors.lilac[900], fontWeight: "600" },
                     ]}
                     numberOfLines={2}
                   >
@@ -154,7 +165,7 @@ export default function GoalsMetricsScreen() {
               );
             })}
             {!isEditing && localGoals.length === 0 && (
-              <Text style={styles.emptyText}>{t("goals.noGoalsSelected")}</Text>
+              <Text style={[styles.emptyText, { color: Colors.text.secondary }]}>{t("goals.noGoalsSelected")}</Text>
             )}
           </View>
         </View>
@@ -166,7 +177,7 @@ export default function GoalsMetricsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: StaticColors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -174,9 +185,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: StaticColors.background.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
+    borderBottomColor: StaticColors.border.light,
   },
   backButton: {
     padding: 4,
@@ -184,7 +195,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   editButton: {
     padding: 4,
@@ -197,7 +208,7 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   section: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: StaticColors.background.surface,
     borderRadius: 20,
     padding: 20,
     shadowColor: "#000",
@@ -215,7 +226,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   // Goals Styles
   goalsGrid: {
@@ -246,7 +257,7 @@ const styles = StyleSheet.create({
   },
   goalIconCircleSelected: {
     backgroundColor: "#F0EDFF",
-    borderColor: Colors.lilac[400],
+    borderColor: StaticColors.lilac[400],
   },
   goalEmoji: {
     fontSize: 32,
@@ -255,24 +266,24 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -4,
     right: -4,
-    backgroundColor: "#fff",
+    backgroundColor: StaticColors.background.surface,
     borderRadius: 10,
     zIndex: 10,
   },
   goalTitle: {
     fontSize: 12,
     fontWeight: "500",
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     textAlign: "center",
     lineHeight: 16,
   },
   goalTitleSelected: {
-    color: Colors.lilac[900],
+    color: StaticColors.lilac[900],
     fontWeight: "600",
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     fontStyle: "italic",
     textAlign: "center",
     width: "100%",

@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useFilterStore } from "@/lib/stores/filter-store";
+import { useTheme } from "@/providers/theme-provider";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useEffect } from "react";
@@ -20,6 +21,10 @@ export function SearchBar({
   isSearching = false,
 }: SearchBarProps) {
   const { selectedIngredients, selectedCuisines } = useFilterStore();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[500];
 
   useEffect(() => {
     console.log(
@@ -31,23 +36,29 @@ export function SearchBar({
 
   return (
     <View style={styles.searchBarRow}>
-      <View style={styles.searchBar}>
+      <View style={[
+        styles.searchBar,
+        { 
+          backgroundColor: themeColors.background.surface,
+          borderColor: themeColors.border.light,
+        }
+      ]}>
         <Ionicons
           name="search"
           size={20}
-          color={Colors.lilac[500]}
+          color={accentColor}
           style={styles.searchIcon}
         />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: themeColors.text.primary }]}
           placeholder="Search recipes..."
-          placeholderTextColor={Colors.gray[400]}
+          placeholderTextColor={themeColors.text.tertiary}
           value={searchQuery}
           onChangeText={onSearchChange}
         />
         {isSearching && (
           <Animated.View entering={FadeIn} exiting={FadeOut}>
-            <ActivityIndicator size="small" color={Colors.lilac[500]} />
+            <ActivityIndicator size="small" color={accentColor} />
           </Animated.View>
         )}
         {searchQuery.length > 0 && !isSearching && (
@@ -56,7 +67,7 @@ export function SearchBar({
               onPress={() => onSearchChange("")}
               style={styles.clearButton}
             >
-              <AntDesign name="close-circle" size={18} color={Colors.gray[400]} />
+              <AntDesign name="close-circle" size={18} color={themeColors.text.tertiary} />
             </Pressable>
           </Animated.View>
         )}
@@ -75,15 +86,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: Platform.OS === "ios" ? 14 : 2,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
   },
   filterButton: {
-    backgroundColor: Colors.lilac[900],
     width: 44,
     height: 44,
     borderRadius: 8,
@@ -96,10 +104,10 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: Colors.text.primary,
   },
   clearButton: {
     padding: 4,
   },
 });
+
 

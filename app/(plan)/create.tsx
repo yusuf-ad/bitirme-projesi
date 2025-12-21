@@ -1,8 +1,9 @@
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { DateModal } from "@/features/meal-plan/components/date-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -35,6 +36,9 @@ export default function CreateMealPlan() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const startDateModalRef = useRef<BottomSheetModal>(null);
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[700];
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -218,21 +222,21 @@ export default function CreateMealPlan() {
         styles.container,
         {
           paddingTop: insets.top,
-          backgroundColor: Colors.background.primary,
+          backgroundColor: themeColors.background.primary,
         },
       ]}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       {/* Header */}
-      <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
+      <Animated.View entering={FadeIn.duration(300)} style={[styles.header, { backgroundColor: themeColors.background.primary, borderColor: isDark ? themeColors.border.light : Colors.lilac[100] }]}>
         <Pressable
           onPress={() => router.back()}
-          style={styles.headerButton}
+          style={[styles.headerButton, { backgroundColor: isDark ? themeColors.background.surface : Colors.gray[100] }]}
           hitSlop={12}
         >
-          <Ionicons name="close" size={24} color={Colors.text.primary} />
+          <Ionicons name="close" size={24} color={themeColors.text.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Create Meal Plan</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>Create Meal Plan</Text>
         <View style={styles.headerButtonPlaceholder} />
       </Animated.View>
 
@@ -248,17 +252,17 @@ export default function CreateMealPlan() {
           style={styles.heroSection}
         >
           <LinearGradient
-            colors={[Colors.lilac[100], Colors.lilac[200]]}
+            colors={isDark ? ["rgba(191, 90, 242, 0.2)", "rgba(191, 90, 242, 0.1)"] : [Colors.lilac[100], Colors.lilac[200]]}
             style={styles.iconContainer}
           >
             <Ionicons
               name="calendar-outline"
               size={44}
-              color={Colors.lilac[700]}
+              color={accentColor}
             />
           </LinearGradient>
-          <Text style={styles.heroTitle}>Choose Your Date</Text>
-          <Text style={styles.heroDescription}>
+          <Text style={[styles.heroTitle, { color: themeColors.text.primary }]}>Choose Your Date</Text>
+          <Text style={[styles.heroDescription, { color: themeColors.text.secondary }]}>
             Select a date to create your personalized meal plan
           </Text>
         </Animated.View>
@@ -268,33 +272,33 @@ export default function CreateMealPlan() {
           entering={FadeInUp.duration(400).delay(200)}
           style={styles.selectedDateSection}
         >
-          <Text style={styles.sectionLabel}>SELECTED DATE</Text>
+          <Text style={[styles.sectionLabel, { color: themeColors.text.tertiary }]}>SELECTED DATE</Text>
           <Pressable
             onPress={handleStartDatePress}
-            style={styles.selectedDateCard}
+            style={[styles.selectedDateCard, { backgroundColor: themeColors.background.surface }]}
           >
             <View style={styles.dateCardLeft}>
-              <View style={styles.calendarIconWrapper}>
-                <Ionicons name="calendar" size={24} color={Colors.lilac[700]} />
+              <View style={[styles.calendarIconWrapper, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100] }]}>
+                <Ionicons name="calendar" size={24} color={accentColor} />
               </View>
               <View style={styles.dateInfo}>
                 {startDateDisplay.label ? (
-                  <View style={styles.labelBadge}>
+                  <View style={[styles.labelBadge, { backgroundColor: accentColor }]}>
                     <Text style={styles.labelBadgeText}>
                       {startDateDisplay.label}
                     </Text>
                   </View>
                 ) : null}
-                <Text style={styles.dayName}>{startDateDisplay.day}</Text>
-                <Text style={styles.fullDate}>{startDateDisplay.date}</Text>
+                <Text style={[styles.dayName, { color: themeColors.text.primary }]}>{startDateDisplay.day}</Text>
+                <Text style={[styles.fullDate, { color: themeColors.text.secondary }]}>{startDateDisplay.date}</Text>
               </View>
             </View>
-            <View style={styles.changeButton}>
-              <Text style={styles.changeButtonText}>Change</Text>
+            <View style={[styles.changeButton, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100] }]}>
+              <Text style={[styles.changeButtonText, { color: accentColor }]}>Change</Text>
               <Ionicons
                 name="chevron-forward"
                 size={16}
-                color={Colors.lilac[700]}
+                color={accentColor}
               />
             </View>
           </Pressable>
@@ -305,7 +309,7 @@ export default function CreateMealPlan() {
           entering={FadeInUp.duration(400).delay(350)}
           style={styles.quickSelectSection}
         >
-          <Text style={styles.sectionLabel}>QUICK SELECT</Text>
+          <Text style={[styles.sectionLabel, { color: themeColors.text.tertiary }]}>QUICK SELECT</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -325,14 +329,16 @@ export default function CreateMealPlan() {
                     onPress={() => handleQuickSelect(option.date)}
                     style={({ pressed }) => [
                       styles.quickDateCard,
-                      selected && styles.quickDateCardSelected,
-                      isTodayNotSelected && styles.quickDateCardToday,
+                      { backgroundColor: themeColors.background.surface },
+                      selected && [styles.quickDateCardSelected, { backgroundColor: accentColor }],
+                      isTodayNotSelected && [styles.quickDateCardToday, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100], borderColor: accentColor }],
                       pressed && styles.quickDateCardPressed,
                     ]}
                   >
                     <Text
                       style={[
                         styles.dayShortText,
+                        { color: themeColors.text.secondary },
                         selected && styles.dayShortTextSelected,
                       ]}
                     >
@@ -341,6 +347,7 @@ export default function CreateMealPlan() {
                     <Text
                       style={[
                         styles.dateNumText,
+                        { color: themeColors.text.primary },
                         selected && styles.dateNumTextSelected,
                       ]}
                     >
@@ -380,11 +387,12 @@ export default function CreateMealPlan() {
       {/* Footer */}
       <Animated.View
         entering={FadeInUp.duration(400).delay(650)}
-        style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}
+        style={[styles.footer, { paddingBottom: insets.bottom + 16, backgroundColor: themeColors.background.primary, borderTopColor: themeColors.border.light }]}
       >
         <CustomButton
           containerStyle={[
             styles.nextButton,
+            { backgroundColor: accentColor },
             isPastDate && styles.nextButtonDisabled,
           ]}
           onPress={handleNext}

@@ -1,13 +1,14 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
+    Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withTiming,
 } from "react-native-reanimated";
 
 interface CalorieProgressBarProps {
@@ -21,10 +22,20 @@ interface CalorieProgressBarProps {
 export default function CalorieProgressBar({
   currentValue,
   goalValue,
-  filledColor = [Colors.lilac[400], Colors.lilac[800]], // Default gradient
-  emptyColor = "#F3F4F6",
+  filledColor,
+  emptyColor,
   height = 12,
 }: CalorieProgressBarProps) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
+  // Default colors based on theme
+  const defaultFilledColor = isDark ? [themeColors.accent.lilac, "#9D4EDD"] : [Colors.lilac[400], Colors.lilac[800]];
+  const defaultEmptyColor = isDark ? themeColors.background.tertiary : "#F3F4F6";
+  
+  const actualFilledColor = filledColor || defaultFilledColor;
+  const actualEmptyColor = emptyColor || defaultEmptyColor;
+
   const rawPercentage = (currentValue / goalValue) * 100;
   const progressPercentage = Math.min(100, Math.max(0, rawPercentage));
 
@@ -67,7 +78,7 @@ export default function CalorieProgressBar({
     <View
       style={[
         styles.progressBarContainer,
-        { height, backgroundColor: emptyColor },
+        { height, backgroundColor: actualEmptyColor },
       ]}
     >
       {/* Foreground (Filled) with Animation */}
@@ -81,9 +92,9 @@ export default function CalorieProgressBar({
         {/* Gradient Fill */}
         <LinearGradient
           colors={
-            (Array.isArray(filledColor)
-              ? filledColor
-              : [filledColor, filledColor]) as [string, string, ...string[]]
+            (Array.isArray(actualFilledColor)
+              ? actualFilledColor
+              : [actualFilledColor, actualFilledColor]) as [string, string, ...string[]]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}

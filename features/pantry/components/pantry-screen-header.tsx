@@ -1,15 +1,16 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { TabType } from "@/features/pantry";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -44,12 +45,16 @@ export function PantryScreenHeader({
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background.secondary }]}>
       {/* Top Row: Title & Actions */}
       <View style={styles.topRow}>
-        <Text style={styles.title}>{t("pantry.title")}</Text>
+        <Text style={[styles.title, { color: themeColors.text.primary }]}>{t("pantry.title")}</Text>
 
         <View style={styles.actionsContainer}>
           <View style={styles.clearButtonSpacer}>
@@ -57,7 +62,14 @@ export function PantryScreenHeader({
               ingredientsCount > 0 &&
               onClear && (
                 <AnimatedPressable
-                  style={[styles.pillButton, styles.clearButton]}
+                  style={[
+                    styles.pillButton, 
+                    styles.clearButton,
+                    { 
+                      backgroundColor: isDark ? "rgba(255,69,58,0.15)" : Colors.gray[100],
+                      borderColor: isDark ? "rgba(255,69,58,0.3)" : Colors.lilac[300],
+                    }
+                  ]}
                   onPress={onClear}
                   entering={FadeIn.duration(300)}
                   exiting={FadeOut.duration(300)}
@@ -65,13 +77,13 @@ export function PantryScreenHeader({
                   <Feather
                     name="trash-2"
                     size={16}
-                    color={Colors.semantic.error.main}
+                    color={themeColors.semantic.error.main}
                   />
                 </AnimatedPressable>
               )}
           </View>
           <Pressable
-            style={[styles.pillButton, styles.cartButton]}
+            style={[styles.pillButton, styles.cartButton, { backgroundColor: accentColor }]}
             onPress={() => router.push("/shopping-list")}
           >
             <Feather name="shopping-cart" size={16} color="#FFFFFF" />
@@ -84,23 +96,24 @@ export function PantryScreenHeader({
       <View
         style={[
           styles.searchContainer,
+          { backgroundColor: themeColors.background.surface },
           Platform.OS === "android" ? { paddingVertical: 0 } : null,
         ]}
       >
         <Feather
           name="search"
           size={20}
-          color={Colors.gray[400]}
+          color={themeColors.text.tertiary}
           style={styles.searchIcon}
         />
         <TextInput
-          style={[styles.searchInput]}
+          style={[styles.searchInput, { color: themeColors.text.primary }]}
           placeholder={
             activeTab === "my-ingredients"
               ? `${t("common.search")}...`
               : `${t("common.search")}...`
           }
-          placeholderTextColor={Colors.gray[400]}
+          placeholderTextColor={themeColors.text.tertiary}
           value={
             activeTab === "my-ingredients" ? searchQuery : recipeSearchQuery
           }
@@ -113,11 +126,11 @@ export function PantryScreenHeader({
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
+      <View style={[styles.tabsContainer, { borderBottomColor: themeColors.border.light }]}>
         <Pressable
           style={[
             styles.tab,
-            activeTab === "my-ingredients" && styles.activeTab,
+            activeTab === "my-ingredients" && { borderBottomColor: accentColor },
           ]}
           onPress={() => onTabChange("my-ingredients")}
         >
@@ -125,7 +138,8 @@ export function PantryScreenHeader({
             <Text
               style={[
                 styles.tabText,
-                activeTab === "my-ingredients" && styles.activeTabText,
+                { color: themeColors.text.tertiary },
+                activeTab === "my-ingredients" && { color: accentColor },
               ]}
             >
               {t("pantry.myIngredients")}
@@ -134,12 +148,14 @@ export function PantryScreenHeader({
               <View
                 style={[
                   styles.badge,
-                  activeTab === "my-ingredients" && styles.activeBadge,
+                  { backgroundColor: isDark ? themeColors.gray[700] : Colors.gray[200] },
+                  activeTab === "my-ingredients" && { backgroundColor: accentColor },
                 ]}
               >
                 <Text
                   style={[
                     styles.badgeText,
+                    { color: themeColors.text.secondary },
                     activeTab === "my-ingredients" && styles.activeBadgeText,
                   ]}
                 >
@@ -150,14 +166,18 @@ export function PantryScreenHeader({
           </View>
         </Pressable>
         <Pressable
-          style={[styles.tab, activeTab === "recipe-ideas" && styles.activeTab]}
+          style={[
+            styles.tab, 
+            activeTab === "recipe-ideas" && { borderBottomColor: accentColor }
+          ]}
           onPress={() => onTabChange("recipe-ideas")}
         >
           <View style={styles.tabContent}>
             <Text
               style={[
                 styles.tabText,
-                activeTab === "recipe-ideas" && styles.activeTabText,
+                { color: themeColors.text.tertiary },
+                activeTab === "recipe-ideas" && { color: accentColor },
               ]}
             >
               {t("pantry.recipeIdeas")}
@@ -166,12 +186,14 @@ export function PantryScreenHeader({
               <View
                 style={[
                   styles.badge,
-                  activeTab === "recipe-ideas" && styles.activeBadge,
+                  { backgroundColor: isDark ? themeColors.gray[700] : Colors.gray[200] },
+                  activeTab === "recipe-ideas" && { backgroundColor: accentColor },
                 ]}
               >
                 <Text
                   style={[
                     styles.badgeText,
+                    { color: themeColors.text.secondary },
                     activeTab === "recipe-ideas" && styles.activeBadgeText,
                   ]}
                 >
@@ -188,10 +210,9 @@ export function PantryScreenHeader({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.background.secondary,
     paddingHorizontal: 24,
     paddingBottom: 0,
-    minHeight: 160, // Fixed minimum height to prevent layout shift
+    minHeight: 160,
   },
   topRow: {
     flexDirection: "row",
@@ -202,11 +223,11 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: "row",
     gap: 6,
-    alignItems: "center", // Ensure vertical alignment
+    alignItems: "center",
   },
   clearButtonSpacer: {
-    width: 44, // Fixed width to maintain layout when button is hidden
-    height: 36, // Fixed height to match pill button
+    width: 44,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -217,16 +238,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 24,
     gap: 8,
-    height: 36, // Fixed height for consistency
+    height: 36,
   },
   clearButton: {
-    backgroundColor: Colors.gray[100],
     borderWidth: 1,
-    borderColor: Colors.lilac[300],
   },
-  cartButton: {
-    backgroundColor: Colors.lilac[900],
-  },
+  cartButton: {},
   cartText: {
     fontSize: 14,
     fontWeight: "bold",
@@ -235,12 +252,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: Colors.text.primary,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.background.primary,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -257,13 +272,11 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: Colors.text.primary,
   },
   tabsContainer: {
     flexDirection: "row",
     marginBottom: 0,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
   },
   tab: {
     flex: 1,
@@ -272,16 +285,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
-  activeTab: {
-    borderBottomColor: Colors.lilac[900],
-  },
   tabText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.gray[400],
-  },
-  activeTabText: {
-    color: Colors.lilac[900],
   },
   tabContent: {
     flexDirection: "row",
@@ -289,20 +295,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    backgroundColor: Colors.gray[200],
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
   },
-  activeBadge: {
-    backgroundColor: Colors.lilac[900],
-  },
   badgeText: {
     fontSize: 12,
     fontWeight: "bold",
-    color: Colors.gray[600],
   },
   activeBadgeText: {
     color: "#FFFFFF",
   },
 });
+

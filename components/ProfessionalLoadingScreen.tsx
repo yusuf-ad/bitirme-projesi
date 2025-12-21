@@ -1,4 +1,5 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
@@ -18,6 +19,8 @@ export function ProfessionalLoadingScreen({
 }: ProfessionalLoadingScreenProps) {
   const spinValue = useRef(new Animated.Value(0)).current;
   const pulseValue = useRef(new Animated.Value(1)).current;
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark);
 
   useEffect(() => {
     // Spinning animation
@@ -52,30 +55,34 @@ export function ProfessionalLoadingScreen({
   });
 
   return (
-    <View style={styles.professionalLoadingContainer}>
+    <View style={[styles.professionalLoadingContainer, { backgroundColor: themeColors.background.secondary }]}>
       <View style={styles.loadingContent}>
         <Animated.View
           style={[
             styles.loadingIconContainer,
             {
               transform: [{ rotate: spin }, { scale: pulseValue }],
+              backgroundColor: themeColors.background.surface,
+              shadowColor: themeColors.card.shadow,
+              shadowOpacity: 1,
             },
           ]}
         >
           <MaterialCommunityIcons
             name="food-apple"
             size={48}
-            color={Colors.lilac[500]}
+            color={isDark ? themeColors.accent.lilac : themeColors.lilac[500]}
           />
         </Animated.View>
-        <Text style={styles.loadingTitle}>{title}</Text>
-        <Text style={styles.loadingSubtitle}>{subtitle}</Text>
+        <Text style={[styles.loadingTitle, { color: themeColors.text.primary }]}>{title}</Text>
+        <Text style={[styles.loadingSubtitle, { color: themeColors.text.tertiary }]}>{subtitle}</Text>
         <View style={styles.loadingDotsContainer}>
           <Animated.View
             style={[
               styles.loadingDot,
               {
                 opacity: pulseValue,
+                backgroundColor: isDark ? themeColors.accent.lilac : themeColors.lilac[500],
               },
             ]}
           />
@@ -83,6 +90,7 @@ export function ProfessionalLoadingScreen({
             style={[
               styles.loadingDot,
               {
+                backgroundColor: isDark ? themeColors.accent.lilac : themeColors.lilac[500],
                 opacity: pulseValue.interpolate({
                   inputRange: [0, 1],
                   outputRange: [0.3, 1],
@@ -94,6 +102,7 @@ export function ProfessionalLoadingScreen({
             style={[
               styles.loadingDot,
               {
+                backgroundColor: isDark ? themeColors.accent.lilac : themeColors.lilac[500],
                 opacity: pulseValue.interpolate({
                   inputRange: [0, 1],
                   outputRange: [0.6, 0.3],

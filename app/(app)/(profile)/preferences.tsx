@@ -1,6 +1,7 @@
-import { Colors } from "@/constants/theme";
+import { Colors as StaticColors, getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -27,6 +28,8 @@ export default function PreferencesScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { locale, isLoaded, changeLanguage, t } = useLanguage();
   const { isEnabled: hapticEnabled, setHapticEnabled, selection } = useHaptics();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   
   // Animation values
@@ -75,16 +78,16 @@ export default function PreferencesScreen() {
 
   if (!isLoaded) {
     return (
-      <View style={[styles.container, styles.loadingContainer, { paddingTop: top }]}>
+      <View style={[styles.container, styles.loadingContainer, { paddingTop: top, backgroundColor: Colors.background.secondary }]}>
         <ActivityIndicator size="large" color={Colors.lilac[900]} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: Colors.background.primary }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: Colors.background.surface, borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "#E5E5E5" }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
             name="arrow-left"
@@ -92,7 +95,7 @@ export default function PreferencesScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("preferences.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("preferences.title")}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -102,8 +105,8 @@ export default function PreferencesScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* App Settings Section */}
-        <Text style={styles.sectionLabel}>{t("preferences.appSettings")}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("preferences.appSettings")}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           {/* Language */}
           <Pressable
             style={styles.menuItem}
@@ -113,7 +116,7 @@ export default function PreferencesScreen() {
             }}
           >
             <View style={styles.menuItemLeft}>
-              <View style={styles.iconContainer}>
+              <View style={[styles.iconContainer, { backgroundColor: isDark ? Colors.background.tertiary : "#F5F5F5" }]}>
                 <MaterialCommunityIcons
                   name="translate"
                   size={20}
@@ -121,14 +124,14 @@ export default function PreferencesScreen() {
                 />
               </View>
               <View style={styles.menuItemInfo}>
-                <Text style={styles.menuItemLabel}>{t("preferences.language")}</Text>
-                <Text style={styles.menuItemDescription}>
+                <Text style={[styles.menuItemLabel, { color: Colors.text.primary }]}>{t("preferences.language")}</Text>
+                <Text style={[styles.menuItemDescription, { color: Colors.text.secondary }]}>
                   {t("preferences.languageDesc")}
                 </Text>
               </View>
             </View>
             <View style={styles.menuItemRight}>
-              <Text style={styles.menuItemValue}>
+              <Text style={[styles.menuItemValue, { color: Colors.text.secondary }]}>
                 {getCurrentLang().flag} {getCurrentLang().name}
               </Text>
               <MaterialCommunityIcons
@@ -150,6 +153,8 @@ export default function PreferencesScreen() {
                 }),
                 opacity: opacityAnim,
                 overflow: "hidden",
+                backgroundColor: isDark ? Colors.background.secondary : "#FAFAFA",
+                borderTopColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0",
               }
             ]}
           >
@@ -168,7 +173,7 @@ export default function PreferencesScreen() {
                 <Pressable
                   style={[
                     styles.pickerOption,
-                    locale === lang.code && styles.pickerOptionSelected,
+                    locale === lang.code && { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : StaticColors.lilac[100] },
                   ]}
                   onPress={async () => {
                     selection();
@@ -180,7 +185,8 @@ export default function PreferencesScreen() {
                   <Text
                     style={[
                       styles.pickerOptionText,
-                      locale === lang.code && styles.pickerOptionTextSelected,
+                      { color: Colors.text.primary },
+                      locale === lang.code && { fontWeight: "600", color: Colors.lilac[900] },
                     ]}
                   >
                     {lang.name}
@@ -197,12 +203,12 @@ export default function PreferencesScreen() {
             ))}
           </Animated.View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0" }]} />
 
           {/* Haptic Feedback */}
           <View style={styles.switchItem}>
             <View style={styles.menuItemLeft}>
-              <View style={styles.iconContainer}>
+              <View style={[styles.iconContainer, { backgroundColor: isDark ? Colors.background.tertiary : "#F5F5F5" }]}>
                 <MaterialCommunityIcons
                   name="vibrate"
                   size={20}
@@ -210,8 +216,8 @@ export default function PreferencesScreen() {
                 />
               </View>
               <View style={styles.menuItemInfo}>
-                <Text style={styles.menuItemLabel}>{t("preferences.hapticFeedback")}</Text>
-                <Text style={styles.menuItemDescription}>
+                <Text style={[styles.menuItemLabel, { color: Colors.text.primary }]}>{t("preferences.hapticFeedback")}</Text>
+                <Text style={[styles.menuItemDescription, { color: Colors.text.secondary }]}>
                   {t("preferences.hapticDesc")}
                 </Text>
               </View>
@@ -220,8 +226,8 @@ export default function PreferencesScreen() {
               value={hapticEnabled}
               onValueChange={setHapticEnabled}
               trackColor={{
-                false: Colors.gray[200],
-                true: Colors.lilac[200],
+                false: isDark ? Colors.gray[700] : Colors.gray[200],
+                true: isDark ? Colors.lilac[700] : Colors.lilac[200],
               }}
               thumbColor={hapticEnabled ? Colors.lilac[900] : "#FFFFFF"}
             />
@@ -229,7 +235,7 @@ export default function PreferencesScreen() {
         </View>
 
         {/* Info Text */}
-        <Text style={styles.footerText}>
+        <Text style={[styles.footerText, { color: Colors.text.secondary }]}>
           {t("preferences.footerText")}{"\n"}
           {t("preferences.languageChangeNote")}
         </Text>
@@ -241,7 +247,6 @@ export default function PreferencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   loadingContainer: {
     justifyContent: "center",
@@ -253,9 +258,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
   },
   backButton: {
     padding: 4,
@@ -263,7 +266,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
   },
   headerRight: {
     width: 32,
@@ -280,11 +282,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: "600",
     textTransform: "uppercase",
-    color: Colors.text.secondary,
     marginTop: 8,
   },
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 4,
@@ -316,7 +316,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -326,12 +325,10 @@ const styles = StyleSheet.create({
   menuItemLabel: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
     marginBottom: 2,
   },
   menuItemDescription: {
     fontSize: 12,
-    color: Colors.text.secondary,
     lineHeight: 16,
   },
   menuItemRight: {
@@ -341,21 +338,17 @@ const styles = StyleSheet.create({
   },
   menuItemValue: {
     fontSize: 14,
-    color: Colors.text.secondary,
     fontWeight: "500",
   },
   divider: {
     height: 1,
-    backgroundColor: "#F0F0F0",
     marginLeft: 48,
   },
   pickerContainer: {
-    backgroundColor: "#FAFAFA",
     marginHorizontal: -16,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
   },
   pickerOption: {
     flexDirection: "row",
@@ -365,24 +358,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     gap: 12,
   },
-  pickerOptionSelected: {
-    backgroundColor: Colors.lilac[100],
-  },
   pickerOptionFlag: {
     fontSize: 20,
   },
   pickerOptionText: {
     fontSize: 15,
-    color: Colors.text.primary,
     flex: 1,
-  },
-  pickerOptionTextSelected: {
-    fontWeight: "600",
-    color: Colors.lilac[900],
   },
   footerText: {
     fontSize: 12,
-    color: Colors.text.secondary,
     textAlign: "center",
     lineHeight: 18,
     marginTop: 8,

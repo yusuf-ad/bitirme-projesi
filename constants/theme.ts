@@ -134,105 +134,186 @@ export const Colors = {
     dark: "#52465F", // Dark borders
     focus: "#875EC5", // Focus border (lilac)
   },
+
+  // Card Colors (Default Light)
+  card: {
+    background: "#FFFFFF", // Card background
+    backgroundElevated: "#FFFFFF", // Elevated card
+    border: "#E1DDE6", // Card border
+    shadow: "rgba(0, 0, 0, 0.1)", // Shadow
+  },
+
+  // Gradients (Default Light)
+  gradients: {
+    primary: ["#B49CDA", "#7849B6"], // Lilac gradient
+    success: ["#87B99D", "#548A6A"], // Green gradient
+    dark: ["#393140", "#111215"], // Dark gradient
+    card: ["#FFFFFF", "#F8F9FA"], // Card gradient
+  },
 };
 
-// Dark Mode Theme Colors (for Profile tab - text-heavy content)
+// MIUI-style Dark Mode Theme Colors
+// Inspired by Xiaomi's MIUI dark theme with premium aesthetics
 export const DarkColors = {
   // Keep the same color scales
   ...Colors,
 
-  // Override background colors for dark mode
+  // MIUI-style background colors - deep blacks with subtle elevation
   background: {
-    primary: "#0F0E13", // Main dark background
-    secondary: "#1A1820", // Secondary dark background
-    tertiary: "#25222E", // Tertiary dark background
+    primary: "#000000", // Pure black main background (MIUI style)
+    secondary: "#0D0D0D", // Very dark secondary background
+    tertiary: "#1A1A1A", // Tertiary background
     dark: "#000000", // Darkest background
-    surface: "#1E1C24", // Surface/card background
-    overlay: "rgba(0, 0, 0, 0.7)", // Modal overlay
+    surface: "#1C1C1E", // Card/surface background (iOS-like dark surface)
+    overlay: "rgba(0, 0, 0, 0.85)", // Modal overlay
   },
 
-  // Override text colors for dark mode
+  // MIUI-style text colors - off-white for comfort
   text: {
-    primary: "#F5F5F7", // Primary text on dark
-    secondary: "#C4C4C8", // Secondary text on dark
-    tertiary: "#8E8E93", // Tertiary text on dark
-    disabled: "#636366", // Disabled text on dark
-    inverse: "#1E1C24", // Text on light backgrounds in dark mode
-    accent: "#A587D3", // Accent text (lighter lilac)
+    primary: "#FFFFFF", // Pure white for primary text
+    secondary: "#EBEBF5", // Slightly muted secondary text
+    tertiary: "#8E8E93", // System gray for tertiary
+    disabled: "#48484A", // Disabled text
+    inverse: "#000000", // Text on light backgrounds
+    accent: "#BF5AF2", // MIUI purple accent
   },
 
-  // Override border colors for dark mode
+  // MIUI-style border colors - subtle separators
   border: {
-    light: "#38343E", // Light borders on dark
-    medium: "#48444E", // Medium borders on dark
-    dark: "#58545E", // Dark borders on dark
-    focus: "#9673CC", // Focus border (lighter lilac)
+    light: "#1C1C1E", // Very subtle borders
+    medium: "#2C2C2E", // Medium borders
+    dark: "#3A3A3C", // Dark borders
+    focus: "#BF5AF2", // Purple focus border
   },
 
-  // Card-specific colors for dark mode
+  // MIUI-style card colors - elevated surfaces
   card: {
-    background: "#1E1C24",
-    backgroundElevated: "#25222E",
-    border: "#38343E",
-    shadow: "rgba(0, 0, 0, 0.4)",
+    background: "#1C1C1E", // Card background
+    backgroundElevated: "#2C2C2E", // Elevated card
+    border: "#38383A", // Card border
+    shadow: "rgba(0, 0, 0, 0.5)", // Shadow
   },
 
-  // Gradients for premium dark mode aesthetics
+  // MIUI-style gradients
   gradients: {
-    primary: ["#A587D3", "#7849B6"],
-    success: ["#87B99D", "#548A6A"],
-    dark: ["#1E1C24", "#0F0E13"],
-    card: ["#25222E", "#1E1C24"],
+    primary: ["#BF5AF2", "#9D4EDD"], // Purple gradient
+    success: ["#30D158", "#28CD50"], // Green gradient
+    dark: ["#1C1C1E", "#000000"], // Dark gradient
+    card: ["#2C2C2E", "#1C1C1E"], // Card gradient
+  },
+
+  // MIUI accent colors - vibrant but not overwhelming
+  accent: {
+    lilac: "#BF5AF2", // MIUI purple
+    green: "#30D158", // MIUI green
+    dark: "#000000", // Pure black
+    light: "#F2F2F7", // Light accent
+  },
+
+  // MIUI semantic colors for dark mode
+  semantic: {
+    success: {
+      light: "#0D3318",
+      main: "#30D158",
+      dark: "#28CD50",
+    },
+    error: {
+      light: "#3D1519",
+      main: "#FF453A",
+      dark: "#FF6961",
+    },
+    warning: {
+      light: "#3D2E0A",
+      main: "#FFD60A",
+      dark: "#FFCC00",
+    },
+    info: {
+      light: "#1A1038",
+      main: "#BF5AF2",
+      dark: "#9D4EDD",
+    },
   },
 };
 
-// Lighter Dark Mode for Content Tabs (Home, Recipes, Pantry - image/visual-heavy content)
+// MIUI-style Content Dark Mode (for image-heavy screens)
 export const ContentDarkColors = {
   // Keep the same color scales
   ...Colors,
 
-  // Lighter backgrounds for better visual content display
+  // Slightly elevated backgrounds for content screens
   background: {
-    primary: "#1C1A22", // Lighter main background
-    secondary: "#353147ff", // Lighter secondary background
-    tertiary: "#2E2B3A", // Lighter tertiary background
-    dark: "#0F0E13", // Darkest background
-    surface: "#282634", // Lighter surface/card background
-    overlay: "rgba(0, 0, 0, 0.65)", // Slightly lighter overlay
+    primary: "#000000", // Pure black main background
+    secondary: "#121212", // Slightly elevated secondary
+    tertiary: "#1E1E1E", // Tertiary background
+    dark: "#000000", // Darkest background
+    surface: "#1C1C1E", // Surface/card background
+    overlay: "rgba(0, 0, 0, 0.8)", // Modal overlay
   },
 
-  // Text colors optimized for lighter backgrounds
+  // Text colors for content screens
   text: {
-    primary: "#F8F8FA", // Brighter primary text
-    secondary: "#D1D1D6", // Brighter secondary text
-    tertiary: "#9A9AA0", // Brighter tertiary text
-    disabled: "#6C6C70", // Disabled text
-    inverse: "#1C1A22", // Text on light backgrounds
-    accent: "#B49CDA", // Lighter accent (more visible on lighter bg)
+    primary: "#FFFFFF", // Pure white
+    secondary: "#EBEBF5", // Secondary text
+    tertiary: "#8E8E93", // Tertiary text
+    disabled: "#48484A", // Disabled text
+    inverse: "#000000", // Text on light backgrounds
+    accent: "#BF5AF2", // Purple accent
   },
 
-  // Border colors for lighter dark mode
+  // Border colors for content screens
   border: {
-    light: "#3E3B48", // Lighter borders
-    medium: "#4E4B58", // Medium borders
-    dark: "#5E5B68", // Dark borders
-    focus: "#A587D3", // Focus border (brighter lilac)
+    light: "#1C1C1E", // Subtle borders
+    medium: "#2C2C2E", // Medium borders
+    dark: "#3A3A3C", // Dark borders
+    focus: "#BF5AF2", // Focus border
   },
 
-  // Card-specific colors for content dark mode
+  // Card colors for content screens
   card: {
-    background: "#282634",
-    backgroundElevated: "#2E2B3A",
-    border: "#3E3B48",
-    shadow: "rgba(0, 0, 0, 0.3)",
+    background: "#1C1C1E", // Card background
+    backgroundElevated: "#2C2C2E", // Elevated card
+    border: "#38383A", // Card border
+    shadow: "rgba(0, 0, 0, 0.4)", // Shadow
   },
 
-  // Gradients for content dark mode
+  // MIUI-style gradients for content
   gradients: {
-    primary: ["#B49CDA", "#875EC5"],
-    success: ["#97C9AE", "#659A7B"],
-    dark: ["#282634", "#1C1A22"],
-    card: ["#2E2B3A", "#282634"],
+    primary: ["#BF5AF2", "#9D4EDD"], // Purple gradient
+    success: ["#30D158", "#28CD50"], // Green gradient
+    dark: ["#1C1C1E", "#000000"], // Dark gradient
+    card: ["#2C2C2E", "#1C1C1E"], // Card gradient
+  },
+
+  // MIUI accent colors
+  accent: {
+    lilac: "#BF5AF2", // MIUI purple
+    green: "#30D158", // MIUI green
+    dark: "#000000", // Pure black
+    light: "#F2F2F7", // Light accent
+  },
+
+  // MIUI semantic colors
+  semantic: {
+    success: {
+      light: "#0D3318",
+      main: "#30D158",
+      dark: "#28CD50",
+    },
+    error: {
+      light: "#3D1519",
+      main: "#FF453A",
+      dark: "#FF6961",
+    },
+    warning: {
+      light: "#3D2E0A",
+      main: "#FFD60A",
+      dark: "#FFCC00",
+    },
+    info: {
+      light: "#1A1038",
+      main: "#BF5AF2",
+      dark: "#9D4EDD",
+    },
   },
 };
 

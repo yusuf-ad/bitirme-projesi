@@ -1,4 +1,5 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import { Pressable, PressableProps, StyleSheet, Text } from "react-native";
 
 interface CalendarDayProps extends PressableProps {
@@ -19,31 +20,75 @@ export default function CalendarDay({
   onPress,
   ...props
 }: CalendarDayProps) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
   const isTodayButNotSelected = isToday && !isSelected;
   const isPastButNotSelected = isPast && !isSelected;
+
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
+
+  // Dynamic container styles
+  const getContainerStyle = () => {
+    const baseStyle = {
+      backgroundColor: themeColors.background.surface,
+      opacity: isDark ? 0.7 : 0.5,
+    };
+
+    if (isSelected && isPast) {
+      return {
+        backgroundColor: isDark ? themeColors.gray[600] : Colors.gray[400],
+        opacity: 1,
+      };
+    }
+
+    if (isSelected) {
+      return {
+        backgroundColor: accentColor,
+        opacity: 1,
+      };
+    }
+
+    if (isPastButNotSelected) {
+      return {
+        backgroundColor: isDark ? themeColors.gray[800] : Colors.gray[100],
+        opacity: isDark ? 0.5 : 0.6,
+      };
+    }
+
+    if (isTodayButNotSelected) {
+      return {
+        backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100],
+        opacity: 1,
+        borderWidth: 1,
+        borderColor: accentColor,
+      };
+    }
+
+    return baseStyle;
+  };
+
+  // Dynamic text colors
+  const getDayTextColor = () => {
+    if (isSelected) return "#FFFFFF";
+    if (isPastButNotSelected) return themeColors.text.tertiary;
+    return themeColors.text.primary;
+  };
+
+  const getDayOfWeekTextColor = () => {
+    if (isSelected) return "#FFFFFF";
+    if (isPastButNotSelected) return themeColors.text.tertiary;
+    return themeColors.text.secondary;
+  };
 
   return (
     <Pressable
       onPress={onPress}
-      style={[
-        styles.container,
-        isPastButNotSelected && styles.pastContainer,
-        isSelected && styles.selectedContainer,
-        isSelected && isPast && styles.selectedPastContainer,
-        isTodayButNotSelected && styles.todayContainer,
-      ]}
+      style={[styles.container, getContainerStyle()]}
       {...props}
     >
-      <Text style={[
-        styles.day, 
-        isSelected && styles.selectedText,
-        isPastButNotSelected && styles.pastText,
-      ]}>{day}</Text>
-      <Text style={[
-        styles.dayOfWeek, 
-        isSelected && styles.selectedText,
-        isPastButNotSelected && styles.pastText,
-      ]}>
+      <Text style={[styles.day, { color: getDayTextColor() }]}>{day}</Text>
+      <Text style={[styles.dayOfWeek, { color: getDayOfWeekTextColor() }]}>
         {dayOfWeek}
       </Text>
     </Pressable>
@@ -60,45 +105,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 52,
     height: 64,
-    backgroundColor: Colors.background.surface,
-    opacity: 0.5,
-  },
-  selectedContainer: {
-    backgroundColor: Colors.lilac[900],
-    opacity: 1,
-  },
-  selectedPastContainer: {
-    backgroundColor: Colors.gray[400],
-    opacity: 1,
-  },
-  pastContainer: {
-    backgroundColor: Colors.gray[100],
-    opacity: 0.6,
-  },
-  todayContainer: {
-    backgroundColor: Colors.lilac[100],
-    opacity: 1,
-    borderWidth: 1,
-    borderColor: Colors.lilac[500],
   },
   day: {
     fontFamily: "Inter",
     fontWeight: "600",
     fontSize: 12,
     lineHeight: 16,
-    color: Colors.gray[700],
   },
   dayOfWeek: {
     fontFamily: "Inter",
     fontWeight: "500",
     fontSize: 12,
     lineHeight: 16,
-    color: Colors.gray[400],
-  },
-  selectedText: {
-    color: Colors.background.primary,
-  },
-  pastText: {
-    color: Colors.gray[400],
   },
 });
+

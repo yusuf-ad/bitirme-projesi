@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 
 type TabType = "discover" | "favorites";
@@ -20,6 +21,9 @@ export function HomeHeader({
   tabWidth,
 }: HomeHeaderProps) {
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true);
+  
   const formattedFavoriteCount =
     favoriteCount > 99 ? "99+" : favoriteCount.toString();
 
@@ -34,8 +38,8 @@ export function HomeHeader({
             style={[
               styles.tabText,
               activeTab === "discover"
-                ? styles.activeTabText
-                : styles.inactiveTabText,
+                ? { color: isDark ? Colors.accent.lilac : Colors.lilac[900], fontWeight: "bold" }
+                : { color: Colors.text.tertiary },
             ]}
           >
             {t("recipes.discover")}
@@ -50,16 +54,16 @@ export function HomeHeader({
               style={[
                 styles.tabText,
                 activeTab === "favorites"
-                  ? styles.activeTabText
-                  : styles.inactiveTabText,
+                  ? { color: isDark ? Colors.accent.lilac : Colors.lilac[900], fontWeight: "bold" }
+                  : { color: Colors.text.tertiary },
               ]}
             >
               {t("recipes.favorites")}
             </Text>
 
             {favoriteCount > 0 && (
-              <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>
+              <View style={[styles.countBadge, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100] }]}>
+                <Text style={[styles.countBadgeText, { color: isDark ? Colors.accent.lilac : Colors.lilac[900] }]}>
                   {formattedFavoriteCount}
                 </Text>
               </View>
@@ -75,6 +79,7 @@ export function HomeHeader({
               {
                 width: tabWidth,
                 transform: [{ translateX: indicatorTranslateX }],
+                backgroundColor: isDark ? Colors.accent.lilac : Colors.lilac[900],
               },
             ]}
           />
@@ -82,7 +87,7 @@ export function HomeHeader({
       </View>
 
       {/* Bottom border */}
-      <View style={styles.bottomBorder} />
+      <View style={[styles.bottomBorder, { backgroundColor: Colors.border.light }]} />
     </View>
   );
 }
@@ -111,24 +116,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
   },
-  activeTabText: {
-    color: Colors.lilac[900],
-    fontWeight: "bold",
-  },
-  inactiveTabText: {
-    color: Colors.gray[500],
-  },
   countBadge: {
     minWidth: 24,
     paddingHorizontal: 6,
     height: 20,
     borderRadius: 10,
-    backgroundColor: Colors.lilac[100],
     alignItems: "center",
     justifyContent: "center",
   },
   countBadgeText: {
-    color: Colors.lilac[900],
     fontSize: 12,
     fontWeight: "600",
   },
@@ -137,11 +133,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     height: 3,
-    backgroundColor: Colors.lilac[900],
     borderRadius: 1.5,
   },
   bottomBorder: {
     height: 1,
-    backgroundColor: Colors.lilac[300],
   },
 });
+
