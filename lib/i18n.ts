@@ -61,7 +61,8 @@ const en = {
     support: "Support & Feedback",
     logout: "Log Out",
     signOut: "Sign out",
-    signOutConfirm: "Are you sure you want to sign out? Your saved preferences will stay on this device.",
+    signOutConfirm:
+      "Are you sure you want to sign out? Your saved preferences will stay on this device.",
     goalsMetrics: "Goals & Metrics",
     allergiesDiet: "Allergies & Diet",
     tastePreferences: "Taste Preferences",
@@ -145,22 +146,28 @@ const en = {
     notificationTypes: "Notification Types",
     actions: "Actions",
     editMealTimes: "Edit meal times",
-    footerText: "Notifications help you stay on track with your meal plans.\nYou can change these settings anytime.",
+    footerText:
+      "Notifications help you stay on track with your meal plans.\nYou can change these settings anytime.",
     permissionRequired: "Permission Required",
-    permissionRequiredDesc: "Please enable notifications in your device settings to receive meal reminders.",
+    permissionRequiredDesc:
+      "Please enable notifications in your device settings to receive meal reminders.",
     openSettings: "Open Settings",
     physicalDeviceRequired: "Physical Device Required",
-    physicalDeviceRequiredDesc: "Push notifications only work on physical devices.",
+    physicalDeviceRequiredDesc:
+      "Push notifications only work on physical devices.",
     notificationScheduled: "Notification Scheduled",
-    notificationScheduledDesc: "You'll receive a test notification in 2 seconds.",
+    notificationScheduledDesc:
+      "You'll receive a test notification in 2 seconds.",
     notificationsLimited: "Notifications Limited",
-    notificationsLimitedDesc: "Notifications may not work in Expo Go. Use a development build for full functionality.",
+    notificationsLimitedDesc:
+      "Notifications may not work in Expo Go. Use a development build for full functionality.",
   },
   // Privacy
   privacy: {
     title: "Privacy & Data",
     personalizedInsights: "Personalized insights",
-    personalizedDesc: "Enable AI-powered meal suggestions and tips based on your preferences and goals.",
+    personalizedDesc:
+      "Enable AI-powered meal suggestions and tips based on your preferences and goals.",
     dataEncrypted: "Your data is encrypted and never sold to third parties.",
     privacyControls: "Privacy Controls",
     dataManagement: "Data Management",
@@ -168,12 +175,15 @@ const en = {
     exportDataDesc: "Download a copy of all your data.",
     deleteAccount: "Delete my account",
     deleteAccountDesc: "Permanently remove all your data.",
-    deleteAccountConfirm: "This will permanently delete all your data including meal plans, preferences, and history. This action cannot be undone.",
+    deleteAccountConfirm:
+      "This will permanently delete all your data including meal plans, preferences, and history. This action cannot be undone.",
     resetToDefaults: "Reset to defaults",
     resetConfirm: "Reset privacy settings?",
-    resetConfirmDesc: "We'll restore default privacy choices. You can undo this anytime.",
+    resetConfirmDesc:
+      "We'll restore default privacy choices. You can undo this anytime.",
     requestSent: "Request sent",
-    requestSentDesc: "We'll compile your data export and email it to you within 48 hours.",
+    requestSentDesc:
+      "We'll compile your data export and email it to you within 48 hours.",
     lastUpdated: "Last updated: December 2025",
     contactPrivacy: "Questions? Contact privacy@plannedeat.app",
   },
@@ -205,7 +215,8 @@ const en = {
     mealReminders: "Meal Reminders",
     mealRemindersDesc: "Get notified when it's time to eat",
     selectTime: "Select your preferred time",
-    footerText: "Your meal times are used to schedule reminders and personalize your meal plan recommendations.",
+    footerText:
+      "Your meal times are used to schedule reminders and personalize your meal plan recommendations.",
   },
   // Days
   days: {
@@ -226,7 +237,8 @@ const en = {
     emptyDesc: "Add ingredients to get recipe suggestions",
     prefill: "Pre-fill with common items",
     clearPantry: "Clear Pantry",
-    clearPantryConfirm: "Are you sure you want to remove all items from your pantry? This action cannot be undone.",
+    clearPantryConfirm:
+      "Are you sure you want to remove all items from your pantry? This action cannot be undone.",
   },
   // Recipes
   recipes: {
@@ -234,7 +246,8 @@ const en = {
     favorites: "Favorites",
     discover: "Discover",
     noFavorites: "No favorite recipes yet",
-    noFavoritesDesc: "All recipes you like in the Discover section will be collected here. Start searching to choose your daily inspiration.",
+    noFavoritesDesc:
+      "All recipes you like in the Discover section will be collected here. Start searching to choose your daily inspiration.",
     returnToDiscover: "Return to Discover",
     yourFavorites: "Your Favorites",
     savedRecipes: "saved recipes",
@@ -247,7 +260,8 @@ const en = {
     inspirationBoard: "Your Inspiration Board",
     recipesAtHand: "recipes always at hand",
     saveRecipesYouLove: "Save recipes you love",
-    heroSubtitle: "Recipes are collected here when you tap the heart icon. Adding favorites to your plans is now easier.",
+    heroSubtitle:
+      "Recipes are collected here when you tap the heart icon. Adding favorites to your plans is now easier.",
   },
   // Cooking Skills
   cookingSkills: {
@@ -268,7 +282,7 @@ const en = {
     emptyTitleHighlight: "delicious",
     emptyTitleEnd: "day!",
     emptySubtitle: "You have no meals planned for today.",
-    quickAddMeal: "Quick Add Meal",
+    quickAddMeal: "Create Meal Plan",
     discoverRecipes: "Discover Recipes",
     generateWithAI: "Generate recipes with AI",
     suggestedForYou: "Suggested for You",
@@ -315,7 +329,8 @@ const en = {
     itemsAvoidedPlural: "items",
     avoided: "avoided",
     noRestrictions: "No restrictions set",
-    noRestrictionsDesc: "You haven't set any dietary preferences or allergies yet.",
+    noRestrictionsDesc:
+      "You haven't set any dietary preferences or allergies yet.",
     setPreferences: "Set Preferences",
     addAllergies: "Add Allergies & Dislikes",
     editAllergies: "Edit Allergies & Dislikes",
@@ -327,7 +342,8 @@ const en = {
     diets: "Diets",
     allergies: "Allergies",
     infoTitle: "Why this matters",
-    infoText: "Your dietary preferences help us filter recipes and create personalized meal plans that work for you.",
+    infoText:
+      "Your dietary preferences help us filter recipes and create personalized meal plans that work for you.",
   },
   // Cooking Skill
   cookingSkillPage: {
@@ -342,16 +358,19 @@ const en = {
   tastePreferencesPage: {
     title: "Taste Preferences",
     favoriteCuisines: "Favorite Cuisines",
-    favoriteCuisinesDesc: "Select the cuisines you enjoy the most. We'll prioritize recipes from these categories.",
+    favoriteCuisinesDesc:
+      "Select the cuisines you enjoy the most. We'll prioritize recipes from these categories.",
     dislikesExclusions: "Dislikes & Exclusions",
-    dislikesExclusionsDesc: "Ingredients you want to avoid. We'll do our best to exclude recipes containing these.",
+    dislikesExclusionsDesc:
+      "Ingredients you want to avoid. We'll do our best to exclude recipes containing these.",
     heroTitle: "Your Taste Profile",
     heroSubtitle: "Help us personalize your meal recommendations",
     progress: "Progress",
     remaining: "Remaining",
     swipeHint: "Swipe to explore",
     tipTitle: "Pro Tip",
-    tipText: "The more cuisines you rate, the better we can personalize your meal suggestions!",
+    tipText:
+      "The more cuisines you rate, the better we can personalize your meal suggestions!",
   },
   // Units & Nutrition
   unitsNutrition: {
@@ -375,7 +394,8 @@ const en = {
   support: {
     title: "Support & Feedback",
     needHelp: "Need a hand?",
-    responseTime: "Our meal planning specialists respond in under 2 hours during the day.",
+    responseTime:
+      "Our meal planning specialists respond in under 2 hours during the day.",
     contactUs: "Contact us",
     liveChat: "Live chat",
     liveChatDesc: "Weekdays 09:00 - 18:00 GMT+3",
@@ -467,7 +487,8 @@ const tr = {
     support: "Destek & Geri Bildirim",
     logout: "Çıkış Yap",
     signOut: "Çıkış yap",
-    signOutConfirm: "Çıkış yapmak istediğinizden emin misiniz? Kayıtlı tercihleriniz bu cihazda kalacaktır.",
+    signOutConfirm:
+      "Çıkış yapmak istediğinizden emin misiniz? Kayıtlı tercihleriniz bu cihazda kalacaktır.",
     goalsMetrics: "Hedefler & Metrikler",
     allergiesDiet: "Alerjiler & Diyet",
     tastePreferences: "Tat Tercihleri",
@@ -551,22 +572,28 @@ const tr = {
     notificationTypes: "Bildirim Türleri",
     actions: "İşlemler",
     editMealTimes: "Öğün saatlerini düzenle",
-    footerText: "Bildirimler öğün planlarınızı takip etmenize yardımcı olur.\nBu ayarları istediğiniz zaman değiştirebilirsiniz.",
+    footerText:
+      "Bildirimler öğün planlarınızı takip etmenize yardımcı olur.\nBu ayarları istediğiniz zaman değiştirebilirsiniz.",
     permissionRequired: "İzin Gerekli",
-    permissionRequiredDesc: "Öğün hatırlatıcıları almak için lütfen cihaz ayarlarınızda bildirimleri etkinleştirin.",
+    permissionRequiredDesc:
+      "Öğün hatırlatıcıları almak için lütfen cihaz ayarlarınızda bildirimleri etkinleştirin.",
     openSettings: "Ayarları Aç",
     physicalDeviceRequired: "Fiziksel Cihaz Gerekli",
-    physicalDeviceRequiredDesc: "Push bildirimleri yalnızca fiziksel cihazlarda çalışır.",
+    physicalDeviceRequiredDesc:
+      "Push bildirimleri yalnızca fiziksel cihazlarda çalışır.",
     notificationScheduled: "Bildirim Planlandı",
-    notificationScheduledDesc: "2 saniye içinde bir test bildirimi alacaksınız.",
+    notificationScheduledDesc:
+      "2 saniye içinde bir test bildirimi alacaksınız.",
     notificationsLimited: "Bildirimler Sınırlı",
-    notificationsLimitedDesc: "Bildirimler Expo Go'da çalışmayabilir. Tam işlevsellik için geliştirme derlemesi kullanın.",
+    notificationsLimitedDesc:
+      "Bildirimler Expo Go'da çalışmayabilir. Tam işlevsellik için geliştirme derlemesi kullanın.",
   },
   // Privacy
   privacy: {
     title: "Gizlilik & Veri",
     personalizedInsights: "Kişiselleştirilmiş öneriler",
-    personalizedDesc: "Tercihlerinize ve hedeflerinize göre AI destekli öğün önerileri ve ipuçlarını etkinleştirin.",
+    personalizedDesc:
+      "Tercihlerinize ve hedeflerinize göre AI destekli öğün önerileri ve ipuçlarını etkinleştirin.",
     dataEncrypted: "Verileriniz şifrelenir ve asla üçüncü taraflara satılmaz.",
     privacyControls: "Gizlilik Kontrolleri",
     dataManagement: "Veri Yönetimi",
@@ -574,12 +601,15 @@ const tr = {
     exportDataDesc: "Tüm verilerinizin bir kopyasını indirin.",
     deleteAccount: "Hesabımı sil",
     deleteAccountDesc: "Tüm verilerinizi kalıcı olarak kaldırın.",
-    deleteAccountConfirm: "Bu işlem öğün planları, tercihler ve geçmiş dahil tüm verilerinizi kalıcı olarak silecektir. Bu işlem geri alınamaz.",
+    deleteAccountConfirm:
+      "Bu işlem öğün planları, tercihler ve geçmiş dahil tüm verilerinizi kalıcı olarak silecektir. Bu işlem geri alınamaz.",
     resetToDefaults: "Varsayılanlara sıfırla",
     resetConfirm: "Gizlilik ayarları sıfırlansın mı?",
-    resetConfirmDesc: "Varsayılan gizlilik tercihlerini geri yükleyeceğiz. Bunu istediğiniz zaman geri alabilirsiniz.",
+    resetConfirmDesc:
+      "Varsayılan gizlilik tercihlerini geri yükleyeceğiz. Bunu istediğiniz zaman geri alabilirsiniz.",
     requestSent: "İstek gönderildi",
-    requestSentDesc: "Veri dışa aktarımınızı derleyip 48 saat içinde e-posta ile göndereceğiz.",
+    requestSentDesc:
+      "Veri dışa aktarımınızı derleyip 48 saat içinde e-posta ile göndereceğiz.",
     lastUpdated: "Son güncelleme: Aralık 2025",
     contactPrivacy: "Sorularınız mı var? privacy@plannedeat.app adresine yazın",
   },
@@ -611,7 +641,8 @@ const tr = {
     mealReminders: "Öğün Hatırlatıcıları",
     mealRemindersDesc: "Yemek zamanı geldiğinde bildirim al",
     selectTime: "Tercih ettiğiniz saati seçin",
-    footerText: "Öğün saatleriniz hatırlatıcıları planlamak ve öğün planı önerilerinizi kişiselleştirmek için kullanılır.",
+    footerText:
+      "Öğün saatleriniz hatırlatıcıları planlamak ve öğün planı önerilerinizi kişiselleştirmek için kullanılır.",
   },
   // Days
   days: {
@@ -632,7 +663,8 @@ const tr = {
     emptyDesc: "Tarif önerileri almak için malzeme ekleyin",
     prefill: "Yaygın malzemelerle doldur",
     clearPantry: "Kileri Temizle",
-    clearPantryConfirm: "Kilerdeki tüm malzemeleri kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+    clearPantryConfirm:
+      "Kilerdeki tüm malzemeleri kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.",
   },
   // Recipes
   recipes: {
@@ -640,7 +672,8 @@ const tr = {
     favorites: "Favoriler",
     discover: "Keşfet",
     noFavorites: "Henüz favori tarif yok",
-    noFavoritesDesc: "Keşfet bölümünde beğendiğiniz tüm tarifler burada toplanacak. Günlük ilhamınızı seçmek için aramaya başlayın.",
+    noFavoritesDesc:
+      "Keşfet bölümünde beğendiğiniz tüm tarifler burada toplanacak. Günlük ilhamınızı seçmek için aramaya başlayın.",
     returnToDiscover: "Keşfet'e Dön",
     yourFavorites: "Favorileriniz",
     savedRecipes: "kayıtlı tarif",
@@ -653,7 +686,8 @@ const tr = {
     inspirationBoard: "İlham Panonuz",
     recipesAtHand: "tarif her zaman elinizin altında",
     saveRecipesYouLove: "Sevdiğiniz tarifleri kaydedin",
-    heroSubtitle: "Kalp simgesine dokunduğunuzda tarifler burada toplanır. Favorileri planlarınıza eklemek artık daha kolay.",
+    heroSubtitle:
+      "Kalp simgesine dokunduğunuzda tarifler burada toplanır. Favorileri planlarınıza eklemek artık daha kolay.",
   },
   // Cooking Skills
   cookingSkills: {
@@ -674,7 +708,7 @@ const tr = {
     emptyTitleHighlight: "lezzetli",
     emptyTitleEnd: "gününü planla!",
     emptySubtitle: "Bugün için planlanmış öğün yok.",
-    quickAddMeal: "Hızlı Öğün Ekle",
+    quickAddMeal: "Yemek Planı Oluştur",
     discoverRecipes: "Tarifleri Keşfet",
     generateWithAI: "AI ile öneri oluştur",
     suggestedForYou: "Senin İçin Öneriler",
@@ -733,7 +767,8 @@ const tr = {
     diets: "Diyetler",
     allergies: "Alerjiler",
     infoTitle: "Neden önemli",
-    infoText: "Diyet tercihleriniz tarifleri filtrelememize ve size uygun kişiselleştirilmiş yemek planları oluşturmamıza yardımcı olur.",
+    infoText:
+      "Diyet tercihleriniz tarifleri filtrelememize ve size uygun kişiselleştirilmiş yemek planları oluşturmamıza yardımcı olur.",
   },
   // Cooking Skill
   cookingSkillPage: {
@@ -748,16 +783,19 @@ const tr = {
   tastePreferencesPage: {
     title: "Tat Tercihleri",
     favoriteCuisines: "Favori Mutfaklar",
-    favoriteCuisinesDesc: "En çok sevdiğiniz mutfakları seçin. Bu kategorilerden tariflere öncelik vereceğiz.",
+    favoriteCuisinesDesc:
+      "En çok sevdiğiniz mutfakları seçin. Bu kategorilerden tariflere öncelik vereceğiz.",
     dislikesExclusions: "Beğenmediklerim & Hariç Tutulanlar",
-    dislikesExclusionsDesc: "Kaçınmak istediğiniz malzemeler. Bunları içeren tarifleri hariç tutmak için elimizden geleni yapacağız.",
+    dislikesExclusionsDesc:
+      "Kaçınmak istediğiniz malzemeler. Bunları içeren tarifleri hariç tutmak için elimizden geleni yapacağız.",
     heroTitle: "Tat Profiliniz",
     heroSubtitle: "Yemek önerilerinizi kişiselleştirmemize yardımcı olun",
     progress: "İlerleme",
     remaining: "Kalan",
     swipeHint: "Keşfetmek için kaydırın",
     tipTitle: "İpucu",
-    tipText: "Ne kadar çok mutfak değerlendirirseniz, yemek önerilerinizi o kadar iyi kişiselleştirebiliriz!",
+    tipText:
+      "Ne kadar çok mutfak değerlendirirseniz, yemek önerilerinizi o kadar iyi kişiselleştirebiliriz!",
   },
   // Units & Nutrition
   unitsNutrition: {
@@ -781,7 +819,8 @@ const tr = {
   support: {
     title: "Destek & Geri Bildirim",
     needHelp: "Yardıma mı ihtiyacınız var?",
-    responseTime: "Öğün planlama uzmanlarımız gün içinde 2 saat içinde yanıt verir.",
+    responseTime:
+      "Öğün planlama uzmanlarımız gün içinde 2 saat içinde yanıt verir.",
     contactUs: "Bize ulaşın",
     liveChat: "Canlı sohbet",
     liveChatDesc: "Hafta içi 09:00 - 18:00 GMT+3",
@@ -792,7 +831,8 @@ const tr = {
     helpCenter: "Yardım merkezi",
     helpCenterDesc: "Sorun giderme, faturalandırma ve özellik kılavuzları.",
     serviceStatus: "Servis durumu",
-    serviceStatusDesc: "Tarifler, kimlik doğrulama ve AI öğün planları için canlı çalışma süresi.",
+    serviceStatusDesc:
+      "Tarifler, kimlik doğrulama ve AI öğün planları için canlı çalışma süresi.",
   },
   // Cuisines
   cuisines: {

@@ -34,18 +34,18 @@ export function RecipeCardSkeleton() {
   });
 
   const gradientColors = isDark
-    ? [
+    ? ([
         "rgba(191, 90, 242, 0.15)",
         "rgba(191, 90, 242, 0.10)",
         "rgba(191, 90, 242, 0.08)",
         "rgba(191, 90, 242, 0.03)",
-      ] as const
-    : [
+      ] as const)
+    : ([
         "rgba(120, 73, 182, 0.15)",
         "rgba(120, 73, 182, 0.10)",
         "rgba(120, 73, 182, 0.08)",
         "rgba(120, 73, 182, 0.03)",
-      ] as const;
+      ] as const);
 
   const skeletonColor = isDark ? themeColors.gray[800] : Colors.gray[200];
 
@@ -57,20 +57,37 @@ export function RecipeCardSkeleton() {
         end={{ x: 0, y: 1 }}
         style={styles.gradientBorder}
       >
-        <View style={[styles.card, { backgroundColor: themeColors.background.surface }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: themeColors.background.surface },
+          ]}
+        >
           <Animated.View
-            style={[styles.skeletonImage, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
+            style={[
+              styles.skeletonImage,
+              { opacity: shimmerOpacity, backgroundColor: skeletonColor },
+            ]}
           />
           <View style={styles.contentContainer}>
             <Animated.View
-              style={[styles.skeletonTitle, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
+              style={[
+                styles.skeletonTitle,
+                { opacity: shimmerOpacity, backgroundColor: skeletonColor },
+              ]}
             />
             <Animated.View
-              style={[styles.skeletonTitleSecond, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
+              style={[
+                styles.skeletonTitleSecond,
+                { opacity: shimmerOpacity, backgroundColor: skeletonColor },
+              ]}
             />
             <View style={styles.metaContainer}>
               <Animated.View
-                style={[styles.skeletonMeta, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
+                style={[
+                  styles.skeletonMeta,
+                  { opacity: shimmerOpacity, backgroundColor: skeletonColor },
+                ]}
               />
             </View>
           </View>
@@ -87,7 +104,15 @@ const styles = StyleSheet.create({
   gradientBorder: {
     borderRadius: 18,
     padding: 2.5,
-    height: 272,
+    height: 252,
+    shadowColor: Colors.lilac[900],
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 8,
   },
   card: {
     flex: 1,
@@ -121,4 +146,3 @@ const styles = StyleSheet.create({
     width: "60%",
   },
 });
-

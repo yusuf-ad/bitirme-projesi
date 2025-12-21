@@ -486,7 +486,12 @@ export default function AssignMealScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: bottom + 12, paddingTop: 12 },
+          ]}
+        >
           <CustomButton
             onPress={handleAddToPlan}
             disabled={isSaving}
