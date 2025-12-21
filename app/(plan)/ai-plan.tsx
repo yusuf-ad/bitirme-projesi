@@ -26,7 +26,7 @@ import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { generateAPIUrl } from "@/lib/utils";
-import CustomButton from "@/shared/components/custom-button";
+import { StickyFooter } from "@/shared/components/sticky-footer";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -520,12 +520,7 @@ export default function AiPlan() {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top, paddingBottom: insets.bottom },
-      ]}
-    >
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -625,16 +620,11 @@ export default function AiPlan() {
         />
       </ScrollView>
 
-      {/* Footer with Generate Button */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <CustomButton
-          containerStyle={styles.generateButton}
-          onPress={handleGenerateRecipe}
-        >
-          <MaterialIcons name="auto-awesome" size={20} color="#fff" />
-          <Text style={styles.generateButtonText}>GENERATE RECIPE</Text>
-        </CustomButton>
-      </View>
+      <StickyFooter
+        text="GENERATE RECIPE"
+        onPress={handleGenerateRecipe}
+        leftIcon={<MaterialIcons name="auto-awesome" size={20} color="#fff" />}
+      />
 
       {/* Ingredient Selection Modal */}
       <IngredientSelectionModal
@@ -746,25 +736,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: Colors.lilac[700],
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray[200],
-  },
-  generateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: Colors.lilac[900],
-    borderRadius: 99,
-    paddingVertical: 16,
-  },
-  generateButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
   },
 });

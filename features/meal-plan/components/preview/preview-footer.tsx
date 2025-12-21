@@ -1,8 +1,8 @@
 import { Colors, getThemeColors } from "@/constants/theme";
 import { useTheme } from "@/providers/theme-provider";
-import CustomButton from "@/shared/components/custom-button";
+import { StickyFooter } from "@/shared/components/sticky-footer";
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
 import type { PreviewFooterProps } from "./types";
 
@@ -17,52 +17,15 @@ export function PreviewFooter({
   const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[800];
 
   return (
-    <View style={[styles.footer, { backgroundColor: themeColors.background.primary, borderTopColor: themeColors.border.light }]}>
-      <CustomButton
-        containerStyle={[
-          styles.saveButton,
-          { backgroundColor: accentColor },
-          isDisabled && styles.saveButtonDisabled,
-        ]}
-        onPress={onSave}
-        disabled={isDisabled}
-      >
-        {isSaving ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <>
-            <Text style={styles.saveButtonText}>Save Meal Plan</Text>
-            <Ionicons name="checkmark-circle" size={20} color="#fff" />
-          </>
-        )}
-      </CustomButton>
-    </View>
+    <StickyFooter
+      text="Save Meal Plan"
+      onPress={onSave}
+      isLoading={isSaving}
+      disabled={isAddingToShoppingList}
+      accentColor={accentColor}
+      rightIcon={<Ionicons name="checkmark-circle" size={20} color="#fff" />}
+    />
   );
 }
 
-const styles = StyleSheet.create({
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-  },
-  saveButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    paddingVertical: 16,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#fff",
-    letterSpacing: -0.2,
-  },
-});
-
+const styles = StyleSheet.create({});
