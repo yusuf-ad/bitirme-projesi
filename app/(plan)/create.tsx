@@ -4,7 +4,7 @@ import { DateModal } from "@/features/meal-plan/components/date-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useMealPlansQuery } from "@/hooks/use-meal-plans-query";
 import { useTheme } from "@/providers/theme-provider";
-import CustomButton from "@/shared/components/custom-button";
+import { StickyFooter } from "@/shared/components/sticky-footer";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -228,15 +228,33 @@ export default function CreateMealPlan() {
     >
       <StatusBar style={isDark ? "light" : "dark"} />
       {/* Header */}
-      <Animated.View entering={FadeIn.duration(300)} style={[styles.header, { backgroundColor: themeColors.background.primary, borderColor: isDark ? themeColors.border.light : Colors.lilac[100] }]}>
+      <Animated.View
+        entering={FadeIn.duration(300)}
+        style={[
+          styles.header,
+          {
+            backgroundColor: themeColors.background.primary,
+            borderColor: isDark ? themeColors.border.light : Colors.lilac[100],
+          },
+        ]}
+      >
         <Pressable
           onPress={() => router.back()}
-          style={[styles.headerButton, { backgroundColor: isDark ? themeColors.background.surface : Colors.gray[100] }]}
+          style={[
+            styles.headerButton,
+            {
+              backgroundColor: isDark
+                ? themeColors.background.surface
+                : Colors.gray[100],
+            },
+          ]}
           hitSlop={12}
         >
           <Ionicons name="close" size={24} color={themeColors.text.primary} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>Create Meal Plan</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>
+          Create Meal Plan
+        </Text>
         <View style={styles.headerButtonPlaceholder} />
       </Animated.View>
 
@@ -252,17 +270,24 @@ export default function CreateMealPlan() {
           style={styles.heroSection}
         >
           <LinearGradient
-            colors={isDark ? ["rgba(191, 90, 242, 0.2)", "rgba(191, 90, 242, 0.1)"] : [Colors.lilac[100], Colors.lilac[200]]}
+            colors={
+              isDark
+                ? ["rgba(191, 90, 242, 0.2)", "rgba(191, 90, 242, 0.1)"]
+                : [Colors.lilac[100], Colors.lilac[200]]
+            }
             style={styles.iconContainer}
           >
-            <Ionicons
-              name="calendar-outline"
-              size={44}
-              color={accentColor}
-            />
+            <Ionicons name="calendar-outline" size={44} color={accentColor} />
           </LinearGradient>
-          <Text style={[styles.heroTitle, { color: themeColors.text.primary }]}>Choose Your Date</Text>
-          <Text style={[styles.heroDescription, { color: themeColors.text.secondary }]}>
+          <Text style={[styles.heroTitle, { color: themeColors.text.primary }]}>
+            Choose Your Date
+          </Text>
+          <Text
+            style={[
+              styles.heroDescription,
+              { color: themeColors.text.secondary },
+            ]}
+          >
             Select a date to create your personalized meal plan
           </Text>
         </Animated.View>
@@ -272,34 +297,73 @@ export default function CreateMealPlan() {
           entering={FadeInUp.duration(400).delay(200)}
           style={styles.selectedDateSection}
         >
-          <Text style={[styles.sectionLabel, { color: themeColors.text.tertiary }]}>SELECTED DATE</Text>
+          <Text
+            style={[styles.sectionLabel, { color: themeColors.text.tertiary }]}
+          >
+            SELECTED DATE
+          </Text>
           <Pressable
             onPress={handleStartDatePress}
-            style={[styles.selectedDateCard, { backgroundColor: themeColors.background.surface }]}
+            style={[
+              styles.selectedDateCard,
+              { backgroundColor: themeColors.background.surface },
+            ]}
           >
             <View style={styles.dateCardLeft}>
-              <View style={[styles.calendarIconWrapper, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100] }]}>
+              <View
+                style={[
+                  styles.calendarIconWrapper,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(191, 90, 242, 0.15)"
+                      : Colors.lilac[100],
+                  },
+                ]}
+              >
                 <Ionicons name="calendar" size={24} color={accentColor} />
               </View>
               <View style={styles.dateInfo}>
                 {startDateDisplay.label ? (
-                  <View style={[styles.labelBadge, { backgroundColor: accentColor }]}>
+                  <View
+                    style={[
+                      styles.labelBadge,
+                      { backgroundColor: accentColor },
+                    ]}
+                  >
                     <Text style={styles.labelBadgeText}>
                       {startDateDisplay.label}
                     </Text>
                   </View>
                 ) : null}
-                <Text style={[styles.dayName, { color: themeColors.text.primary }]}>{startDateDisplay.day}</Text>
-                <Text style={[styles.fullDate, { color: themeColors.text.secondary }]}>{startDateDisplay.date}</Text>
+                <Text
+                  style={[styles.dayName, { color: themeColors.text.primary }]}
+                >
+                  {startDateDisplay.day}
+                </Text>
+                <Text
+                  style={[
+                    styles.fullDate,
+                    { color: themeColors.text.secondary },
+                  ]}
+                >
+                  {startDateDisplay.date}
+                </Text>
               </View>
             </View>
-            <View style={[styles.changeButton, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100] }]}>
-              <Text style={[styles.changeButtonText, { color: accentColor }]}>Change</Text>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={accentColor}
-              />
+            <View
+              style={[
+                styles.changeButton,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(191, 90, 242, 0.15)"
+                    : Colors.lilac[100],
+                },
+              ]}
+            >
+              <Text style={[styles.changeButtonText, { color: accentColor }]}>
+                Change
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={accentColor} />
             </View>
           </Pressable>
         </Animated.View>
@@ -309,7 +373,11 @@ export default function CreateMealPlan() {
           entering={FadeInUp.duration(400).delay(350)}
           style={styles.quickSelectSection}
         >
-          <Text style={[styles.sectionLabel, { color: themeColors.text.tertiary }]}>QUICK SELECT</Text>
+          <Text
+            style={[styles.sectionLabel, { color: themeColors.text.tertiary }]}
+          >
+            QUICK SELECT
+          </Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -330,8 +398,19 @@ export default function CreateMealPlan() {
                     style={({ pressed }) => [
                       styles.quickDateCard,
                       { backgroundColor: themeColors.background.surface },
-                      selected && [styles.quickDateCardSelected, { backgroundColor: accentColor }],
-                      isTodayNotSelected && [styles.quickDateCardToday, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100], borderColor: accentColor }],
+                      selected && [
+                        styles.quickDateCardSelected,
+                        { backgroundColor: accentColor },
+                      ],
+                      isTodayNotSelected && [
+                        styles.quickDateCardToday,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(191, 90, 242, 0.15)"
+                            : Colors.lilac[100],
+                          borderColor: accentColor,
+                        },
+                      ],
                       pressed && styles.quickDateCardPressed,
                     ]}
                   >
@@ -384,23 +463,14 @@ export default function CreateMealPlan() {
         )}
       </ScrollView>
 
-      {/* Footer */}
-      <Animated.View
-        entering={FadeInUp.duration(400).delay(650)}
-        style={[styles.footer, { paddingBottom: insets.bottom + 16, backgroundColor: themeColors.background.primary, borderTopColor: themeColors.border.light }]}
-      >
-        <CustomButton
-          containerStyle={[
-            styles.nextButton,
-            { backgroundColor: accentColor },
-            isPastDate && styles.nextButtonDisabled,
-          ]}
+      <Animated.View entering={FadeInUp.duration(400).delay(650)}>
+        <StickyFooter
+          text="Continue"
           onPress={handleNext}
           disabled={isPastDate}
-        >
-          <Text style={styles.nextButtonText}>Continue</Text>
-          <Ionicons name="arrow-forward" size={20} color="#fff" />
-        </CustomButton>
+          accentColor={accentColor}
+          rightIcon={<Ionicons name="arrow-forward" size={20} color="#fff" />}
+        />
       </Animated.View>
 
       <DateModal
@@ -659,30 +729,5 @@ const styles = StyleSheet.create({
     color: Colors.semantic.warning.dark,
     lineHeight: 18,
     opacity: 0.85,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.light,
-    backgroundColor: Colors.background.primary,
-  },
-  nextButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 16,
-    backgroundColor: Colors.lilac[800],
-    borderRadius: 14,
-  },
-  nextButtonDisabled: {
-    opacity: 0.5,
-  },
-  nextButtonText: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#fff",
-    letterSpacing: -0.2,
   },
 });

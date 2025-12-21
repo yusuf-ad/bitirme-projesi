@@ -6,20 +6,14 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
-import {
-    Image,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 import Animated, {
-    FadeIn,
-    FadeInDown,
-    FadeInUp,
-    FadeOut,
-    FadeOutDown,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  FadeOut,
+  FadeOutDown,
 } from "react-native-reanimated";
 import { AllergiesModalProps } from "./types";
 
@@ -290,6 +284,7 @@ const styles = StyleSheet.create({
   allergiesList: {
     maxHeight: 280,
     paddingHorizontal: 16,
+    flexGrow: 0,
   },
   allergyItem: {
     marginBottom: 10,

@@ -4,6 +4,7 @@ import { MealSlot } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import CustomButton from "@/shared/components/custom-button";
+import { StickyFooter } from "@/shared/components/sticky-footer";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -486,20 +487,13 @@ export default function AssignMealScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
-          <CustomButton
-            onPress={handleAddToPlan}
-            disabled={isSaving}
-            containerStyle={[
-              styles.footerButton,
-              isSaving && styles.footerButtonDisabled,
-            ]}
-          >
-            <Text style={styles.footerButtonText}>
-              {isSaving ? "Adding..." : "Add to meal plan"}
-            </Text>
-          </CustomButton>
-        </View>
+        <StickyFooter
+          text={isSaving ? "Adding..." : "Add to meal plan"}
+          onPress={handleAddToPlan}
+          isLoading={isSaving}
+          containerStyle={styles.footer}
+          accentColor={Colors.lilac[900]}
+        />
       </>
     );
   };
@@ -752,23 +746,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.background.primary,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.light,
-  },
-  footerButton: {
-    backgroundColor: Colors.lilac[900],
-    borderRadius: 16,
-    paddingVertical: 14,
-  },
-  footerButtonDisabled: {
-    opacity: 0.7,
-  },
-  footerButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.background.surface,
   },
   errorState: {
     flex: 1,

@@ -1,16 +1,16 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors, getThemeColors } from "@/constants/theme";
 import {
-    PantryItem,
-    PantryItemDetailSheet,
-    ShoppingListItemsList,
+  PantryItem,
+  PantryItemDetailSheet,
+  ShoppingListItemsList,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { useTheme } from "@/providers/theme-provider";
 import {
-    AttachMenuOverlay,
-    AttachMenuProvider,
-    useAttachMenu,
+  AttachMenuOverlay,
+  AttachMenuProvider,
+  useAttachMenu,
 } from "@/shared/components/attach-menu";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/build/AntDesign";
@@ -18,16 +18,16 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    useAnimatedStyle,
-    withTiming,
+  useAnimatedStyle,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -270,16 +270,26 @@ export default function ShoppingListScreen() {
           onPress={handleBackPress}
           hitSlop={12}
         >
-          <Ionicons name="chevron-back" size={24} color={themeColors.text.primary} />
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={themeColors.text.primary}
+          />
         </Pressable>
         <Pressable
           style={styles.titlePressable}
           onPress={handleBackPress}
           hitSlop={8}
         >
-          <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>Groceries</Text>
+          <Text
+            style={[styles.headerTitle, { color: themeColors.text.primary }]}
+          >
+            Groceries
+          </Text>
         </Pressable>
-        <Text style={[styles.headerCount, { color: themeColors.text.tertiary }]}>
+        <Text
+          style={[styles.headerCount, { color: themeColors.text.tertiary }]}
+        >
           {shoppingListItems.length}{" "}
           {shoppingListItems.length === 1 ? "item" : "items"}
         </Text>
@@ -287,21 +297,36 @@ export default function ShoppingListScreen() {
 
       {/* Summary bar - simplified */}
       {shoppingListItems.length > 0 && (
-        <View style={[styles.summaryBar, { backgroundColor: themeColors.background.surface }]}>
+        <View
+          style={[
+            styles.summaryBar,
+            { backgroundColor: themeColors.background.surface },
+          ]}
+        >
           <View style={styles.summaryContent}>
-            <Text style={[styles.summaryText, { color: themeColors.text.primary }]}>
+            <Text
+              style={[styles.summaryText, { color: themeColors.text.primary }]}
+            >
               {checkedItems.length} purchased • {uncheckedItems.length} to buy
             </Text>
             <View style={styles.summaryActions}>
               {/* Mark all / Unmark all button */}
               {uncheckedItems.length > 0 && (
                 <Pressable hitSlop={8} onPress={handleMarkAll}>
-                  <Text style={[styles.actionButtonText, { color: accentColor }]}>Mark all</Text>
+                  <Text
+                    style={[styles.actionButtonText, { color: accentColor }]}
+                  >
+                    Mark all
+                  </Text>
                 </Pressable>
               )}
               {checkedItems.length > 0 && (
                 <Pressable hitSlop={8} onPress={handleUnmarkAll}>
-                  <Text style={[styles.actionButtonText, { color: accentColor }]}>Unmark all</Text>
+                  <Text
+                    style={[styles.actionButtonText, { color: accentColor }]}
+                  >
+                    Unmark all
+                  </Text>
                 </Pressable>
               )}
               <Pressable hitSlop={8} onPress={handleClearAll}>
@@ -315,7 +340,10 @@ export default function ShoppingListScreen() {
           </View>
           {/* Save to pantry button */}
           {checkedItems.length > 0 && (
-            <Pressable style={[styles.saveButton, { backgroundColor: accentColor }]} onPress={handleSaveToPantry}>
+            <Pressable
+              style={[styles.saveButton, { backgroundColor: accentColor }]}
+              onPress={handleSaveToPantry}
+            >
               <Feather name="check-circle" size={18} color="#FFFFFF" />
               <Text style={styles.saveButtonText}>Save to Pantry</Text>
             </Pressable>
@@ -327,12 +355,24 @@ export default function ShoppingListScreen() {
       {isLoading && items.length === 0 ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={accentColor} />
-          <Text style={[styles.loadingText, { color: themeColors.text.tertiary }]}>Loading items...</Text>
+          <Text
+            style={[styles.loadingText, { color: themeColors.text.tertiary }]}
+          >
+            Loading items...
+          </Text>
         </View>
       ) : shoppingListItems.length === 0 ? (
         <View style={styles.emptyState}>
-          <Feather name="shopping-cart" size={48} color={themeColors.text.tertiary} />
-          <Text style={[styles.emptyText, { color: themeColors.text.tertiary }]}>Your shopping list is empty</Text>
+          <Feather
+            name="shopping-cart"
+            size={48}
+            color={themeColors.text.tertiary}
+          />
+          <Text
+            style={[styles.emptyText, { color: themeColors.text.tertiary }]}
+          >
+            Your shopping list is empty
+          </Text>
         </View>
       ) : (
         <ShoppingListItemsList
@@ -371,8 +411,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
+    paddingBottom: 12,
     marginBottom: 12,
     gap: 12,
+
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lilac[100],
   },
   backButton: {
     width: 40,
@@ -472,4 +516,3 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 });
-

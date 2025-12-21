@@ -16,7 +16,6 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import switchTheme from "react-native-theme-switch-animation";
 
 const HEADER_HEIGHT = 60;
 const SCROLL_THRESHOLD = 100;
@@ -218,36 +217,23 @@ export const FixedHeader = React.memo(function FixedHeader({
     ]);
   }, [t]);
 
+  // Icon rotation value
+  const iconRotation = useSharedValue(0);
+
+  const iconAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${iconRotation.value}deg` }],
+    };
+  });
+
   const handleThemeToggle = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    // Measure the button position to start circular animation from its center
-    themeButtonRef.current?.measure((
-      _x: number,
-      _y: number,
-      width: number,
-      height: number,
-      pageX: number,
-      pageY: number
-    ) => {
-      const cx = pageX + width / 2;
-      const cy = pageY + height / 2;
-      
-      switchTheme({
-        switchThemeFunction: () => {
-          toggleTheme();
-        },
-        animationConfig: {
-          type: 'circular',
-          duration: 500,
-          startingPoint: {
-            cx,
-            cy,
-          },
-        },
-      });
+    toggleTheme();
+    iconRotation.value = withSpring(iconRotation.value + 180, {
+      damping: 12,
+      stiffness: 150,
     });
-  }, [toggleTheme]);
+  }, [toggleTheme, iconRotation]);
 
   const initials = useMemo(
     () => getUserInitials(profile, session ?? null),
@@ -307,11 +293,11 @@ export const FixedHeader = React.memo(function FixedHeader({
             isDark ? "Switch to light mode" : "Switch to dark mode"
           }
         >
-          <View
-            ref={themeButtonRef}
+          <Animated.View
             style={[
               styles.iconButtonCircle,
               { backgroundColor: iconButtonBgColor },
+              iconAnimatedStyle,
             ]}
           >
             <MaterialCommunityIcons
@@ -319,7 +305,7 @@ export const FixedHeader = React.memo(function FixedHeader({
               size={20}
               color={themeIconColor}
             />
-          </View>
+          </Animated.View>
         </Pressable>
 
         {/* Header Center - SETTINGS title or Profile Avatar & Name */}

@@ -2,31 +2,31 @@ import { Colors } from "@/constants/theme";
 import { searchIngredients } from "@/lib/spoonacular";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
-    BottomSheetBackdrop,
-    BottomSheetModal,
-    BottomSheetScrollView,
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import {
-    forwardRef,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PantryItem } from "../types";
@@ -189,22 +189,44 @@ export const PantryItemDetailSheet = forwardRef<
     );
   }, [item]);
 
+  // Format unit for display
+  const formatUnit = (unit: string): string => {
+    const u = (unit || "").toLowerCase();
+    if (u === "liter" || u === "liters" || u === "l") return "L";
+    if (u === "milliliter" || u === "milliliters" || u === "ml") return "mL";
+    if (u === "gram" || u === "grams" || u === "g") return "g";
+    if (u === "kilogram" || u === "kilograms" || u === "kg") return "kg";
+    if (u === "piece" || u === "pieces" || u === "pcs") return "pcs";
+    if (u === "package" || u === "pkg") return "pkg";
+    return unit;
+  };
+
   // Format amount for badge display (convert grams to kg, ml to l)
+  // Format amount for badge display
   const formatBadgeAmount = (amount: number, unit: string): string => {
     const unitLower = (unit || "").toLowerCase();
+    const formattedUnit = formatUnit(unit);
+
+    // Tiny amount logic for grams/ml being converted to kg/L
     if (unitLower === "g" || unitLower === "gram" || unitLower === "grams") {
-      const kg = amount / 1000;
-      return `${kg.toFixed(1)}kg`;
+      if (amount >= 1000) {
+        return `${(amount / 1000).toFixed(1)}kg`;
+      }
     }
     if (
       unitLower === "ml" ||
       unitLower === "milliliter" ||
       unitLower === "milliliters"
     ) {
-      const l = amount / 1000;
-      return `${l.toFixed(2)}l`;
+      if (amount >= 1000) {
+        return `${(amount / 1000).toFixed(2)}L`;
+      }
     }
-    return String(Math.round(amount));
+
+    // For everything else, or small amounts, just show Number + Unit
+    // e.g. "1 L", "500 g", "12 pcs"
+    // Use formatUnit to get the nice abbreviation
+    return `${Math.round(amount)}${formattedUnit}`;
   };
 
   const handleQuantityChange = (delta: number) => {
@@ -242,10 +264,6 @@ export const PantryItemDetailSheet = forwardRef<
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setInputValue(String(item.amount));
       setIsEditingQuantity(true);
-      // Focus the input after a short delay to ensure it's rendered
-      setTimeout(() => {
-        quantityInputRef.current?.focus();
-      }, 100);
     }
   };
 
@@ -370,49 +388,131 @@ export const PantryItemDetailSheet = forwardRef<
                   {isEditingQuantity ? (
                     // Editing mode: show input with controls
                     <View style={styles.quantityEditContainer}>
-                      {!showAsWeight && (
-                        <TouchableOpacity
-                          onPress={() => handleQuantityChange(-1)}
-                          style={styles.quantityEditBtn}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                          <Ionicons
-                            name="remove"
-                            size={20}
-                            color={Colors.lilac[900]}
-                          />
-                        </TouchableOpacity>
-                      )}
-                      <TextInput
-                        ref={quantityInputRef}
-                        style={styles.quantityEditInput}
-                        value={inputValue}
-                        onChangeText={handleAmountInputChange}
-                        onBlur={handleAmountSubmit}
-                        onSubmitEditing={handleAmountSubmit}
-                        keyboardType="decimal-pad"
-                        returnKeyType="done"
-                        selectTextOnFocus
-                      />
+                      {/* Amount Control Group */}
+                      <View style={styles.amountControl}>
+                        {!showAsWeight && (
+                          <TouchableOpacity
+                            onPress={() => handleQuantityChange(-1)}
+                            style={styles.quantityEditBtn}
+                            hitSlop={{
+                              top: 10,
+                              bottom: 10,
+                              left: 10,
+                              right: 10,
+                            }}
+                          >
+                            <Ionicons
+                              name="remove"
+                              size={20}
+                              color={Colors.lilac[900]}
+                            />
+                          </TouchableOpacity>
+                        )}
+                        <TextInput
+                          ref={quantityInputRef}
+                          style={styles.quantityEditInput}
+                          value={inputValue}
+                          onChangeText={handleAmountInputChange}
+                          onBlur={handleAmountSubmit}
+                          onSubmitEditing={handleAmountSubmit}
+                          keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          selectTextOnFocus
+                        />
+                        {!showAsWeight && (
+                          <TouchableOpacity
+                            onPress={() => handleQuantityChange(1)}
+                            style={styles.quantityEditBtn}
+                            hitSlop={{
+                              top: 10,
+                              bottom: 10,
+                              left: 10,
+                              right: 10,
+                            }}
+                          >
+                            <Ionicons
+                              name="add"
+                              size={20}
+                              color={Colors.lilac[900]}
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      {/* Unit Selector - Independent */}
                       <TouchableOpacity
-                        onPress={handleUnitCycle}
+                        onPress={() => {
+                          Keyboard.dismiss();
+                          setTimeout(() => {
+                            Alert.alert(
+                              "Select Unit",
+                              "Choose a unit for this item",
+                              [
+                                {
+                                  text: "kg",
+                                  onPress: () =>
+                                    onUpdateItem?.(item.id, {
+                                      unit: "kg",
+                                      is_weight: true,
+                                    }),
+                                },
+                                {
+                                  text: "g",
+                                  onPress: () =>
+                                    onUpdateItem?.(item.id, {
+                                      unit: "g",
+                                      is_weight: true,
+                                    }),
+                                },
+                                {
+                                  text: "L",
+                                  onPress: () =>
+                                    onUpdateItem?.(item.id, {
+                                      unit: "L",
+                                      is_weight: false,
+                                    }),
+                                },
+                                {
+                                  text: "mL",
+                                  onPress: () =>
+                                    onUpdateItem?.(item.id, {
+                                      unit: "mL",
+                                      is_weight: false,
+                                    }),
+                                },
+                                {
+                                  text: "pcs",
+                                  onPress: () =>
+                                    onUpdateItem?.(item.id, {
+                                      unit: "pcs",
+                                      is_weight: false,
+                                    }),
+                                },
+                                {
+                                  text: "pkg",
+                                  onPress: () =>
+                                    onUpdateItem?.(item.id, {
+                                      unit: "pkg",
+                                      is_weight: false,
+                                    }),
+                                },
+                                { text: "Cancel", style: "cancel" },
+                              ]
+                            );
+                          }, 100);
+                        }}
                         style={styles.unitBadge}
                       >
-                        <Text style={styles.unitBadgeText}>{item.unit}</Text>
+                        <Text style={styles.unitBadgeText}>
+                          {formatUnit(item.unit)}
+                        </Text>
+                        <Ionicons
+                          name="chevron-down"
+                          size={12}
+                          color={Colors.lilac[900]}
+                          style={{ marginLeft: 4 }}
+                        />
                       </TouchableOpacity>
-                      {!showAsWeight && (
-                        <TouchableOpacity
-                          onPress={() => handleQuantityChange(1)}
-                          style={styles.quantityEditBtn}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                          <Ionicons
-                            name="add"
-                            size={20}
-                            color={Colors.lilac[900]}
-                          />
-                        </TouchableOpacity>
-                      )}
                     </View>
                   ) : (
                     // Display mode: show value with edit icon
@@ -422,7 +522,7 @@ export const PantryItemDetailSheet = forwardRef<
                           {showAsWeight ? item.amount : Math.round(item.amount)}
                         </Text>
                         <Text style={styles.quantityDisplayUnit}>
-                          {item.unit}
+                          {formatUnit(item.unit)}
                         </Text>
                       </View>
                       <View style={styles.quantityEditIcon}>
@@ -661,6 +761,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  amountControl: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     backgroundColor: Colors.background.surface,
     borderRadius: 12,
     paddingHorizontal: 8,
@@ -689,6 +794,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.lilac[900],
+    flexDirection: "row",
+    alignItems: "center",
+    height: 48, // Match height of amount control roughly
   },
   unitBadgeText: {
     fontSize: 14,

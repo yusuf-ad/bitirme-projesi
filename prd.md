@@ -877,24 +877,20 @@ constants/
 - [] anasayfa animasyonu
 - [] ana sayfada sınır ekle max 7 gün ??? yunusa sor bunu
 - [] yunusun nota bakılacak ai generatedla ilgili
-- [] hangi tarif replacedeyse o lunchsa lunch olsun
+- [x] hangi tarif replacedeyse o lunchsa lunch olsun
 - [] onboardingte kaç öğün seçildiyse o öğünler gözüksün
 
 ### meal plan
 
 - [x] var olan mealplan de üstüne yazsın
 - [x] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
-- [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan osman hataları düzeltince ekle - yusuf
 - [] sentry gibi hata raporlama sistemi ekle
 - [] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
 - [] servings için mi calori ingredient kalori felan 1 kişi için mi
 
 ### recipes
 
-- [] select ingredients altta kalıyor
-- [] alerji scrollable degil
 - [x] search recipes inputuna hepsini sil butonu eklenbilir
-
 - [x] snacks seçeneğini kaldır generate with ai da
 - [x] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
 - [x] scroll ederken yüklenme skeletonu gözükmüyor
@@ -902,34 +898,31 @@ constants/
 ### recipes - osman
 
 - [x] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.
-- [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor!
-- [] select ingredients altta kalıyor - yusuf
-- [] alerji scrollable degil - yusuf
-- [] search recipes inputuna hepsini sil butonu eklenebilir 
-- [] snacks seçeneğini kaldır generate with ai da - yusuf
-- [] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
-- [] scroll ederken yüklenme skeletonu gözükmüyor - yusuf
+- [x] select ingredients altta kalıyor - yusuf
+- [x] alerji scrollable degil - yusuf
+- [x] search recipes inputuna hepsini sil butonu eklenebilir
+- [x] snacks seçeneğini kaldır generate with ai da - yusuf
+- [x] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
 
 ### recipes - osman
 
-- [] recipes sayfasındaki ingredient filtresi doğru çalışmıyor scrollable değil.- yusuf
-- [] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor! - yusuf
+- [x] aşağı kaydırınca loading gözükmüyro skleeton recipes gözükmüyor! - yusuf
 - [x] healthy ,easy badgeleri gözükmüyor burası spoonaculardaki şeylerden miçekiliyor oraya bak!
 - [x] spoonaculardeki filter tagleri kullanılsın healthy veg vs. diye
 
 ### pantry - yusuf
 
-- [] prefill deki olayın kg litresini felan düzelt
-- [] update butonu kaldır onun yerine eğer resim yoksa update butonu çıksın
-- [] scanresults sayfasının tasarımını düzelt
+- [x] prefill deki olayın kg litresini felan düzelt
+- [x] scanresults sayfasının tasarımını düzelt
 
 ### profile
 
 - [x] statusbarın rengiyle farklı header kötü duruyor orası.
 - [] yunusun hologram sayfası
-- [] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
+- [x] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
 - [x] dark mode tam uyumlu değil!!
 - [x] goals and metrics sayfasında ikonlar dağınık düzelt
+
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 
 - [x] Meal logging system

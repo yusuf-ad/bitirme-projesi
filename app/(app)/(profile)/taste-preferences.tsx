@@ -11,96 +11,130 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    FlatList,
-    Image,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  FlatList,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const cuisineDescriptions: Record<string, { description: string; image: any; emoji: string }> = {
+const cuisineDescriptions: Record<
+  string,
+  { description: string; image: any; emoji: string }
+> = {
   american: {
     description: "Classic comfort food",
     emoji: "🍔",
-    image: { uri: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
+    },
   },
   asian: {
     description: "Stir-fry, noodles & spices",
     emoji: "🥢",
-    image: { uri: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
+    },
   },
   chinese: {
     description: "Wok-fired & flavorful",
     emoji: "🥡",
-    image: { uri: "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=800&q=80",
+    },
   },
   french: {
     description: "Elegant & sophisticated",
     emoji: "🥐",
-    image: { uri: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
+    },
   },
   greek: {
     description: "Mediterranean classics",
     emoji: "🥗",
-    image: { uri: "https://images.unsplash.com/photo-1539136788836-5699e78bfc75?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1539136788836-5699e78bfc75?auto=format&fit=crop&w=800&q=80",
+    },
   },
   indian: {
     description: "Spicy & aromatic",
     emoji: "🍛",
-    image: { uri: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=800&q=80",
+    },
   },
   italian: {
     description: "Pasta, risotto, pizza",
     emoji: "🍝",
-    image: { uri: "https://images.unsplash.com/photo-1498579150354-977475b7ea0b?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1498579150354-977475b7ea0b?auto=format&fit=crop&w=800&q=80",
+    },
   },
   japanese: {
     description: "Delicate & precise",
     emoji: "🍣",
-    image: { uri: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80",
+    },
   },
   mediterranean: {
     description: "Fresh, healthy & colorful",
     emoji: "🫒",
-    image: { uri: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+    },
   },
   mexican: {
     description: "Bold & vibrant",
     emoji: "🌮",
-    image: { uri: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80",
+    },
   },
   middleeastern: {
     description: "Aromatic & flavorful",
     emoji: "🧆",
-    image: { uri: "https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=800&q=80",
+    },
   },
   thai: {
     description: "Sweet, sour & spicy",
     emoji: "🍜",
-    image: { uri: "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=800&q=80",
+    },
   },
   korean: {
     description: "Bold flavors & fermented",
     emoji: "🍲",
-    image: { uri: "https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=800&q=80",
+    },
   },
   spanish: {
     description: "Tapas & paella",
     emoji: "🥘",
-    image: { uri: "https://images.unsplash.com/photo-1515443961218-a51367888e4b?auto=format&fit=crop&w=800&q=80" },
+    image: {
+      uri: "https://images.unsplash.com/photo-1515443961218-a51367888e4b?auto=format&fit=crop&w=800&q=80",
+    },
   },
 };
 
 const cuisineOptions = POPULAR_CUISINES.map((cuisine) => ({
   id: cuisine.id,
   label: cuisine.name,
-  description: cuisineDescriptions[cuisine.id]?.description || "Delicious cuisine",
+  description:
+    cuisineDescriptions[cuisine.id]?.description || "Delicious cuisine",
   emoji: cuisineDescriptions[cuisine.id]?.emoji || "🍽️",
-  image: cuisineDescriptions[cuisine.id]?.image || { uri: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80" },
+  image: cuisineDescriptions[cuisine.id]?.image || {
+    uri: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+  },
 }));
 
 const CARD_WIDTH = 260;
@@ -147,7 +181,9 @@ export default function TastePreferencesScreen() {
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           await updateUserTastePreferences(user.id, {
             cuisines: liked,
@@ -174,13 +210,13 @@ export default function TastePreferencesScreen() {
       } else {
         const newLiked = [...likedCuisines, cuisineId];
         let newDisliked = dislikedCuisines;
-        
+
         if (dislikedCuisines.includes(cuisineId)) {
           newDisliked = dislikedCuisines.filter((c) => c !== cuisineId);
           setDislikedCuisines(newDisliked);
           onboarding.setDislikedCuisines(newDisliked);
         }
-        
+
         setLikedCuisines(newLiked);
         onboarding.setSelectedCuisines(newLiked);
         saveToSupabase(newLiked, newDisliked);
@@ -205,13 +241,13 @@ export default function TastePreferencesScreen() {
       } else {
         const newDisliked = [...dislikedCuisines, cuisineId];
         let newLiked = likedCuisines;
-        
+
         if (likedCuisines.includes(cuisineId)) {
           newLiked = likedCuisines.filter((c) => c !== cuisineId);
           setLikedCuisines(newLiked);
           onboarding.setSelectedCuisines(newLiked);
         }
-        
+
         setDislikedCuisines(newDisliked);
         onboarding.setDislikedCuisines(newDisliked);
         saveToSupabase(newLiked, newDisliked);
@@ -234,26 +270,38 @@ export default function TastePreferencesScreen() {
     setCurrentIndex(index);
   };
 
-  const progress = ((likedCuisines.length + dislikedCuisines.length) / cuisineOptions.length) * 100;
+  const progress =
+    ((likedCuisines.length + dislikedCuisines.length) / cuisineOptions.length) *
+    100;
 
-  const renderCuisineCard = ({ item, index }: { item: typeof cuisineOptions[0]; index: number }) => {
+  const renderCuisineCard = ({
+    item,
+    index,
+  }: {
+    item: (typeof cuisineOptions)[0];
+    index: number;
+  }) => {
     const isLiked = likedCuisines.includes(item.id);
     const isDisliked = dislikedCuisines.includes(item.id);
 
     return (
       <View style={styles.cardContainer}>
-        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
+        <View
+          style={[styles.card, { backgroundColor: Colors.background.surface }]}
+        >
           <Image source={item.image} style={styles.cardImage} />
           <LinearGradient
             colors={["transparent", "rgba(0,0,0,0.7)"]}
             style={styles.cardGradient}
           />
-          
+
           {/* Card Number */}
           <View style={styles.cardNumber}>
-            <Text style={styles.cardNumberText}>{index + 1}/{cuisineOptions.length}</Text>
+            <Text style={styles.cardNumberText}>
+              {index + 1}/{cuisineOptions.length}
+            </Text>
           </View>
-          
+
           <View style={styles.cardContent}>
             <Text style={styles.cuisineEmoji}>{item.emoji}</Text>
             <Text style={styles.cuisineLabel}>{item.label}</Text>
@@ -265,7 +313,11 @@ export default function TastePreferencesScreen() {
               style={[
                 styles.actionButton,
                 styles.dislikeButton,
-                { backgroundColor: isDark ? Colors.background.surface : "#FFFFFF" },
+                {
+                  backgroundColor: isDark
+                    ? Colors.background.surface
+                    : "#FFFFFF",
+                },
                 isDisliked && styles.dislikeButtonActive,
               ]}
               onPress={() => toggleCuisine(item.id, false)}
@@ -281,7 +333,11 @@ export default function TastePreferencesScreen() {
               style={[
                 styles.actionButton,
                 styles.likeButton,
-                { backgroundColor: isDark ? Colors.background.surface : "#FFFFFF" },
+                {
+                  backgroundColor: isDark
+                    ? Colors.background.surface
+                    : "#FFFFFF",
+                },
                 isLiked && styles.likeButtonActive,
               ]}
               onPress={() => toggleCuisine(item.id, true)}
@@ -295,7 +351,13 @@ export default function TastePreferencesScreen() {
           </View>
 
           {isLiked && (
-            <View style={[styles.badge, styles.likedBadge, { backgroundColor: Colors.lilac[900] }]}>
+            <View
+              style={[
+                styles.badge,
+                styles.likedBadge,
+                { backgroundColor: Colors.lilac[900] },
+              ]}
+            >
               <MaterialCommunityIcons name="heart" size={12} color="#FFFFFF" />
               <Text style={styles.badgeText}>{t("common.liked")}</Text>
             </View>
@@ -313,9 +375,19 @@ export default function TastePreferencesScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors.background.secondary, paddingTop: top }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: Colors.background.secondary },
+      ]}
+    >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: Colors.background.surface }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: Colors.background.surface, paddingTop: top },
+        ]}
+      >
         <Pressable
           onPress={() => {
             selection();
@@ -323,7 +395,11 @@ export default function TastePreferencesScreen() {
           }}
           style={styles.backButton}
         >
-          <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.text.primary} />
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={Colors.text.primary}
+          />
         </Pressable>
         <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
           {t("tastePreferencesPage.title")}
@@ -331,44 +407,89 @@ export default function TastePreferencesScreen() {
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView 
-        contentContainerStyle={[styles.content, { paddingBottom: bottom + 100 }]}
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: bottom + 100 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Section */}
-        <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.heroSection}>
+        <Animated.View
+          entering={FadeInUp.delay(50).springify()}
+          style={styles.heroSection}
+        >
           <LinearGradient
-            colors={isDark ? [Colors.lilac[900], Colors.background.tertiary] : [Colors.lilac[100], Colors.lilac[200]]}
+            colors={
+              isDark
+                ? [Colors.lilac[900], Colors.background.tertiary]
+                : [Colors.lilac[100], Colors.lilac[200]]
+            }
             style={styles.heroGradient}
           >
             <View style={styles.heroContent}>
               <Text style={styles.heroEmoji}>🍽️</Text>
               <View style={styles.heroTextContainer}>
-                <Text style={[styles.heroTitle, { color: isDark ? Colors.lilac[100] : Colors.lilac[900] }]}>
+                <Text
+                  style={[
+                    styles.heroTitle,
+                    { color: isDark ? Colors.lilac[100] : Colors.lilac[900] },
+                  ]}
+                >
                   {t("tastePreferencesPage.heroTitle") || "Your Taste Profile"}
                 </Text>
-                <Text style={[styles.heroSubtitle, { color: Colors.text.secondary }]}>
-                  {t("tastePreferencesPage.heroSubtitle") || "Help us personalize your meal recommendations"}
+                <Text
+                  style={[
+                    styles.heroSubtitle,
+                    { color: Colors.text.secondary },
+                  ]}
+                >
+                  {t("tastePreferencesPage.heroSubtitle") ||
+                    "Help us personalize your meal recommendations"}
                 </Text>
               </View>
             </View>
-            
+
             {/* Progress Bar */}
             <View style={styles.progressContainer}>
               <View style={styles.progressHeader}>
-                <Text style={[styles.progressLabel, { color: Colors.text.secondary }]}>
+                <Text
+                  style={[
+                    styles.progressLabel,
+                    { color: Colors.text.secondary },
+                  ]}
+                >
                   {t("tastePreferencesPage.progress") || "Progress"}
                 </Text>
-                <Text style={[styles.progressValue, { color: isDark ? Colors.lilac[300] : Colors.lilac[900] }]}>
+                <Text
+                  style={[
+                    styles.progressValue,
+                    { color: isDark ? Colors.lilac[300] : Colors.lilac[900] },
+                  ]}
+                >
                   {Math.round(progress)}%
                 </Text>
               </View>
-              <View style={[styles.progressBar, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.5)" }]}>
-                <View 
+              <View
+                style={[
+                  styles.progressBar,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255,255,255,0.1)"
+                      : "rgba(255,255,255,0.5)",
+                  },
+                ]}
+              >
+                <View
                   style={[
-                    styles.progressFill, 
-                    { width: `${progress}%`, backgroundColor: isDark ? Colors.lilac[400] : Colors.lilac[900] }
-                  ]} 
+                    styles.progressFill,
+                    {
+                      width: `${progress}%`,
+                      backgroundColor: isDark
+                        ? Colors.lilac[400]
+                        : Colors.lilac[900],
+                    },
+                  ]}
                 />
               </View>
             </View>
@@ -376,39 +497,121 @@ export default function TastePreferencesScreen() {
         </Animated.View>
 
         {/* Stats Row */}
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.statsContainer}>
-          <View style={[styles.statChip, { backgroundColor: isDark ? "rgba(124, 58, 237, 0.2)" : `${Colors.lilac[900]}12` }]}>
-            <MaterialCommunityIcons name="heart" size={14} color={isDark ? Colors.lilac[300] : Colors.lilac[900]} />
-            <Text style={[styles.statChipValue, { color: isDark ? Colors.lilac[300] : Colors.lilac[900] }]}>{likedCuisines.length}</Text>
-            <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>{t("common.liked")}</Text>
-          </View>
-          
-          <View style={[styles.statChip, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#E6394610" }]}>
-            <MaterialCommunityIcons name="close-circle" size={14} color={isDark ? "#F87171" : "#E63946"} />
-            <Text style={[styles.statChipValue, { color: isDark ? "#F87171" : "#E63946" }]}>{dislikedCuisines.length}</Text>
-            <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>{t("common.disliked")}</Text>
-          </View>
-          
-          <View style={[styles.statChip, { backgroundColor: isDark ? "rgba(34, 197, 94, 0.2)" : "#22C55E10" }]}>
-            <MaterialCommunityIcons name="help-circle-outline" size={14} color={isDark ? "#4ADE80" : "#22C55E"} />
-            <Text style={[styles.statChipValue, { color: isDark ? "#4ADE80" : "#22C55E" }]}>
-              {cuisineOptions.length - likedCuisines.length - dislikedCuisines.length}
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.statsContainer}
+        >
+          <View
+            style={[
+              styles.statChip,
+              {
+                backgroundColor: isDark
+                  ? "rgba(124, 58, 237, 0.2)"
+                  : `${Colors.lilac[900]}12`,
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="heart"
+              size={14}
+              color={isDark ? Colors.lilac[300] : Colors.lilac[900]}
+            />
+            <Text
+              style={[
+                styles.statChipValue,
+                { color: isDark ? Colors.lilac[300] : Colors.lilac[900] },
+              ]}
+            >
+              {likedCuisines.length}
             </Text>
-            <Text style={[styles.statChipLabel, { color: Colors.text.secondary }]}>
+            <Text
+              style={[styles.statChipLabel, { color: Colors.text.secondary }]}
+            >
+              {t("common.liked")}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.statChip,
+              {
+                backgroundColor: isDark
+                  ? "rgba(239, 68, 68, 0.2)"
+                  : "#E6394610",
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="close-circle"
+              size={14}
+              color={isDark ? "#F87171" : "#E63946"}
+            />
+            <Text
+              style={[
+                styles.statChipValue,
+                { color: isDark ? "#F87171" : "#E63946" },
+              ]}
+            >
+              {dislikedCuisines.length}
+            </Text>
+            <Text
+              style={[styles.statChipLabel, { color: Colors.text.secondary }]}
+            >
+              {t("common.disliked")}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.statChip,
+              {
+                backgroundColor: isDark
+                  ? "rgba(34, 197, 94, 0.2)"
+                  : "#22C55E10",
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="help-circle-outline"
+              size={14}
+              color={isDark ? "#4ADE80" : "#22C55E"}
+            />
+            <Text
+              style={[
+                styles.statChipValue,
+                { color: isDark ? "#4ADE80" : "#22C55E" },
+              ]}
+            >
+              {cuisineOptions.length -
+                likedCuisines.length -
+                dislikedCuisines.length}
+            </Text>
+            <Text
+              style={[styles.statChipLabel, { color: Colors.text.secondary }]}
+            >
               {t("tastePreferencesPage.remaining") || "Left"}
             </Text>
           </View>
         </Animated.View>
 
         {/* Cuisines Section */}
-        <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(150).springify()}
+          style={styles.section}
+        >
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
               {t("tastePreferencesPage.favoriteCuisines")}
             </Text>
             <View style={styles.swipeHint}>
-              <MaterialCommunityIcons name="gesture-swipe-horizontal" size={16} color={Colors.text.secondary} />
-              <Text style={[styles.swipeHintText, { color: Colors.text.secondary }]}>
+              <MaterialCommunityIcons
+                name="gesture-swipe-horizontal"
+                size={16}
+                color={Colors.text.secondary}
+              />
+              <Text
+                style={[styles.swipeHintText, { color: Colors.text.secondary }]}
+              >
                 {t("tastePreferencesPage.swipeHint") || "Swipe to explore"}
               </Text>
             </View>
@@ -436,7 +639,12 @@ export default function TastePreferencesScreen() {
                 style={[
                   styles.dot,
                   {
-                    backgroundColor: index === currentIndex ? Colors.lilac[900] : (isDark ? Colors.gray[700] : Colors.gray[300]),
+                    backgroundColor:
+                      index === currentIndex
+                        ? Colors.lilac[900]
+                        : isDark
+                        ? Colors.gray[700]
+                        : Colors.gray[300],
                     width: index === currentIndex ? 20 : 6,
                   },
                 ]}
@@ -446,19 +654,37 @@ export default function TastePreferencesScreen() {
         </Animated.View>
 
         {/* Tip Card */}
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.tipCard}>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.tipCard}
+        >
           <LinearGradient
-            colors={isDark ? [Colors.gray[700], Colors.gray[800]] : ["#FEF3C7", "#FDE68A"]}
+            colors={
+              isDark
+                ? [Colors.gray[700], Colors.gray[800]]
+                : ["#FEF3C7", "#FDE68A"]
+            }
             style={styles.tipGradient}
           >
             <View style={styles.tipContent}>
               <Text style={styles.tipEmoji}>💡</Text>
               <View style={styles.tipTextContainer}>
-                <Text style={[styles.tipTitle, isDark && { color: Colors.text.primary }]}>
+                <Text
+                  style={[
+                    styles.tipTitle,
+                    isDark && { color: Colors.text.primary },
+                  ]}
+                >
                   {t("tastePreferencesPage.tipTitle") || "Pro Tip"}
                 </Text>
-                <Text style={[styles.tipText, isDark && { color: Colors.text.secondary }]}>
-                  {t("tastePreferencesPage.tipText") || "The more cuisines you rate, the better we can personalize your meal suggestions!"}
+                <Text
+                  style={[
+                    styles.tipText,
+                    isDark && { color: Colors.text.secondary },
+                  ]}
+                >
+                  {t("tastePreferencesPage.tipText") ||
+                    "The more cuisines you rate, the better we can personalize your meal suggestions!"}
                 </Text>
               </View>
             </View>

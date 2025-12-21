@@ -1,12 +1,12 @@
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { getThemeColors } from "@/constants/theme";
 import {
-    EmptyMealState,
-    LoadingOverlay,
-    MealItem,
-    PreviewFooter,
-    PreviewHeader,
-    useMealPlanPreview,
+  EmptyMealState,
+  LoadingOverlay,
+  MealItem,
+  PreviewFooter,
+  PreviewHeader,
+  useMealPlanPreview,
 } from "@/features/meal-plan";
 import type { MealSelectionModalHandle } from "@/features/meal-plan/components/meal-selection-modal";
 import { MealSelectionModal } from "@/features/meal-plan/components/meal-selection-modal";
@@ -82,8 +82,18 @@ export default function MealPlanPreview() {
     // Show empty state with "Generate with AI" button if no data
     if (!mealData) {
       return (
-        <View key={mealType} style={[styles.mealCard, { backgroundColor: themeColors.background.surface }]}>
-          <Text style={[styles.mealTypeHeader, { color: themeColors.text.primary }]}>{capitalizeFirst(mealType)}</Text>
+        <View
+          key={mealType}
+          style={[
+            styles.mealCard,
+            { backgroundColor: themeColors.background.surface },
+          ]}
+        >
+          <Text
+            style={[styles.mealTypeHeader, { color: themeColors.text.primary }]}
+          >
+            {capitalizeFirst(mealType)}
+          </Text>
           <EmptyMealState
             mealType={mealType}
             onGenerateWithAI={handleGenerateWithAI}
@@ -96,8 +106,18 @@ export default function MealPlanPreview() {
     const { meal, isAiGenerated } = mealData;
 
     return (
-      <View key={mealType} style={[styles.mealCard, { backgroundColor: themeColors.background.surface }]}>
-        <Text style={[styles.mealTypeHeader, { color: themeColors.text.primary }]}>{capitalizeFirst(mealType)}</Text>
+      <View
+        key={mealType}
+        style={[
+          styles.mealCard,
+          { backgroundColor: themeColors.background.surface },
+        ]}
+      >
+        <Text
+          style={[styles.mealTypeHeader, { color: themeColors.text.primary }]}
+        >
+          {capitalizeFirst(mealType)}
+        </Text>
         <MealItem
           meal={meal}
           mealType={mealType}
@@ -115,7 +135,6 @@ export default function MealPlanPreview() {
         styles.container,
         {
           paddingTop: insets.top,
-          paddingBottom: insets.bottom,
           backgroundColor: themeColors.background.primary,
         },
       ]}
@@ -132,7 +151,9 @@ export default function MealPlanPreview() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={[styles.description, { color: themeColors.text.secondary }]}>
+        <Text
+          style={[styles.description, { color: themeColors.text.secondary }]}
+        >
           Here are the recipes we&apos;ve chosen for your meal plan. Feel free
           to swap out any that you don&apos;t like!
         </Text>
@@ -217,4 +238,3 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 });
-

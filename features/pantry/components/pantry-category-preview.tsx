@@ -4,11 +4,11 @@ import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Image } from "expo-image";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { PantryItem } from "../types";
 
@@ -27,7 +27,7 @@ export function PantryCategoryPreview({
 }: PantryCategoryPreviewProps) {
   const { isDark } = useTheme();
   const themeColors = getThemeColors(isDark, true);
-  
+
   if (items.length === 0) return null;
 
   const getBadgeContent = (item: PantryItem) => {
@@ -69,7 +69,9 @@ export function PantryCategoryPreview({
   };
 
   const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
-  const imageBackground = isDark ? themeColors.background.tertiary : themeColors.background.surface;
+  const imageBackground = isDark
+    ? themeColors.background.tertiary
+    : themeColors.background.surface;
   const borderColor = isDark ? themeColors.border.light : Colors.lilac[100];
   const badgeBackground = isDark ? themeColors.accent.lilac : Colors.lilac[700];
 
@@ -89,9 +91,15 @@ export function PantryCategoryPreview({
               gap: 4,
             }}
           >
-            <Text style={[styles.count, { color: themeColors.text.tertiary }]}>{items.length} ITEMS</Text>
+            <Text style={[styles.count, { color: themeColors.text.tertiary }]}>
+              {items.length} ITEMS
+            </Text>
 
-            <Entypo name="chevron-right" size={16} color={themeColors.text.primary} />
+            <Entypo
+              name="chevron-right"
+              size={16}
+              color={themeColors.text.primary}
+            />
           </View>
         </View>
       </TouchableOpacity>
@@ -106,14 +114,16 @@ export function PantryCategoryPreview({
             key={`${item.spoonacular_id || item.id}-${index}`}
             containerStyle={[
               styles.itemContainer,
-              { backgroundColor: imageBackground, borderColor }
+              { backgroundColor: imageBackground, borderColor },
             ]}
             onPress={() => onItemPress?.(item)}
           >
-            <View style={[
-              styles.imageWrapper,
-              { backgroundColor: imageBackground, borderColor }
-            ]}>
+            <View
+              style={[
+                styles.imageWrapper,
+                { backgroundColor: imageBackground, borderColor },
+              ]}
+            >
               <Image
                 source={{
                   uri: `https://spoonacular.com/cdn/ingredients_100x100/${item.spoonacular_image}`,
@@ -122,10 +132,15 @@ export function PantryCategoryPreview({
                 contentFit="contain"
                 transition={200}
               />
-              <View style={[
-                styles.badge,
-                { backgroundColor: badgeBackground, borderColor: imageBackground }
-              ]}>
+              <View
+                style={[
+                  styles.badge,
+                  {
+                    backgroundColor: badgeBackground,
+                    borderColor: imageBackground,
+                  },
+                ]}
+              >
                 <Text style={styles.badgeText}>{getBadgeContent(item)}</Text>
               </View>
             </View>
@@ -189,18 +204,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 6,
     right: 6,
-    minWidth: 24,
-    height: 24,
-    paddingHorizontal: 4,
-    borderRadius: 24,
+    height: 20,
+    paddingHorizontal: 6,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,
   },
   badgeText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "bold",
+    textTransform: "uppercase",
   },
 });
-

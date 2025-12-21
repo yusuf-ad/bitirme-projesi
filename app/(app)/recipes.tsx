@@ -14,7 +14,11 @@ import {
   TimeFilterModal,
   type ReadyTimeOption,
 } from "@/features/home";
-import { CALORIE_OPTIONS, CalorieFilterModal, type CalorieOption } from "@/features/home/components/calorie-filter-modal";
+import {
+  CALORIE_OPTIONS,
+  CalorieFilterModal,
+  type CalorieOption,
+} from "@/features/home/components/calorie-filter-modal";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
@@ -293,7 +297,12 @@ export default function HomeTab() {
   }, []);
 
   return (
-    <View style={[styles.mainContainer, { paddingTop: top, backgroundColor: Colors.background.secondary }]}>
+    <View
+      style={[
+        styles.mainContainer,
+        { paddingTop: top, backgroundColor: Colors.background.secondary },
+      ]}
+    >
       {/* Header */}
       <HomeHeader
         activeTab={activeTab}
@@ -304,17 +313,19 @@ export default function HomeTab() {
       />
 
       {activeTab === "discover" && (
-        <View style={[
-          styles.searchContainer,
-          {
-            backgroundColor: Colors.background.secondary,
-            borderBottomColor: Colors.border.light,
-          }
-        ]}>
+        <View
+          style={[
+            styles.searchContainer,
+            {
+              backgroundColor: Colors.background.secondary,
+              borderBottomColor: Colors.border.light,
+            },
+          ]}
+        >
           <SearchBar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onFilterPress={() => { }}
+            onFilterPress={() => {}}
             isSearching={loading && searchQuery.length > 0}
           />
 
@@ -385,11 +396,17 @@ export default function HomeTab() {
               )}
 
               {/* Pagination loading - show fewer skeletons at bottom */}
-              {isFetchingNextPage && <LoadingState count={2} />}
+              {isFetchingNextPage && (
+                <View style={{ marginVertical: 12 }}>
+                  <LoadingState count={2} />
+                </View>
+              )}
 
               {error && !loading && <ErrorState onRetry={handleRefresh} />}
 
-              {!hasMore && recipes.length > 0 && !isFetchingNextPage && <EndMessage />}
+              {!hasMore && recipes.length > 0 && !isFetchingNextPage && (
+                <EndMessage />
+              )}
             </View>
           </ScrollView>
         </View>
@@ -415,14 +432,10 @@ export default function HomeTab() {
             <View style={styles.favoritesContainer}>
               <FavoritesHeroCard favoriteCount={favoritesCount} />
 
-              {isLoadingFavorites && (
-                <LoadingState />
-              )}
+              {isLoadingFavorites && <LoadingState />}
 
               {!isLoadingFavorites && hasFavoritesError && (
-                <ErrorState
-                  onRetry={() => refetchFavorites()}
-                />
+                <ErrorState onRetry={() => refetchFavorites()} />
               )}
 
               {!isLoadingFavorites &&
