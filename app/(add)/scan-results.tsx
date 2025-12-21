@@ -4,19 +4,24 @@ import { PantryCategory } from "@/features/pantry/types";
 import { generateAPIUrl } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -33,6 +38,85 @@ interface EditableIngredient extends ScannedIngredient {
   parsedUnit: string;
   isWeight: boolean;
 }
+
+// Custom Modal for Unit Selection to replace Alert.alert on Android
+const UnitPickerModal = ({
+  visible,
+  onClose,
+  onSelect,
+  currentUnit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (unit: string, isWeight: boolean) => void;
+  currentUnit: string;
+}) => {
+  const options = [
+    { label: "Kilogram (kg)", unit: "kg", isWeight: true },
+    { label: "Gram (g)", unit: "g", isWeight: true },
+    { label: "Liter (L)", unit: "L", isWeight: false },
+    { label: "Milliliter (mL)", unit: "mL", isWeight: false },
+    { label: "Piece (pcs)", unit: "piece", isWeight: false },
+    { label: "Package (pkg)", unit: "pkg", isWeight: false },
+  ];
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Unit</Text>
+                <TouchableOpacity onPress={onClose} hitSlop={10}>
+                  <Ionicons name="close" size={24} color={Colors.gray[600]} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalOptions}>
+                {options.map((opt) => (
+                  <TouchableOpacity
+                    key={opt.unit}
+                    style={[
+                      styles.modalOption,
+                      currentUnit.toLowerCase() === opt.unit.toLowerCase() &&
+                        styles.modalOptionSelected,
+                    ]}
+                    onPress={() => {
+                      onSelect(opt.unit, opt.isWeight);
+                      onClose();
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        currentUnit.toLowerCase() === opt.unit.toLowerCase() &&
+                          styles.modalOptionTextSelected,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                    {currentUnit.toLowerCase() === opt.unit.toLowerCase() && (
+                      <Ionicons
+                        name="checkmark"
+                        size={20}
+                        color={Colors.lilac[600]}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+};
 
 export default function ScanResults() {
   const router = useRouter();
@@ -51,6 +135,12 @@ export default function ScanResults() {
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Unit picker state
+  const [unitPickerVisible, setUnitPickerVisible] = useState(false);
+  const [activePickerIndex, setActivePickerIndex] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     if (params.items) {
@@ -163,15 +253,7 @@ export default function ScanResults() {
     setEditingIndex(ingredients.length);
   };
 
-  const COMMON_UNITS = [
-    { label: "piece", value: "piece", weight: false },
-    { label: "g", value: "g", weight: true },
-    { label: "kg", value: "kg", weight: true },
-    { label: "ml", value: "ml", weight: true },
-    { label: "l", value: "l", weight: true },
-  ];
-
-  const quickSetUnit = (index: number, nextUnit: string, isWeight: boolean) => {
+  const changeUnit = (index: number, nextUnit: string, isWeight: boolean) => {
     const updated = [...ingredients];
     const prevUnit = (updated[index].parsedUnit || "").toLowerCase();
     const amount = updated[index].parsedAmount;
@@ -188,6 +270,23 @@ export default function ScanResults() {
     updated[index].parsedUnit = nextUnit;
     updated[index].isWeight = isWeight;
     setIngredients(updated);
+  };
+
+  const formatUnit = (unit: string): string => {
+    const u = (unit || "").toLowerCase();
+    if (u === "liter" || u === "liters" || u === "l") return "L";
+    if (u === "milliliter" || u === "milliliters" || u === "ml") return "mL";
+    if (u === "gram" || u === "grams" || u === "g") return "g";
+    if (u === "kilogram" || u === "kilograms" || u === "kg") return "kg";
+    if (u === "piece" || u === "pieces" || u === "pcs") return "pcs";
+    if (u === "package" || u === "pkg") return "pkg";
+    return unit;
+  };
+
+  const handleUnitPress = (index: number) => {
+    Keyboard.dismiss();
+    setActivePickerIndex(index);
+    setUnitPickerVisible(true);
   };
 
   const removeIngredient = (index: number) => {
@@ -335,6 +434,7 @@ export default function ScanResults() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={[styles.safeArea, { paddingTop: top }]}>
+        <StatusBar style="dark" />
         <View style={styles.header}>
           <Pressable
             style={styles.iconButton}
@@ -346,14 +446,12 @@ export default function ScanResults() {
           <Text style={styles.title}>Detected Ingredients</Text>
           <View style={{ width: 42 }} />
         </View>
-
         {secondsText && (
           <View style={styles.metaBar}>
             <Ionicons name="time-outline" size={16} color="#6b7280" />
             <Text style={styles.metaText}>Scan time: {secondsText}</Text>
           </View>
         )}
-
         <FlatList
           data={ingredients}
           showsVerticalScrollIndicator={false}
@@ -370,14 +468,7 @@ export default function ScanResults() {
 
             return (
               <View style={styles.row}>
-                {/* Delete Button */}
-                <Pressable
-                  style={styles.deleteButton}
-                  onPress={() => removeIngredient(index)}
-                >
-                  <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                </Pressable>
-
+                {/* Horizontal Layout: Image Left */}
                 {item.spoonacularImage ? (
                   <View style={styles.imageContainer}>
                     <Image
@@ -393,8 +484,9 @@ export default function ScanResults() {
                   </View>
                 )}
 
+                {/* Right Content */}
                 <View style={styles.rowContent}>
-                  <View style={styles.nameContainer}>
+                  <View style={styles.nameHeader}>
                     {isEditing ? (
                       <View style={styles.editNameRow}>
                         <TextInput
@@ -425,82 +517,74 @@ export default function ScanResults() {
                         </Pressable>
                       </View>
                     )}
-
                     {item.spoonacularId && !isEditing && (
                       <Text style={styles.idText}>
                         ID: {item.spoonacularId}
                       </Text>
                     )}
-                  </View>np
+                  </View>
 
-                  {/* Quantity Controls */}
-                  <View style={styles.quantityControls}>
-                    {item.isWeight ? (
-                      <View style={styles.weightInputWrapper}>
-                        <TextInput
-                          style={styles.weightInput}
-                          defaultValue={String(item.parsedAmount)}
-                          keyboardType="numeric"
-                          onChangeText={(text) =>
-                            handleWeightChange(index, text)
-                          }
-                          returnKeyType="done"
-                        />
-                        <Text style={styles.unitText}>{item.parsedUnit}</Text>
-                      </View>
-                    ) : (
-                      <View style={styles.pieceControls}>
-                        <Pressable
+                  <View style={styles.quantityControlsWrapper}>
+                    <View style={styles.amountControl}>
+                      {!item.isWeight && (
+                        <TouchableOpacity
                           onPress={() => handleDecrement(index)}
-                          style={styles.pieceBtn}
-                          hitSlop={8}
+                          style={styles.quantityEditBtn}
                         >
-                          <Ionicons name="remove" size={16} color="#4b5563" />
-                        </Pressable>
-                        <Text style={styles.pieceText}>
-                          {item.parsedUnit.toLowerCase() === "piece"
-                            ? Math.round(item.parsedAmount)
-                            : Number(item.parsedAmount).toFixed(2)}
-                        </Text>
-                        <Pressable
+                          <Ionicons
+                            name="remove"
+                            size={18}
+                            color={Colors.gray[600]}
+                          />
+                        </TouchableOpacity>
+                      )}
+                      <TextInput
+                        style={styles.quantityEditInput}
+                        value={String(item.parsedAmount)}
+                        onChangeText={(text) => handleWeightChange(index, text)}
+                        keyboardType="decimal-pad"
+                        returnKeyType="done"
+                        selectTextOnFocus
+                      />
+                      {!item.isWeight && (
+                        <TouchableOpacity
                           onPress={() => handleIncrement(index)}
-                          style={styles.pieceBtn}
-                          hitSlop={8}
+                          style={styles.quantityEditBtn}
                         >
-                          <Ionicons name="add" size={16} color="#4b5563" />
-                        </Pressable>
-                      </View>
-                    )}
-                    <View style={styles.unitChipsRow}>
-                      {COMMON_UNITS.map((u) => {
-                        const selected =
-                          item.parsedUnit.toLowerCase() ===
-                          u.value.toLowerCase();
-                        return (
-                          <Pressable
-                            key={u.value}
-                            onPress={() =>
-                              quickSetUnit(index, u.value, u.weight)
-                            }
-                            style={[
-                              styles.unitChip,
-                              selected && styles.unitChipSelected,
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.unitChipText,
-                                selected && styles.unitChipTextSelected,
-                              ]}
-                            >
-                              {u.label}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
+                          <Ionicons
+                            name="add"
+                            size={18}
+                            color={Colors.gray[600]}
+                          />
+                        </TouchableOpacity>
+                      )}
                     </View>
+
+                    {/* Unit Selector */}
+                    <TouchableOpacity
+                      onPress={() => handleUnitPress(index)}
+                      style={styles.unitBadge}
+                    >
+                      <Text style={styles.unitBadgeText}>
+                        {formatUnit(item.parsedUnit)}
+                      </Text>
+                      <Ionicons
+                        name="chevron-down"
+                        size={12}
+                        color={Colors.lilac[900]}
+                        style={{ marginLeft: 4 }}
+                      />
+                    </TouchableOpacity>
                   </View>
                 </View>
+
+                {/* Delete Button - kept absolute but adjusted */}
+                <Pressable
+                  style={styles.deleteButton}
+                  onPress={() => removeIngredient(index)}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                </Pressable>
               </View>
             );
           }}
@@ -511,7 +595,6 @@ export default function ScanResults() {
             </Pressable>
           }
         />
-
         <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
           <Pressable
             style={[styles.primaryButton, isSaving && { opacity: 0.7 }]}
@@ -532,6 +615,22 @@ export default function ScanResults() {
             )}
           </Pressable>
         </View>
+
+        {/* Render Unit Picker Modal */}
+        <UnitPickerModal
+          visible={unitPickerVisible}
+          onClose={() => setUnitPickerVisible(false)}
+          currentUnit={
+            activePickerIndex !== null && ingredients[activePickerIndex]
+              ? ingredients[activePickerIndex].parsedUnit
+              : ""
+          }
+          onSelect={(unit, isWeight) => {
+            if (activePickerIndex !== null) {
+              changeUnit(activePickerIndex, unit, isWeight);
+            }
+          }}
+        />
       </View>
     </KeyboardAvoidingView>
   );
@@ -564,8 +663,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#111",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "bold",
   },
   empty: {
     padding: 40,
@@ -578,7 +677,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     gap: 12,
-    paddingBottom: 120, // Increased padding to account for footer
+    paddingBottom: 120,
   },
   metaBar: {
     flexDirection: "row",
@@ -592,64 +691,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
   },
+
+  // Row Styles
   row: {
-    flexDirection: "column",
+    flexDirection: "row", // Changed to row for compactness
     alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 16,
     backgroundColor: Colors.background.surface,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderRadius: 16,
+    padding: 12, // Reduced padding
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.lilac[100],
+    position: "relative",
   },
   deleteButton: {
+    marginLeft: 8,
     padding: 4,
+    justifyContent: "center",
+    alignItems: "center",
   },
   imageContainer: {
-    width: 48,
-    height: 48,
-    overflow: "hidden",
-    borderRadius: 24,
+    width: 50, // Smaller image
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#f9fafb",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#e5e7eb",
+    marginRight: 12,
   },
   ingredientImage: {
-    width: 48,
-    height: 48,
-    resizeMode: "center",
+    width: 36,
+    height: 36,
+    resizeMode: "contain",
   },
   ingredientImagePlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#f0fdf4",
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
   },
   rowContent: {
     flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
+    gap: 4, // Tighter spacing
   },
-  nameContainer: {
-    flex: 1,
-    gap: 2,
-    marginRight: 4,
+  nameHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   displayNameRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    flex: 1,
   },
   editNameRow: {
     flexDirection: "row",
@@ -660,95 +763,82 @@ const styles = StyleSheet.create({
   nameInput: {
     flex: 1,
     fontSize: 16,
+    fontWeight: "bold",
     color: "#111",
     borderBottomWidth: 1,
-    borderBottomColor: "#16a34a",
+    borderBottomColor: Colors.lilac[500],
     paddingVertical: 0,
   },
   rowText: {
     fontSize: 16,
+    fontWeight: "bold",
     color: "#111",
     textTransform: "capitalize",
-    fontWeight: "500",
-    maxWidth: 120,
+    flex: 1,
   },
   idText: {
     fontSize: 10,
     color: "#9ca3af",
+    marginRight: 4,
   },
-  quantityControls: {
-    minWidth: 90,
-    alignItems: "flex-end",
-  },
-  unitChipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 6,
-    justifyContent: "flex-end",
-  },
-  unitChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#f9fafb",
-  },
-  unitChipSelected: {
-    borderColor: "#7849B6",
-    backgroundColor: "#F2EEF8",
-  },
-  unitChipText: { fontSize: 12, color: "#52465F" },
-  unitChipTextSelected: { color: "#7849B6", fontWeight: "600" },
-  weightInputWrapper: {
+  quantityControlsWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    gap: 8,
+    justifyContent: "flex-start",
   },
-  weightInput: {
-    minWidth: 30,
-    fontSize: 14,
-    textAlign: "right",
-    padding: 0,
-    color: "#111",
-    fontWeight: "600",
-  },
-  unitText: {
-    marginLeft: 4,
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  pieceControls: {
+  amountControl: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    gap: 0,
+    backgroundColor: Colors.background.surface,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e5e7eb",
+    height: 40,
     overflow: "hidden",
   },
-  pieceBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: "#f3f4f6",
+  quantityEditBtn: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#f9fafb",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quantityEditInput: {
+    height: 40,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111",
+    textAlign: "center",
+    minWidth: 40,
+    paddingHorizontal: 4,
+    backgroundColor: "#fff",
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: "#e5e7eb",
   },
-  pieceText: {
-    paddingHorizontal: 8,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
-    minWidth: 24,
-    textAlign: "center",
+  unitBadge: {
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.lilac[200],
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
+  unitBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.lilac[900],
+  },
+
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -757,14 +847,14 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    backgroundColor: "#f9fafb",
+    borderColor: Colors.lilac[200],
+    borderRadius: 16,
+    backgroundColor: "#fff",
     borderStyle: "dashed",
   },
   addButtonText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
     color: "#7849B6",
   },
   footer: {
@@ -786,15 +876,74 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: "#7849B6",
     borderRadius: 12,
-    height: 50,
+    height: 52,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    shadowColor: "#7849B6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   primaryButtonText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end", // Bottom sheet style
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.gray[800],
+  },
+  modalOptions: {
+    gap: 8,
+  },
+  modalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.background.secondary,
+    borderWidth: 1,
+    borderColor: Colors.gray[100],
+  },
+  modalOptionSelected: {
+    backgroundColor: Colors.lilac[100],
+    borderColor: Colors.lilac[200],
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: Colors.gray[700],
+    fontWeight: "500",
+  },
+  modalOptionTextSelected: {
+    color: Colors.lilac[900],
     fontWeight: "600",
   },
 });
