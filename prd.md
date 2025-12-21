@@ -884,7 +884,6 @@ constants/
 
 - [x] var olan mealplan de üstüne yazsın
 - [x] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
-- [] mealplande recipes sayfasındaki gibi ingredient ekleme olayı olsun debouncing kullan osman hataları düzeltince ekle - yusuf
 - [] sentry gibi hata raporlama sistemi ekle
 - [] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
 - [] servings için mi calori ingredient kalori felan 1 kişi için mi
@@ -913,8 +912,7 @@ constants/
 
 ### pantry - yusuf
 
-- [] prefill deki olayın kg litresini felan düzelt
-- [] update butonu kaldır onun yerine eğer resim yoksa update butonu çıksın
+- [x] prefill deki olayın kg litresini felan düzelt
 - [] scanresults sayfasının tasarımını düzelt
 
 ### profile

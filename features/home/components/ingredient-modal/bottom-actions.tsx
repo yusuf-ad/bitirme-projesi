@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomActionsProps } from "./types";
 
 export const BottomActions = ({
@@ -12,10 +13,17 @@ export const BottomActions = ({
   onClearAll,
   onApply,
 }: BottomActionsProps) => {
+  const { bottom } = useSafeAreaInsets();
+
   return (
     <Animated.View
       entering={FadeInDown.delay(400).springify()}
-      style={styles.bottomContainer}
+      style={[
+        styles.bottomContainer,
+        {
+          paddingBottom: bottom + 12,
+        },
+      ]}
     >
       <Pressable
         style={({ pressed }) => [

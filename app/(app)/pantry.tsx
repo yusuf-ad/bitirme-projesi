@@ -35,7 +35,7 @@ export default function PantryTab() {
 
   const { refresh } = useLocalSearchParams();
 
-  // Bottom sheet for item details
+  const [isPrefilling, setIsPrefilling] = useState(false);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [selectedItem, setSelectedItem] = useState<PantryItem | null>(null);
 
@@ -122,6 +122,7 @@ export default function PantryTab() {
   };
 
   const handlePrefill = async () => {
+    setIsPrefilling(true);
     try {
       const commonIngredients = await getCommonPantryIngredients();
 
@@ -129,8 +130,8 @@ export default function PantryTab() {
         const category = mapAisleToCategory(ing.aisle);
         return {
           name: ing.name,
-          amount: 1,
-          unit: "pkg",
+          amount: ing.amount || 1,
+          unit: ing.unit || "pkg",
           is_weight: false,
           category: category,
           status: "pantry" as const,
@@ -146,6 +147,8 @@ export default function PantryTab() {
     } catch (error) {
       console.error("Failed to pre-fill pantry:", error);
       Alert.alert("Error", "Failed to pre-fill pantry. Please try again.");
+    } finally {
+      setIsPrefilling(false);
     }
   };
 
@@ -269,7 +272,10 @@ export default function PantryTab() {
         >
           <View style={styles.categoriesContainer}>
             {pantryStockItems.length === 0 && !searchQuery ? (
-              <EmptyPantryState onPrefill={handlePrefill} />
+              <EmptyPantryState
+                onPrefill={handlePrefill}
+                isPrefilling={isPrefilling}
+              />
             ) : (
               <>
                 {searchQuery ? (

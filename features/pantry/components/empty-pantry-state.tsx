@@ -2,15 +2,19 @@ import { Colors } from "@/constants/theme";
 import { useLanguage } from "@/hooks/useLanguage";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 
 interface EmptyPantryStateProps {
   onPrefill: () => void;
+  isPrefilling?: boolean;
 }
 
-export function EmptyPantryState({ onPrefill }: EmptyPantryStateProps) {
+export function EmptyPantryState({
+  onPrefill,
+  isPrefilling,
+}: EmptyPantryStateProps) {
   const { t } = useLanguage();
-  
+
   return (
     <View style={styles.container}>
       <Image
@@ -20,18 +24,28 @@ export function EmptyPantryState({ onPrefill }: EmptyPantryStateProps) {
         resizeMode="contain"
       />
       <Text style={styles.title}>{t("pantry.emptyTitle")}</Text>
-      <Text style={styles.description}>
-        {t("pantry.emptyDesc")}
-      </Text>
-      <CustomButton onPress={onPrefill} containerStyle={styles.button}>
+      <Text style={styles.description}>{t("pantry.emptyDesc")}</Text>
+      <CustomButton
+        onPress={onPrefill}
+        containerStyle={styles.button}
+        disabled={isPrefilling}
+      >
         <View style={styles.buttonContent}>
-          <Ionicons
-            name="sparkles-outline"
-            size={20}
-            color={Colors.text.primary}
-            style={styles.icon}
-          />
-          <Text style={styles.buttonText}>{t("pantry.prefill").toUpperCase()}</Text>
+          {isPrefilling ? (
+            <ActivityIndicator size="small" color={Colors.text.primary} />
+          ) : (
+            <>
+              <Ionicons
+                name="sparkles-outline"
+                size={20}
+                color={Colors.text.primary}
+                style={styles.icon}
+              />
+              <Text style={styles.buttonText}>
+                {t("pantry.prefill").toUpperCase()}
+              </Text>
+            </>
+          )}
         </View>
       </CustomButton>
     </View>
