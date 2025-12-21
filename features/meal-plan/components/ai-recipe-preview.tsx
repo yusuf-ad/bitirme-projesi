@@ -1,31 +1,32 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useHaptics } from "@/hooks/useHaptics";
 import { Recipe } from "@/lib/spoonacular";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
 import {
-  Ionicons,
-  MaterialCommunityIcons,
-  MaterialIcons,
+    Ionicons,
+    MaterialCommunityIcons,
+    MaterialIcons,
 } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
+    Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -70,6 +71,8 @@ export function AIRecipePreview({
 }: AIRecipePreviewProps) {
   const insets = useSafeAreaInsets();
   const { impact } = useHaptics();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
   const { session } = useAuthContext();
   const userId = session?.user?.id;
 
@@ -107,12 +110,6 @@ export function AIRecipePreview({
     try {
       const ingredientNames =
         recipe.extendedIngredients?.slice(0, 6).map((ing) => ing.name) || [];
-
-      // Get user ID from prop or context (we need to pass it from parent or use context here)
-      // Since this component might be used where we don't want to couple to auth context directly,
-      // let's try to get it from context if not available in some other way.
-      // Ideally this component should receive userId as prop, but for now let's use the hook.
-      // We need to import useAuthContext for this to work.
 
       const response = await fetch("/api/generate-recipe-image", {
         method: "POST",
@@ -267,24 +264,27 @@ export function AIRecipePreview({
   }, [onBack, impact]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background.primary }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: themeColors.border.light }]}>
         <Pressable onPress={handleBack} style={styles.backButton}>
           <MaterialIcons
             name="arrow-back"
             size={24}
-            color={Colors.text.primary}
+            color={themeColors.text.primary}
           />
         </Pressable>
         <View style={styles.headerCenter}>
-          <View style={styles.aiBadge}>
+          <View style={[
+            styles.aiBadge,
+            { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100] }
+          ]}>
             <MaterialCommunityIcons
               name="robot-happy"
               size={14}
-              color={Colors.lilac[700]}
+              color={isDark ? themeColors.accent.lilac : Colors.lilac[700]}
             />
-            <Text style={styles.aiBadgeText}>AI Generated</Text>
+            <Text style={[styles.aiBadgeText, { color: isDark ? themeColors.accent.lilac : Colors.lilac[700] }]}>AI Generated</Text>
           </View>
         </View>
         <View style={styles.headerSpacer} />
@@ -299,13 +299,13 @@ export function AIRecipePreview({
         <View style={styles.heroContainer}>
           {isGeneratingImage ? (
             // Loading state with shimmer animation
-            <View style={styles.imageLoadingContainer}>
-              <View style={styles.shimmerBackground}>
-                <Animated.View style={[styles.shimmerOverlay, shimmerStyle]} />
+            <View style={[styles.imageLoadingContainer, { backgroundColor: isDark ? Colors.gray[800] : Colors.gray[100] }]}>
+              <View style={[styles.shimmerBackground, { backgroundColor: isDark ? Colors.gray[700] : Colors.gray[200] }]}>
+                <Animated.View style={[styles.shimmerOverlay, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.4)" }, shimmerStyle]} />
               </View>
               <View style={styles.loadingContent}>
-                <ActivityIndicator size="large" color={Colors.lilac[500]} />
-                <Text style={styles.loadingText}>Generating image...</Text>
+                <ActivityIndicator size="large" color={isDark ? themeColors.accent.lilac : Colors.lilac[500]} />
+                <Text style={[styles.loadingText, { color: themeColors.text.secondary }]}>Generating image...</Text>
               </View>
             </View>
           ) : displayImageUrl ? (
@@ -341,9 +341,9 @@ export function AIRecipePreview({
 
         {/* Title & Summary */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>{recipe.title}</Text>
+          <Text style={[styles.title, { color: themeColors.text.primary }]}>{recipe.title}</Text>
           {recipe.summary && (
-            <Text style={styles.summary} numberOfLines={3}>
+            <Text style={[styles.summary, { color: themeColors.text.secondary }]} numberOfLines={3}>
               {recipe.summary.replace(/<[^>]*>/g, "")}
             </Text>
           )}
@@ -352,9 +352,9 @@ export function AIRecipePreview({
               <MaterialCommunityIcons
                 name="account-group"
                 size={16}
-                color={Colors.text.secondary}
+                color={themeColors.text.secondary}
               />
-              <Text style={styles.servingsText}>
+              <Text style={[styles.servingsText, { color: themeColors.text.secondary }]}>
                 {recipe.servings} servings
               </Text>
             </View>
@@ -363,12 +363,12 @@ export function AIRecipePreview({
 
         {/* Macros Section */}
         <View style={styles.macrosSection}>
-          <Text style={styles.sectionTitle}>Nutrition per serving</Text>
+          <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Nutrition per serving</Text>
           <View style={styles.macrosGrid}>
             {macros.map((macro) => (
-              <View key={macro.label} style={styles.macroItem}>
+              <View key={macro.label} style={[styles.macroItem, { backgroundColor: themeColors.background.surface }]}>
                 <View
-                  style={[styles.macroBar, { backgroundColor: macro.color }]}
+                  style={[styles.macroBar, { backgroundColor: isDark ? Colors.gray[700] : Colors.gray[200] }]}
                 >
                   <View
                     style={[
@@ -380,8 +380,8 @@ export function AIRecipePreview({
                     ]}
                   />
                 </View>
-                <Text style={styles.macroLabel}>{macro.label}</Text>
-                <Text style={styles.macroAmount}>{macro.amountLabel}</Text>
+                <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>{macro.label}</Text>
+                <Text style={[styles.macroAmount, { color: themeColors.text.primary }]}>{macro.amountLabel}</Text>
                 <Text style={[styles.macroPercent, { color: macro.color }]}>
                   {macro.percentLabel}
                 </Text>
@@ -394,15 +394,15 @@ export function AIRecipePreview({
         {recipe.extendedIngredients &&
           recipe.extendedIngredients.length > 0 && (
             <View style={styles.ingredientsSection}>
-              <Text style={styles.sectionTitle}>Ingredients</Text>
+              <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Ingredients</Text>
               <View style={styles.ingredientsList}>
                 {recipe.extendedIngredients.map((ingredient, index) => (
                   <View
                     key={`${ingredient.name}-${index}`}
                     style={styles.ingredientItem}
                   >
-                    <View style={styles.ingredientBullet} />
-                    <Text style={styles.ingredientText}>
+                    <View style={[styles.ingredientBullet, { backgroundColor: isDark ? themeColors.accent.lilac : Colors.lilac[500] }]} />
+                    <Text style={[styles.ingredientText, { color: themeColors.text.primary }]}>
                       {ingredient.original ||
                         `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`}
                     </Text>
@@ -415,14 +415,17 @@ export function AIRecipePreview({
         {/* Instructions Section */}
         {instructions.length > 0 && (
           <View style={styles.instructionsSection}>
-            <Text style={styles.sectionTitle}>Instructions</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Instructions</Text>
             <View style={styles.instructionsList}>
               {instructions.map((step) => (
                 <View key={step.number} style={styles.instructionItem}>
-                  <View style={styles.stepNumber}>
-                    <Text style={styles.stepNumberText}>{step.number}</Text>
+                  <View style={[
+                    styles.stepNumber,
+                    { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100] }
+                  ]}>
+                    <Text style={[styles.stepNumberText, { color: isDark ? themeColors.accent.lilac : Colors.lilac[700] }]}>{step.number}</Text>
                   </View>
-                  <Text style={styles.instructionText}>{step.text}</Text>
+                  <Text style={[styles.instructionText, { color: themeColors.text.primary }]}>{step.text}</Text>
                 </View>
               ))}
             </View>
@@ -434,21 +437,27 @@ export function AIRecipePreview({
       </ScrollView>
 
       {/* Footer Actions */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16, backgroundColor: themeColors.background.primary, borderTopColor: themeColors.border.light }]}>
         <Pressable
-          style={styles.regenerateButton}
+          style={[
+            styles.regenerateButton,
+            {
+              backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100],
+              borderColor: isDark ? themeColors.accent.lilac : Colors.lilac[300],
+            }
+          ]}
           onPress={handleRegenerate}
           disabled={isRegenerating}
         >
           <MaterialIcons
             name="refresh"
             size={20}
-            color={isRegenerating ? Colors.gray[400] : Colors.lilac[700]}
+            color={isRegenerating ? (isDark ? Colors.gray[600] : Colors.gray[400]) : (isDark ? themeColors.accent.lilac : Colors.lilac[700])}
           />
           <Text
             style={[
               styles.regenerateButtonText,
-              isRegenerating && styles.disabledText,
+              { color: isRegenerating ? (isDark ? Colors.gray[600] : Colors.gray[400]) : (isDark ? themeColors.accent.lilac : Colors.lilac[700]) },
             ]}
           >
             Regenerate
@@ -456,7 +465,7 @@ export function AIRecipePreview({
         </Pressable>
 
         <CustomButton
-          containerStyle={styles.confirmButton}
+          containerStyle={[styles.confirmButton, { backgroundColor: isDark ? themeColors.accent.lilac : Colors.lilac[900] }]}
           onPress={handleConfirm}
           disabled={isSaving || isRegenerating}
         >
@@ -477,7 +486,6 @@ export function AIRecipePreview({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -486,7 +494,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
   },
   backButton: {
     padding: 4,
@@ -502,7 +509,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: Colors.lilac[100],
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 99,
@@ -510,7 +516,6 @@ const styles = StyleSheet.create({
   aiBadgeText: {
     fontSize: 12,
     fontWeight: "600",
-    color: Colors.lilac[700],
   },
   scrollView: {
     flex: 1,
@@ -531,14 +536,12 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.gray[100],
     overflow: "hidden",
   },
   shimmerBackground: {
     position: "absolute",
     width: "100%",
     height: "100%",
-    backgroundColor: Colors.gray[200],
     overflow: "hidden",
   },
   shimmerOverlay: {
@@ -556,7 +559,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.text.secondary,
   },
   heroOverlay: {
     position: "absolute",
@@ -587,12 +589,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.text.primary,
     lineHeight: 30,
   },
   summary: {
     fontSize: 14,
-    color: Colors.text.secondary,
     lineHeight: 20,
   },
   servingsRow: {
@@ -603,7 +603,6 @@ const styles = StyleSheet.create({
   },
   servingsText: {
     fontSize: 13,
-    color: Colors.text.secondary,
   },
   macrosSection: {
     paddingHorizontal: 16,
@@ -612,7 +611,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text.primary,
     marginBottom: 12,
   },
   macrosGrid: {
@@ -623,14 +621,12 @@ const styles = StyleSheet.create({
   macroItem: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: Colors.background.surface,
     borderRadius: 12,
     padding: 12,
   },
   macroBar: {
     width: "100%",
     height: 4,
-    backgroundColor: Colors.gray[200],
     borderRadius: 2,
     marginBottom: 8,
     overflow: "hidden",
@@ -641,13 +637,11 @@ const styles = StyleSheet.create({
   },
   macroLabel: {
     fontSize: 12,
-    color: Colors.text.secondary,
     marginBottom: 2,
   },
   macroAmount: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.text.primary,
   },
   macroPercent: {
     fontSize: 12,
@@ -669,13 +663,11 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.lilac[500],
     marginTop: 6,
   },
   ingredientText: {
     flex: 1,
     fontSize: 14,
-    color: Colors.text.primary,
     lineHeight: 20,
   },
   instructionsSection: {
@@ -693,19 +685,16 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.lilac[100],
     alignItems: "center",
     justifyContent: "center",
   },
   stepNumberText: {
     fontSize: 13,
     fontWeight: "700",
-    color: Colors.lilac[700],
   },
   instructionText: {
     flex: 1,
     fontSize: 14,
-    color: Colors.text.primary,
     lineHeight: 20,
   },
   footer: {
@@ -718,9 +707,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: Colors.background.primary,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray[200],
   },
   regenerateButton: {
     flexDirection: "row",
@@ -731,13 +718,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 99,
     borderWidth: 1,
-    borderColor: Colors.lilac[300],
-    backgroundColor: Colors.lilac[100],
   },
   regenerateButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.lilac[700],
   },
   disabledText: {
     color: Colors.gray[400],
@@ -748,7 +732,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: Colors.lilac[900],
     borderRadius: 99,
     paddingVertical: 14,
   },

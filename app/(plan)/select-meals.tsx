@@ -1,14 +1,16 @@
 import { CelebrationModal } from "@/components/CelebrationModal";
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { fetchRecipes } from "@/features/meal-plan";
 import type { MealType } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -37,6 +39,7 @@ interface MealStep {
   description: string;
   calories: string;
   bgColor: string;
+  bgColorDark: string;
 }
 
 const MEAL_STEPS: MealStep[] = [
@@ -47,6 +50,7 @@ const MEAL_STEPS: MealStep[] = [
     description: "Kickstart your day with energy.",
     calories: "400-500 kcal",
     bgColor: "#FFF5E6",
+    bgColorDark: "rgba(255, 180, 100, 0.15)",
   },
   {
     id: "lunch",
@@ -55,6 +59,7 @@ const MEAL_STEPS: MealStep[] = [
     description: "Fuel your afternoon productivity.",
     calories: "500-700 kcal",
     bgColor: "#E8F5E9",
+    bgColorDark: "rgba(100, 200, 120, 0.15)",
   },
   {
     id: "dinner",
@@ -63,6 +68,7 @@ const MEAL_STEPS: MealStep[] = [
     description: "End your day satisfied.",
     calories: "500-600 kcal",
     bgColor: "#E3F2FD",
+    bgColorDark: "rgba(100, 150, 255, 0.15)",
   },
 ];
 
@@ -72,6 +78,9 @@ export default function SelectMeals() {
   const { session } = useAuthContext();
   const userId = session?.user?.id;
   const flatListRef = useRef<FlatList>(null);
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[800];
 
   const { data: onboardingData } = useQuery({
     queryKey: ["onboardingProfile", userId],
@@ -212,18 +221,24 @@ export default function SelectMeals() {
       return (
         <View style={styles.cardWrapper}>
           <View
-            style={[styles.mealCard, isSelected && styles.mealCardSelected]}
+            style={[
+              styles.mealCard, 
+              { 
+                backgroundColor: themeColors.background.surface,
+                borderColor: isSelected ? Colors.green[500] : (isDark ? themeColors.border.light : Colors.gray[200]),
+              }
+            ]}
           >
             <View
               style={[
                 styles.mealIconWrapper,
-                { backgroundColor: item.bgColor },
+                { backgroundColor: isDark ? item.bgColorDark : item.bgColor },
               ]}
             >
               <Text style={styles.mealEmoji}>{item.icon}</Text>
             </View>
-            <Text style={styles.mealTitle}>{item.label}</Text>
-            <Text style={styles.mealDescription}>{item.description}</Text>
+            <Text style={[styles.mealTitle, { color: themeColors.text.primary }]}>{item.label}</Text>
+            <Text style={[styles.mealDescription, { color: themeColors.text.secondary }]}>{item.description}</Text>
             {isSelected ? (
               <Pressable
                 onPress={() => handleRemoveMeal(item.id)}
@@ -235,13 +250,13 @@ export default function SelectMeals() {
             ) : (
               <Pressable
                 onPress={() => handleAddMeal(item.id)}
-                style={styles.addButton}
+                style={[styles.addButton, { backgroundColor: isDark ? "rgba(34, 197, 94, 0.15)" : Colors.green[100], borderColor: Colors.green[400] }]}
               >
-                <Ionicons name="add" size={16} color={Colors.green[700]} />
-                <Text style={styles.addButtonText}>Add {item.label}</Text>
+                <Ionicons name="add" size={16} color={Colors.green[600]} />
+                <Text style={[styles.addButtonText, { color: Colors.green[600] }]}>Add {item.label}</Text>
               </Pressable>
             )}
-            <Text style={styles.caloriesText}>
+            <Text style={[styles.caloriesText, { color: themeColors.text.tertiary }]}>
               Recommended: {item.calories}
             </Text>
             <View style={styles.skipContainer}>
@@ -250,7 +265,7 @@ export default function SelectMeals() {
                   onPress={() => scrollToIndex(index + 1)}
                   style={styles.skipButton}
                 >
-                  <Text style={styles.skipText}>Skip</Text>
+                  <Text style={[styles.skipText, { color: themeColors.text.tertiary }]}>Skip</Text>
                 </Pressable>
               ) : (
                 <View style={styles.skipPlaceholder} />
@@ -260,7 +275,7 @@ export default function SelectMeals() {
         </View>
       );
     },
-    [selectedMealTypes, handleAddMeal, handleRemoveMeal, scrollToIndex]
+    [selectedMealTypes, handleAddMeal, handleRemoveMeal, scrollToIndex, isDark, themeColors]
   );
 
   return (
@@ -269,25 +284,26 @@ export default function SelectMeals() {
         styles.container,
         {
           paddingTop: insets.top,
-          backgroundColor: Colors.background.primary,
+          backgroundColor: themeColors.background.primary,
         },
       ]}
     >
-      <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <Animated.View entering={FadeIn.duration(300)} style={[styles.header, { backgroundColor: themeColors.background.primary, borderColor: isDark ? themeColors.border.light : Colors.lilac[100] }]}>
         <Pressable
           onPress={() => router.back()}
-          style={styles.headerButton}
+          style={[styles.headerButton, { backgroundColor: isDark ? themeColors.background.surface : Colors.gray[100] }]}
           hitSlop={12}
         >
-          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+          <Ionicons name="arrow-back" size={22} color={themeColors.text.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Create Meal Plan</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>Create Meal Plan</Text>
         <Pressable
           onPress={() => router.dismissTo("/")}
-          style={styles.headerButton}
+          style={[styles.headerButton, { backgroundColor: isDark ? themeColors.background.surface : Colors.gray[100] }]}
           hitSlop={12}
         >
-          <Ionicons name="close" size={22} color={Colors.gray[500]} />
+          <Ionicons name="close" size={22} color={themeColors.text.tertiary} />
         </Pressable>
       </Animated.View>
 
@@ -296,21 +312,21 @@ export default function SelectMeals() {
           entering={FadeInDown.duration(400).delay(100)}
           style={styles.titleSection}
         >
-          <Text style={styles.mainTitle}>Build your perfect day!</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.mainTitle, { color: themeColors.text.primary }]}>Build your perfect day!</Text>
+          <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
             Swipe to browse meals, tap to add.
           </Text>
         </Animated.View>
 
         <Animated.View
           entering={FadeInUp.duration(400).delay(150)}
-          style={styles.dateCard}
+          style={[styles.dateCard, { backgroundColor: themeColors.background.surface }]}
         >
-          <View style={styles.dateIconWrapper}>
-            <Ionicons name="calendar" size={16} color={Colors.green[600]} />
+          <View style={[styles.dateIconWrapper, { backgroundColor: isDark ? "rgba(34, 197, 94, 0.15)" : Colors.green[100] }]}>
+            <Ionicons name="calendar" size={16} color={Colors.green[500]} />
           </View>
-          <Text style={styles.dateLabel}>{isToday ? "Today" : "Selected"}</Text>
-          <Text style={styles.dateText}>{formattedDate}</Text>
+          <Text style={[styles.dateLabel, { color: themeColors.text.tertiary }]}>{isToday ? "Today" : "Selected"}</Text>
+          <Text style={[styles.dateText, { color: themeColors.text.primary }]}>{formattedDate}</Text>
         </Animated.View>
 
         <Animated.View
@@ -322,8 +338,9 @@ export default function SelectMeals() {
               <View
                 style={[
                   styles.dot,
-                  index === currentStep && styles.dotActive,
-                  selectedMealTypes[step.id] && styles.dotCompleted,
+                  { backgroundColor: isDark ? themeColors.border.light : Colors.gray[200] },
+                  index === currentStep && [styles.dotActive, { backgroundColor: Colors.green[500] }],
+                  selectedMealTypes[step.id] && [styles.dotCompleted, { backgroundColor: Colors.green[400] }],
                 ]}
               />
             </Pressable>
@@ -359,17 +376,18 @@ export default function SelectMeals() {
       {/* footer */}
       <Animated.View
         entering={FadeInUp.duration(400).delay(300)}
-        style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}
+        style={[styles.footer, { paddingBottom: insets.bottom + 16, backgroundColor: themeColors.background.primary, borderTopColor: themeColors.border.light }]}
       >
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryText}>{selectedCount}/3 meals</Text>
+          <Text style={[styles.summaryText, { color: themeColors.text.secondary }]}>{selectedCount}/3 meals</Text>
           <View style={styles.summaryDots}>
             {MEAL_STEPS.map((step) => (
               <View
                 key={step.id}
                 style={[
                   styles.summaryDot,
-                  selectedMealTypes[step.id] && styles.summaryDotActive,
+                  { backgroundColor: isDark ? themeColors.border.light : Colors.gray[200] },
+                  selectedMealTypes[step.id] && [styles.summaryDotActive, { backgroundColor: Colors.green[500] }],
                 ]}
               />
             ))}
@@ -378,6 +396,7 @@ export default function SelectMeals() {
         <CustomButton
           containerStyle={[
             styles.createButton,
+            { backgroundColor: accentColor },
             (isLoading || selectedCount === 0) && styles.createButtonDisabled,
           ]}
           onPress={handleCreateMealPlan}

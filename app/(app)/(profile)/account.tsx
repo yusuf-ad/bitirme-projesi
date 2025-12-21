@@ -11,21 +11,20 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    Alert,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from "react-native";
 import Animated, {
-  FadeInDown,
-  FadeInUp
+    FadeInDown,
+    FadeInUp
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 
 
 const AVATARS = [
@@ -150,7 +149,7 @@ export default function AccountScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: Colors.background.secondary, paddingTop: top },
+        { backgroundColor: Colors.background.primary, paddingTop: top },
       ]}
     >
       {/* Header */}

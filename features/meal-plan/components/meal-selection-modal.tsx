@@ -1,39 +1,40 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
 import { Recipe } from "@/lib/spoonacular";
 import { getMealImageUrl, type Meal } from "@/lib/utils";
+import { useTheme } from "@/providers/theme-provider";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import {
-  BottomSheetBackdrop,
-  BottomSheetFlatList,
-  BottomSheetModal,
+    BottomSheetBackdrop,
+    BottomSheetFlatList,
+    BottomSheetModal,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import {
-  forwardRef,
-  useCallback,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
+    forwardRef,
+    useCallback,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  runOnUI,
-  scrollTo,
-  useAnimatedRef,
-  useAnimatedScrollHandler,
-  useSharedValue,
+    runOnUI,
+    scrollTo,
+    useAnimatedRef,
+    useAnimatedScrollHandler,
+    useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -82,6 +83,10 @@ export const MealSelectionModal = forwardRef<
       Dimensions.get("screen").height - top - (Platform.OS === "ios" ? 24 : 0);
     const screenWidth = Dimensions.get("window").width;
     const contentWidth = screenWidth - 40; // 20 padding on each side
+    
+    const { isDark } = useTheme();
+    const themeColors = getThemeColors(isDark, true);
+    const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
 
     const [activeTab, setActiveTab] = useState<"suggestions" | "favorites">(
       "suggestions"
@@ -235,27 +240,31 @@ export const MealSelectionModal = forwardRef<
             onPress={() => onSelect(item)}
             style={({ pressed }) => [
               styles.mealCard,
+              { 
+                backgroundColor: themeColors.background.surface,
+                borderColor: isSelected ? Colors.lilac[500] : (isDark ? themeColors.border.light : Colors.border.light)
+              },
               isSelected && styles.mealCardSelected,
               pressed && styles.mealCardPressed,
             ]}
           >
             {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.mealImage} />
+              <Image source={{ uri: imageUrl }} style={[styles.mealImage, { backgroundColor: isDark ? themeColors.background.tertiary : Colors.gray[200] }]} />
             ) : (
-              <View style={[styles.mealImage, styles.mealPlaceholder]} />
+              <View style={[styles.mealImage, styles.mealPlaceholder, { backgroundColor: isDark ? themeColors.background.tertiary : Colors.gray[300] }]} />
             )}
             <View style={styles.mealInfo}>
-              <Text numberOfLines={2} style={styles.mealTitle}>
+              <Text numberOfLines={2} style={[styles.mealTitle, { color: themeColors.text.primary }]}>
                 {item.title}
               </Text>
               <View style={styles.mealMeta}>
                 {item.nutrition?.calories && (
-                  <Text style={styles.metaText}>
+                  <Text style={[styles.metaText, { color: themeColors.text.secondary }]}>
                     {Math.round(item.nutrition.calories)} cal
                   </Text>
                 )}
                 {item.readyInMinutes && (
-                  <Text style={styles.metaText}>{item.readyInMinutes} min</Text>
+                  <Text style={[styles.metaText, { color: themeColors.text.secondary }]}>{item.readyInMinutes} min</Text>
                 )}
               </View>
             </View>
@@ -267,7 +276,7 @@ export const MealSelectionModal = forwardRef<
           </Pressable>
         );
       },
-      [onSelect, safeSelectedIndex, activeTab]
+      [onSelect, safeSelectedIndex, activeTab, isDark, themeColors]
     );
 
     const renderLoadMoreFooter = useCallback(() => {
@@ -280,26 +289,30 @@ export const MealSelectionModal = forwardRef<
             disabled={isLoadingMore}
             style={({ pressed }) => [
               styles.loadMoreButton,
+              { 
+                backgroundColor: isDark ? themeColors.background.surface : "transparent",
+                borderColor: isDark ? themeColors.border.light : Colors.lilac[900],
+              },
               pressed && { opacity: 0.8 },
               isLoadingMore && styles.loadMoreButtonDisabled,
             ]}
           >
             {isLoadingMore ? (
-              <ActivityIndicator color={Colors.lilac[900]} size="small" />
+              <ActivityIndicator color={isDark ? Colors.lilac[300] : Colors.lilac[900]} size="small" />
             ) : (
               <>
                 <Ionicons
                   name="chevron-down"
                   size={18}
-                  color={Colors.lilac[900]}
+                  color={isDark ? Colors.lilac[300] : Colors.lilac[900]}
                 />
-                <Text style={styles.loadMoreText}>Load more recipes</Text>
+                <Text style={[styles.loadMoreText, { color: isDark ? Colors.lilac[300] : Colors.lilac[900] }]}>Load more recipes</Text>
               </>
             )}
           </Pressable>
         </View>
       );
-    }, [onLoadMore, isLoadingMore, hasMorePages]);
+    }, [onLoadMore, isLoadingMore, hasMorePages, isDark, themeColors]);
 
     const renderList = useCallback(
       (data: Meal[], type: "suggestions" | "favorites") => {
@@ -316,7 +329,7 @@ export const MealSelectionModal = forwardRef<
               contentContainerStyle={[
                 styles.gridContainer,
                 type === "suggestions" &&
-                  onGenerateMore && { paddingBottom: 80 },
+                  onGenerateMore && { paddingBottom: 100 },
               ]}
               ListFooterComponent={
                 type === "suggestions" ? renderLoadMoreFooter : undefined
@@ -336,9 +349,9 @@ export const MealSelectionModal = forwardRef<
             <MaterialIcons
               name="restaurant-menu"
               size={48}
-              color={Colors.gray[300]}
+              color={themeColors.text.tertiary}
             />
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyText, { color: themeColors.text.secondary }]}>
               {type === "favorites"
                 ? "No favorite recipes yet"
                 : "No recipes found for this meal"}
@@ -349,6 +362,7 @@ export const MealSelectionModal = forwardRef<
                 disabled={isGeneratingMore}
                 style={({ pressed }) => [
                   styles.emptyAiButton,
+                  { backgroundColor: accentColor },
                   pressed && styles.mealCardPressed,
                   isGeneratingMore && styles.generateCardDisabled,
                 ]}
@@ -368,7 +382,7 @@ export const MealSelectionModal = forwardRef<
           </View>
         );
       },
-      [renderMealCard, renderLoadMoreFooter, onGenerateMore, isGeneratingMore]
+      [renderMealCard, renderLoadMoreFooter, onGenerateMore, isGeneratingMore, themeColors, accentColor]
     );
 
     return (
@@ -381,7 +395,8 @@ export const MealSelectionModal = forwardRef<
         enableDynamicSizing={false}
         enablePanDownToClose={false}
         onDismiss={() => onDismiss?.()}
-        handleIndicatorStyle={styles.handleIndicator}
+        handleIndicatorStyle={[styles.handleIndicator, { backgroundColor: isDark ? themeColors.border.light : Colors.gray[300] }]}
+        backgroundStyle={{ backgroundColor: themeColors.background.primary }}
       >
         <View
           style={[
@@ -391,24 +406,25 @@ export const MealSelectionModal = forwardRef<
         >
           <View style={styles.header}>
             <View style={styles.headerTop}>
-              <Text style={styles.title}>{title ?? "Select a meal"}</Text>
+              <Text style={[styles.title, { color: themeColors.text.primary }]}>{title ?? "Select a meal"}</Text>
               <Pressable onPress={() => internalRef.current?.dismiss()}>
-                <AntDesign name="close" size={20} color={Colors.text.primary} />
+                <AntDesign name="close" size={20} color={themeColors.text.primary} />
               </Pressable>
             </View>
 
-            <View style={styles.tabsContainer}>
+            <View style={[styles.tabsContainer, { backgroundColor: isDark ? themeColors.background.secondary : Colors.gray[100] }]}>
               <Pressable
                 style={[
                   styles.tab,
-                  activeTab === "suggestions" && styles.activeTab,
+                  activeTab === "suggestions" && [styles.activeTab, { backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface }],
                 ]}
                 onPress={() => handleTabChange("suggestions")}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    activeTab === "suggestions" && styles.activeTabText,
+                    { color: themeColors.text.secondary },
+                    activeTab === "suggestions" && [styles.activeTabText, { color: themeColors.text.primary }],
                   ]}
                 >
                   Suggestions
@@ -417,14 +433,15 @@ export const MealSelectionModal = forwardRef<
               <Pressable
                 style={[
                   styles.tab,
-                  activeTab === "favorites" && styles.activeTab,
+                  activeTab === "favorites" && [styles.activeTab, { backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface }],
                 ]}
                 onPress={() => handleTabChange("favorites")}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    activeTab === "favorites" && styles.activeTabText,
+                    { color: themeColors.text.secondary },
+                    activeTab === "favorites" && [styles.activeTabText, { color: themeColors.text.primary }],
                   ]}
                 >
                   Favorites
@@ -460,12 +477,13 @@ export const MealSelectionModal = forwardRef<
             Array.isArray(meals) &&
             meals.length > 0 &&
             onGenerateMore && (
-              <View style={[styles.stickyFooter, { paddingBottom: bottom }]}>
+              <View style={[styles.stickyFooter, { paddingBottom: bottom + 20, backgroundColor: themeColors.background.primary, borderTopColor: isDark ? themeColors.border.light : Colors.gray[200] }]}>
                 <Pressable
                   onPress={onGenerateMore}
                   disabled={isGeneratingMore}
                   style={({ pressed }) => [
                     styles.stickyFooterButton,
+                    { backgroundColor: accentColor },
                     pressed && { opacity: 0.9 },
                     isGeneratingMore && styles.generateCardDisabled,
                   ]}
@@ -527,7 +545,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.surface,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -557,11 +575,11 @@ const styles = StyleSheet.create({
   },
   mealCard: {
     width: "48%",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.surface,
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: Colors.gray[200],
+    borderColor: Colors.border.light,
   },
   mealCardSelected: {
     borderColor: Colors.lilac[500],
@@ -679,7 +697,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.lilac[900],
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.surface,
   },
   loadMoreButtonDisabled: {
     opacity: 0.6,

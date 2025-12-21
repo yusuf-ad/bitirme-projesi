@@ -1,10 +1,13 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
 export function RecipeCardSkeleton() {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
 
   useEffect(() => {
     const shimmer = Animated.loop(
@@ -30,33 +33,44 @@ export function RecipeCardSkeleton() {
     outputRange: [0.3, 0.8],
   });
 
+  const gradientColors = isDark
+    ? [
+        "rgba(191, 90, 242, 0.15)",
+        "rgba(191, 90, 242, 0.10)",
+        "rgba(191, 90, 242, 0.08)",
+        "rgba(191, 90, 242, 0.03)",
+      ] as const
+    : [
+        "rgba(120, 73, 182, 0.15)",
+        "rgba(120, 73, 182, 0.10)",
+        "rgba(120, 73, 182, 0.08)",
+        "rgba(120, 73, 182, 0.03)",
+      ] as const;
+
+  const skeletonColor = isDark ? themeColors.gray[800] : Colors.gray[200];
+
   return (
     <View style={styles.cardWrapper}>
       <LinearGradient
-        colors={[
-          "rgba(120, 73, 182, 0.15)",
-          "rgba(120, 73, 182, 0.10)",
-          "rgba(120, 73, 182, 0.08)",
-          "rgba(120, 73, 182, 0.03)",
-        ]}
+        colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.gradientBorder}
       >
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: themeColors.background.surface }]}>
           <Animated.View
-            style={[styles.skeletonImage, { opacity: shimmerOpacity }]}
+            style={[styles.skeletonImage, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
           />
           <View style={styles.contentContainer}>
             <Animated.View
-              style={[styles.skeletonTitle, { opacity: shimmerOpacity }]}
+              style={[styles.skeletonTitle, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
             />
             <Animated.View
-              style={[styles.skeletonTitleSecond, { opacity: shimmerOpacity }]}
+              style={[styles.skeletonTitleSecond, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
             />
             <View style={styles.metaContainer}>
               <Animated.View
-                style={[styles.skeletonMeta, { opacity: shimmerOpacity }]}
+                style={[styles.skeletonMeta, { opacity: shimmerOpacity, backgroundColor: skeletonColor }]}
               />
             </View>
           </View>
@@ -77,14 +91,12 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: Colors.background.surface,
     borderRadius: 15.5,
     overflow: "hidden",
   },
   skeletonImage: {
     width: "100%",
     aspectRatio: 10 / 9,
-    backgroundColor: Colors.gray[200],
   },
   contentContainer: {
     flex: 1,
@@ -93,12 +105,10 @@ const styles = StyleSheet.create({
   },
   skeletonTitle: {
     height: 14,
-    backgroundColor: Colors.gray[200],
     borderRadius: 4,
   },
   skeletonTitleSecond: {
     height: 14,
-    backgroundColor: Colors.gray[200],
     borderRadius: 4,
     width: "80%",
   },
@@ -107,8 +117,8 @@ const styles = StyleSheet.create({
   },
   skeletonMeta: {
     height: 12,
-    backgroundColor: Colors.gray[200],
     borderRadius: 4,
     width: "60%",
   },
 });
+

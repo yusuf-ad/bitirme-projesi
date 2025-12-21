@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
@@ -9,12 +10,12 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { memo, useRef } from "react";
 import {
-  Animated,
-  ImageSourcePropType,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    ImageSourcePropType,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { MealActionModal } from "./meal-action-modal";
@@ -56,6 +57,9 @@ function MealCard({
 }: MealCardProps) {
   const mealActionModalRef = useRef<BottomSheetModal>(null);
   const { impact, notification } = useHaptics();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
 
   const handleEditPress = async () => {
     impact();
@@ -88,18 +92,24 @@ function MealCard({
         overshootRight={false}
         friction={2}
       >
-        <View style={styles.container}>
+        <View style={[
+          styles.container,
+          { 
+            backgroundColor: themeColors.background.surface,
+            borderColor: isDark ? themeColors.border.light : Colors.lilac[200],
+          }
+        ]}>
           {/* Meal Header */}
-          <View style={styles.header}>
+          <View style={[styles.header, { borderBottomColor: isDark ? themeColors.border.light : Colors.lilac[200] }]}>
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
             >
-              <View style={styles.mealIconContainer}>
+              <View style={[styles.mealIconContainer, { borderColor: isDark ? themeColors.border.light : Colors.lilac[200], backgroundColor: isDark ? themeColors.background.tertiary : "#F3F3F3" }]}>
                 <Image source={mealIcon} style={styles.mealIcon} />
               </View>
               <View style={styles.mealInfo}>
                 <View style={styles.mealTypeRow}>
-                  <Text style={styles.mealType}>{mealType}</Text>
+                  <Text style={[styles.mealType, { color: themeColors.text.primary }]}>{mealType}</Text>
                   {isEaten && (
                     <View style={styles.eatenBadge}>
                       <Ionicons
@@ -110,7 +120,7 @@ function MealCard({
                     </View>
                   )}
                 </View>
-                <Text style={styles.mealTime}>{mealTime}</Text>
+                <Text style={[styles.mealTime, { color: themeColors.text.tertiary }]}>{mealTime}</Text>
               </View>
             </View>
 
@@ -125,19 +135,20 @@ function MealCard({
                   justifyContent: "center",
                   borderRadius: 4,
                   borderWidth: 1,
-                  borderColor: Colors.lilac[200],
+                  borderColor: isDark ? themeColors.border.light : Colors.lilac[200],
                   paddingHorizontal: 0,
                   paddingVertical: 0,
+                  backgroundColor: "transparent",
                 }}
                 onPress={handleEditPress}
               >
-                <Feather name="edit-3" size={20} color={Colors.lilac[900]} />
+                <Feather name="edit-3" size={20} color={accentColor} />
               </CustomButton>
             </View>
           </View>
 
           {/* Recipe Card */}
-          <Pressable onPress={onPress} style={styles.recipeCard}>
+          <Pressable onPress={onPress} style={[styles.recipeCard, { backgroundColor: isDark ? themeColors.background.tertiary : Colors.gray[100] }]}>
             <Image
               source={recipeImage}
               style={styles.recipeImage}
@@ -146,7 +157,7 @@ function MealCard({
             />
             <View style={styles.recipeInfo}>
               <View style={styles.recipeTextContainer}>
-                <Text style={styles.recipeName}>{recipeName}</Text>
+                <Text style={[styles.recipeName, { color: themeColors.text.primary }]}>{recipeName}</Text>
 
                 <View style={styles.recipeMetaContainer}>
                   <View style={styles.metaItem}>
@@ -154,15 +165,15 @@ function MealCard({
                       source={require("@/assets/icons/clock-icon.svg")}
                       style={styles.metaIcon}
                     />
-                    <Text style={styles.metaText}>{prepTime}</Text>
+                    <Text style={[styles.metaText, { color: themeColors.text.secondary }]}>{prepTime}</Text>
                   </View>
-                  <Text style={styles.separator}>|</Text>
+                  <Text style={[styles.separator, { color: themeColors.text.secondary }]}>|</Text>
                   <View style={styles.metaItem}>
                     <Image
                       source={require("@/assets/icons/flame-icon.svg")}
                       style={styles.metaIcon}
                     />
-                    <Text style={styles.metaText}>{calories}</Text>
+                    <Text style={[styles.metaText, { color: themeColors.text.secondary }]}>{calories}</Text>
                   </View>
                 </View>
 
@@ -171,52 +182,52 @@ function MealCard({
                   <View style={styles.macrosContainer}>
                     {carbs && (
                       <LinearGradient
-                        colors={[
-                          "rgba(120, 73, 182, 0.25)",
-                          "rgba(120, 73, 182, 0.15)",
-                          "rgba(120, 73, 182, 0.08)",
-                        ]}
+                        colors={
+                          isDark 
+                            ? ["rgba(191, 90, 242, 0.3)", "rgba(191, 90, 242, 0.15)", "rgba(191, 90, 242, 0.08)"]
+                            : ["rgba(120, 73, 182, 0.25)", "rgba(120, 73, 182, 0.15)", "rgba(120, 73, 182, 0.08)"]
+                        }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
                         style={styles.macroGradientWrapper}
                       >
-                        <View style={styles.macroItem}>
-                          <Text style={styles.macroLabel}>Carbs</Text>
-                          <Text style={styles.macroValue}>{carbs}</Text>
+                        <View style={[styles.macroItem, { backgroundColor: themeColors.background.surface }]}>
+                          <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Carbs</Text>
+                          <Text style={[styles.macroValue, { color: accentColor }]}>{carbs}</Text>
                         </View>
                       </LinearGradient>
                     )}
                     {protein && (
                       <LinearGradient
-                        colors={[
-                          "rgba(120, 73, 182, 0.25)",
-                          "rgba(120, 73, 182, 0.15)",
-                          "rgba(120, 73, 182, 0.08)",
-                        ]}
+                        colors={
+                          isDark 
+                            ? ["rgba(191, 90, 242, 0.3)", "rgba(191, 90, 242, 0.15)", "rgba(191, 90, 242, 0.08)"]
+                            : ["rgba(120, 73, 182, 0.25)", "rgba(120, 73, 182, 0.15)", "rgba(120, 73, 182, 0.08)"]
+                        }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
                         style={styles.macroGradientWrapper}
                       >
-                        <View style={styles.macroItem}>
-                          <Text style={styles.macroLabel}>Protein</Text>
-                          <Text style={styles.macroValue}>{protein}</Text>
+                        <View style={[styles.macroItem, { backgroundColor: themeColors.background.surface }]}>
+                          <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Protein</Text>
+                          <Text style={[styles.macroValue, { color: accentColor }]}>{protein}</Text>
                         </View>
                       </LinearGradient>
                     )}
                     {fat && (
                       <LinearGradient
-                        colors={[
-                          "rgba(120, 73, 182, 0.25)",
-                          "rgba(120, 73, 182, 0.15)",
-                          "rgba(120, 73, 182, 0.08)",
-                        ]}
+                        colors={
+                          isDark 
+                            ? ["rgba(191, 90, 242, 0.3)", "rgba(191, 90, 242, 0.15)", "rgba(191, 90, 242, 0.08)"]
+                            : ["rgba(120, 73, 182, 0.25)", "rgba(120, 73, 182, 0.15)", "rgba(120, 73, 182, 0.08)"]
+                        }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
                         style={styles.macroGradientWrapper}
                       >
-                        <View style={styles.macroItem}>
-                          <Text style={styles.macroLabel}>Fat</Text>
-                          <Text style={styles.macroValue}>{fat}</Text>
+                        <View style={[styles.macroItem, { backgroundColor: themeColors.background.surface }]}>
+                          <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Fat</Text>
+                          <Text style={[styles.macroValue, { color: accentColor }]}>{fat}</Text>
                         </View>
                       </LinearGradient>
                     )}
@@ -248,9 +259,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingBottom: 12,
-    backgroundColor: Colors.background.surface,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
     borderRadius: 12,
 
     shadowColor: "#000",
@@ -269,14 +278,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.lilac[200],
   },
   mealIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
     justifyContent: "center",
     alignItems: "center",
   },
@@ -297,7 +304,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 14,
     lineHeight: 21,
-    color: Colors.text.primary,
   },
   eatenBadge: {
     justifyContent: "center",
@@ -308,7 +314,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 12,
     lineHeight: 21,
-    color: Colors.gray[400],
   },
   arrowButton: {
     flexDirection: "row",
@@ -325,7 +330,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: Colors.gray[100],
     borderRadius: 12,
   },
   recipeImage: {
@@ -350,14 +354,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 14,
     lineHeight: 16,
-    color: Colors.text.primary,
   },
   recipeDescription: {
     fontFamily: "Inter",
     fontWeight: "400",
     fontSize: 12,
     lineHeight: 16,
-    color: Colors.text.primary,
   },
   recipeMetaContainer: {
     flexDirection: "row",
@@ -379,7 +381,6 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     fontSize: 12,
     lineHeight: 24,
-    color: Colors.gray[600],
   },
   separator: {
     fontFamily: "Inter",
@@ -387,7 +388,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 24,
     letterSpacing: -1,
-    color: Colors.gray[600],
   },
   macrosContainer: {
     flexDirection: "row",
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   macroGradientWrapper: {
     borderRadius: 8,
     padding: 1,
-    shadowColor: Colors.lilac[900],
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 3,
@@ -412,7 +412,6 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 4,
     paddingVertical: 4,
-    backgroundColor: Colors.background.surface,
     borderRadius: 7,
   },
   macroLabel: {
@@ -420,14 +419,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 11,
     lineHeight: 16,
-    color: Colors.gray[500],
   },
   macroValue: {
     fontFamily: "Inter",
     fontWeight: "600",
     fontSize: 11,
     lineHeight: 16,
-    color: Colors.lilac[900],
   },
   deleteAction: {
     justifyContent: "center",
@@ -449,3 +446,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+

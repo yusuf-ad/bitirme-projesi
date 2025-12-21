@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   loadingContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.surface,
     borderRadius: 16,
     padding: 24,
     alignItems: "center",

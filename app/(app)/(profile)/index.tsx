@@ -1,12 +1,12 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
 import {
-  FixedHeader,
-  HighlightCard,
-  HighlightCardComponent,
-  ProfileHeader,
-  SettingsSection,
-  SettingsSections,
+    FixedHeader,
+    HighlightCard,
+    HighlightCardComponent,
+    ProfileHeader,
+    SettingsSection,
+    SettingsSections,
 } from "@/features/profile";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -14,24 +14,24 @@ import { useOnboarding } from "@/providers/onboarding-provider";
 import { useTheme } from "@/providers/theme-provider";
 import { router } from "expo-router";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import {
-  Alert,
-  Dimensions,
-  FlatList,
-  Share,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Dimensions,
+    FlatList,
+    Share,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  useAnimatedScrollHandler,
-  useSharedValue,
+    useAnimatedScrollHandler,
+    useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -449,7 +449,7 @@ export default function ProfileTab() {
     <View
       style={[
         styles.container,
-        { backgroundColor: Colors.background.secondary },
+        { backgroundColor: Colors.background.primary },
       ]}
     >
       {/* Fixed Header */}

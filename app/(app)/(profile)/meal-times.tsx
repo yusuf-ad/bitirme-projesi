@@ -1,22 +1,23 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
-import { Colors } from "@/constants/theme";
+import { Colors as StaticColors, getThemeColors } from "@/constants/theme";
 import { TimePicker } from "@/features/onboarding/sections/meal-time/components/time-picker";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/lib/supabase";
 import { updateUserMealTimes } from "@/lib/supabase-onboarding";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -32,6 +33,8 @@ export default function MealTimesScreen() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
   const { selection } = useHaptics();
 
   const [editingMeal, setEditingMeal] = useState<MealType | null>(null);
@@ -163,9 +166,15 @@ export default function MealTimesScreen() {
   const meals: MealType[] = ["breakfast", "lunch", "dinner"];
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: Colors.background.primary }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[
+          styles.header, 
+          { 
+              backgroundColor: Colors.background.surface,
+              borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "#E5E5E5"
+          }
+      ]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
             name="arrow-left"
@@ -173,7 +182,7 @@ export default function MealTimesScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("profile.mealTimes")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("profile.mealTimes")}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -183,8 +192,8 @@ export default function MealTimesScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Daily Schedule Section */}
-        <Text style={styles.sectionLabel}>{t("mealTimes.dailySchedule") || "DAILY SCHEDULE"}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("mealTimes.dailySchedule") || "DAILY SCHEDULE"}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           {meals.map((meal, index) => (
             <View key={meal}>
               <Pressable
@@ -192,7 +201,7 @@ export default function MealTimesScreen() {
                 onPress={() => handleEditMeal(meal)}
               >
                 <View style={styles.mealTimeLeft}>
-                  <View style={styles.mealTimeIcon}>
+                  <View style={[styles.mealTimeIcon, { backgroundColor: isDark ? Colors.lilac[900] + "20" : Colors.lilac[100] }]}>
                     <MaterialCommunityIcons
                       name={getMealIcon(meal) as any}
                       size={22}
@@ -200,10 +209,10 @@ export default function MealTimesScreen() {
                     />
                   </View>
                   <View style={styles.mealTimeInfo}>
-                    <Text style={styles.mealTimeLabel}>
+                    <Text style={[styles.mealTimeLabel, { color: Colors.text.primary }]}>
                       {t(`mealTimes.${meal}`)}
                     </Text>
-                    <Text style={styles.mealTimeValue}>
+                    <Text style={[styles.mealTimeValue, { color: Colors.text.secondary }]}>
                       {formatTime(getMealTime(meal))}
                     </Text>
                   </View>
@@ -214,14 +223,14 @@ export default function MealTimesScreen() {
                   color={Colors.text.secondary}
                 />
               </Pressable>
-              {index < meals.length - 1 && <View style={styles.divider} />}
+              {index < meals.length - 1 && <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#F0F0F0" }]} />}
             </View>
           ))}
         </View>
 
         {/* Notifications Link */}
-        <Text style={styles.sectionLabel}>{t("mealTimes.reminders") || "REMINDERS"}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("mealTimes.reminders") || "REMINDERS"}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           <Pressable
             style={styles.linkRow}
             onPress={() => {
@@ -230,7 +239,7 @@ export default function MealTimesScreen() {
             }}
           >
             <View style={styles.linkLeft}>
-              <View style={styles.linkIcon}>
+              <View style={[styles.linkIcon, { backgroundColor: isDark ? Colors.background.secondary : "#F5F5F5" }]}>
                 <MaterialCommunityIcons
                   name="bell-outline"
                   size={20}
@@ -238,10 +247,10 @@ export default function MealTimesScreen() {
                 />
               </View>
               <View style={styles.linkInfo}>
-                <Text style={styles.linkTitle}>
+                <Text style={[styles.linkTitle, { color: Colors.text.primary }]}>
                   {t("mealTimes.mealReminders") || "Meal Reminders"}
                 </Text>
-                <Text style={styles.linkDescription}>
+                <Text style={[styles.linkDescription, { color: Colors.text.secondary }]}>
                   {t("mealTimes.mealRemindersDesc") || "Get notified when it's time to eat"}
                 </Text>
               </View>
@@ -255,7 +264,7 @@ export default function MealTimesScreen() {
         </View>
 
         {/* Footer Text */}
-        <Text style={styles.footerText}>
+        <Text style={[styles.footerText, { color: Colors.text.secondary }]}>
           {t("mealTimes.footerText") || "Your meal times are used to schedule reminders and personalize your meal plan recommendations."}
         </Text>
       </ScrollView>
@@ -273,6 +282,7 @@ export default function MealTimesScreen() {
             style={[
               styles.modalContent,
               {
+                backgroundColor: Colors.background.surface,
                 transform: [
                   {
                     scale: modalAnim.interpolate({
@@ -290,10 +300,10 @@ export default function MealTimesScreen() {
               <Text style={styles.modalEmoji}>
                 {editingMeal && getMealEmoji(editingMeal)}
               </Text>
-              <Text style={styles.modalTitle}>
+              <Text style={[styles.modalTitle, { color: Colors.text.primary }]}>
                 {editingMeal && t(`mealTimes.${editingMeal}`)}
               </Text>
-              <Text style={styles.modalSubtitle}>
+              <Text style={[styles.modalSubtitle, { color: Colors.text.secondary }]}>
                 {t("mealTimes.selectTime") || "Select your preferred time"}
               </Text>
             </View>
@@ -311,17 +321,17 @@ export default function MealTimesScreen() {
             </View>
 
             {/* Modal Actions */}
-            <View style={styles.modalActions}>
+            <View style={[styles.modalActions, { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#F0F0F0" }]}>
               <Pressable
-                style={styles.cancelButton}
+                style={[styles.cancelButton, { backgroundColor: isDark ? Colors.background.secondary : "#F5F5F5" }]}
                 onPress={handleCancel}
               >
-                <Text style={styles.cancelButtonText}>
+                <Text style={[styles.cancelButtonText, { color: Colors.text.secondary }]}>
                   {t("common.cancel")}
                 </Text>
               </Pressable>
               <Pressable
-                style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                style={[styles.saveButton, isSaving && styles.saveButtonDisabled, { backgroundColor: Colors.lilac[900] }]}
                 onPress={handleSave}
                 disabled={isSaving}
               >
@@ -340,7 +350,7 @@ export default function MealTimesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: StaticColors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -358,7 +368,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   headerRight: {
     width: 32,
@@ -375,7 +385,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: "600",
     textTransform: "uppercase",
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     marginTop: 8,
   },
   card: {
@@ -404,7 +414,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.lilac[100],
+    backgroundColor: StaticColors.lilac[100],
     justifyContent: "center",
     alignItems: "center",
   },
@@ -414,11 +424,11 @@ const styles = StyleSheet.create({
   mealTimeLabel: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   mealTimeValue: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
   },
   divider: {
     height: 1,
@@ -451,17 +461,17 @@ const styles = StyleSheet.create({
   linkTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
     marginBottom: 2,
   },
   linkDescription: {
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     lineHeight: 16,
   },
   footerText: {
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     textAlign: "center",
     lineHeight: 18,
     marginTop: 8,
@@ -498,12 +508,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
     marginBottom: 4,
   },
   modalSubtitle: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
   },
   pickerContainer: {
     paddingHorizontal: 16,
@@ -526,13 +536,13 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
   },
   saveButton: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: Colors.lilac[900],
+    backgroundColor: StaticColors.lilac[900],
     alignItems: "center",
   },
   saveButtonDisabled: {

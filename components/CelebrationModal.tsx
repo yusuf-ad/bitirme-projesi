@@ -1,13 +1,14 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React, { useEffect } from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Animated, {
-  FadeInDown,
-  FadeInUp,
-  ZoomIn,
+    FadeInDown,
+    FadeInUp,
+    ZoomIn,
 } from "react-native-reanimated";
 
 interface CelebrationModalProps {
@@ -63,6 +64,10 @@ export function CelebrationModal({
   onSecondaryAction,
 }: CelebrationModalProps) {
   const config = MODAL_CONFIG[type];
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[600];
+  const primaryColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
 
   useEffect(() => {
     if (visible) {
@@ -82,29 +87,29 @@ export function CelebrationModal({
         {/* Modal Content */}
         <Animated.View
           entering={ZoomIn.duration(400).springify()}
-          style={styles.modalCard}
+          style={[styles.modalCard, { backgroundColor: themeColors.background.surface }]}
         >
           <Animated.View
             entering={ZoomIn.delay(100).springify()}
-            style={styles.iconContainer}
+            style={[styles.iconContainer, { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100], borderColor: isDark ? themeColors.border.light : "#fff" }]}
           >
             <MaterialCommunityIcons
               name={config.icon as any}
               size={42}
-              color={Colors.lilac[600]}
+              color={accentColor}
             />
           </Animated.View>
 
           <Animated.Text
             entering={FadeInDown.delay(200).springify()}
-            style={styles.title}
+            style={[styles.title, { color: themeColors.text.primary }]}
           >
             {config.title}
           </Animated.Text>
 
           <Animated.Text
             entering={FadeInDown.delay(300).springify()}
-            style={styles.description}
+            style={[styles.description, { color: themeColors.text.secondary }]}
           >
             {config.description}
           </Animated.Text>
@@ -116,7 +121,7 @@ export function CelebrationModal({
               style={{ width: "100%" }}
             >
               <TouchableOpacity
-                style={styles.button}
+                style={[styles.button, { backgroundColor: primaryColor }]}
                 onPress={() => {
                   Haptics.selectionAsync();
                   onAction?.() || onClose();
@@ -141,7 +146,7 @@ export function CelebrationModal({
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.secondaryButtonText}>
+                  <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>
                     {config.secondaryButtonText}
                   </Text>
                 </TouchableOpacity>
@@ -171,7 +176,6 @@ const styles = StyleSheet.create({
   modalCard: {
     width: "100%",
     maxWidth: 340,
-    backgroundColor: Colors.background?.surface || "#fff",
     borderRadius: 32,
     padding: 32,
     alignItems: "center",
@@ -188,12 +192,10 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: Colors.lilac[100],
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
     borderWidth: 4,
-    borderColor: "#fff",
     shadowColor: Colors.lilac[500],
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
@@ -203,14 +205,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "800",
-    color: Colors.lilac[900],
     marginBottom: 12,
     textAlign: "center",
     letterSpacing: -0.5,
   },
   description: {
     fontSize: 16,
-    color: Colors.gray[500],
     textAlign: "center",
     marginBottom: 32,
     lineHeight: 24,
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   button: {
-    backgroundColor: Colors.lilac[900],
     paddingVertical: 18,
     width: "100%",
     borderRadius: 20,
@@ -245,8 +244,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   secondaryButtonText: {
-    color: Colors.lilac[600],
     fontSize: 16,
     fontWeight: "600",
   },
 });
+

@@ -870,7 +870,7 @@ constants/
 - [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
 - console logları sil!
-- [] Forget Password Sayfasını düzelt
+- [x] Forget Password Sayfasını düzelt
 
 ### ana sayfa
 
@@ -925,10 +925,10 @@ constants/
 
 ### profile
 
-- [] statusbarın rengiyle farklı header kötü duruyor orası.
+- [x] statusbarın rengiyle farklı header kötü duruyor orası.
 - [] yunusun hologram sayfası
 - [] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
-- dark mode tam uyumlu değil!!
+- [x] dark mode tam uyumlu değil!!
 - [x] goals and metrics sayfasında ikonlar dağınık düzelt
 ### Phase 4: Tracking & Analytics (Weeks 8-9)
 

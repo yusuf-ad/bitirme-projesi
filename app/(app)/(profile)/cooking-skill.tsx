@@ -1,20 +1,21 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
-import { Colors } from "@/constants/theme";
+import { Colors as StaticColors, getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/lib/supabase";
 import { updateUserTastePreferences } from "@/lib/supabase-onboarding";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,9 +29,10 @@ interface SkillCardProps {
   isSelected: boolean;
   onPress: () => void;
   disabled: boolean;
+  colors: any;
 }
 
-function SkillCard({ skill, isSelected, onPress, disabled }: SkillCardProps) {
+function SkillCard({ skill, isSelected, onPress, disabled, colors }: SkillCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(isSelected ? 1 : 0)).current;
 
@@ -87,6 +89,7 @@ function SkillCard({ skill, isSelected, onPress, disabled }: SkillCardProps) {
           {
             opacity: glowOpacity,
             transform: [{ scale: glowScale }],
+            backgroundColor: colors.lilac[900],
           },
         ]}
       />
@@ -96,10 +99,18 @@ function SkillCard({ skill, isSelected, onPress, disabled }: SkillCardProps) {
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled}
-        style={[styles.skillCard, isSelected && styles.skillCardSelected]}
+        style={[
+            styles.skillCard, 
+            { backgroundColor: colors.background.surface, borderColor: isSelected ? colors.lilac[900] : "transparent" },
+            isSelected && { backgroundColor: colors.lilac[100] } 
+        ]}
       >
         <View
-          style={[styles.skillEmoji, isSelected && styles.skillEmojiSelected]}
+          style={[
+              styles.skillEmoji, 
+              { backgroundColor: colors.background.primary },
+              isSelected && { backgroundColor: "#FAF5FF" } // Keep light background for emoji for contrast, or adjust
+          ]}
         >
           <Text style={styles.skillEmojiText}>{skill.emoji}</Text>
         </View>
@@ -107,12 +118,21 @@ function SkillCard({ skill, isSelected, onPress, disabled }: SkillCardProps) {
           <Text
             style={[
               styles.skillLabel,
-              isSelected && styles.skillLabelSelected,
+              { color: colors.text.primary },
+              isSelected && { color: colors.lilac[900] },
             ]}
           >
             {skill.label}
           </Text>
-          <Text style={styles.skillDescription}>{skill.description}</Text>
+          <Text 
+            style={[
+              styles.skillDescription, 
+              { color: colors.text.secondary },
+              isSelected && { color: colors.lilac[700] }
+            ]}
+          >
+            {skill.description}
+          </Text>
         </View>
         {isSelected && (
           <Animated.View
@@ -130,7 +150,7 @@ function SkillCard({ skill, isSelected, onPress, disabled }: SkillCardProps) {
             <MaterialCommunityIcons
               name="check-circle"
               size={24}
-              color={Colors.lilac[900]}
+              color={colors.lilac[900]}
             />
           </Animated.View>
         )}
@@ -143,6 +163,8 @@ export default function CookingSkillScreen() {
   const onboarding = useOnboarding();
   const { top, bottom } = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
   const { selection } = useHaptics();
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -247,9 +269,15 @@ export default function CookingSkillScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: Colors.background.primary }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[
+          styles.header, 
+          { 
+              backgroundColor: Colors.background.surface,
+              borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "#E5E5E5"
+          }
+      ]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
             name="arrow-left"
@@ -257,7 +285,7 @@ export default function CookingSkillScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("cookingSkillPage.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("cookingSkillPage.title")}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -265,8 +293,8 @@ export default function CookingSkillScreen() {
         style={styles.scrollView}
         contentContainerStyle={[styles.content, { paddingBottom: bottom + 20 }]}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionDescription}>
+        <View style={[styles.section, { backgroundColor: Colors.background.surface }]}>
+          <Text style={[styles.sectionDescription, { color: Colors.text.secondary }]}>
             {t("cookingSkillPage.description")}
           </Text>
 
@@ -279,6 +307,7 @@ export default function CookingSkillScreen() {
                 isSelected={isSelected}
                 onPress={() => handleSkillSelect(skill.id)}
                 disabled={isSaving}
+                colors={Colors}
               />
             );
           })}
@@ -291,7 +320,7 @@ export default function CookingSkillScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: StaticColors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -309,7 +338,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   headerRight: {
     width: 32,
@@ -327,7 +356,7 @@ const styles = StyleSheet.create({
   },
   sectionDescription: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
     marginBottom: 20,
   },
   skillCardWrapper: {
@@ -341,7 +370,7 @@ const styles = StyleSheet.create({
     right: -4,
     bottom: -4,
     borderRadius: 16,
-    backgroundColor: Colors.lilac[900],
+    backgroundColor: StaticColors.lilac[900],
   },
   skillCard: {
     flexDirection: "row",
@@ -354,8 +383,8 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   skillCardSelected: {
-    backgroundColor: Colors.lilac[100],
-    borderColor: Colors.lilac[900],
+    backgroundColor: StaticColors.lilac[100],
+    borderColor: StaticColors.lilac[900],
   },
   skillEmoji: {
     width: 56,
@@ -377,14 +406,14 @@ const styles = StyleSheet.create({
   skillLabel: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
     marginBottom: 4,
   },
   skillLabelSelected: {
-    color: Colors.lilac[900],
+    color: StaticColors.lilac[900],
   },
   skillDescription: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: StaticColors.text.secondary,
   },
 });

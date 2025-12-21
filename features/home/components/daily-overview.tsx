@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -25,6 +26,9 @@ export default function DailyOverview({
   isEmpty = false,
 }: DailyOverviewProps) {
   const { selectedDietPreferences, dietNutritionTargets } = useOnboarding();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[600];
 
   const { goalCalories, goalCarbs, goalProtein, goalFat } = useMemo(() => {
     // Default values
@@ -72,21 +76,27 @@ export default function DailyOverview({
   const roundedCalories = Math.round(totalCalories);
 
   return (
-    <View style={styles.card}>
+    <View style={[
+      styles.card,
+      { 
+        backgroundColor: themeColors.background.surface,
+        borderColor: isDark ? themeColors.border.light : Colors.lilac[200],
+      }
+    ]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: isDark ? themeColors.border.light : Colors.lilac[200] }]}>
         <View style={styles.iconContainer}>
-          <Ionicons name="flash" size={16} color={Colors.lilac[600]} />
+          <Ionicons name="flash" size={16} color={accentColor} />
         </View>
-        <Text style={styles.headerTitle}>Daily Overview</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text.secondary }]}>Daily Overview</Text>
       </View>
 
       <View style={styles.divider} />
 
       {/* Calories */}
       <View style={styles.calorieContainer}>
-        <Text style={styles.currentCalories}>{roundedCalories}</Text>
-        <Text style={styles.goalCalories}>/{goalCalories} cal goal</Text>
+        <Text style={[styles.currentCalories, { color: themeColors.text.primary }]}>{roundedCalories}</Text>
+        <Text style={[styles.goalCalories, { color: themeColors.text.tertiary }]}>/{goalCalories} cal goal</Text>
       </View>
 
       {/* Progress Bar */}
@@ -94,7 +104,7 @@ export default function DailyOverview({
         <CalorieProgressBar
           currentValue={totalCalories}
           goalValue={goalCalories}
-          filledColor={["#A78BFA", "#7C3AED"]} // Gradient Purple
+          filledColor={isDark ? ["#BF5AF2", "#9D4EDD"] : ["#A78BFA", "#7C3AED"]}
           height={10}
         />
       </View>
@@ -105,43 +115,50 @@ export default function DailyOverview({
           label="Carbs"
           value={totalCarbs}
           goal={goalCarbs}
-          color="#10B981" // Greenish for carbs/veg? Or stick to design colors
+          color="#10B981"
+          themeColors={themeColors}
         />
         <MacroItem
           label="Protein"
           value={totalProtein}
           goal={goalProtein}
-          color="#F59E0B" // Orange
+          color="#F59E0B"
+          themeColors={themeColors}
         />
         <MacroItem
           label="Fat"
           value={totalFat}
           goal={goalFat}
-          color="#EF4444" // Red
+          color="#EF4444"
+          themeColors={themeColors}
         />
       </View>
     </View>
   );
 }
 
+type ThemeColorsType = ReturnType<typeof getThemeColors>;
+
 function MacroItem({
   label,
   value,
   goal,
   color,
+  themeColors,
 }: {
   label: string;
   value: number;
   goal: number;
   color: string;
+  themeColors: ThemeColorsType;
 }) {
   return (
     <View style={styles.macroItem}>
       <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={styles.macroLabel}>{label}</Text>
+      <Text style={[styles.macroLabel, { color: themeColors.text.tertiary }]}>{label}</Text>
       <Text style={styles.macroValue}>
-        <Text style={styles.macroCurrent}>{Math.round(value)}</Text>
-        <Text style={styles.macroGoal}>/{goal}g</Text>
+        <Text style={[styles.macroCurrent, { color: themeColors.text.primary }]}>{Math.round(value)}</Text>
+        <Text style={[styles.macroGoal, { color: themeColors.text.tertiary }]}>/{goal}g</Text>
       </Text>
     </View>
   );
@@ -149,12 +166,10 @@ function MacroItem({
 
 const styles = StyleSheet.create({
   card: {
-    gap: 8, // increased from 4
-    paddingHorizontal: 12, // increased from 10
-    paddingBottom: 12, // increased from 8
-    backgroundColor: Colors.background.surface,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
     borderRadius: 12,
 
     shadowColor: "#000",
@@ -166,29 +181,27 @@ const styles = StyleSheet.create({
     shadowRadius: 1.41,
 
     elevation: 2,
-    marginBottom: 12, // increased from 8
+    marginBottom: 12,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8, // increased from 6
-    paddingVertical: 8, // increased from 6
+    gap: 8,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.lilac[200],
-    marginBottom: 8, // increased from 6
+    marginBottom: 8,
   },
   iconContainer: {
     justifyContent: "center",
     alignItems: "center",
-    height: 16, // increased from 14
-    width: 16, // increased from 14
+    height: 16,
+    width: 16,
   },
   headerTitle: {
     fontFamily: "Inter",
-    fontSize: 13, // increased from 12
-    lineHeight: 16, // increased from 14
+    fontSize: 13,
+    lineHeight: 16,
     fontWeight: "500",
-    color: "#4B5563",
     includeFontPadding: false,
     textAlignVertical: "center",
   },
@@ -199,58 +212,53 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "baseline",
     gap: 4,
-    marginBottom: 6, // increased from 4
-    paddingHorizontal: 4, // increased from 2
+    marginBottom: 6,
+    paddingHorizontal: 4,
   },
   currentCalories: {
     fontFamily: "Inter",
-    fontSize: 24, // increased from 20
+    fontSize: 24,
     fontWeight: "700",
-    color: "#111827",
   },
   goalCalories: {
     fontFamily: "Inter",
-    fontSize: 12, // increased from 11
+    fontSize: 12,
     fontWeight: "400",
-    color: "#6B7280",
   },
   progressBarWrapper: {
-    marginBottom: 12, // increased from 8
-    paddingHorizontal: 4, // increased from 2
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   macrosContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 4, // increased from 2
+    paddingHorizontal: 4,
   },
   macroItem: {
-    flexDirection: "row", // Side by side
+    flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  // macroHeader removed
   dot: {
-    width: 6, // increased from 4
-    height: 6, // increased from 4
+    width: 6,
+    height: 6,
     borderRadius: 3,
   },
   macroLabel: {
     fontFamily: "Inter",
-    fontSize: 12, // increased from 11
+    fontSize: 12,
     fontWeight: "400",
-    color: "#6B7280",
   },
   macroValue: {
     fontFamily: "Inter",
-    fontSize: 12, // increased from 11
+    fontSize: 12,
     marginLeft: -2,
   },
   macroCurrent: {
     fontWeight: "600",
-    color: "#111827",
   },
   macroGoal: {
     fontWeight: "400",
-    color: "#9CA3AF",
   },
 });
+

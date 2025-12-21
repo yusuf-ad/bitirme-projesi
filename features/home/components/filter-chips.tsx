@@ -1,4 +1,5 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import Entypo from "@expo/vector-icons/Entypo";
 import { memo } from "react";
@@ -18,20 +19,30 @@ interface FilterChipsProps {
   selectedCalorieLabel?: string;
 }
 
-// Memoized filter chip
-const FilterChip = memo(({
+// Memoized filter chip with theme support
+const FilterChipComponent = ({
   filter,
   isSelected,
   onToggle,
+  isDark,
+  themeColors,
+  accentColor,
 }: {
   filter: string;
   isSelected: boolean;
   onToggle: (filter: string) => void;
+  isDark: boolean;
+  themeColors: ReturnType<typeof getThemeColors>;
+  accentColor: string;
 }) => (
   <Pressable
     style={({ pressed }) => [
       styles.filterChip,
-      isSelected && styles.filterChipActive,
+      { 
+        backgroundColor: themeColors.background.surface,
+        borderColor: themeColors.border.light,
+      },
+      isSelected && { backgroundColor: accentColor, borderColor: accentColor },
       pressed && styles.filterChipPressed,
     ]}
     onPress={() => onToggle(filter)}
@@ -39,14 +50,16 @@ const FilterChip = memo(({
     <Text
       style={[
         styles.filterChipText,
+        { color: themeColors.text.primary },
         isSelected && styles.filterChipTextActive,
       ]}
     >
       {filter}
     </Text>
   </Pressable>
-));
+);
 
+const FilterChip = memo(FilterChipComponent);
 FilterChip.displayName = "FilterChip";
 
 export function FilterChips({
@@ -62,6 +75,12 @@ export function FilterChips({
   onCaloriePress,
   selectedCalorieLabel,
 }: FilterChipsProps) {
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
+  const chevronColor = isDark ? themeColors.text.primary : "black";
+
   const getIngredientButtonText = () => {
     if (selectedIngredients.length === 0) return "Ingredients";
     if (selectedIngredients.length === 1) return selectedIngredients[0];
@@ -72,6 +91,16 @@ export function FilterChips({
     if (selectedCuisines.length === 0) return "Cuisine";
     if (selectedCuisines.length === 1) return selectedCuisines[0];
     return `${selectedCuisines.length} items`;
+  };
+
+  const buttonStyle = {
+    backgroundColor: themeColors.background.surface,
+    borderColor: themeColors.border.light,
+  };
+
+  const activeButtonStyle = {
+    backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : "rgba(180, 156, 218, 0.15)",
+    borderColor: accentColor,
   };
 
   return (
@@ -85,14 +114,15 @@ export function FilterChips({
         <CustomButton
           containerStyle={[
             styles.addIngredientsButton,
-            selectedIngredients.length > 0 && styles.addIngredientsButtonActive,
+            buttonStyle,
+            selectedIngredients.length > 0 && activeButtonStyle,
           ]}
           onPress={onAddIngredients}
         >
-          <Text style={styles.addIngredientsText}>
+          <Text style={[styles.addIngredientsText, { color: themeColors.text.primary }]}>
             {getIngredientButtonText()}
           </Text>
-          <Entypo name="chevron-down" size={20} color="black" />
+          <Entypo name="chevron-down" size={20} color={chevronColor} />
         </CustomButton>
       )}
 
@@ -100,14 +130,15 @@ export function FilterChips({
         <CustomButton
           containerStyle={[
             styles.addIngredientsButton,
-            selectedCuisines.length > 0 && styles.addIngredientsButtonActive,
+            buttonStyle,
+            selectedCuisines.length > 0 && activeButtonStyle,
           ]}
           onPress={onCuisinePress}
         >
-          <Text style={styles.addIngredientsText}>
+          <Text style={[styles.addIngredientsText, { color: themeColors.text.primary }]}>
             {getCuisineButtonText()}
           </Text>
-          <Entypo name="chevron-down" size={20} color="black" />
+          <Entypo name="chevron-down" size={20} color={chevronColor} />
         </CustomButton>
       )}
 
@@ -115,14 +146,15 @@ export function FilterChips({
         <CustomButton
           containerStyle={[
             styles.addIngredientsButton,
-            selectedTimeLabel && styles.addIngredientsButtonActive,
+            buttonStyle,
+            selectedTimeLabel && activeButtonStyle,
           ]}
           onPress={onTimePress}
         >
-          <Text style={styles.addIngredientsText}>
+          <Text style={[styles.addIngredientsText, { color: themeColors.text.primary }]}>
             {selectedTimeLabel ?? "Total time"}
           </Text>
-          <Entypo name="chevron-down" size={20} color="black" />
+          <Entypo name="chevron-down" size={20} color={chevronColor} />
         </CustomButton>
       )}
 
@@ -130,14 +162,15 @@ export function FilterChips({
         <CustomButton
           containerStyle={[
             styles.addIngredientsButton,
-            selectedCalorieLabel && styles.addIngredientsButtonActive,
+            buttonStyle,
+            selectedCalorieLabel && activeButtonStyle,
           ]}
           onPress={onCaloriePress}
         >
-          <Text style={styles.addIngredientsText}>
+          <Text style={[styles.addIngredientsText, { color: themeColors.text.primary }]}>
             {selectedCalorieLabel ?? "Calories"}
           </Text>
-          <Entypo name="chevron-down" size={20} color="black" />
+          <Entypo name="chevron-down" size={20} color={chevronColor} />
         </CustomButton>
       )}
 
@@ -147,6 +180,9 @@ export function FilterChips({
           filter={filter}
           isSelected={selectedFilters.includes(filter)}
           onToggle={onToggleFilter}
+          isDark={isDark}
+          themeColors={themeColors}
+          accentColor={accentColor}
         />
       ))}
     </ScrollView>
@@ -164,37 +200,24 @@ const styles = StyleSheet.create({
   },
   addIngredientsButton: {
     width: "auto",
-    backgroundColor: "white",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 99,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
   },
-  addIngredientsButtonActive: {
-    backgroundColor: "rgba(180, 156, 218, 0.15)",
-    borderColor: Colors.lilac[700],
-  },
   addIngredientsText: {
     fontSize: 14,
-    color: Colors.text.primary,
     fontWeight: "500",
   },
   filterChip: {
-    backgroundColor: "white",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 99,
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
-  },
-  filterChipActive: {
-    backgroundColor: Colors.lilac[900],
-    borderColor: Colors.lilac[900],
   },
   filterChipPressed: {
     opacity: 0.7,
@@ -202,10 +225,10 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     fontSize: 14,
-    color: Colors.text.primary,
   },
   filterChipTextActive: {
     color: "white",
     fontWeight: "600",
   },
 });
+

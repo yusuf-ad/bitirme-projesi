@@ -1,3 +1,4 @@
+import { getThemeColors } from "@/constants/theme";
 import { SplashScreenController } from "@/features/splash-screen/splash-screen-controller";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { initHaptics } from "@/hooks/useHaptics";
@@ -7,8 +8,8 @@ import { LanguageProvider } from "@/providers/language-provider";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
 import { ThemeProvider, useTheme } from "@/providers/theme-provider";
 import {
-  AttachMenuOverlay,
-  AttachMenuProvider,
+    AttachMenuOverlay,
+    AttachMenuProvider,
 } from "@/shared/components/attach-menu";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -34,21 +35,36 @@ const queryClient = new QueryClient({
   },
 });
 
-// Separate RootNavigator so we can access the AuthContext
+import {
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider as NavThemeProvider,
+} from "@react-navigation/native";
+
+// ... existing code ...
+
 function RootNavigator() {
   const { isLoggedIn, isLoading } = useAuthContext();
   const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark);
 
   return (
-    <>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      <Stack>
-        {/* Show loading screen while auth state is being determined */}
+    <NavThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <StatusBar style={isDark ? "light" : "dark"} backgroundColor="transparent" translucent />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: themeColors.background.primary,
+          },
+          animation: "fade",
+        }}
+      >
+        {/* ... existing screens ... */}
         <Stack.Protected guard={isLoading}>
           <Stack.Screen name="loading" options={{ headerShown: false }} />
         </Stack.Protected>
 
-        {/* Show app screens when logged in and not loading */}
         <Stack.Protected guard={!isLoading && isLoggedIn}>
           <Stack.Screen name="(app)" options={{ headerShown: false }} />
           <Stack.Screen name="(plan)" options={{ headerShown: false }} />
@@ -59,14 +75,16 @@ function RootNavigator() {
           <Stack.Screen name="pantry-items" options={{ headerShown: false }} />
         </Stack.Protected>
 
-        {/* Show onboarding screens when logged out and not loading */}
         <Stack.Protected guard={!isLoading && !isLoggedIn}>
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
-    </>
+    </NavThemeProvider>
   );
 }
+
+// ... existing code ...
+
 
 export default function RootLayout() {
   useEffect(() => {

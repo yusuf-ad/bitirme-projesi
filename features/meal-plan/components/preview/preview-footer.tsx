@@ -1,4 +1,5 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
@@ -11,12 +12,16 @@ export function PreviewFooter({
   isAddingToShoppingList,
 }: PreviewFooterProps) {
   const isDisabled = isSaving || isAddingToShoppingList;
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
+  const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[800];
 
   return (
-    <View style={styles.footer}>
+    <View style={[styles.footer, { backgroundColor: themeColors.background.primary, borderTopColor: themeColors.border.light }]}>
       <CustomButton
         containerStyle={[
           styles.saveButton,
+          { backgroundColor: accentColor },
           isDisabled && styles.saveButtonDisabled,
         ]}
         onPress={onSave}
@@ -40,16 +45,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
-    backgroundColor: Colors.background.primary,
     borderTopWidth: 1,
-    borderTopColor: Colors.border.light,
   },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: Colors.lilac[800],
     borderRadius: 14,
     paddingVertical: 16,
   },
@@ -63,3 +65,4 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 });
+

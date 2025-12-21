@@ -1,20 +1,21 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Linking,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -32,6 +33,8 @@ export default function PrivacyScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { selection } = useHaptics();
   const { t } = useLanguage();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
   const [prefs, setPrefs] = useState<PrivacyPreferences>(defaultPreferences);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -91,6 +94,14 @@ export default function PrivacyScreen() {
     );
   };
 
+  if (!isLoaded) {
+    return (
+      <View style={[styles.container, styles.loadingContainer, { paddingTop: top, backgroundColor: Colors.background.secondary }]}>
+        <ActivityIndicator size="large" color={Colors.lilac[900]} />
+      </View>
+    );
+  }
+
   const privacyOptions = [
     {
       id: "insights",
@@ -103,17 +114,9 @@ export default function PrivacyScreen() {
     },
   ];
 
-  if (!isLoaded) {
-    return (
-      <View style={[styles.container, styles.loadingContainer, { paddingTop: top }]}>
-        <ActivityIndicator size="large" color={Colors.lilac[900]} />
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
-      <View style={styles.header}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: Colors.background.primary }]}>
+      <View style={[styles.header, { backgroundColor: Colors.background.surface, borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "#E5E5E5" }]}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
@@ -125,7 +128,7 @@ export default function PrivacyScreen() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>{t("privacy.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("privacy.title")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -135,23 +138,23 @@ export default function PrivacyScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Privacy Info Banner */}
-        <View style={styles.infoBanner}>
+        <View style={[styles.infoBanner, { backgroundColor: isDark ? Colors.lilac[900] + "20" : "#F0EDFF" }]}>
           <MaterialCommunityIcons
             name="shield-check-outline"
             size={24}
             color={Colors.lilac[900]}
           />
-          <Text style={styles.infoBannerText}>
+          <Text style={[styles.infoBannerText, { color: Colors.lilac[900] }]}>
             {t("privacy.dataEncrypted")}
           </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>{t("privacy.privacyControls")}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("privacy.privacyControls")}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           {privacyOptions.map((option, index) => (
             <View key={option.id}>
               <View style={styles.optionRow}>
-                <View style={styles.optionIconContainer}>
+                <View style={[styles.optionIconContainer, { backgroundColor: isDark ? Colors.background.tertiary : "#F5F5F5" }]}>
                   <MaterialCommunityIcons
                     name={option.icon}
                     size={20}
@@ -159,8 +162,8 @@ export default function PrivacyScreen() {
                   />
                 </View>
                 <View style={styles.optionCopy}>
-                  <Text style={styles.optionTitle}>{option.title}</Text>
-                  <Text style={styles.optionDescription}>
+                  <Text style={[styles.optionTitle, { color: Colors.text.primary }]}>{option.title}</Text>
+                  <Text style={[styles.optionDescription, { color: Colors.text.secondary }]}>
                     {option.description}
                   </Text>
                 </View>
@@ -168,25 +171,25 @@ export default function PrivacyScreen() {
                   value={option.value}
                   onValueChange={option.onToggle}
                   trackColor={{
-                    false: Colors.gray[200],
-                    true: Colors.lilac[200],
+                    false: isDark ? Colors.gray[700] : Colors.gray[200],
+                    true: isDark ? Colors.lilac[700] : Colors.lilac[200],
                   }}
                   thumbColor={option.value ? Colors.lilac[900] : "#FFFFFF"}
                 />
               </View>
-              {index < privacyOptions.length - 1 && <View style={styles.divider} />}
+              {index < privacyOptions.length - 1 && <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0" }]} />}
             </View>
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>{t("privacy.dataManagement")}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.text.secondary }]}>{t("privacy.dataManagement")}</Text>
+        <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           <Pressable
             style={styles.listRow}
             onPress={handleExport}
             accessibilityRole="button"
           >
-            <View style={styles.rowIconContainer}>
+            <View style={[styles.rowIconContainer, { backgroundColor: isDark ? Colors.lilac[900] + "20" : "#F0EDFF" }]}>
               <MaterialCommunityIcons
                 name="download-outline"
                 size={20}
@@ -194,8 +197,8 @@ export default function PrivacyScreen() {
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{t("privacy.exportData")}</Text>
-              <Text style={styles.rowDescription}>
+              <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>{t("privacy.exportData")}</Text>
+              <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
                 {t("privacy.exportDataDesc")}
               </Text>
             </View>
@@ -205,7 +208,7 @@ export default function PrivacyScreen() {
               color={Colors.text.secondary}
             />
           </Pressable>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F0F0F0" }]} />
           <Pressable
             style={styles.listRow}
             onPress={() =>
@@ -223,16 +226,16 @@ export default function PrivacyScreen() {
               )
             }
           >
-            <View style={[styles.rowIconContainer, styles.rowIconDanger]}>
+            <View style={[styles.rowIconContainer, { backgroundColor: isDark ? "rgba(220, 53, 69, 0.15)" : "#FFEBEE" }]}>
               <MaterialCommunityIcons
                 name="trash-can-outline"
                 size={20}
-                color="#DC3545"
+                color={isDark ? "#EF4444" : "#DC3545"}
               />
             </View>
             <View style={styles.rowCopy}>
-              <Text style={[styles.rowTitle, styles.dangerText]}>{t("privacy.deleteAccount")}</Text>
-              <Text style={styles.rowDescription}>
+              <Text style={[styles.rowTitle, { color: isDark ? "#EF4444" : "#DC3545" }]}>{t("privacy.deleteAccount")}</Text>
+              <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
                 {t("privacy.deleteAccountDesc")}
               </Text>
             </View>
@@ -244,16 +247,19 @@ export default function PrivacyScreen() {
           </Pressable>
         </View>
 
-        <Pressable style={styles.resetButton} onPress={handleReset}>
+        <Pressable
+          style={[styles.resetButton, { backgroundColor: Colors.background.surface }]}
+          onPress={handleReset}
+        >
           <MaterialCommunityIcons
             name="refresh"
             size={18}
             color={Colors.text.primary}
           />
-          <Text style={styles.resetText}>{t("privacy.resetToDefaults")}</Text>
+          <Text style={[styles.resetText, { color: Colors.text.primary }]}>{t("privacy.resetToDefaults")}</Text>
         </Pressable>
 
-        <Text style={styles.footerText}>
+        <Text style={[styles.footerText, { color: Colors.text.secondary }]}>
           {t("privacy.lastUpdated")}{"\n"}
           {t("privacy.contactPrivacy")}
         </Text>
@@ -265,7 +271,6 @@ export default function PrivacyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
   },
   loadingContainer: {
     justifyContent: "center",
@@ -277,9 +282,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
   },
   backButton: {
     padding: 4,
@@ -287,7 +290,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -299,7 +301,6 @@ const styles = StyleSheet.create({
   infoBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0EDFF",
     borderRadius: 12,
     padding: 14,
     gap: 12,
@@ -307,7 +308,6 @@ const styles = StyleSheet.create({
   infoBannerText: {
     flex: 1,
     fontSize: 13,
-    color: Colors.lilac[900],
     fontWeight: "500",
     lineHeight: 18,
   },
@@ -316,11 +316,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: "600",
     textTransform: "uppercase",
-    color: Colors.text.secondary,
     marginTop: 8,
   },
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 4,
@@ -340,7 +338,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -350,17 +347,14 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
     marginBottom: 2,
   },
   optionDescription: {
     fontSize: 12,
-    color: Colors.text.secondary,
     lineHeight: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: "#F0F0F0",
     marginLeft: 48,
   },
   listRow: {
@@ -373,12 +367,8 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F0EDFF",
     justifyContent: "center",
     alignItems: "center",
-  },
-  rowIconDanger: {
-    backgroundColor: "#FFEBEE",
   },
   rowCopy: {
     flex: 1,
@@ -386,16 +376,11 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
     marginBottom: 2,
   },
   rowDescription: {
     fontSize: 12,
-    color: Colors.text.secondary,
     lineHeight: 16,
-  },
-  dangerText: {
-    color: "#DC3545",
   },
   resetButton: {
     flexDirection: "row",
@@ -403,7 +388,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#FFFFFF",
     gap: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -414,14 +398,11 @@ const styles = StyleSheet.create({
   resetText: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.text.primary,
   },
   footerText: {
     fontSize: 12,
-    color: Colors.text.secondary,
     textAlign: "center",
     lineHeight: 18,
     marginTop: 8,
   },
 });
-

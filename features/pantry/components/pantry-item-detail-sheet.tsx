@@ -2,31 +2,31 @@ import { Colors } from "@/constants/theme";
 import { searchIngredients } from "@/lib/spoonacular";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
+    BottomSheetBackdrop,
+    BottomSheetModal,
+    BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    forwardRef,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    ActivityIndicator,
+    Alert,
+    Keyboard,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PantryItem } from "../types";
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "white",
+    backgroundColor: Colors.background.surface,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   removeBtn: {
-    backgroundColor: "white",
+    backgroundColor: Colors.background.surface,
     borderWidth: 1,
     borderColor: "#EF4444",
   },

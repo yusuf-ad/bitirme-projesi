@@ -29,6 +29,8 @@ export default function Header({
   const { isDark } = useTheme();
   const ThemeColors = getThemeColors(isDark, true);
   const scale = useSharedValue(1);
+  
+  const accentColor = isDark ? ThemeColors.accent.lilac : Colors.lilac[900];
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -69,7 +71,7 @@ export default function Header({
           onPress={handleProfilePress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          style={styles.profilePictureContainer}
+          style={[styles.profilePictureContainer, { borderColor: accentColor }]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Animated.View style={animatedStyle}>
@@ -102,7 +104,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontWeight: "700",
     fontSize: 20,
-    color: Colors.text.primary,
     marginBottom: -4,
   },
   date: {
@@ -110,7 +111,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
     lineHeight: 16,
-    color: Colors.gray[300],
     marginTop: 10,
   },
   headerRight: {
@@ -122,7 +122,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderWidth: 1,
-    borderColor: Colors.lilac[900],
     borderRadius: 18,
     overflow: "hidden",
   },
@@ -132,3 +131,4 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
 });
+

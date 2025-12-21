@@ -240,10 +240,10 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     borderWidth: 1,
-    borderColor: Colors.lilac[100],
+    borderColor: Colors.border.light,
     borderRadius: 16,
     padding: 16,
-    backgroundColor: "white",
+    backgroundColor: Colors.background.surface,
   },
   optionCardActive: {
     borderColor: Colors.lilac[700],
