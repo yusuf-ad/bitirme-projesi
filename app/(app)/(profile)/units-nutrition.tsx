@@ -29,7 +29,7 @@ export default function UnitsNutritionScreen() {
 
   // Nutrition State
   const selectedDietId = onboarding.selectedDietPreferences?.[0];
-  
+
   // Default values (matching daily-overview.tsx)
   let targetCalories = 2200;
   let targetCarbs = 275;
@@ -38,22 +38,29 @@ export default function UnitsNutritionScreen() {
 
   if (selectedDietId) {
     const customTarget = onboarding.dietNutritionTargets?.[selectedDietId];
-    
+
     if (customTarget) {
-        // User has custom targets - use defaults if values are undefined
-        targetCalories = customTarget.calories ?? 2200;
-        targetCarbs = customTarget.carbs ?? 275;
-        targetProtein = customTarget.protein ?? 138;
-        targetFat = customTarget.fat ?? 61;
+      // User has custom targets - use defaults if values are undefined
+      targetCalories = customTarget.calories ?? 2200;
+      targetCarbs = customTarget.carbs ?? 275;
+      targetProtein = customTarget.protein ?? 138;
+      targetFat = customTarget.fat ?? 61;
     } else {
-        // Fallback to diet option defaults
-        const dietOption = DIET_OPTIONS.find(d => d.id === selectedDietId);
-        if (dietOption) {
-            targetCalories = dietOption.targetCalories ?? 2200;
-            targetCarbs = Math.round((targetCalories * (dietOption.defaultMacros?.carbohydrates ?? 0.5)) / 4);
-            targetProtein = Math.round((targetCalories * (dietOption.defaultMacros?.protein ?? 0.25)) / 4);
-            targetFat = Math.round((targetCalories * (dietOption.defaultMacros?.fat ?? 0.25)) / 9);
-        }
+      // Fallback to diet option defaults
+      const dietOption = DIET_OPTIONS.find((d) => d.id === selectedDietId);
+      if (dietOption) {
+        targetCalories = dietOption.targetCalories ?? 2200;
+        targetCarbs = Math.round(
+          (targetCalories * (dietOption.defaultMacros?.carbohydrates ?? 0.5)) /
+            4
+        );
+        targetProtein = Math.round(
+          (targetCalories * (dietOption.defaultMacros?.protein ?? 0.25)) / 4
+        );
+        targetFat = Math.round(
+          (targetCalories * (dietOption.defaultMacros?.fat ?? 0.25)) / 9
+        );
+      }
     }
   }
 
@@ -73,12 +80,24 @@ export default function UnitsNutritionScreen() {
       setAge(onboarding.age?.toString() || "");
       setGender(onboarding.selectedGender || "");
     }
-  }, [onboarding.isLoading, onboarding.weight, onboarding.height, onboarding.age, onboarding.selectedGender]);
+  }, [
+    onboarding.isLoading,
+    onboarding.weight,
+    onboarding.height,
+    onboarding.age,
+    onboarding.selectedGender,
+  ]);
 
-  const handleSaveBodyMetrics = async (updates: { weight?: number; height?: number; age?: number }) => {
+  const handleSaveBodyMetrics = async (updates: {
+    weight?: number;
+    height?: number;
+    age?: number;
+  }) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         console.error("No user logged in");
         return;
@@ -99,12 +118,12 @@ export default function UnitsNutritionScreen() {
 
       // Check existence
       const { data: existing, error: fetchError } = await supabase
-        .from('user_body_metrics')
-        .select('user_id')
-        .eq('user_id', user.id)
+        .from("user_body_metrics")
+        .select("user_id")
+        .eq("user_id", user.id)
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError && fetchError.code !== "PGRST116") {
         console.error("Error fetching body metrics:", fetchError);
         throw fetchError;
       }
@@ -112,16 +131,16 @@ export default function UnitsNutritionScreen() {
       let result;
       if (!existing) {
         console.log("Creating new body metrics");
-        result = await supabase.from('user_body_metrics').insert({
+        result = await supabase.from("user_body_metrics").insert({
           user_id: user.id,
-          ...currentBodyData
+          ...currentBodyData,
         });
       } else {
         console.log("Updating existing body metrics");
         result = await supabase
-          .from('user_body_metrics')
+          .from("user_body_metrics")
           .update(currentBodyData)
-          .eq('user_id', user.id);
+          .eq("user_id", user.id);
       }
 
       if (result.error) {
@@ -130,7 +149,10 @@ export default function UnitsNutritionScreen() {
       }
 
       // Update AsyncStorage
-      await AsyncStorage.setItem("onboarding_body", JSON.stringify(currentBodyData));
+      await AsyncStorage.setItem(
+        "onboarding_body",
+        JSON.stringify(currentBodyData)
+      );
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       console.log("Successfully saved body metrics");
@@ -140,64 +162,130 @@ export default function UnitsNutritionScreen() {
     }
   };
 
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const Section = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>{title}</Text>
-      <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
+      <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+        {title}
+      </Text>
+      <View
+        style={[styles.card, { backgroundColor: Colors.background.surface }]}
+      >
         {children}
       </View>
     </View>
   );
 
-  const SettingRow = ({ 
-    icon, 
-    label, 
+  const SettingRow = ({
+    icon,
+    label,
     value,
     unit,
     onEdit,
-    last = false 
-  }: { 
-    icon: keyof typeof MaterialCommunityIcons.glyphMap; 
-    label: string; 
+    last = false,
+  }: {
+    icon: keyof typeof MaterialCommunityIcons.glyphMap;
+    label: string;
     value: string;
     unit: string;
     onEdit?: () => void;
-    last?: boolean; 
+    last?: boolean;
   }) => (
-    <View style={[styles.row, !last && { borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", borderBottomWidth: 1 }]}>
+    <View
+      style={[
+        styles.row,
+        !last && {
+          borderBottomColor: isDark
+            ? "rgba(255,255,255,0.1)"
+            : "rgba(0,0,0,0.05)",
+          borderBottomWidth: 1,
+        },
+      ]}
+    >
       <View style={styles.rowLeft}>
-        <View style={[styles.iconContainer, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.03)" }]}>
-          <MaterialCommunityIcons name={icon} size={20} color={Colors.lilac[900]} />
+        <View
+          style={[
+            styles.iconContainer,
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.03)",
+            },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name={icon}
+            size={20}
+            color={Colors.lilac[900]}
+          />
         </View>
-        <Text style={[styles.rowLabel, { color: Colors.text.primary }]}>{label}</Text>
+        <Text style={[styles.rowLabel, { color: Colors.text.primary }]}>
+          {label}
+        </Text>
       </View>
-      
+
       <View style={styles.rowRight}>
         <View style={styles.valueWrapper}>
-            <Text style={[styles.valueText, { color: Colors.text.primary }]}>{value || "-"}</Text>
-            <Text style={[styles.unitText, { color: Colors.text.tertiary }]}>{unit}</Text>
+          <Text style={[styles.valueText, { color: Colors.text.primary }]}>
+            {value || "-"}
+          </Text>
+          <Text style={[styles.unitText, { color: Colors.text.tertiary }]}>
+            {unit}
+          </Text>
         </View>
         {onEdit && (
-            <Pressable 
-                onPress={() => {
-                    Haptics.selectionAsync();
-                    onEdit();
-                }}
-                style={({pressed}) => [styles.editButton, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", opacity: pressed ? 0.7 : 1 }]}
-            >
-                <MaterialCommunityIcons name="pencil" size={16} color={Colors.text.secondary} />
-            </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              onEdit();
+            }}
+            style={({ pressed }) => [
+              styles.editButton,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="pencil"
+              size={16}
+              color={Colors.text.secondary}
+            />
+          </Pressable>
         )}
       </View>
     </View>
   );
 
   return (
-    <View 
-      style={[styles.container, { backgroundColor: Colors.background.secondary, paddingTop: top }]}
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: Colors.background.secondary },
+      ]}
     >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: Colors.background.surface, borderBottomColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: Colors.background.secondary, paddingTop: top },
+
+          {
+            backgroundColor: Colors.background.surface,
+            borderBottomColor: isDark
+              ? "rgba(255,255,255,0.05)"
+              : "rgba(0,0,0,0.05)",
+          },
+        ]}
+      >
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
@@ -205,75 +293,82 @@ export default function UnitsNutritionScreen() {
           }}
           style={styles.backButton}
         >
-          <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.text.primary} />
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={Colors.text.primary}
+          />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>{t("unitsNutrition.title")}</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
+          {t("unitsNutrition.title")}
+        </Text>
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + 40 }]}>
-        
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: bottom + 40 }]}
+      >
         {/* Body Measurements */}
         <Section title={t("unitsNutrition.bodyMeasurements")}>
-          <SettingRow 
-            icon="weight-kilogram" 
-            label={t("unitsNutrition.weight")} 
-            value={weight} 
-            unit="kg" 
-            onEdit={() => setActiveModal('weight')}
+          <SettingRow
+            icon="weight-kilogram"
+            label={t("unitsNutrition.weight")}
+            value={weight}
+            unit="kg"
+            onEdit={() => setActiveModal("weight")}
           />
-          <SettingRow 
-            icon="human-male-height" 
-            label={t("unitsNutrition.height")} 
-            value={height} 
-            unit="cm" 
-            onEdit={() => setActiveModal('height')}
+          <SettingRow
+            icon="human-male-height"
+            label={t("unitsNutrition.height")}
+            value={height}
+            unit="cm"
+            onEdit={() => setActiveModal("height")}
             last
           />
         </Section>
 
         {/* Daily Targets */}
         <Section title={t("unitsNutrition.dailyTargets")}>
-          <SettingRow 
-            icon="fire" 
-            label={t("unitsNutrition.calorieGoal")} 
-            value={calories} 
-            unit="kcal" 
+          <SettingRow
+            icon="fire"
+            label={t("unitsNutrition.calorieGoal")}
+            value={calories}
+            unit="kcal"
             last
           />
         </Section>
 
         {/* Macros */}
         <Section title={t("unitsNutrition.macroDistribution")}>
-          <SettingRow 
-            icon="food-steak" 
-            label={t("unitsNutrition.protein")} 
-            value={protein} 
-            unit="g" 
+          <SettingRow
+            icon="food-steak"
+            label={t("unitsNutrition.protein")}
+            value={protein}
+            unit="g"
           />
-          <SettingRow 
-            icon="barley" 
-            label={t("unitsNutrition.carbs")} 
-            value={carbs} 
-            unit="g" 
+          <SettingRow
+            icon="barley"
+            label={t("unitsNutrition.carbs")}
+            value={carbs}
+            unit="g"
           />
-          <SettingRow 
-            icon="oil" 
-            label={t("unitsNutrition.fat")} 
-            value={fat} 
-            unit="g" 
+          <SettingRow
+            icon="oil"
+            label={t("unitsNutrition.fat")}
+            value={fat}
+            unit="g"
             last
           />
         </Section>
 
         {/* Personal Details */}
         <Section title={t("unitsNutrition.personalDetails")}>
-          <SettingRow 
-            icon="calendar-account" 
-            label={t("unitsNutrition.age")} 
-            value={age} 
-            unit={t("goals.age") === "YAŞ" ? "yıl" : "years"} 
-            onEdit={() => setActiveModal('age')}
+          <SettingRow
+            icon="calendar-account"
+            label={t("unitsNutrition.age")}
+            value={age}
+            unit={t("goals.age") === "YAŞ" ? "yıl" : "years"}
+            onEdit={() => setActiveModal("age")}
             last
           />
         </Section>
@@ -281,13 +376,13 @@ export default function UnitsNutritionScreen() {
 
       {/* Modals */}
       <RulerPickerModal
-        visible={activeModal === 'weight'}
+        visible={activeModal === "weight"}
         onClose={() => setActiveModal(null)}
         onSave={async (val) => {
-            const newVal = parseFloat(val.toString());
-            setWeight(newVal.toString());
-            await handleSaveBodyMetrics({ weight: newVal });
-            setActiveModal(null);
+          const newVal = parseFloat(val.toString());
+          setWeight(newVal.toString());
+          await handleSaveBodyMetrics({ weight: newVal });
+          setActiveModal(null);
         }}
         title={t("unitsNutrition.editWeight")}
         initialValue={parseFloat(weight) || 75}
@@ -297,13 +392,13 @@ export default function UnitsNutritionScreen() {
       />
 
       <RulerPickerModal
-        visible={activeModal === 'height'}
+        visible={activeModal === "height"}
         onClose={() => setActiveModal(null)}
         onSave={async (val) => {
-            const newVal = parseFloat(val.toString());
-            setHeight(newVal.toString());
-            await handleSaveBodyMetrics({ height: newVal });
-            setActiveModal(null);
+          const newVal = parseFloat(val.toString());
+          setHeight(newVal.toString());
+          await handleSaveBodyMetrics({ height: newVal });
+          setActiveModal(null);
         }}
         title={t("unitsNutrition.editHeight")}
         initialValue={parseFloat(height) || 175}
@@ -313,19 +408,18 @@ export default function UnitsNutritionScreen() {
       />
 
       <NumericInputModal
-        visible={activeModal === 'age'}
+        visible={activeModal === "age"}
         onClose={() => setActiveModal(null)}
         onSave={async (val) => {
-            const newVal = parseInt(val) || 0;
-            setAge(val);
-            await handleSaveBodyMetrics({ age: newVal });
-            setActiveModal(null);
+          const newVal = parseInt(val) || 0;
+          setAge(val);
+          await handleSaveBodyMetrics({ age: newVal });
+          setActiveModal(null);
         }}
         title={t("unitsNutrition.editAge")}
         initialValue={age}
         unit={t("goals.age") === "YAŞ" ? "yıl" : "years"}
       />
-
     </View>
   );
 }
@@ -404,18 +498,18 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   valueWrapper: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: 4,
   },
   valueText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   unitText: {
     fontSize: 14,
@@ -424,7 +518,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

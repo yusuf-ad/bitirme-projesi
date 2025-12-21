@@ -913,13 +913,13 @@ constants/
 ### pantry - yusuf
 
 - [x] prefill deki olayın kg litresini felan düzelt
-- [] scanresults sayfasının tasarımını düzelt
+- [x] scanresults sayfasının tasarımını düzelt
 
 ### profile
 
 - [x] statusbarın rengiyle farklı header kötü duruyor orası.
 - [] yunusun hologram sayfası
-- [] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
+- [x] dark mode animasyonu düzeltilsin ya da kaldırılsın donuyor
 - [x] dark mode tam uyumlu değil!!
 - [x] goals and metrics sayfasında ikonlar dağınık düzelt
 
