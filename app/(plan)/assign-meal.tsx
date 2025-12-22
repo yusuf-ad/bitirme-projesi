@@ -1,6 +1,10 @@
 import { Colors } from "@/constants/theme";
+import {
+  MealPlanItemRecord,
+  MealSlot,
+  mealPlanIngredientsService,
+} from "@/features/meal-plan";
 import { DateModal } from "@/features/meal-plan/components/date-modal";
-import { MealSlot } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import CustomButton from "@/shared/components/custom-button";
@@ -138,7 +142,11 @@ export default function AssignMealScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const dateModalRef = useRef<BottomSheetModal>(null);
 
-  const params = useLocalSearchParams<{ recipe?: string; mealSlot?: string }>();
+  const params = useLocalSearchParams<{
+    recipe?: string;
+    mealSlot?: string;
+    isAiGenerated?: string;
+  }>();
   const payload = useMemo<RecipePlanPayload | null>(() => {
     const rawValue = Array.isArray(params.recipe)
       ? params.recipe[0]
@@ -311,16 +319,86 @@ export default function AssignMealScreen() {
         }
       }
 
+      const savedItem: MealPlanItemRecord = {
+        id: 0, // Dummy ID as it's not used for ingredient fetching
+        meal_plan_id: planId,
+        spoonacular_recipe_id: payload.id,
+        recipe_name: payload.title,
+        recipe_image_url: payload.image || null,
+        ready_in_minutes: payload.readyInMinutes ?? null,
+        calories_per_serving:
+          typeof payload?.macros?.calories === "number"
+            ? Math.round(payload.macros.calories)
+            : null,
+        carbs_per_serving: normalizeNumber(payload?.macros?.carbs),
+        protein_per_serving: normalizeNumber(payload?.macros?.protein),
+        fat_per_serving: normalizeNumber(payload?.macros?.fat),
+        meal_date: mealDateString,
+        meal_type: selectedMealType,
+        is_ai_generated: params.isAiGenerated === "true",
+      };
+
+      const result =
+        await mealPlanIngredientsService.addMissingIngredientsToShoppingList([
+          savedItem,
+        ]);
+
       await queryClient.invalidateQueries({
         queryKey: ["meal-plans"],
       });
 
+      // Invalidate pantry query to refresh shopping list
+      await queryClient.invalidateQueries({
+        queryKey: ["pantry"],
+      });
+
       AccessibilityInfo.announceForAccessibility("Meal scheduled");
 
-      router.replace({
-        pathname: "/(app)",
-        params: { date: mealDateString },
-      });
+      if (result.addedCount > 0) {
+        Alert.alert(
+          "Meal scheduled! 🎉",
+          `${result.addedCount} missing ingredient${
+            result.addedCount > 1 ? "s" : ""
+          } added to your shopping list.${
+            result.alreadyInPantryCount > 0
+              ? `\n\n${result.alreadyInPantryCount} ingredient${
+                  result.alreadyInPantryCount !== 1 ? "s" : ""
+                } already in your pantry.`
+              : ""
+          }`,
+          [
+            {
+              text: "View Shopping List",
+              onPress: () => router.replace("/shopping-list"),
+            },
+            {
+              text: "Go to Home",
+              onPress: () =>
+                router.replace({
+                  pathname: "/(app)",
+                  params: { date: mealDateString },
+                }),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Meal scheduled! ✨",
+          `All ${result.alreadyInPantryCount} ingredient${
+            result.alreadyInPantryCount !== 1 ? "s" : ""
+          } already in your pantry. No shopping needed!`,
+          [
+            {
+              text: "OK",
+              onPress: () =>
+                router.replace({
+                  pathname: "/(app)",
+                  params: { date: mealDateString },
+                }),
+            },
+          ]
+        );
+      }
     } catch (error) {
       console.error("Failed to add meal to plan", error);
       const message =
