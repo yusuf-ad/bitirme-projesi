@@ -871,6 +871,7 @@ constants/
 - [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
 - console logları sil!
 - [x] Forget Password Sayfasını düzelt
+- []anasayfaya en son eklenen veya çıkarılan yemekler, Anasayfadaki slotların son halinden shopping liste her zaman veri çekilecek.
 
 ### ana sayfa
 
@@ -894,6 +895,7 @@ constants/
 - [x] snacks seçeneğini kaldır generate with ai da
 - [x] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
 - [x] scroll ederken yüklenme skeletonu gözükmüyor
+- [] Dark mode eksik
 
 ### recipes - osman
 
