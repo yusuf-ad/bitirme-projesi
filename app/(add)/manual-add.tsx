@@ -1,7 +1,8 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { PantryCategory } from "@/features/pantry/types";
 import { generateAPIUrl } from "@/lib/utils";
+import { useTheme } from "@/providers/theme-provider";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +30,8 @@ interface EditableIngredient {
 
 export default function ManualAdd() {
   const router = useRouter();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark);
   const params = useLocalSearchParams<{ destination?: string }>();
   const destination = params.destination || "pantry";
   const { top, bottom } = useSafeAreaInsets();
@@ -274,16 +277,16 @@ export default function ManualAdd() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
-      <View style={styles.header}>
+    <View style={[styles.container, { paddingTop: top, backgroundColor: themeColors.background.primary }]}>
+      <View style={[styles.header, { borderBottomColor: themeColors.border.light }]}>
         <Pressable
-          style={styles.iconButton}
+          style={[styles.iconButton, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f3f4f6" }]}
           onPress={() => router.back()}
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={22} color="#111" />
+          <Ionicons name="chevron-back" size={22} color={themeColors.text.primary} />
         </Pressable>
-        <Text style={styles.title}>Add Ingredients Manually</Text>
+        <Text style={[styles.title, { color: themeColors.text.primary }]}>Add Ingredients Manually</Text>
         <View style={{ width: 42 }} />
       </View>
 
@@ -297,17 +300,24 @@ export default function ManualAdd() {
       >
         {ingredients.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No ingredients. Add one below.</Text>
+            <Text style={[styles.emptyText, { color: themeColors.text.secondary }]}>No ingredients. Add one below.</Text>
           </View>
         ) : (
           ingredients.map((item, index) => (
-            <View key={item.id} style={styles.row}>
+            <View key={item.id} style={[
+                styles.row, 
+                { 
+                    backgroundColor: themeColors.background.surface,
+                    borderColor: themeColors.border.light
+                }
+            ]}>
               <View style={styles.rowContent}>
                 <View style={styles.nameContainer}>
                   <View style={styles.editNameRow}>
                     <TextInput
-                      style={styles.nameInput}
+                      style={[styles.nameInput, { color: themeColors.text.primary, borderBottomColor: themeColors.accent.lilac }]}
                       placeholder="Ingredient name"
+                      placeholderTextColor={themeColors.text.tertiary}
                       value={item.name}
                       onChangeText={(text) => handleNameChange(index, text)}
                       onFocus={() => setEditingIndex(index)}
@@ -321,7 +331,7 @@ export default function ManualAdd() {
                       <Ionicons
                         name="trash-outline"
                         size={20}
-                        color="#ef4444"
+                        color={isDark ? themeColors.semantic.error.main : "#ef4444"}
                       />
                     </Pressable>
                   </View>
@@ -329,9 +339,19 @@ export default function ManualAdd() {
 
                 <View style={styles.quantityControls}>
                   {item.isWeight ? (
-                    <View style={styles.weightInputWrapper}>
+                    <View style={[
+                        styles.weightInputWrapper, 
+                        { 
+                            backgroundColor: isDark ? themeColors.background.tertiary : "#f9fafb",
+                            borderColor: themeColors.border.light
+                        }
+                    ]}>
                       <TextInput
-                        style={styles.amountInput}
+                        style={[styles.amountInput, { 
+                            backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface,
+                            borderColor: themeColors.border.light,
+                            color: themeColors.text.primary
+                        }]}
                         value={
                           amountInputs[index] ??
                           Number(item.parsedAmount).toFixed(2)
@@ -351,21 +371,34 @@ export default function ManualAdd() {
                         }
                         returnKeyType="done"
                       />
-                      <Text style={styles.unitStaticText}>
+                      <Text style={[styles.unitStaticText, { color: themeColors.text.secondary }]}>
                         {item.parsedUnit}
                       </Text>
                     </View>
                   ) : (
-                    <View style={styles.pieceControls}>
+                    <View style={[
+                        styles.pieceControls, 
+                        { 
+                            backgroundColor: isDark ? themeColors.background.tertiary : "#f9fafb",
+                            borderColor: themeColors.border.light
+                        }
+                    ]}>
                       <Pressable
                         onPress={() => handleDecrement(index)}
-                        style={styles.pieceBtn}
+                        style={[styles.pieceBtn, { 
+                            backgroundColor: isDark ? themeColors.background.surface : "#f3f4f6",
+                            borderColor: themeColors.border.light
+                        }]}
                         hitSlop={8}
                       >
-                        <Ionicons name="remove" size={16} color="#4b5563" />
+                        <Ionicons name="remove" size={16} color={themeColors.text.secondary} />
                       </Pressable>
                       <TextInput
-                        style={styles.amountInput}
+                        style={[styles.amountInput, { 
+                            backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface,
+                            borderColor: themeColors.border.light,
+                            color: themeColors.text.primary
+                        }]}
                         value={
                           amountInputs[index] ??
                           String(Math.round(item.parsedAmount))
@@ -387,10 +420,13 @@ export default function ManualAdd() {
                       />
                       <Pressable
                         onPress={() => handleIncrement(index)}
-                        style={styles.pieceBtn}
+                        style={[styles.pieceBtn, { 
+                            backgroundColor: isDark ? themeColors.background.surface : "#f3f4f6",
+                            borderColor: themeColors.border.light
+                        }]}
                         hitSlop={8}
                       >
-                        <Ionicons name="add" size={16} color="#4b5563" />
+                        <Ionicons name="add" size={16} color={themeColors.text.secondary} />
                       </Pressable>
                     </View>
                   )}
@@ -404,13 +440,25 @@ export default function ManualAdd() {
                           onPress={() => quickSetUnit(index, u.value, u.weight)}
                           style={[
                             styles.unitChip,
-                            selected && styles.unitChipSelected,
+                            {
+                                backgroundColor: isDark 
+                                    ? (selected ? "rgba(120, 73, 182, 0.2)" : themeColors.background.tertiary)
+                                    : (selected ? "#F2EEF8" : "#f9fafb"),
+                                borderColor: isDark
+                                    ? (selected ? themeColors.accent.lilac : themeColors.border.light)
+                                    : (selected ? "#7849B6" : "#e5e7eb")
+                            }
                           ]}
                         >
                           <Text
                             style={[
                               styles.unitChipText,
-                              selected && styles.unitChipTextSelected,
+                              {
+                                  color: selected 
+                                    ? (isDark ? themeColors.accent.lilac : "#7849B6")
+                                    : themeColors.text.secondary,
+                                  fontWeight: selected ? "600" : "400"
+                              }
                             ]}
                           >
                             {u.label}
@@ -425,15 +473,25 @@ export default function ManualAdd() {
           ))
         )}
 
-        <Pressable style={styles.addButton} onPress={addNewIngredient}>
-          <Ionicons name="add-circle-outline" size={24} color="#7849B6" />
-          <Text style={styles.addButtonText}>Add ingredient</Text>
+        <Pressable style={[
+            styles.addButton, 
+            { 
+                backgroundColor: isDark ? themeColors.background.surface : "#f9fafb",
+                borderColor: themeColors.border.light 
+            }
+        ]} onPress={addNewIngredient}>
+          <Ionicons name="add-circle-outline" size={24} color={isDark ? themeColors.accent.lilac : "#7849B6"} />
+          <Text style={[styles.addButtonText, { color: isDark ? themeColors.accent.lilac : "#7849B6" }]}>Add ingredient</Text>
         </Pressable>
       </KeyboardAwareScrollView>
 
-      <View style={[styles.footer, { paddingBottom: bottom + 12 }]}>
+      <View style={[styles.footer, { 
+          paddingBottom: bottom + 12, 
+          backgroundColor: themeColors.background.surface,
+          borderTopColor: themeColors.border.light
+        }]}>
         <Pressable
-          style={[styles.primaryButton, isSaving && { opacity: 0.7 }]}
+          style={[styles.primaryButton, { backgroundColor: isDark ? themeColors.accent.lilac : "#7849B6" }, isSaving && { opacity: 0.7 }]}
           onPress={handleAddToPantry}
           disabled={isSaving}
         >
