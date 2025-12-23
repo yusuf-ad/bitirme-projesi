@@ -1,16 +1,16 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
 import {
-    TasteAllergies,
-    TasteDietPreferences,
+  TasteAllergies,
+  TasteDietPreferences,
 } from "@/features/onboarding/sections/taste";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
-    resolveAllergiesWithImages,
-    resolveDietPreferences,
-    type DisplayAllergy,
-    type DisplayDietPreference,
+  resolveAllergiesWithImages,
+  resolveDietPreferences,
+  type DisplayAllergy,
+  type DisplayDietPreference,
 } from "@/lib/allergies-diet-helpers";
 import { supabase } from "@/lib/supabase";
 import { updateUserTastePreferences } from "@/lib/supabase-onboarding";
@@ -21,14 +21,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -220,7 +220,7 @@ export default function AllergiesDietScreen() {
     >
       {/* Header */}
       <View
-        style={[styles.header, { backgroundColor: Colors.background.surface }]}
+        style={[styles.header, { backgroundColor: Colors.background.surface, borderBottomColor: Colors.border.light }]}
       >
         <Pressable
           onPress={() => {

@@ -856,7 +856,7 @@ constants/
 
 - [] Fix error states - yunus
 - [] tanıtım tutorialı tarzı bir şey eklensin bu en son yapılacak!!!
-- [] AI Chatte androidde chat keybordunun altına kayıplı keyboardaware scrollview lazım
+- [x] AI Chatte androidde chat keybordunun altına kayıplı keyboardaware scrollview lazım
 
 ### onboarding
 
@@ -888,6 +888,7 @@ constants/
 - [] sentry gibi hata raporlama sistemi ekle
 - [] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
 - [] servings için mi calori ingredient kalori felan 1 kişi için mi
+- [x] Plan this recipes sayfasında choose a meal slottaki öğün saatleri supabaseden gelsin.
 
 ### recipes
 
@@ -895,7 +896,7 @@ constants/
 - [x] snacks seçeneğini kaldır generate with ai da
 - [x] çok saçma sapan yemekler gözüküyor ilk loadda sort parametresini değiştir
 - [x] scroll ederken yüklenme skeletonu gözükmüyor
-- [] Dark mode eksik
+- [x] Dark mode eksik
 
 ### recipes - osman
 
@@ -916,7 +917,7 @@ constants/
 
 - [x] prefill deki olayın kg litresini felan düzelt
 - [x] scanresults sayfasının tasarımını düzelt
-
+- [x] Add ingredients manually sayfasına dark mode ekle
 ### profile
 
 - [x] statusbarın rengiyle farklı header kötü duruyor orası.

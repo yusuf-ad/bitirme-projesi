@@ -1,23 +1,23 @@
 import { getThemeColors } from "@/constants/theme";
 import { POPULAR_INGREDIENTS } from "@/lib/constants";
 import {
-  getIngredientInformation,
-  searchIngredients,
-  type Ingredient,
+    getIngredientInformation,
+    searchIngredients,
+    type Ingredient,
 } from "@/lib/spoonacular";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
 interface TasteAllergiesProps {
@@ -331,13 +331,13 @@ export function TasteAllergies({
       <View
         style={[
           styles.cardContainer,
-          { backgroundColor: "#FFFFFF", shadowColor: Colors.lilac[900] },
+          { backgroundColor: Colors.background.surface, shadowColor: Colors.card.shadow, borderColor: Colors.border.light },
         ]}
       >
         {/* Card Header */}
         <View style={styles.cardHeader}>
           <Text
-            style={[styles.cardEmoji, { backgroundColor: Colors.lilac[100] }]}
+            style={[styles.cardEmoji, { backgroundColor: isDark ? Colors.lilac[900] + "40" : Colors.lilac[100] }]}
           >
             🥜
           </Text>
@@ -354,7 +354,7 @@ export function TasteAllergies({
           <View
             style={[
               styles.searchContainer,
-              { backgroundColor: Colors.background.surface },
+              { backgroundColor: isDark ? Colors.background.tertiary : Colors.background.secondary },
             ]}
           >
             <MaterialCommunityIcons
@@ -390,7 +390,7 @@ export function TasteAllergies({
                 <View
                   style={[
                     styles.sectionIconContainer,
-                    { backgroundColor: "#EF444415" },
+                    { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#EF444415" },
                   ]}
                 >
                   <MaterialCommunityIcons
@@ -417,7 +417,10 @@ export function TasteAllergies({
                     <Pressable
                       key={`selected-${index}`}
                       onPress={() => toggleAllergy(item)}
-                      style={styles.selectedChip}
+                      style={[styles.selectedChip, { 
+                          backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+                          borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA"
+                      }]}
                     >
                       {ingredientImageUrl ? (
                         <Image
@@ -425,7 +428,7 @@ export function TasteAllergies({
                           style={styles.selectedChipImage}
                         />
                       ) : (
-                        <View style={styles.selectedChipImagePlaceholder}>
+                        <View style={[styles.selectedChipImagePlaceholder, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2" }]}>
                           <MaterialCommunityIcons
                             name="food-off"
                             size={14}
@@ -433,7 +436,7 @@ export function TasteAllergies({
                           />
                         </View>
                       )}
-                      <Text style={styles.selectedChipLabel} numberOfLines={1}>
+                      <Text style={[styles.selectedChipLabel, { color: isDark ? "#FCA5A5" : "#DC2626" }]} numberOfLines={1}>
                         {ingredientName}
                       </Text>
                       <View style={styles.removeIcon}>
@@ -456,13 +459,13 @@ export function TasteAllergies({
               <View
                 style={[
                   styles.sectionIconContainer,
-                  { backgroundColor: `${Colors.lilac[900]}15` },
+                  { backgroundColor: isDark ? Colors.lilac[900] + "40" : `${Colors.lilac[900]}15` },
                 ]}
               >
                 <MaterialCommunityIcons
                   name="food-variant"
                   size={16}
-                  color={Colors.lilac[900]}
+                  color={isDark ? Colors.lilac[300] : Colors.lilac[900]}
                 />
               </View>
               <Text
@@ -516,16 +519,19 @@ export function TasteAllergies({
         </View>
 
         {/* Skip Actions */}
-        <View style={styles.actionContainer}>
+        <View style={[styles.actionContainer, { borderTopColor: Colors.border.light }]}>
           <Pressable
-            style={styles.skipButton}
+            style={[
+                styles.skipButton,
+                { backgroundColor: isDark ? Colors.background.tertiary : "#F5F5F5" }
+            ]}
             onPress={() => {
               setSelectedAllergiesMap(new Map());
               onSelectionChange?.([]);
             }}
           >
             <Text
-              style={[styles.skipButtonText, { color: Colors.text.secondary }]}
+              style={[styles.skipButtonText, { color: Colors.text.primary }]}
             >
               I have no allergies
             </Text>
