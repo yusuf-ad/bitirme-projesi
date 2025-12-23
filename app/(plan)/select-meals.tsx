@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -101,6 +101,28 @@ export default function SelectMeals() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pendingNavigationParams, setPendingNavigationParams] =
     useState<any>(null);
+
+  // Track if we've initialized from onboarding to prevent overwriting user changes
+  const hasInitializedFromOnboarding = useRef(false);
+
+  useEffect(() => {
+    if (
+      onboardingData?.tastePreferences?.meal_types &&
+      !hasInitializedFromOnboarding.current
+    ) {
+      const preferences = onboardingData.tastePreferences.meal_types;
+
+      // Create new selection state based on preferences
+      const newSelection = {
+        breakfast: preferences.includes("breakfast"),
+        lunch: preferences.includes("lunch"),
+        dinner: preferences.includes("dinner"),
+      };
+
+      setSelectedMealTypes(newSelection);
+      hasInitializedFromOnboarding.current = true;
+    }
+  }, [onboardingData]);
 
   const selectedDate = new Date(params.startDate as string);
   const isToday = (() => {
