@@ -149,6 +149,8 @@ export interface Recipe {
   diets?: string[];
   readyInMinutes?: number;
   servings?: number;
+  minServings?: number;
+  maxServings?: number;
   sourceUrl?: string;
   instructions?: string;
   analyzedInstructions?: {

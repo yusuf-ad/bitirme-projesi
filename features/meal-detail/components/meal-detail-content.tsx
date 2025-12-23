@@ -7,29 +7,29 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    LayoutAnimation,
-    Platform,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    UIManager,
-    View
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-    Easing,
-    Extrapolation,
-    FadeInDown,
-    FadeOutUp,
-    interpolate,
-    runOnJS,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withTiming,
+  Easing,
+  Extrapolation,
+  FadeInDown,
+  FadeOutUp,
+  interpolate,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -191,8 +191,35 @@ export function MealDetailContent({
   const scrollY = useSharedValue(0);
   const tabProgress = useSharedValue(0);
 
-  // Servings - sadece default değer gösterilir
-  const servings = meal.servings ?? 1;
+  // Servings
+  const originalServings = meal.servings || 1;
+  const [currentServings, setCurrentServings] = useState(originalServings);
+
+  // Reset local servings if meal changes
+  useEffect(() => {
+    setCurrentServings(meal.servings || 1);
+  }, [meal.servings]);
+
+  const handleIncrementServings = useCallback(() => {
+    selection();
+    const max = meal.maxServings || 8;
+    setCurrentServings((prev) => Math.min(prev + 1, max));
+  }, [selection, meal.maxServings]);
+
+  const handleDecrementServings = useCallback(() => {
+    selection();
+    const min = meal.minServings || 1;
+    setCurrentServings((prev) => Math.max(prev - 1, min));
+  }, [selection, meal.minServings]);
+
+  // Scaled Ingredients
+  const scaledIngredients = useMemo(() => {
+    const scale = currentServings / originalServings;
+    return (meal.extendedIngredients ?? []).map((ing) => ({
+      ...ing,
+      amount: ing.amount * scale,
+    }));
+  }, [meal.extendedIngredients, currentServings, originalServings]);
 
   // Scroll threshold - when content title reaches header position
   const SCROLL_THRESHOLD = HERO_HEIGHT - (HEADER_HEIGHT + insets.top);
@@ -258,12 +285,10 @@ export function MealDetailContent({
   // Calories
   const calories = findNutrientValue("Calories", nutrients);
   const caloriesAmount =
-    typeof calories?.amount === "number"
-      ? Math.round(calories.amount)
-      : null;
+    typeof calories?.amount === "number" ? Math.round(calories.amount) : null;
 
-  // Ingredients
-  const ingredients = meal.extendedIngredients ?? [];
+  // Note: We use scaledIngredients now instead of meal.extendedIngredients directly
+  const ingredients = scaledIngredients;
 
   const macros = useMemo<MacroData[]>(() => {
     const protein = findMacro("Protein", nutrients);
@@ -343,26 +368,18 @@ export function MealDetailContent({
   const switchTab = useCallback(
     (tabKey: TabKey) => {
       if (tabKey === activeTab) return;
-
       selection();
-
-      // Animate layout change - faster duration
       LayoutAnimation.configureNext({
         duration: 180,
-        update: {
-          type: LayoutAnimation.Types.easeOut,
-        },
+        update: { type: LayoutAnimation.Types.easeOut },
       });
-
-      // Update tab progress for indicator animation - smooth easing without bounce
       tabProgress.value = withTiming(tabKey === "ingredients" ? 0 : 1, {
         duration: 200,
         easing: Easing.out(Easing.cubic),
       });
-
       setActiveTab(tabKey);
     },
-    [activeTab, tabProgress]
+    [activeTab, tabProgress, selection]
   );
 
   const handleTabPress = useCallback(
@@ -372,22 +389,17 @@ export function MealDetailContent({
     [switchTab]
   );
 
-  // Swipe gesture for tab switching - more responsive
   const swipeGesture = Gesture.Pan()
     .activeOffsetX([-15, 15])
     .failOffsetY([-15, 15])
     .onEnd((event) => {
       const { translationX, velocityX } = event;
-
-      // Swipe left -> go to instructions (lower threshold for faster response)
       if (
         (translationX < -SWIPE_THRESHOLD || velocityX < -300) &&
         activeTab === "ingredients"
       ) {
         runOnJS(switchTab)("instructions");
-      }
-      // Swipe right -> go to ingredients
-      else if (
+      } else if (
         (translationX > SWIPE_THRESHOLD || velocityX > 300) &&
         activeTab === "instructions"
       ) {
@@ -395,7 +407,6 @@ export function MealDetailContent({
       }
     });
 
-  // Tab indicator animated style - snappier, using interpolate for smooth transition
   const tabIndicatorStyle = useAnimatedStyle(() => {
     const leftPercent = interpolate(
       tabProgress.value,
@@ -403,12 +414,9 @@ export function MealDetailContent({
       [0, 50],
       Extrapolation.CLAMP
     );
-    return {
-      left: `${leftPercent}%`,
-    };
+    return { left: `${leftPercent}%` };
   });
 
-  // Ingredients tab animated style
   const ingredientsTabStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       tabProgress.value,
@@ -419,7 +427,6 @@ export function MealDetailContent({
     return { transform: [{ scale }] };
   });
 
-  // Instructions tab animated style
   const instructionsTabStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       tabProgress.value,
@@ -430,11 +437,16 @@ export function MealDetailContent({
     return { transform: [{ scale }] };
   });
 
+  // Helper to format scaled ingredient amount nicely
+  const formatAmount = (amount: number) => {
+    // Round to 2 decimals max, avoid trailing zeros
+    return parseFloat(amount.toFixed(2));
+  };
+
   return (
     <View style={styles.container}>
       {/* Fixed Header */}
       <View style={[styles.fixedHeader, { paddingTop: insets.top }]}>
-        {/* Header Background (fades in on scroll) */}
         <Animated.View
           style={[
             styles.headerBackground,
@@ -442,10 +454,7 @@ export function MealDetailContent({
             headerBackgroundStyle,
           ]}
         />
-
-        {/* Header Content */}
         <View style={styles.headerContent}>
-          {/* Back Button */}
           {onBack && (
             <CustomButton
               onPress={onBack}
@@ -460,7 +469,6 @@ export function MealDetailContent({
             </CustomButton>
           )}
 
-          {/* Header Title (slides in on scroll) */}
           <Animated.View
             style={[styles.headerTitleContainer, headerTitleStyle]}
           >
@@ -469,7 +477,6 @@ export function MealDetailContent({
             </Text>
           </Animated.View>
 
-          {/* Favorite Button */}
           {onToggleFavorite && (
             <CustomButton
               onPress={onToggleFavorite}
@@ -509,7 +516,6 @@ export function MealDetailContent({
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Image (extends under header, fades out on scroll) */}
         <Animated.View style={[styles.heroWrapper, heroAnimatedStyle]}>
           <Image
             source={
@@ -550,16 +556,56 @@ export function MealDetailContent({
               </Text>
             </View>
             <Text style={styles.metaSeparator}>|</Text>
-            {/* Servings */}
+            {/* Servings Control */}
             <View style={styles.metaItem}>
-              <Ionicons
-                name="people-outline"
-                size={16}
-                color={Colors.gray[600]}
-              />
-              <Text style={styles.metaText}>
-                {servings} {servings === 1 ? "serving" : "servings"}
-              </Text>
+              <Pressable
+                onPress={handleDecrementServings}
+                hitSlop={8}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <Ionicons
+                  name="remove-circle-outline"
+                  size={20}
+                  color={
+                    currentServings > (meal.minServings || 1)
+                      ? Colors.lilac[800]
+                      : Colors.gray[400]
+                  }
+                />
+              </Pressable>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  minWidth: 60,
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="people-outline"
+                  size={16}
+                  color={Colors.gray[600]}
+                />
+                <Text style={styles.metaText}>{currentServings} serv.</Text>
+              </View>
+
+              <Pressable
+                onPress={handleIncrementServings}
+                hitSlop={8}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={20}
+                  color={
+                    currentServings < (meal.maxServings || 8)
+                      ? Colors.lilac[800]
+                      : Colors.gray[400]
+                  }
+                />
+              </Pressable>
             </View>
           </View>
 
@@ -654,18 +700,15 @@ export function MealDetailContent({
                 </Animated.View>
               </Pressable>
             </View>
-            {/* Animated Underline */}
             <View style={styles.tabUnderlineTrack}>
               <Animated.View style={[styles.tabUnderline, tabIndicatorStyle]} />
             </View>
           </View>
 
-          {/* Tab Content - Swipeable with modern card design */}
           <GestureDetector gesture={swipeGesture}>
             <View style={styles.tabContentWrapper}>
               {activeTab === "ingredients" ? (
                 <View key="ingredients" style={styles.contentSection}>
-                  {/* Header with staggered animation */}
                   <Animated.View
                     entering={FadeInDown.duration(200).delay(0)}
                     exiting={FadeOutUp.duration(100)}
@@ -685,7 +728,7 @@ export function MealDetailContent({
                   <View style={styles.ingredientsList}>
                     {ingredients.map((ingredient, index, arr) => (
                       <Animated.View
-                        key={`${ingredient.id}-${ingredient.original}-${index}`}
+                        key={`${ingredient.id}-${index}`}
                         entering={FadeInDown.duration(200).delay(
                           50 + index * 30
                         )}
@@ -700,8 +743,13 @@ export function MealDetailContent({
                         </View>
                         <View style={styles.ingredientContent}>
                           <Text style={styles.ingredientText}>
-                            {ingredient.original}
+                            {formatAmount(ingredient.amount)} {ingredient.unit}{" "}
+                            {ingredient.name}
                           </Text>
+                          {/* Optional: Show original note if available and not just the name */}
+                          {/* <Text style={[styles.ingredientText, { fontSize: 13, color: Colors.gray[500] }]}>
+                             {ingredient.original}
+                          </Text> */}
                         </View>
                       </Animated.View>
                     ))}
@@ -802,8 +850,6 @@ export function MealDetailContent({
           </View>
         )}
       </Animated.ScrollView>
-
-
     </View>
   );
 }
