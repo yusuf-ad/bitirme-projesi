@@ -173,6 +173,18 @@ export interface Recipe {
     name: string;
     amount: number;
     unit: string;
+    measures?: {
+      metric: {
+        amount: number;
+        unitLong: string;
+        unitShort: string;
+      };
+      us: {
+        amount: number;
+        unitLong: string;
+        unitShort: string;
+      };
+    };
   }[];
   // Used when fillIngredients is true
   usedIngredients?: {

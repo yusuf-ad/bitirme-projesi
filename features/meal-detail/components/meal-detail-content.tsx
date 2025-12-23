@@ -215,10 +215,17 @@ export function MealDetailContent({
   // Scaled Ingredients
   const scaledIngredients = useMemo(() => {
     const scale = currentServings / originalServings;
-    return (meal.extendedIngredients ?? []).map((ing) => ({
-      ...ing,
-      amount: ing.amount * scale,
-    }));
+    return (meal.extendedIngredients ?? []).map((ing) => {
+      // Prefer metric measurements if available
+      const amount = ing.measures?.metric?.amount ?? ing.amount;
+      const unit = ing.measures?.metric?.unitShort ?? ing.unit;
+
+      return {
+        ...ing,
+        amount: amount * scale,
+        unit: unit,
+      };
+    });
   }, [meal.extendedIngredients, currentServings, originalServings]);
 
   // Scroll threshold - when content title reaches header position
