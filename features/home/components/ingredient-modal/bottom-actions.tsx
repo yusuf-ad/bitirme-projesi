@@ -78,6 +78,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.gray[200],
     backgroundColor: "#FAFAFA",
+    marginBottom: 24,
+
   },
   buttonPressed: {
     transform: [{ scale: 0.98 }],

@@ -1,4 +1,6 @@
+import { getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -29,6 +31,8 @@ export function TasteDietPreferences({
   initialSelection = [],
 }: TasteDietPreferencesProps) {
   const { selection } = useHaptics();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
   const [selectedDiets, setSelectedDiets] =
     useState<string[]>(initialSelection);
 
@@ -60,12 +64,19 @@ export function TasteDietPreferences({
       <Pressable
         key={diet.id}
         onPress={() => toggleDiet(diet.id)}
-        style={[styles.dietCard, isSelected && styles.dietCardSelected]}
+        style={[
+            styles.dietCard, 
+            { 
+                backgroundColor: Colors.background.surface, 
+                borderColor: isSelected ? Colors.semantic.success.main : Colors.border.light 
+            },
+            isSelected && { backgroundColor: isDark ? Colors.background.tertiary : "#F9FBFA" }
+        ]}
       >
         {/* Left Side - Text Content */}
         <View style={styles.cardTextContainer}>
-          <Text style={styles.dietLabel}>{diet.label}</Text>
-          <Text style={styles.dietSubtitle}>{diet.subtitle}</Text>
+          <Text style={[styles.dietLabel, { color: Colors.text.primary }]}>{diet.label}</Text>
+          <Text style={[styles.dietSubtitle, { color: Colors.text.secondary }]}>{diet.subtitle}</Text>
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
@@ -73,11 +84,11 @@ export function TasteDietPreferences({
             }}
             style={styles.viewDietButton}
           >
-            <Text style={styles.viewDietText}>View diet</Text>
+            <Text style={[styles.viewDietText, { color: Colors.text.tertiary }]}>View diet</Text>
             <MaterialCommunityIcons
               name="arrow-right"
               size={14}
-              color="#9B9FB3"
+              color={Colors.text.tertiary}
               style={{ marginLeft: 4 }}
             />
           </Pressable>
@@ -92,7 +103,7 @@ export function TasteDietPreferences({
 
         {/* Selection Indicator */}
         {isSelected && (
-          <View style={styles.selectionCheckmark}>
+          <View style={[styles.selectionCheckmark, { backgroundColor: Colors.semantic.success.main }]}>
             <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
           </View>
         )}
@@ -107,8 +118,8 @@ export function TasteDietPreferences({
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        {description && <Text style={styles.description}>{description}</Text>}
+        <Text style={[styles.title, { color: Colors.text.primary }]}>{title}</Text>
+        {description && <Text style={[styles.description, { color: Colors.text.secondary }]}>{description}</Text>}
       </View>
 
       {/* Diet Cards */}
@@ -118,14 +129,20 @@ export function TasteDietPreferences({
 
       {/* Selection Summary */}
       {selectedDiets.length > 0 && (
-        <View style={styles.summaryContainer}>
+        <View style={[
+            styles.summaryContainer, 
+            { 
+                backgroundColor: isDark ? "rgba(84, 138, 106, 0.15)" : "#F0F7F3",
+                borderLeftColor: Colors.semantic.success.main
+            }
+        ]}>
           <View style={styles.summaryHeader}>
             <MaterialCommunityIcons
               name="check-circle"
               size={20}
-              color="#548A6A"
+              color={Colors.semantic.success.main}
             />
-            <Text style={styles.summaryTitle}>Diet preference selected</Text>
+            <Text style={[styles.summaryTitle, { color: Colors.semantic.success.main }]}>Diet preference selected</Text>
           </View>
 
           {/* Selected Diet Tags */}
@@ -133,7 +150,7 @@ export function TasteDietPreferences({
             {selectedDiets.map((dietId) => {
               const diet = DIET_OPTIONS.find((d) => d.id === dietId);
               return (
-                <View key={dietId} style={styles.selectedTag}>
+                <View key={dietId} style={[styles.selectedTag, { backgroundColor: Colors.semantic.success.main }]}>
                   <Text style={styles.selectedTagLabel}>{diet?.label}</Text>
                   <Pressable
                     onPress={() => toggleDiet(dietId)}

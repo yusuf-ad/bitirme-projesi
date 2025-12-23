@@ -1,6 +1,7 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { Recipe } from "@/lib/spoonacular";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { findMacro, findNutrientValue } from "@/shared/utils/nutrition";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -74,35 +75,6 @@ interface MacroData {
   percentValue: number;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
 }
-
-const MACRO_CONFIG: Record<
-  string,
-  {
-    color: string;
-    bgColor: string;
-    iconBgColor: string;
-    icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  }
-> = {
-  protein: {
-    color: "#41D5B7",
-    bgColor: "#E8FAF6",
-    iconBgColor: "#C5F2E9",
-    icon: "heart-pulse",
-  },
-  fat: {
-    color: "#FCB205",
-    bgColor: "#FFF8E5",
-    iconBgColor: "#FFEDB8",
-    icon: "water",
-  },
-  carbs: {
-    color: "#CB8395",
-    bgColor: "#F9F0F2",
-    iconBgColor: "#F0D9DF",
-    icon: "silverware-fork-knife",
-  },
-};
 
 // Animated Nutrition Card Component
 function NutritionCard({ macro, index }: { macro: MacroData; index: number }) {
@@ -187,6 +159,8 @@ export function MealDetailContent({
 }: MealDetailContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("ingredients");
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
   const { selection } = useHaptics();
   const scrollY = useSharedValue(0);
   const tabProgress = useSharedValue(0);
@@ -304,6 +278,36 @@ export function MealDetailContent({
 
     const totalGrams = protein.amount + fat.amount + carbs.amount || 1;
 
+    // Macro Config - Dynamic based on theme
+    const macroConfig: Record<
+      string,
+      {
+        color: string;
+        bgColor: string;
+        iconBgColor: string;
+        icon: keyof typeof MaterialCommunityIcons.glyphMap;
+      }
+    > = {
+      protein: {
+        color: "#41D5B7",
+        bgColor: isDark ? "rgba(65, 213, 183, 0.15)" : "#E8FAF6",
+        iconBgColor: isDark ? "rgba(65, 213, 183, 0.25)" : "#C5F2E9",
+        icon: "heart-pulse",
+      },
+      fat: {
+        color: "#FCB205",
+        bgColor: isDark ? "rgba(252, 178, 5, 0.15)" : "#FFF8E5",
+        iconBgColor: isDark ? "rgba(252, 178, 5, 0.25)" : "#FFEDB8",
+        icon: "water",
+      },
+      carbs: {
+        color: "#CB8395",
+        bgColor: isDark ? "rgba(203, 131, 149, 0.15)" : "#F9F0F2",
+        iconBgColor: isDark ? "rgba(203, 131, 149, 0.25)" : "#F0D9DF",
+        icon: "silverware-fork-knife",
+      },
+    };
+
     const macroList = [
       {
         label: "Protein",
@@ -326,7 +330,7 @@ export function MealDetailContent({
     ];
 
     return macroList.map((macro) => {
-      const config = MACRO_CONFIG[macro.key];
+      const config = macroConfig[macro.key];
       const percentValue = Math.round((macro.amount / totalGrams) * 100);
       const normalizedUnit = macro.unit
         ? macro.unit.toLowerCase() === "g"
@@ -344,7 +348,7 @@ export function MealDetailContent({
         icon: config.icon,
       };
     });
-  }, [nutrients]);
+  }, [nutrients, isDark]);
 
   const instructions = useMemo(() => {
     const analyzed = meal.analyzedInstructions;
@@ -451,13 +455,19 @@ export function MealDetailContent({
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: themeColors.background.secondary },
+      ]}
+    >
       {/* Fixed Header */}
       <View style={[styles.fixedHeader, { paddingTop: insets.top }]}>
         <Animated.View
           style={[
             styles.headerBackground,
             { height: HEADER_HEIGHT + insets.top },
+            { backgroundColor: themeColors.background.surface },
             headerBackgroundStyle,
           ]}
         />
@@ -470,8 +480,21 @@ export function MealDetailContent({
               accessibilityLabel="Go back"
               accessibilityRole="button"
             >
-              <View style={styles.iconButton}>
-                <Ionicons name="chevron-back" size={24} color="#312A35" />
+              <View
+                style={[
+                  styles.iconButton,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 255, 255, 0.15)"
+                      : "rgba(242, 240, 244, 0.85)",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={24}
+                  color={isDark ? themeColors.text.primary : "#312A35"}
+                />
               </View>
             </CustomButton>
           )}
@@ -479,7 +502,10 @@ export function MealDetailContent({
           <Animated.View
             style={[styles.headerTitleContainer, headerTitleStyle]}
           >
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text
+              style={[styles.headerTitle, { color: themeColors.text.primary }]}
+              numberOfLines={1}
+            >
               {meal.title}
             </Text>
           </Animated.View>
@@ -494,7 +520,16 @@ export function MealDetailContent({
               }
               accessibilityRole="button"
             >
-              <View style={styles.iconButton}>
+              <View
+                style={[
+                  styles.iconButton,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 255, 255, 0.15)"
+                      : "rgba(242, 240, 244, 0.85)",
+                  },
+                ]}
+              >
                 <Ionicons
                   name={isFavorited ? "heart" : "heart-outline"}
                   size={24}
@@ -508,7 +543,10 @@ export function MealDetailContent({
 
       {/* Scrollable Content */}
       <Animated.ScrollView
-        style={styles.scroll}
+        style={[
+          styles.scroll,
+          { backgroundColor: themeColors.background.secondary },
+        ]}
         contentContainerStyle={styles.scrollContent}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -516,14 +554,21 @@ export function MealDetailContent({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.lilac[800]}
-            colors={[Colors.lilac[800]]}
+            tintColor={isDark ? themeColors.accent.lilac : Colors.lilac[800]}
+            colors={[isDark ? themeColors.accent.lilac : Colors.lilac[800]]}
             progressViewOffset={HEADER_HEIGHT + insets.top}
           />
         }
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={[styles.heroWrapper, heroAnimatedStyle]}>
+        {/* Hero Image (extends under header, fades out on scroll) */}
+        <Animated.View
+          style={[
+            styles.heroWrapper,
+            { backgroundColor: themeColors.background.tertiary },
+            heroAnimatedStyle,
+          ]}
+        >
           <Image
             source={
               meal.image
@@ -537,8 +582,16 @@ export function MealDetailContent({
           />
         </Animated.View>
 
-        <View style={styles.sheet}>
-          <Text style={styles.title} accessibilityRole="header">
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: themeColors.background.surface },
+          ]}
+        >
+          <Text
+            style={[styles.title, { color: themeColors.text.primary }]}
+            accessibilityRole="header"
+          >
             {meal.title}
           </Text>
 
@@ -546,73 +599,65 @@ export function MealDetailContent({
             <View style={styles.metaItem}>
               <Image
                 source={require("@/assets/icons/clock-icon.svg")}
-                style={styles.metaIcon}
+                style={[
+                  styles.metaIcon,
+                  {
+                    tintColor: isDark ? themeColors.text.secondary : undefined,
+                  },
+                ]}
                 contentFit="contain"
               />
-              <Text style={styles.metaText}>{readyInMinutes}</Text>
+              <Text
+                style={[styles.metaText, { color: themeColors.text.secondary }]}
+              >
+                {readyInMinutes}
+              </Text>
             </View>
-            <Text style={styles.metaSeparator}>|</Text>
+            <Text
+              style={[
+                styles.metaSeparator,
+                { color: themeColors.text.tertiary },
+              ]}
+            >
+              |
+            </Text>
             <View style={styles.metaItem}>
               <Image
                 source={require("@/assets/icons/flame-icon.svg")}
-                style={styles.metaIcon}
+                style={[
+                  styles.metaIcon,
+                  {
+                    tintColor: isDark ? themeColors.text.secondary : undefined,
+                  },
+                ]}
                 contentFit="contain"
               />
-              <Text style={styles.metaText}>
+              <Text
+                style={[styles.metaText, { color: themeColors.text.secondary }]}
+              >
                 {caloriesAmount !== null ? `${caloriesAmount} kcal` : "—"}
               </Text>
             </View>
-            <Text style={styles.metaSeparator}>|</Text>
-            {/* Servings Control */}
+            <Text
+              style={[
+                styles.metaSeparator,
+                { color: themeColors.text.tertiary },
+              ]}
+            >
+              |
+            </Text>
+            {/* Servings */}
             <View style={styles.metaItem}>
-              <Pressable
-                onPress={handleDecrementServings}
-                hitSlop={8}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              <Ionicons
+                name="people-outline"
+                size={16}
+                color={themeColors.text.secondary}
+              />
+              <Text
+                style={[styles.metaText, { color: themeColors.text.secondary }]}
               >
-                <Ionicons
-                  name="remove-circle-outline"
-                  size={20}
-                  color={
-                    currentServings > (meal.minServings || 1)
-                      ? Colors.lilac[800]
-                      : Colors.gray[400]
-                  }
-                />
-              </Pressable>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                  minWidth: 60,
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons
-                  name="people-outline"
-                  size={16}
-                  color={Colors.gray[600]}
-                />
-                <Text style={styles.metaText}>{currentServings} serv.</Text>
-              </View>
-
-              <Pressable
-                onPress={handleIncrementServings}
-                hitSlop={8}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-              >
-                <Ionicons
-                  name="add-circle-outline"
-                  size={20}
-                  color={
-                    currentServings < (meal.maxServings || 8)
-                      ? Colors.lilac[800]
-                      : Colors.gray[400]
-                  }
-                />
-              </Pressable>
+                {servings} {servings === 1 ? "serving" : "servings"}
+              </Text>
             </View>
           </View>
 
@@ -625,20 +670,72 @@ export function MealDetailContent({
               contentContainerStyle={styles.tagsContainer}
             >
               {meal.cuisines?.map((cuisine) => (
-                <View key={cuisine} style={styles.cuisineTag}>
-                  <Text style={styles.cuisineTagText}>{cuisine}</Text>
+                <View
+                  key={cuisine}
+                  style={[
+                    styles.cuisineTag,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(120, 73, 182, 0.15)"
+                        : Colors.lilac[100],
+                      borderColor: isDark
+                        ? "rgba(120, 73, 182, 0.3)"
+                        : Colors.lilac[300],
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.cuisineTagText,
+                      {
+                        color: isDark
+                          ? themeColors.accent.lilac
+                          : Colors.lilac[900],
+                      },
+                    ]}
+                  >
+                    {cuisine}
+                  </Text>
                 </View>
               ))}
               {meal.diets?.map((diet) => (
-                <View key={diet} style={styles.dietTag}>
-                  <Text style={styles.dietTagText}>{diet}</Text>
+                <View
+                  key={diet}
+                  style={[
+                    styles.dietTag,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(84, 138, 106, 0.15)"
+                        : Colors.green[100],
+                      borderColor: isDark
+                        ? "rgba(84, 138, 106, 0.3)"
+                        : Colors.green[300],
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dietTagText,
+                      {
+                        color: isDark
+                          ? themeColors.accent.green
+                          : Colors.green[900],
+                      },
+                    ]}
+                  >
+                    {diet}
+                  </Text>
                 </View>
               ))}
             </ScrollView>
           ) : null}
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nutrition</Text>
+            <Text
+              style={[styles.sectionTitle, { color: themeColors.text.primary }]}
+            >
+              Nutrition
+            </Text>
           </View>
 
           <View style={styles.nutritionCardsWrapper}>
@@ -662,16 +759,22 @@ export function MealDetailContent({
                     size={18}
                     color={
                       activeTab === "ingredients"
-                        ? Colors.lilac[800]
-                        : Colors.gray[400]
+                        ? isDark
+                          ? themeColors.accent.lilac
+                          : Colors.lilac[800]
+                        : themeColors.text.tertiary
                     }
                   />
                   <Text
                     style={[
                       styles.tabLabel,
                       activeTab === "ingredients"
-                        ? styles.tabLabelActive
-                        : styles.tabLabelInactive,
+                        ? {
+                            color: isDark
+                              ? themeColors.accent.lilac
+                              : Colors.lilac[800],
+                          }
+                        : { color: themeColors.text.tertiary },
                     ]}
                   >
                     Ingredients
@@ -690,16 +793,22 @@ export function MealDetailContent({
                     size={18}
                     color={
                       activeTab === "instructions"
-                        ? Colors.lilac[800]
-                        : Colors.gray[400]
+                        ? isDark
+                          ? themeColors.accent.lilac
+                          : Colors.lilac[800]
+                        : themeColors.text.tertiary
                     }
                   />
                   <Text
                     style={[
                       styles.tabLabel,
                       activeTab === "instructions"
-                        ? styles.tabLabelActive
-                        : styles.tabLabelInactive,
+                        ? {
+                            color: isDark
+                              ? themeColors.accent.lilac
+                              : Colors.lilac[800],
+                          }
+                        : { color: themeColors.text.tertiary },
                     ]}
                   >
                     Instructions
@@ -707,8 +816,28 @@ export function MealDetailContent({
                 </Animated.View>
               </Pressable>
             </View>
-            <View style={styles.tabUnderlineTrack}>
-              <Animated.View style={[styles.tabUnderline, tabIndicatorStyle]} />
+            {/* Animated Underline */}
+            <View
+              style={[
+                styles.tabUnderlineTrack,
+                {
+                  backgroundColor: isDark
+                    ? themeColors.background.tertiary
+                    : Colors.gray[100],
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.tabUnderline,
+                  {
+                    backgroundColor: isDark
+                      ? themeColors.accent.lilac
+                      : Colors.lilac[700],
+                  },
+                  tabIndicatorStyle,
+                ]}
+              />
             </View>
           </View>
 
@@ -721,14 +850,30 @@ export function MealDetailContent({
                     exiting={FadeOutUp.duration(100)}
                     style={styles.contentHeader}
                   >
-                    <View style={styles.contentHeaderIcon}>
+                    <View
+                      style={[
+                        styles.contentHeaderIcon,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(120, 73, 182, 0.15)"
+                            : Colors.lilac[100],
+                        },
+                      ]}
+                    >
                       <Ionicons
                         name="leaf-outline"
                         size={16}
-                        color={Colors.lilac[700]}
+                        color={
+                          isDark ? themeColors.accent.lilac : Colors.lilac[700]
+                        }
                       />
                     </View>
-                    <Text style={styles.contentHeaderTitle}>
+                    <Text
+                      style={[
+                        styles.contentHeaderTitle,
+                        { color: themeColors.text.primary },
+                      ]}
+                    >
                       {ingredients.length} Ingredients
                     </Text>
                   </Animated.View>
@@ -740,18 +885,40 @@ export function MealDetailContent({
                           50 + index * 30
                         )}
                         exiting={FadeOutUp.duration(80)}
-                        style={styles.ingredientCard}
+                        style={[styles.ingredientCard, { paddingVertical: 4 }]}
                       >
                         <View style={styles.ingredientIconWrapper}>
-                          <View style={styles.ingredientIcon} />
+                          <View
+                            style={[
+                              styles.ingredientIcon,
+                              {
+                                backgroundColor: isDark
+                                  ? themeColors.accent.lilac
+                                  : Colors.lilac[700],
+                              },
+                            ]}
+                          />
                           {index < arr.length - 1 && (
-                            <View style={styles.ingredientConnector} />
+                            <View
+                              style={[
+                                styles.ingredientConnector,
+                                {
+                                  backgroundColor: isDark
+                                    ? "rgba(120, 73, 182, 0.2)"
+                                    : Colors.lilac[100],
+                                },
+                              ]}
+                            />
                           )}
                         </View>
                         <View style={styles.ingredientContent}>
-                          <Text style={styles.ingredientText}>
-                            {formatAmount(ingredient.amount)} {ingredient.unit}{" "}
-                            {ingredient.name}
+                          <Text
+                            style={[
+                              styles.ingredientText,
+                              { color: themeColors.text.secondary },
+                            ]}
+                          >
+                            {ingredient.original}
                           </Text>
                           {/* Optional: Show original note if available and not just the name */}
                           {/* <Text style={[styles.ingredientText, { fontSize: 13, color: Colors.gray[500] }]}>
@@ -768,9 +935,14 @@ export function MealDetailContent({
                         <Ionicons
                           name="basket-outline"
                           size={48}
-                          color={Colors.gray[300]}
+                          color={themeColors.text.tertiary}
                         />
-                        <Text style={styles.emptyText}>
+                        <Text
+                          style={[
+                            styles.emptyText,
+                            { color: themeColors.text.tertiary },
+                          ]}
+                        >
                           No ingredients available
                         </Text>
                       </Animated.View>
@@ -785,14 +957,30 @@ export function MealDetailContent({
                     exiting={FadeOutUp.duration(100)}
                     style={styles.contentHeader}
                   >
-                    <View style={styles.contentHeaderIcon}>
+                    <View
+                      style={[
+                        styles.contentHeaderIcon,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(120, 73, 182, 0.15)"
+                            : Colors.lilac[100],
+                        },
+                      ]}
+                    >
                       <Ionicons
                         name="list-outline"
                         size={16}
-                        color={Colors.lilac[700]}
+                        color={
+                          isDark ? themeColors.accent.lilac : Colors.lilac[700]
+                        }
                       />
                     </View>
-                    <Text style={styles.contentHeaderTitle}>
+                    <Text
+                      style={[
+                        styles.contentHeaderTitle,
+                        { color: themeColors.text.primary },
+                      ]}
+                    >
                       {instructions.length} Steps
                     </Text>
                   </Animated.View>
@@ -805,20 +993,54 @@ export function MealDetailContent({
                             50 + index * 40
                           )}
                           exiting={FadeOutUp.duration(80)}
-                          style={styles.stepCard}
+                          style={[styles.stepCard, { paddingVertical: 4 }]}
                         >
                           <View style={styles.stepNumberContainer}>
-                            <View style={styles.stepBadge}>
-                              <Text style={styles.stepBadgeText}>
+                            <View
+                              style={[
+                                styles.stepBadge,
+                                {
+                                  backgroundColor: isDark
+                                    ? themeColors.accent.lilac
+                                    : Colors.lilac[800],
+                                },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.stepBadgeText,
+                                  { color: "#fff" },
+                                ]}
+                              >
                                 {step.number}
                               </Text>
                             </View>
                             {index < instructions.length - 1 && (
-                              <View style={styles.stepConnector} />
+                              <View
+                                style={[
+                                  styles.stepConnector,
+                                  {
+                                    width: 2,
+                                    flex: 1,
+                                    backgroundColor: isDark
+                                      ? "rgba(120, 73, 182, 0.2)"
+                                      : Colors.lilac[100],
+                                    marginTop: 4,
+                                    borderRadius: 1,
+                                  },
+                                ]}
+                              />
                             )}
                           </View>
                           <View style={styles.stepContent}>
-                            <Text style={styles.stepText}>{step.text}</Text>
+                            <Text
+                              style={[
+                                styles.stepText,
+                                { color: themeColors.text.secondary },
+                              ]}
+                            >
+                              {step.text}
+                            </Text>
                           </View>
                         </Animated.View>
                       ))
@@ -830,9 +1052,14 @@ export function MealDetailContent({
                         <Ionicons
                           name="document-text-outline"
                           size={48}
-                          color={Colors.gray[300]}
+                          color={themeColors.text.tertiary}
                         />
-                        <Text style={styles.emptyText}>
+                        <Text
+                          style={[
+                            styles.emptyText,
+                            { color: themeColors.text.tertiary },
+                          ]}
+                        >
                           No instructions available
                         </Text>
                       </Animated.View>
@@ -848,7 +1075,14 @@ export function MealDetailContent({
           <View style={styles.planCtaWrapper}>
             <CustomButton
               onPress={onPlanMeal}
-              containerStyle={styles.planButton}
+              containerStyle={[
+                styles.planButton,
+                {
+                  backgroundColor: isDark
+                    ? themeColors.accent.lilac
+                    : Colors.lilac[900],
+                },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Plan this meal"
             >

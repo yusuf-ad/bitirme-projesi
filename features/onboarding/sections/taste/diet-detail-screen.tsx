@@ -1,5 +1,7 @@
+import { getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
@@ -37,6 +39,8 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
   const { selection } = useHaptics();
   const insets = useSafeAreaInsets();
   const onboarding = useOnboarding();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
 
   const dietOption: DietOption | undefined = DIET_OPTIONS.find(
     (diet) => diet.id === dietId
@@ -135,9 +139,9 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
 
   if (!dietOption) {
     return (
-      <View style={styles.fallbackContainer}>
-        <Text style={styles.fallbackTitle}>Diet not found</Text>
-        <Pressable style={styles.fallbackButton} onPress={handleBack}>
+      <View style={[styles.fallbackContainer, { backgroundColor: Colors.background.primary }]}>
+        <Text style={[styles.fallbackTitle, { color: Colors.text.primary }]}>Diet not found</Text>
+        <Pressable style={[styles.fallbackButton, { backgroundColor: Colors.lilac[900] }]} onPress={handleBack}>
           <Text style={styles.fallbackButtonText}>Go back</Text>
         </Pressable>
       </View>
@@ -149,20 +153,22 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
   );
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View style={[styles.screen, { paddingTop: insets.top, backgroundColor: Colors.background.secondary }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.dragHandle} />
-        <Text style={styles.title}>{dietOption.label} Diet</Text>
+        <Text style={[styles.title, { color: Colors.text.primary }]}>{dietOption.label} Diet</Text>
 
-        <View style={styles.chartCard}>
+        <View style={[styles.chartCard, { backgroundColor: Colors.background.surface, shadowColor: Colors.card.shadow }]}>
           {macroBreakdown ? (
             <>
               <CalorieDonut
                 calories={macroBreakdown.calories}
                 macros={macroBreakdown.macros}
+                isDark={isDark}
+                Colors={Colors}
               />
               <View style={styles.legendContainer}>
                 {macroBreakdown.macros.map((macro) => (
@@ -173,7 +179,7 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
                         { backgroundColor: macro.color },
                       ]}
                     />
-                    <Text style={styles.legendLabel}>
+                    <Text style={[styles.legendLabel, { color: Colors.text.primary }]}>
                       {macro.percentage.toFixed(0)}% {macro.label}
                     </Text>
                   </View>
@@ -182,8 +188,8 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
             </>
           ) : (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorTitle}>No data</Text>
-              <Text style={styles.errorSubtitle}>
+              <Text style={[styles.errorTitle, { color: Colors.text.primary }]}>No data</Text>
+              <Text style={[styles.errorSubtitle, { color: Colors.text.secondary }]}>
                 We could not calculate the macro targets right now.
               </Text>
             </View>
@@ -191,7 +197,10 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
         </View>
 
         <Pressable
-          style={styles.adjustButton}
+          style={[
+              styles.adjustButton, 
+              { backgroundColor: isDark ? "rgba(120, 73, 182, 0.2)" : "#EEF2FF" }
+          ]}
           onPress={async () => {
             selection();
             router.push({
@@ -200,36 +209,45 @@ export function DietDetailScreen({ dietId }: DietDetailScreenProps) {
             });
           }}
         >
-          <Text style={styles.adjustButtonText}>Adjust nutrition targets</Text>
+          <Text style={[styles.adjustButtonText, { color: isDark ? Colors.accent.lilac : "#1E40AF" }]}>Adjust nutrition targets</Text>
         </Pressable>
 
-        <Text style={styles.description}>{dietOption.detailDescription}</Text>
+        <Text style={[styles.description, { color: Colors.text.secondary }]}>{dietOption.detailDescription}</Text>
 
         {dietOption.sourceUrl && (
           <Pressable
             style={styles.sourceLink}
             onPress={() => Linking.openURL(dietOption.sourceUrl!)}
           >
-            <Text style={styles.sourceText}>Source of recommendations</Text>
+            <Text style={[styles.sourceText, { color: Colors.text.accent }]}>Source of recommendations</Text>
           </Pressable>
         )}
 
         <Image source={dietOption.image} style={styles.heroImage} />
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Pressable style={styles.backButton} onPress={handleBack}>
+      <View style={[
+          styles.footer, 
+          { 
+              paddingBottom: insets.bottom + 12,
+              backgroundColor: isDark ? "rgba(28, 28, 30, 0.9)" : "rgba(248, 250, 252, 0.9)",
+              borderTopColor: Colors.border.light,
+              borderTopWidth: 1
+          }
+      ]}>
+        <Pressable style={[styles.backButton, { backgroundColor: Colors.background.surface, borderColor: Colors.border.light }]} onPress={handleBack}>
           <MaterialCommunityIcons
             name="arrow-left"
             size={20}
-            color="#1F2933"
+            color={Colors.text.primary}
           />
         </Pressable>
 
         <Pressable
           style={[
             styles.selectButton,
-            isDietSelected && styles.selectButtonDisabled,
+            { backgroundColor: Colors.lilac[900] },
+            isDietSelected && { backgroundColor: Colors.gray[400] },
           ]}
           onPress={handleSelectDiet}
           disabled={isDietSelected}
@@ -251,9 +269,11 @@ interface CalorieDonutProps {
     percentage: number;
     color: string;
   }[];
+  isDark: boolean;
+  Colors: any;
 }
 
-function CalorieDonut({ calories, macros }: CalorieDonutProps) {
+function CalorieDonut({ calories, macros, isDark, Colors }: CalorieDonutProps) {
   const radius = 70;
   const strokeWidth = 18;
   const circumference = 2 * Math.PI * radius;
@@ -266,7 +286,7 @@ function CalorieDonut({ calories, macros }: CalorieDonutProps) {
           cx={radius}
           cy={radius}
           r={radius - strokeWidth / 2}
-          stroke="#F1F5F9"
+          stroke={isDark ? Colors.background.tertiary : "#F1F5F9"}
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -293,9 +313,9 @@ function CalorieDonut({ calories, macros }: CalorieDonutProps) {
       </Svg>
 
       <View style={styles.chartCenter}>
-        <Text style={styles.calorieValue}>
+        <Text style={[styles.calorieValue, { color: Colors.text.primary }]}>
           {Math.round(calories)}{" "}
-          <Text style={styles.calorieUnit}>kcal/day</Text>
+          <Text style={[styles.calorieUnit, { color: Colors.text.secondary }]}>kcal/day</Text>
         </Text>
       </View>
     </View>
@@ -334,7 +354,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 24,
-    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 16,
     elevation: 2,
@@ -355,14 +375,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontWeight: "700",
     fontSize: 20,
-    color: "#111827",
     textAlign: "center",
   },
   calorieUnit: {
     fontFamily: "Inter",
     fontWeight: "500",
     fontSize: 14,
-    color: "#6B7280",
   },
   legendContainer: {
     flex: 1,
@@ -381,7 +399,6 @@ const styles = StyleSheet.create({
   legendLabel: {
     fontFamily: "Inter",
     fontSize: 16,
-    color: "#1F2933",
     fontWeight: "500",
   },
   adjustButton: {

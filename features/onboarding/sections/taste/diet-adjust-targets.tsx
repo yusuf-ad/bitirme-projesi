@@ -1,13 +1,15 @@
+import { getThemeColors } from "@/constants/theme";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View
+    Pressable,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DIET_OPTIONS } from "./diet-options";
@@ -22,6 +24,8 @@ interface MacroRowProps {
   label: string;
   value: number;
   onChange: (next: number) => void;
+  isDark: boolean;
+  Colors: any;
 }
 
 const MACRO_STEP = 5;
@@ -35,6 +39,8 @@ export function DietAdjustTargetsScreen({
   const router = useRouter();
   const { selection } = useHaptics();
   const onboarding = useOnboarding();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark);
 
   const diet = useMemo(
     () => DIET_OPTIONS.find((option) => option.id === dietId),
@@ -142,21 +148,14 @@ export function DietAdjustTargetsScreen({
     setProteinPct(Math.round(diet.defaultMacros.protein * 100));
     setFatPct(Math.round(diet.defaultMacros.fat * 100));
     setCarbPct(Math.round(diet.defaultMacros.carbohydrates * 100));
-    // We update UI but don't auto-save immediately to let user confirm, 
-    // or we can just follow previous behavior. 
-    // Previous behavior called handleSave(true) immediately. 
-    // But since this is a "Use defaults" button that might just reset the sliders,
-    // let's just reset sliders. If user wants to save they click save.
-    // WAIT: Previous code was `await handleSave(true);` which exited the screen.
-    // Let's keep that behavior for consistency.
     await handleSave(true);
   };
 
   if (!diet) {
     return (
-      <View style={styles.fallbackContainer}>
-        <Text style={styles.fallbackTitle}>Diet not found</Text>
-        <Pressable style={styles.fallbackButton} onPress={() => router.back()}>
+      <View style={[styles.fallbackContainer, { backgroundColor: Colors.background.primary }]}>
+        <Text style={[styles.fallbackTitle, { color: Colors.text.primary }]}>Diet not found</Text>
+        <Pressable style={[styles.fallbackButton, { backgroundColor: Colors.lilac[900] }]} onPress={() => router.back()}>
           <Text style={styles.fallbackButtonText}>Back</Text>
         </Pressable>
       </View>
@@ -164,28 +163,34 @@ export function DietAdjustTargetsScreen({
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + 12 }]}>
-      <Text style={styles.title}>Adjust targets</Text>
-      <Text style={styles.subtitle}>
+    <View style={[
+        styles.screen, 
+        { 
+            paddingTop: insets.top + 12,
+            backgroundColor: Colors.background.secondary 
+        }
+    ]}>
+      <Text style={[styles.title, { color: Colors.text.primary }]}>Adjust targets</Text>
+      <Text style={[styles.subtitle, { color: Colors.text.secondary }]}>
         Adjust your daily macro distribution (%)
       </Text>
 
       {/* Target and Total Display */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.background.surface, shadowColor: Colors.card.shadow }]}>
         <View style={styles.rowBetween}>
-          <Text style={styles.cardLabel}>Target Calories</Text>
-          <Text style={styles.cardValue}>
-            {targetCalories} <Text style={styles.unit}>kcal</Text>
+          <Text style={[styles.cardLabel, { color: Colors.accent.lilac }]}>Target Calories</Text>
+          <Text style={[styles.cardValue, { color: Colors.text.primary }]}>
+            {targetCalories} <Text style={[styles.unit, { color: Colors.text.secondary }]}>kcal</Text>
           </Text>
         </View>
         <View style={[styles.rowBetween, { marginTop: 12 }]}>
-          <Text style={styles.cardLabel}>Total Allocation</Text>
-          <Text style={[styles.cardValue, !isValid && styles.errorText]}>
+          <Text style={[styles.cardLabel, { color: Colors.text.primary }]}>Total Allocation</Text>
+          <Text style={[styles.cardValue, { color: Colors.text.primary }, !isValid && { color: Colors.semantic.error.main }]}>
             {totalPct}%
           </Text>
         </View>
         {!isValid && (
-          <Text style={styles.validationMsg}>
+          <Text style={[styles.validationMsg, { color: Colors.semantic.error.main }]}>
             Total must equal 100% (currently {totalPct}%)
           </Text>
         )}
@@ -196,29 +201,45 @@ export function DietAdjustTargetsScreen({
           label="Protein (%)"
           value={proteinPct}
           onChange={(next) => handleMacroChange(setProteinPct, next)}
+          isDark={isDark}
+          Colors={Colors}
         />
         <MacroRow
           label="Fat (%)"
           value={fatPct}
           onChange={(next) => handleMacroChange(setFatPct, next)}
+          isDark={isDark}
+          Colors={Colors}
         />
         <MacroRow
           label="Carbohydrates (%)"
           value={carbPct}
           onChange={(next) => handleMacroChange(setCarbPct, next)}
+          isDark={isDark}
+          Colors={Colors}
         />
       </View>
 
       <Pressable
-        style={[styles.primaryButton, !isValid && styles.buttonDisabled]}
+        style={[
+            styles.primaryButton, 
+            { backgroundColor: Colors.lilac[900] },
+            !isValid && { backgroundColor: isDark ? Colors.gray[700] : Colors.gray[300], opacity: 0.5 }
+        ]}
         onPress={() => isValid && handleSave()}
         disabled={!isValid}
       >
         <Text style={styles.primaryButtonText}>Save</Text>
       </Pressable>
 
-      <Pressable style={styles.secondaryButton} onPress={handleUseDefaults}>
-        <Text style={styles.secondaryButtonText}>Use defaults</Text>
+      <Pressable 
+        style={[
+            styles.secondaryButton, 
+            { backgroundColor: isDark ? Colors.background.tertiary : "#E5E7EB" }
+        ]} 
+        onPress={handleUseDefaults}
+      >
+        <Text style={[styles.secondaryButtonText, { color: Colors.text.primary }]}>Use defaults</Text>
       </Pressable>
 
       <View style={{ height: insets.bottom + 24 }} />
@@ -226,7 +247,7 @@ export function DietAdjustTargetsScreen({
   );
 }
 
-function MacroRow({ label, value, onChange }: MacroRowProps) {
+function MacroRow({ label, value, onChange, isDark, Colors }: MacroRowProps) {
   const { selection } = useHaptics();
   const handlePress = async (next: number) => {
     selection();
@@ -234,24 +255,24 @@ function MacroRow({ label, value, onChange }: MacroRowProps) {
   };
 
   return (
-    <View style={styles.macroRow}>
+    <View style={[styles.macroRow, { backgroundColor: Colors.background.surface }]}>
       <Pressable
         onPress={() => handlePress(value - MACRO_STEP)}
-        style={styles.macroControl}
+        style={[styles.macroControl, { borderColor: Colors.border.light, backgroundColor: isDark ? Colors.background.tertiary : "transparent" }]}
         hitSlop={8}
       >
-        <MaterialCommunityIcons name="minus" size={18} color="#6B7280" />
+        <MaterialCommunityIcons name="minus" size={18} color={Colors.text.secondary} />
       </Pressable>
       <View style={styles.macroMiddle}>
-        <Text style={styles.macroLabel}>{label}</Text>
-        <Text style={styles.macroValue}>{value}%</Text>
+        <Text style={[styles.macroLabel, { color: Colors.text.primary }]}>{label}</Text>
+        <Text style={[styles.macroValue, { color: Colors.text.secondary }]}>{value}%</Text>
       </View>
       <Pressable
         onPress={() => handlePress(value + MACRO_STEP)}
-        style={styles.macroControl}
+        style={[styles.macroControl, { borderColor: Colors.border.light, backgroundColor: isDark ? Colors.background.tertiary : "transparent" }]}
         hitSlop={8}
       >
-        <MaterialCommunityIcons name="plus" size={18} color="#6B7280" />
+        <MaterialCommunityIcons name="plus" size={18} color={Colors.text.secondary} />
       </Pressable>
     </View>
   );
@@ -261,7 +282,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     paddingHorizontal: 20,
-    backgroundColor: "#F7F8FB",
+    backgroundColor: "#F7F8FB", // default/fallback
   },
   title: {
     fontFamily: "Inter",
@@ -277,16 +298,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 20,
     marginBottom: 24,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
   },
   cardLabel: {
     fontFamily: "Inter",
     fontSize: 16,
-    color: "#6366F1",
     marginBottom: 0,
+    fontWeight: "600",
   },
   macrosContainer: {
     gap: 12,
@@ -296,16 +320,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
     paddingVertical: 14,
     paddingHorizontal: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   macroControl: {
     width: 48,
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -317,23 +344,17 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
   },
   macroValue: {
     fontFamily: "Inter",
     fontSize: 14,
-    color: "#6B7280",
     marginTop: 4,
   },
   primaryButton: {
-    backgroundColor: "#111827",
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
     marginBottom: 12,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
   },
   primaryButtonText: {
     fontFamily: "Inter",
@@ -345,20 +366,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
-    backgroundColor: "#E5E7EB",
   },
   secondaryButtonText: {
     fontFamily: "Inter",
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
   },
   fallbackContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
-    backgroundColor: "#F7F8FB",
   },
   fallbackTitle: {
     fontFamily: "Inter",
@@ -370,7 +388,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: "#111827",
   },
   fallbackButtonText: {
     color: "#FFFFFF",
@@ -385,20 +402,14 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
     fontSize: 20,
     fontWeight: "700",
-    color: "#111827",
   },
   unit: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#6B7280",
-  },
-  errorText: {
-    color: "#DC2626",
   },
   validationMsg: {
     fontFamily: "Inter",
     fontSize: 13,
-    color: "#DC2626",
     marginTop: 8,
     textAlign: "center",
   },

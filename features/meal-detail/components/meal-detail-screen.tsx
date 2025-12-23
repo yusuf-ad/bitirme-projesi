@@ -1,6 +1,7 @@
-import { Colors } from "@/constants/theme";
+import { Colors, getThemeColors } from "@/constants/theme";
 import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useTheme } from "@/providers/theme-provider";
 import { getMacroSummary } from "@/shared/utils/nutrition";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
@@ -24,6 +25,8 @@ interface MealDetailScreenProps {
 
 export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
   const router = useRouter();
+  const { isDark } = useTheme();
+  const themeColors = getThemeColors(isDark, true);
   const { selection, impact } = useHaptics();
   const canLoadMeal = typeof mealId === "number" && !Number.isNaN(mealId);
 
@@ -96,8 +99,8 @@ export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
   const renderState = () => {
     if (!canLoadMeal) {
       return (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>
+        <View style={[styles.centered, { backgroundColor: themeColors.background.primary }]}>
+          <Text style={[styles.errorText, { color: themeColors.text.primary }]}>
             We were unable to find that meal. Please try again from the recipes
             list.
           </Text>
@@ -107,24 +110,24 @@ export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
 
     if (isPending && !data) {
       return (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={Colors.lilac[800]} />
+        <View style={[styles.centered, { backgroundColor: themeColors.background.primary }]}>
+          <ActivityIndicator size="large" color={isDark ? themeColors.accent.lilac : Colors.lilac[800]} />
         </View>
       );
     }
 
     if (error || !data) {
       return (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>
+        <View style={[styles.centered, { backgroundColor: themeColors.background.primary }]}>
+          <Text style={[styles.errorText, { color: themeColors.text.primary }]}>
             Something went wrong while loading this meal.
           </Text>
           <Pressable
             onPress={handleRefresh}
-            style={styles.retryButton}
+            style={[styles.retryButton, { backgroundColor: isDark ? themeColors.accent.lilac : Colors.lilac[800] }]}
             hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={[styles.retryButtonText, { color: isDark ? "#000" : Colors.background.surface }]}>Retry</Text>
           </Pressable>
         </View>
       );
@@ -145,7 +148,7 @@ export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={[]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: themeColors.background.surface }]} edges={[]}>
       <Stack.Screen
         options={{
           headerShown: false,
@@ -159,7 +162,6 @@ export function MealDetailScreen({ mealId, mealSlot }: MealDetailScreenProps) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.surface,
   },
   centered: {
     flex: 1,
@@ -167,24 +169,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 24,
     gap: 16,
-    backgroundColor: Colors.background.surface,
   },
   errorText: {
     fontFamily: "Inter",
     fontSize: 16,
     textAlign: "center",
-    color: Colors.text.primary,
   },
   retryButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: Colors.lilac[800],
   },
   retryButtonText: {
     fontFamily: "Inter",
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.background.surface,
   },
 });
