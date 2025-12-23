@@ -176,13 +176,13 @@ export interface Recipe {
     measures?: {
       metric: {
         amount: number;
-        unitLong: string;
         unitShort: string;
+        unitLong: string;
       };
       us: {
         amount: number;
-        unitLong: string;
         unitShort: string;
+        unitLong: string;
       };
     };
   }[];
