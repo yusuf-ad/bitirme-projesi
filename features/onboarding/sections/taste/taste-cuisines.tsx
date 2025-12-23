@@ -5,10 +5,12 @@ import {
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface TasteCuisinesProps {
   title: string;
@@ -250,8 +252,10 @@ export function TasteCuisines({
     setCurrentIndex(index);
   };
 
+  const { bottom } = useSafeAreaInsets();
+
   return (
-    <View style={styles.content}>
+    <ScrollView style={[styles.content]} bounces={false}>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
         {description && <Text style={styles.description}>{description}</Text>}
@@ -274,7 +278,7 @@ export function TasteCuisines({
       />
 
       {/* Counter */}
-      <View style={styles.counterContainer}>
+      <View style={[styles.counterContainer, { paddingBottom: bottom + 12 }]}>
         <View style={styles.counterItem}>
           <Text style={styles.counterLabel}>Liked</Text>
           <Text style={styles.counterValue}>{likedCuisines.length}</Text>
@@ -285,7 +289,7 @@ export function TasteCuisines({
           <Text style={styles.counterValue}>{dislikedCuisines.length}</Text>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 

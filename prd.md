@@ -867,7 +867,7 @@ constants/
 - [x] dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
 - [x] adjust targetsta yüzdelik olarak verilsin.
 - [] cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün. -yusuf
-- [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
+- [x] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] console logları sil!
 - [x] Forget Password Sayfasını düzelt
 - []anasayfaya en son eklenen veya çıkarılan yemekler, Anasayfadaki slotların son halinden shopping liste her zaman veri çekilecek.
@@ -878,7 +878,7 @@ constants/
 - [] ana sayfada sınır ekle max 7 gün ??? yunusa sor bunu
 - [] yunusun nota bakılacak ai generatedla ilgili
 - [x] hangi tarif replacedeyse o lunchsa lunch olsun
-- [] onboardingte kaç öğün seçildiyse o öğünler gözüksün
+- [x] onboardingte kaç öğün seçildiyse o öğünler gözüksün
 
 ### meal plan
 
