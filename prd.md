@@ -886,8 +886,8 @@ constants/
 - [x] var olan mealplan de üstüne yazsın
 - [x] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
 - [] sentry gibi hata raporlama sistemi ekle
-- [] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
-- [] servings için mi calori ingredient kalori felan 1 kişi için mi
+- [x] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
+- [x] servings için mi calori ingredient kalori felan 1 kişi için mi
 - [x] Plan this recipes sayfasında choose a meal slottaki öğün saatleri supabaseden gelsin.
 
 ### recipes
@@ -918,6 +918,7 @@ constants/
 - [x] prefill deki olayın kg litresini felan düzelt
 - [x] scanresults sayfasının tasarımını düzelt
 - [x] Add ingredients manually sayfasına dark mode ekle
+
 ### profile
 
 - [x] statusbarın rengiyle farklı header kötü duruyor orası.

@@ -191,6 +191,14 @@ export function MealDetailContent({
   const scrollY = useSharedValue(0);
   const tabProgress = useSharedValue(0);
 
+  // DEBUG: Verify source of serving data
+  console.log("Raw API Meal Data:", {
+    id: meal.id,
+    title: meal.title,
+    servingsFromAPI: meal.servings,
+    readyInMinutes: meal.readyInMinutes,
+  });
+
   // Servings
   const originalServings = meal.servings || 1;
   const [currentServings, setCurrentServings] = useState(originalServings);
@@ -202,9 +210,12 @@ export function MealDetailContent({
 
   const handleIncrementServings = useCallback(() => {
     selection();
-    const max = meal.maxServings || 8;
+    // Default max is 20, or the original servings if it's larger (e.g. 25)
+    // If API provides maxServings, use that.
+    const defaultMax = Math.max(20, originalServings);
+    const max = meal.maxServings || defaultMax;
     setCurrentServings((prev) => Math.min(prev + 1, max));
-  }, [selection, meal.maxServings]);
+  }, [selection, meal.maxServings, originalServings]);
 
   const handleDecrementServings = useCallback(() => {
     selection();
@@ -610,7 +621,8 @@ export function MealDetailContent({
                   name="add-circle-outline"
                   size={20}
                   color={
-                    currentServings < (meal.maxServings || 8)
+                    currentServings <
+                    (meal.maxServings || Math.max(20, originalServings))
                       ? Colors.lilac[800]
                       : Colors.gray[400]
                   }
