@@ -5,10 +5,12 @@ import { useEffect, useMemo } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 import { useOnboarding } from "@/providers/onboarding-provider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function WelcomeScreen() {
   const params = useLocalSearchParams();
   const { resetOnboardingData } = useOnboarding();
+  const { bottom } = useSafeAreaInsets();
 
   const openAuth = useMemo(() => {
     const value = (params as any)?.openAuth;
@@ -37,7 +39,14 @@ export default function WelcomeScreen() {
         style={styles.image}
       />
 
-      <View style={styles.contentContainer}>
+      <View
+        style={[
+          styles.contentContainer,
+          {
+            paddingBottom: bottom + 12,
+          },
+        ]}
+      >
         <Text style={styles.title}>
           Kitchen management, smart recipes and waste-free planning in one
           place.

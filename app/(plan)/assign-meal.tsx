@@ -1,6 +1,5 @@
 import { Colors, getThemeColors } from "@/constants/theme";
 import { DateModal } from "@/features/meal-plan/components/date-modal";
-import { MealSlot } from "@/features/meal-plan/types";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import { getUserMealTimes } from "@/lib/supabase-onboarding";
@@ -14,13 +13,13 @@ import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    AccessibilityInfo,
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  AccessibilityInfo,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -142,12 +141,13 @@ export default function AssignMealScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const dateModalRef = useRef<BottomSheetModal>(null);
 
-  const [mealOptions, setMealOptions] = useState<MealTypeOption[]>(MEAL_TYPE_OPTIONS);
+  const [mealOptions, setMealOptions] =
+    useState<MealTypeOption[]>(MEAL_TYPE_OPTIONS);
 
   useEffect(() => {
     async function fetchMealTimes() {
       if (!session?.user?.id) return;
-      
+
       const times = await getUserMealTimes(session.user.id);
       if (!times) return;
 
@@ -168,7 +168,7 @@ export default function AssignMealScreen() {
           } else if (opt.id === "dinner" && times.dinner_time) {
             customTime = formatTime(times.dinner_time);
           }
-          
+
           if (customTime) {
             return { ...opt, window: customTime };
           }
@@ -352,16 +352,86 @@ export default function AssignMealScreen() {
         }
       }
 
+      const savedItem: MealPlanItemRecord = {
+        id: 0, // Dummy ID as it's not used for ingredient fetching
+        meal_plan_id: planId,
+        spoonacular_recipe_id: payload.id,
+        recipe_name: payload.title,
+        recipe_image_url: payload.image || null,
+        ready_in_minutes: payload.readyInMinutes ?? null,
+        calories_per_serving:
+          typeof payload?.macros?.calories === "number"
+            ? Math.round(payload.macros.calories)
+            : null,
+        carbs_per_serving: normalizeNumber(payload?.macros?.carbs),
+        protein_per_serving: normalizeNumber(payload?.macros?.protein),
+        fat_per_serving: normalizeNumber(payload?.macros?.fat),
+        meal_date: mealDateString,
+        meal_type: selectedMealType,
+        is_ai_generated: params.isAiGenerated === "true",
+      };
+
+      const result =
+        await mealPlanIngredientsService.addMissingIngredientsToShoppingList([
+          savedItem,
+        ]);
+
       await queryClient.invalidateQueries({
         queryKey: ["meal-plans"],
       });
 
+      // Invalidate pantry query to refresh shopping list
+      await queryClient.invalidateQueries({
+        queryKey: ["pantry"],
+      });
+
       AccessibilityInfo.announceForAccessibility("Meal scheduled");
 
-      router.replace({
-        pathname: "/(app)",
-        params: { date: mealDateString },
-      });
+      if (result.addedCount > 0) {
+        Alert.alert(
+          "Meal scheduled! 🎉",
+          `${result.addedCount} missing ingredient${
+            result.addedCount > 1 ? "s" : ""
+          } added to your shopping list.${
+            result.alreadyInPantryCount > 0
+              ? `\n\n${result.alreadyInPantryCount} ingredient${
+                  result.alreadyInPantryCount !== 1 ? "s" : ""
+                } already in your pantry.`
+              : ""
+          }`,
+          [
+            {
+              text: "View Shopping List",
+              onPress: () => router.replace("/shopping-list"),
+            },
+            {
+              text: "Go to Home",
+              onPress: () =>
+                router.replace({
+                  pathname: "/(app)",
+                  params: { date: mealDateString },
+                }),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Meal scheduled! ✨",
+          `All ${result.alreadyInPantryCount} ingredient${
+            result.alreadyInPantryCount !== 1 ? "s" : ""
+          } already in your pantry. No shopping needed!`,
+          [
+            {
+              text: "OK",
+              onPress: () =>
+                router.replace({
+                  pathname: "/(app)",
+                  params: { date: mealDateString },
+                }),
+            },
+          ]
+        );
+      }
     } catch (error) {
       console.error("Failed to add meal to plan", error);
       const message =
@@ -385,14 +455,30 @@ export default function AssignMealScreen() {
     if (!payload) {
       return (
         <View style={styles.errorState}>
-          <Text style={[styles.errorTitle, { color: themeColors.text.primary }]}>Recipe unavailable</Text>
-          <Text style={[styles.errorDescription, { color: themeColors.text.secondary }]}>
+          <Text
+            style={[styles.errorTitle, { color: themeColors.text.primary }]}
+          >
+            Recipe unavailable
+          </Text>
+          <Text
+            style={[
+              styles.errorDescription,
+              { color: themeColors.text.secondary },
+            ]}
+          >
             We couldn&apos;t load the recipe details. Please return to the
             recipes list and try again.
           </Text>
           <CustomButton
             onPress={() => router.back()}
-            containerStyle={[styles.errorButton, { backgroundColor: isDark ? themeColors.accent.lilac : Colors.lilac[900] }]}
+            containerStyle={[
+              styles.errorButton,
+              {
+                backgroundColor: isDark
+                  ? themeColors.accent.lilac
+                  : Colors.lilac[900],
+              },
+            ]}
           >
             <Text style={styles.errorButtonText}>Go back</Text>
           </CustomButton>
@@ -403,18 +489,33 @@ export default function AssignMealScreen() {
     return (
       <>
         <ScrollView
-          style={[styles.scrollView, { backgroundColor: themeColors.background.primary }]}
+          style={[
+            styles.scrollView,
+            { backgroundColor: themeColors.background.primary },
+          ]}
           contentContainerStyle={[
             styles.scrollContent,
             { paddingBottom: bottom + 120 },
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.recipeCard, { 
-              backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface,
-              shadowOpacity: isDark ? 0.3 : 0.12,
-            }]}>
-            <View style={[styles.recipeImageWrapper, { backgroundColor: themeColors.background.tertiary }]}>
+          <View
+            style={[
+              styles.recipeCard,
+              {
+                backgroundColor: isDark
+                  ? themeColors.background.surface
+                  : Colors.background.surface,
+                shadowOpacity: isDark ? 0.3 : 0.12,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.recipeImageWrapper,
+                { backgroundColor: themeColors.background.tertiary },
+              ]}
+            >
               {imageSource ? (
                 <Image
                   source={imageSource}
@@ -425,11 +526,20 @@ export default function AssignMealScreen() {
                 />
               ) : (
                 <View
-                  style={[styles.recipeImage, styles.recipeImagePlaceholder, { backgroundColor: themeColors.background.tertiary }]}
+                  style={[
+                    styles.recipeImage,
+                    styles.recipeImagePlaceholder,
+                    { backgroundColor: themeColors.background.tertiary },
+                  ]}
                 />
               )}
               {payload.readyInMinutes && (
-                <View style={[styles.timeBadge, { backgroundColor: "rgba(0, 0, 0, 0.7)" }]}>
+                <View
+                  style={[
+                    styles.timeBadge,
+                    { backgroundColor: "rgba(0, 0, 0, 0.7)" },
+                  ]}
+                >
                   <Text style={[styles.timeBadgeText, { color: "#fff" }]}>
                     {payload.readyInMinutes} min
                   </Text>
@@ -439,34 +549,141 @@ export default function AssignMealScreen() {
 
             <View style={styles.recipeContent}>
               <View style={styles.recipeHeader}>
-                <Text style={[styles.recipeTitle, { color: themeColors.text.primary }]} numberOfLines={2}>
+                <Text
+                  style={[
+                    styles.recipeTitle,
+                    { color: themeColors.text.primary },
+                  ]}
+                  numberOfLines={2}
+                >
                   {payload.title}
                 </Text>
-                <Text style={[styles.recipeCalories, { color: isDark ? themeColors.accent.lilac : Colors.lilac[900] }]}>{macros[0].value}</Text>
+                <Text
+                  style={[
+                    styles.recipeCalories,
+                    {
+                      color: isDark
+                        ? themeColors.accent.lilac
+                        : Colors.lilac[900],
+                    },
+                  ]}
+                >
+                  {macros[0].value}
+                </Text>
               </View>
 
-              <View style={[styles.macroGrid, { backgroundColor: isDark ? themeColors.background.tertiary : Colors.lilac[100] }]}>
+              <View
+                style={[
+                  styles.macroGrid,
+                  {
+                    backgroundColor: isDark
+                      ? themeColors.background.tertiary
+                      : Colors.lilac[100],
+                  },
+                ]}
+              >
                 <View style={styles.macroItem}>
-                  <Text style={[styles.macroValue, { color: isDark ? themeColors.text.primary : Colors.lilac[900] }]}>{macros[1].value}</Text>
-                  <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Protein</Text>
+                  <Text
+                    style={[
+                      styles.macroValue,
+                      {
+                        color: isDark
+                          ? themeColors.text.primary
+                          : Colors.lilac[900],
+                      },
+                    ]}
+                  >
+                    {macros[1].value}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.macroLabel,
+                      { color: themeColors.text.secondary },
+                    ]}
+                  >
+                    Protein
+                  </Text>
                 </View>
-                <View style={[styles.macroDivider, { backgroundColor: isDark ? themeColors.border.medium : Colors.lilac[300] }]} />
+                <View
+                  style={[
+                    styles.macroDivider,
+                    {
+                      backgroundColor: isDark
+                        ? themeColors.border.medium
+                        : Colors.lilac[300],
+                    },
+                  ]}
+                />
                 <View style={styles.macroItem}>
-                  <Text style={[styles.macroValue, { color: isDark ? themeColors.text.primary : Colors.lilac[900] }]}>{macros[2].value}</Text>
-                  <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Carbs</Text>
+                  <Text
+                    style={[
+                      styles.macroValue,
+                      {
+                        color: isDark
+                          ? themeColors.text.primary
+                          : Colors.lilac[900],
+                      },
+                    ]}
+                  >
+                    {macros[2].value}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.macroLabel,
+                      { color: themeColors.text.secondary },
+                    ]}
+                  >
+                    Carbs
+                  </Text>
                 </View>
-                <View style={[styles.macroDivider, { backgroundColor: isDark ? themeColors.border.medium : Colors.lilac[300] }]} />
+                <View
+                  style={[
+                    styles.macroDivider,
+                    {
+                      backgroundColor: isDark
+                        ? themeColors.border.medium
+                        : Colors.lilac[300],
+                    },
+                  ]}
+                />
                 <View style={styles.macroItem}>
-                  <Text style={[styles.macroValue, { color: isDark ? themeColors.text.primary : Colors.lilac[900] }]}>{macros[3].value}</Text>
-                  <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Fat</Text>
+                  <Text
+                    style={[
+                      styles.macroValue,
+                      {
+                        color: isDark
+                          ? themeColors.text.primary
+                          : Colors.lilac[900],
+                      },
+                    ]}
+                  >
+                    {macros[3].value}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.macroLabel,
+                      { color: themeColors.text.secondary },
+                    ]}
+                  >
+                    Fat
+                  </Text>
                 </View>
               </View>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Choose a meal slot</Text>
-            <Text style={[styles.sectionSubtitle, { color: themeColors.text.secondary }]}>
+            <Text
+              style={[styles.sectionTitle, { color: themeColors.text.primary }]}
+            >
+              Choose a meal slot
+            </Text>
+            <Text
+              style={[
+                styles.sectionSubtitle,
+                { color: themeColors.text.secondary },
+              ]}
+            >
               Pick where this recipe fits best in your routine.
             </Text>
             <View style={styles.mealOptions}>
@@ -478,13 +695,21 @@ export default function AssignMealScreen() {
                     onPress={() => handleMealTypePress(option.id)}
                     style={({ pressed }) => [
                       styles.mealOption,
-                      { 
-                        backgroundColor: isActive 
-                            ? (isDark ? themeColors.background.tertiary : Colors.lilac[100])
-                            : (isDark ? themeColors.background.surface : Colors.background.surface),
-                        borderColor: isActive 
-                            ? (isDark ? themeColors.accent.lilac : Colors.lilac[900])
-                            : (isDark ? themeColors.border.light : Colors.gray[200]),
+                      {
+                        backgroundColor: isActive
+                          ? isDark
+                            ? themeColors.background.tertiary
+                            : Colors.lilac[100]
+                          : isDark
+                          ? themeColors.background.surface
+                          : Colors.background.surface,
+                        borderColor: isActive
+                          ? isDark
+                            ? themeColors.accent.lilac
+                            : Colors.lilac[900]
+                          : isDark
+                          ? themeColors.border.light
+                          : Colors.gray[200],
                       },
                       pressed && styles.mealOptionPressed,
                     ]}
@@ -495,18 +720,41 @@ export default function AssignMealScreen() {
                     <View style={styles.mealOptionHeader}>
                       <Image
                         source={option.icon as any}
-                        style={[styles.mealOptionIcon, { tintColor: isActive && isDark ? themeColors.accent.lilac : (isDark ? themeColors.text.primary : undefined) }]}
+                        style={[
+                          styles.mealOptionIcon,
+                          {
+                            tintColor:
+                              isActive && isDark
+                                ? themeColors.accent.lilac
+                                : isDark
+                                ? themeColors.text.primary
+                                : undefined,
+                          },
+                        ]}
                       />
                       <Text
                         style={[
                           styles.mealOptionLabel,
-                          { color: isActive ? (isDark ? themeColors.accent.lilac : Colors.text.primary) : themeColors.text.primary },
+                          {
+                            color: isActive
+                              ? isDark
+                                ? themeColors.accent.lilac
+                                : Colors.text.primary
+                              : themeColors.text.primary,
+                          },
                         ]}
                       >
                         {option.label}
                       </Text>
                     </View>
-                    <Text style={[styles.mealOptionWindow, { color: themeColors.text.secondary }]}>{option.window}</Text>
+                    <Text
+                      style={[
+                        styles.mealOptionWindow,
+                        { color: themeColors.text.secondary },
+                      ]}
+                    >
+                      {option.window}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -514,17 +762,28 @@ export default function AssignMealScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>Select a day</Text>
-            <Text style={[styles.sectionSubtitle, { color: themeColors.text.secondary }]}>
+            <Text
+              style={[styles.sectionTitle, { color: themeColors.text.primary }]}
+            >
+              Select a day
+            </Text>
+            <Text
+              style={[
+                styles.sectionSubtitle,
+                { color: themeColors.text.secondary },
+              ]}
+            >
               Today is selected by default. You can schedule ahead for the week.
             </Text>
             <Pressable
               onPress={handleOpenDatePicker}
               style={({ pressed }) => [
                 styles.datePicker,
-                { 
-                    backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface,
-                    borderColor: themeColors.border.light 
+                {
+                  backgroundColor: isDark
+                    ? themeColors.background.surface
+                    : Colors.background.surface,
+                  borderColor: themeColors.border.light,
                 },
                 pressed && styles.datePickerPressed,
               ]}
@@ -532,12 +791,35 @@ export default function AssignMealScreen() {
               accessibilityLabel="Choose meal date"
             >
               <View>
-                <Text style={[styles.dateLabel, { color: themeColors.text.secondary }]}>Meal date</Text>
-                <Text style={[styles.dateValue, { color: themeColors.text.primary }]}>
+                <Text
+                  style={[
+                    styles.dateLabel,
+                    { color: themeColors.text.secondary },
+                  ]}
+                >
+                  Meal date
+                </Text>
+                <Text
+                  style={[
+                    styles.dateValue,
+                    { color: themeColors.text.primary },
+                  ]}
+                >
                   {formatDisplayDate(selectedDate)}
                 </Text>
               </View>
-              <Text style={[styles.dateHint, { color: isDark ? themeColors.accent.lilac : Colors.lilac[900] }]}>Change</Text>
+              <Text
+                style={[
+                  styles.dateHint,
+                  {
+                    color: isDark
+                      ? themeColors.accent.lilac
+                      : Colors.lilac[900],
+                  },
+                ]}
+              >
+                Change
+              </Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -554,22 +836,38 @@ export default function AssignMealScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: top, backgroundColor: themeColors.background.primary }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: top, backgroundColor: themeColors.background.primary },
+      ]}
+    >
       <Stack.Screen
         options={{
           headerShown: false,
         }}
       />
 
-      <View style={[styles.header, { borderBottomColor: themeColors.border.light }]}>
+      <View
+        style={[styles.header, { borderBottomColor: themeColors.border.light }]}
+      >
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.closeText, { color: isDark ? themeColors.accent.lilac : Colors.lilac[800] }]}>Close</Text>
+          <Text
+            style={[
+              styles.closeText,
+              { color: isDark ? themeColors.accent.lilac : Colors.lilac[800] },
+            ]}
+          >
+            Close
+          </Text>
         </Pressable>
-        <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>Plan this recipe</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text.primary }]}>
+          Plan this recipe
+        </Text>
         <View style={styles.headerRight} />
       </View>
 

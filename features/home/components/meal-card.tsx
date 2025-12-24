@@ -10,12 +10,13 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { memo, useRef } from "react";
 import {
-    Animated,
-    ImageSourcePropType,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Animated,
+  ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { MealActionModal } from "./meal-action-modal";
@@ -36,6 +37,7 @@ interface MealCardProps {
   onDelete?: () => void;
   onToggleEaten?: (eaten: boolean) => void;
   onReplace?: () => void;
+  isLoading?: boolean;
 }
 
 function MealCard({
@@ -54,6 +56,7 @@ function MealCard({
   onDelete,
   onToggleEaten,
   onReplace,
+  isLoading,
 }: MealCardProps) {
   const mealActionModalRef = useRef<BottomSheetModal>(null);
   const { impact, notification } = useHaptics();
@@ -77,9 +80,18 @@ function MealCard({
   ) => {
     return (
       <View style={styles.deleteAction}>
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
-          <MaterialIcons name="delete-outline" size={24} color="#fff" />
-          <Text style={styles.deleteText}>Delete</Text>
+        <Pressable
+          style={styles.deleteButton}
+          onPress={isLoading ? undefined : handleDelete}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <MaterialIcons name="delete-outline" size={24} color="#fff" />
+              <Text style={styles.deleteText}>Delete</Text>
+            </>
+          )}
         </Pressable>
       </View>
     );
@@ -92,24 +104,56 @@ function MealCard({
         overshootRight={false}
         friction={2}
       >
-        <View style={[
-          styles.container,
-          { 
-            backgroundColor: themeColors.background.surface,
-            borderColor: isDark ? themeColors.border.light : Colors.lilac[200],
-          }
-        ]}>
+        <View
+          style={[
+            styles.container,
+            {
+              backgroundColor: themeColors.background.surface,
+              borderColor: isDark
+                ? themeColors.border.light
+                : Colors.lilac[200],
+            },
+          ]}
+        >
           {/* Meal Header */}
-          <View style={[styles.header, { borderBottomColor: isDark ? themeColors.border.light : Colors.lilac[200] }]}>
+          <View
+            style={[
+              styles.header,
+              {
+                borderBottomColor: isDark
+                  ? themeColors.border.light
+                  : Colors.lilac[200],
+              },
+            ]}
+          >
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
             >
-              <View style={[styles.mealIconContainer, { borderColor: isDark ? themeColors.border.light : Colors.lilac[200], backgroundColor: isDark ? themeColors.background.tertiary : "#F3F3F3" }]}>
+              <View
+                style={[
+                  styles.mealIconContainer,
+                  {
+                    borderColor: isDark
+                      ? themeColors.border.light
+                      : Colors.lilac[200],
+                    backgroundColor: isDark
+                      ? themeColors.background.tertiary
+                      : "#F3F3F3",
+                  },
+                ]}
+              >
                 <Image source={mealIcon} style={styles.mealIcon} />
               </View>
               <View style={styles.mealInfo}>
                 <View style={styles.mealTypeRow}>
-                  <Text style={[styles.mealType, { color: themeColors.text.primary }]}>{mealType}</Text>
+                  <Text
+                    style={[
+                      styles.mealType,
+                      { color: themeColors.text.primary },
+                    ]}
+                  >
+                    {mealType}
+                  </Text>
                   {isEaten && (
                     <View style={styles.eatenBadge}>
                       <Ionicons
@@ -120,7 +164,14 @@ function MealCard({
                     </View>
                   )}
                 </View>
-                <Text style={[styles.mealTime, { color: themeColors.text.tertiary }]}>{mealTime}</Text>
+                <Text
+                  style={[
+                    styles.mealTime,
+                    { color: themeColors.text.tertiary },
+                  ]}
+                >
+                  {mealTime}
+                </Text>
               </View>
             </View>
 
@@ -135,7 +186,9 @@ function MealCard({
                   justifyContent: "center",
                   borderRadius: 4,
                   borderWidth: 1,
-                  borderColor: isDark ? themeColors.border.light : Colors.lilac[200],
+                  borderColor: isDark
+                    ? themeColors.border.light
+                    : Colors.lilac[200],
                   paddingHorizontal: 0,
                   paddingVertical: 0,
                   backgroundColor: "transparent",
@@ -148,7 +201,17 @@ function MealCard({
           </View>
 
           {/* Recipe Card */}
-          <Pressable onPress={onPress} style={[styles.recipeCard, { backgroundColor: isDark ? themeColors.background.tertiary : Colors.gray[100] }]}>
+          <Pressable
+            onPress={onPress}
+            style={[
+              styles.recipeCard,
+              {
+                backgroundColor: isDark
+                  ? themeColors.background.tertiary
+                  : Colors.gray[100],
+              },
+            ]}
+          >
             <Image
               source={recipeImage}
               style={styles.recipeImage}
@@ -157,7 +220,14 @@ function MealCard({
             />
             <View style={styles.recipeInfo}>
               <View style={styles.recipeTextContainer}>
-                <Text style={[styles.recipeName, { color: themeColors.text.primary }]}>{recipeName}</Text>
+                <Text
+                  style={[
+                    styles.recipeName,
+                    { color: themeColors.text.primary },
+                  ]}
+                >
+                  {recipeName}
+                </Text>
 
                 <View style={styles.recipeMetaContainer}>
                   <View style={styles.metaItem}>
@@ -165,15 +235,36 @@ function MealCard({
                       source={require("@/assets/icons/clock-icon.svg")}
                       style={styles.metaIcon}
                     />
-                    <Text style={[styles.metaText, { color: themeColors.text.secondary }]}>{prepTime}</Text>
+                    <Text
+                      style={[
+                        styles.metaText,
+                        { color: themeColors.text.secondary },
+                      ]}
+                    >
+                      {prepTime}
+                    </Text>
                   </View>
-                  <Text style={[styles.separator, { color: themeColors.text.secondary }]}>|</Text>
+                  <Text
+                    style={[
+                      styles.separator,
+                      { color: themeColors.text.secondary },
+                    ]}
+                  >
+                    |
+                  </Text>
                   <View style={styles.metaItem}>
                     <Image
                       source={require("@/assets/icons/flame-icon.svg")}
                       style={styles.metaIcon}
                     />
-                    <Text style={[styles.metaText, { color: themeColors.text.secondary }]}>{calories}</Text>
+                    <Text
+                      style={[
+                        styles.metaText,
+                        { color: themeColors.text.secondary },
+                      ]}
+                    >
+                      {calories}
+                    </Text>
                   </View>
                 </View>
 
@@ -183,51 +274,123 @@ function MealCard({
                     {carbs && (
                       <LinearGradient
                         colors={
-                          isDark 
-                            ? ["rgba(191, 90, 242, 0.3)", "rgba(191, 90, 242, 0.15)", "rgba(191, 90, 242, 0.08)"]
-                            : ["rgba(120, 73, 182, 0.25)", "rgba(120, 73, 182, 0.15)", "rgba(120, 73, 182, 0.08)"]
+                          isDark
+                            ? [
+                                "rgba(191, 90, 242, 0.3)",
+                                "rgba(191, 90, 242, 0.15)",
+                                "rgba(191, 90, 242, 0.08)",
+                              ]
+                            : [
+                                "rgba(120, 73, 182, 0.25)",
+                                "rgba(120, 73, 182, 0.15)",
+                                "rgba(120, 73, 182, 0.08)",
+                              ]
                         }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
                         style={styles.macroGradientWrapper}
                       >
-                        <View style={[styles.macroItem, { backgroundColor: themeColors.background.surface }]}>
-                          <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Carbs</Text>
-                          <Text style={[styles.macroValue, { color: accentColor }]}>{carbs}</Text>
+                        <View
+                          style={[
+                            styles.macroItem,
+                            { backgroundColor: themeColors.background.surface },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.macroLabel,
+                              { color: themeColors.text.secondary },
+                            ]}
+                          >
+                            Carbs
+                          </Text>
+                          <Text
+                            style={[styles.macroValue, { color: accentColor }]}
+                          >
+                            {carbs}
+                          </Text>
                         </View>
                       </LinearGradient>
                     )}
                     {protein && (
                       <LinearGradient
                         colors={
-                          isDark 
-                            ? ["rgba(191, 90, 242, 0.3)", "rgba(191, 90, 242, 0.15)", "rgba(191, 90, 242, 0.08)"]
-                            : ["rgba(120, 73, 182, 0.25)", "rgba(120, 73, 182, 0.15)", "rgba(120, 73, 182, 0.08)"]
+                          isDark
+                            ? [
+                                "rgba(191, 90, 242, 0.3)",
+                                "rgba(191, 90, 242, 0.15)",
+                                "rgba(191, 90, 242, 0.08)",
+                              ]
+                            : [
+                                "rgba(120, 73, 182, 0.25)",
+                                "rgba(120, 73, 182, 0.15)",
+                                "rgba(120, 73, 182, 0.08)",
+                              ]
                         }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
                         style={styles.macroGradientWrapper}
                       >
-                        <View style={[styles.macroItem, { backgroundColor: themeColors.background.surface }]}>
-                          <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Protein</Text>
-                          <Text style={[styles.macroValue, { color: accentColor }]}>{protein}</Text>
+                        <View
+                          style={[
+                            styles.macroItem,
+                            { backgroundColor: themeColors.background.surface },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.macroLabel,
+                              { color: themeColors.text.secondary },
+                            ]}
+                          >
+                            Protein
+                          </Text>
+                          <Text
+                            style={[styles.macroValue, { color: accentColor }]}
+                          >
+                            {protein}
+                          </Text>
                         </View>
                       </LinearGradient>
                     )}
                     {fat && (
                       <LinearGradient
                         colors={
-                          isDark 
-                            ? ["rgba(191, 90, 242, 0.3)", "rgba(191, 90, 242, 0.15)", "rgba(191, 90, 242, 0.08)"]
-                            : ["rgba(120, 73, 182, 0.25)", "rgba(120, 73, 182, 0.15)", "rgba(120, 73, 182, 0.08)"]
+                          isDark
+                            ? [
+                                "rgba(191, 90, 242, 0.3)",
+                                "rgba(191, 90, 242, 0.15)",
+                                "rgba(191, 90, 242, 0.08)",
+                              ]
+                            : [
+                                "rgba(120, 73, 182, 0.25)",
+                                "rgba(120, 73, 182, 0.15)",
+                                "rgba(120, 73, 182, 0.08)",
+                              ]
                         }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
                         style={styles.macroGradientWrapper}
                       >
-                        <View style={[styles.macroItem, { backgroundColor: themeColors.background.surface }]}>
-                          <Text style={[styles.macroLabel, { color: themeColors.text.secondary }]}>Fat</Text>
-                          <Text style={[styles.macroValue, { color: accentColor }]}>{fat}</Text>
+                        <View
+                          style={[
+                            styles.macroItem,
+                            { backgroundColor: themeColors.background.surface },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.macroLabel,
+                              { color: themeColors.text.secondary },
+                            ]}
+                          >
+                            Fat
+                          </Text>
+                          <Text
+                            style={[styles.macroValue, { color: accentColor }]}
+                          >
+                            {fat}
+                          </Text>
                         </View>
                       </LinearGradient>
                     )}
@@ -446,4 +609,3 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
-

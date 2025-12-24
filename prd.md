@@ -864,12 +864,11 @@ constants/
 - [x] çok abartı bir animasyon var age, height,weight adult olayı ne onu açıkla
 - [x] günde kaç öğün yiyorsa onun saati alınsın yoksa default olan kullanılsın hep aynı soruyu soruyuor hoca
 - [x] cuisines de mutfak resimleri gitmiş düzeltilsin.
-- [] dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
+- [x] dark mode olurken uygulamanın tasarımı kötü duruyor. allergies sayfasında!!
 - [x] adjust targetsta yüzdelik olarak verilsin.
 - [] cooking skills seçildiğinde otomatik aşağı kaydırılsın kullanıcı görsün. -yusuf
-- [] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
-- [] /flow?section=meal-time&step=3 sayfasında gölgeye basınca scroll yapılamıyor androidde
-- console logları sil!
+- [x] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
+- [] console logları sil!
 - [x] Forget Password Sayfasını düzelt
 - []anasayfaya en son eklenen veya çıkarılan yemekler, Anasayfadaki slotların son halinden shopping liste her zaman veri çekilecek.
 
@@ -879,15 +878,15 @@ constants/
 - [] ana sayfada sınır ekle max 7 gün ??? yunusa sor bunu
 - [] yunusun nota bakılacak ai generatedla ilgili
 - [x] hangi tarif replacedeyse o lunchsa lunch olsun
-- [] onboardingte kaç öğün seçildiyse o öğünler gözüksün
+- [x] onboardingte kaç öğün seçildiyse o öğünler gözüksün
 
 ### meal plan
 
 - [x] var olan mealplan de üstüne yazsın
 - [x] tasarımı düzelthangi meal seçildiyse o gözüksün şimdi hepsi gözüküyor.
 - [] sentry gibi hata raporlama sistemi ekle
-- [] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
-- [] servings için mi calori ingredient kalori felan 1 kişi için mi
+- [x] servings ayarlama !!!!! ÇOK ÖNEMLİ yusuf
+- [x] servings için mi calori ingredient kalori felan 1 kişi için mi
 - [x] Plan this recipes sayfasında choose a meal slottaki öğün saatleri supabaseden gelsin.
 
 ### recipes
@@ -918,6 +917,7 @@ constants/
 - [x] prefill deki olayın kg litresini felan düzelt
 - [x] scanresults sayfasının tasarımını düzelt
 - [x] Add ingredients manually sayfasına dark mode ekle
+
 ### profile
 
 - [x] statusbarın rengiyle farklı header kötü duruyor orası.

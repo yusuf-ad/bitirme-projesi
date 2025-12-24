@@ -237,6 +237,59 @@ export async function previewMissingIngredients(
   };
 }
 
+/**
+ * Remove ingredients associated with a meal from the shopping list
+ */
+export async function removeIngredientsFromShoppingList(
+  mealPlanItem: MealPlanItemRecord
+): Promise<void> {
+  // 1. Fetch ingredients for the meal
+  // We need to fetch full details to get the ingredients list
+  const recipes = await fetchRecipesWithIngredients([mealPlanItem]);
+  const ingredients = extractIngredients(recipes);
+
+  if (ingredients.length === 0) return;
+
+  // 2. Get current shopping list
+  const shoppingList = await pantryService.getItems("shopping_list");
+
+  // Use the title from the fetched recipe if available, otherwise fallback to the item record
+  const targetRecipeName = recipes[0]?.title || mealPlanItem.recipe_name;
+
+  for (const ingredient of ingredients) {
+    // Find matching item in shopping list
+    // Check by ID or Name
+    const match = shoppingList.find((item) => {
+      const idMatch =
+        item.spoonacular_id &&
+        ingredient.id &&
+        item.spoonacular_id === ingredient.id;
+      const nameMatch =
+        item.name.toLowerCase().trim() === ingredient.name.toLowerCase().trim();
+
+      // Must match ingredient AND contain the recipe name
+      return (
+        (idMatch || nameMatch) &&
+        item.recipe_name &&
+        item.recipe_name.includes(targetRecipeName)
+      );
+    });
+
+    if (match && match.recipe_name) {
+      const names = match.recipe_name.split(",").map((s) => s.trim());
+
+      if (names.length === 1 && names[0] === targetRecipeName) {
+        // It's only for this recipe -> Delete it
+        await pantryService.deleteItem(match.id);
+      } else if (names.includes(targetRecipeName)) {
+        // It's shared with other recipes -> Remove this recipe name
+        const newNames = names.filter((n) => n !== targetRecipeName).join(", ");
+        await pantryService.updateItem(match.id, { recipe_name: newNames });
+      }
+    }
+  }
+}
+
 export const mealPlanIngredientsService = {
   getRecipeIds,
   separateMealPlanItems,
@@ -245,4 +298,5 @@ export const mealPlanIngredientsService = {
   getMissingIngredients,
   addMissingIngredientsToShoppingList,
   previewMissingIngredients,
+  removeIngredientsFromShoppingList,
 };

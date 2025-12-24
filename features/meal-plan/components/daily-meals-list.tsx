@@ -46,7 +46,6 @@ const DEFAULT_MEAL_DETAILS: Record<
   },
 };
 
-
 const DEFAULT_TIMES = {
   breakfast: { start: "07:00", end: "08:00" },
   lunch: { start: "12:00", end: "13:00" },
@@ -59,25 +58,40 @@ function formatTimeRange(
   defaultEnd: string
 ) {
   if (!time) return `${defaultStart} - ${defaultEnd}`;
-  
-  const startHour = time.period === "PM" && time.hour !== 12 ? time.hour + 12 : time.period === "AM" && time.hour === 12 ? 0 : time.hour;
+
+  const startHour =
+    time.period === "PM" && time.hour !== 12
+      ? time.hour + 12
+      : time.period === "AM" && time.hour === 12
+      ? 0
+      : time.hour;
   const endHour = startHour + 1; // Default duration 1 hour
-  
-  const formattedStart = `${String(startHour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
-  const formattedEnd = `${String(endHour > 23 ? 0 : endHour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
-  
+
+  const formattedStart = `${String(startHour).padStart(2, "0")}:${String(
+    time.minute
+  ).padStart(2, "0")}`;
+  const formattedEnd = `${String(endHour > 23 ? 0 : endHour).padStart(
+    2,
+    "0"
+  )}:${String(time.minute).padStart(2, "0")}`;
+
   return `${formattedStart} - ${formattedEnd}`;
 }
 
-export function DailyMealsList({ items, selectedDate, mealTimes }: DailyMealsListProps & { 
+export function DailyMealsList({
+  items,
+  selectedDate,
+  mealTimes,
+}: DailyMealsListProps & {
   mealTimes?: {
     breakfast: { hour: number; minute: number; period: "AM" | "PM" };
     lunch: { hour: number; minute: number; period: "AM" | "PM" };
     dinner: { hour: number; minute: number; period: "AM" | "PM" };
-  } | null 
+  } | null;
 }) {
   const deleteMutation = useDeleteMealItem();
   const [eatenMeals, setEatenMeals] = useState<Set<number>>(new Set());
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [shouldAnimate, setShouldAnimate] = useState(true);
 
   // Reset animation when date changes
@@ -95,8 +109,16 @@ export function DailyMealsList({ items, selectedDate, mealTimes }: DailyMealsLis
     }
   });
 
-  const handleDelete = (mealId: number) => {
-    deleteMutation.mutate(mealId);
+  const handleDelete = async (mealId: number) => {
+    setDeletingId(mealId);
+    try {
+      await deleteMutation.mutateAsync(mealId);
+    } catch (error) {
+      // Error is handled by the mutation hook
+      setDeletingId(null);
+    }
+    // Deleting ID will be cleared when component re-renders with item removed
+    // or we can clear it here if we want to be safe in case of error
   };
 
   const handleToggleEaten = (mealId: number, eaten: boolean) => {
@@ -114,20 +136,29 @@ export function DailyMealsList({ items, selectedDate, mealTimes }: DailyMealsLis
   const getMealDetails = (type: "breakfast" | "lunch" | "dinner") => {
     const base = DEFAULT_MEAL_DETAILS[type];
     const userTime = mealTimes?.[type];
-    
+
     // Fallback defaults if no user time
     let defaultStart = "00:00";
     let defaultEnd = "00:00";
-    
-    switch(type) {
-        case 'breakfast': defaultStart="07:00"; defaultEnd="08:00"; break;
-        case 'lunch': defaultStart="12:00"; defaultEnd="13:00"; break;
-        case 'dinner': defaultStart="19:00"; defaultEnd="20:00"; break;
+
+    switch (type) {
+      case "breakfast":
+        defaultStart = "07:00";
+        defaultEnd = "08:00";
+        break;
+      case "lunch":
+        defaultStart = "12:00";
+        defaultEnd = "13:00";
+        break;
+      case "dinner":
+        defaultStart = "19:00";
+        defaultEnd = "20:00";
+        break;
     }
 
     return {
       ...base,
-      time: formatTimeRange(userTime, defaultStart, defaultEnd)
+      time: formatTimeRange(userTime, defaultStart, defaultEnd),
     };
   };
 
@@ -201,6 +232,7 @@ export function DailyMealsList({ items, selectedDate, mealTimes }: DailyMealsLis
               }
               onDelete={() => handleDelete(item.id)}
               onToggleEaten={(eaten) => handleToggleEaten(item.id, eaten)}
+              isLoading={deletingId === item.id}
             />
           );
         })}

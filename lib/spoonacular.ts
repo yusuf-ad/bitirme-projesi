@@ -149,6 +149,8 @@ export interface Recipe {
   diets?: string[];
   readyInMinutes?: number;
   servings?: number;
+  minServings?: number;
+  maxServings?: number;
   sourceUrl?: string;
   instructions?: string;
   analyzedInstructions?: {
@@ -171,6 +173,18 @@ export interface Recipe {
     name: string;
     amount: number;
     unit: string;
+    measures?: {
+      metric: {
+        amount: number;
+        unitShort: string;
+        unitLong: string;
+      };
+      us: {
+        amount: number;
+        unitShort: string;
+        unitLong: string;
+      };
+    };
   }[];
   // Used when fillIngredients is true
   usedIngredients?: {
