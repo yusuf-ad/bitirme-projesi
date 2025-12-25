@@ -3,13 +3,13 @@ import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import { ReactNode } from "react";
 import {
-  ActivityIndicator,
-  Platform,
-  StyleSheet,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
+    ActivityIndicator,
+    Platform,
+    StyleSheet,
+    Text,
+    TextStyle,
+    View,
+    ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

@@ -160,7 +160,7 @@ export const DarkColors = {
 
   // MIUI-style background colors - deep blacks with subtle elevation
   background: {
-    primary: "#000000", // Pure black main background (MIUI style)
+    primary: "#1C1C1E", // Dark mode main background
     secondary: "#0D0D0D", // Very dark secondary background
     tertiary: "#1A1A1A", // Tertiary background
     dark: "#000000", // Darkest background
@@ -242,7 +242,7 @@ export const ContentDarkColors = {
 
   // Slightly elevated backgrounds for content screens
   background: {
-    primary: "#000000", // Pure black main background
+    primary: "#1C1C1E", // Dark mode main background
     secondary: "#121212", // Slightly elevated secondary
     tertiary: "#1E1E1E", // Tertiary background
     dark: "#000000", // Darkest background
