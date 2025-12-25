@@ -10,7 +10,7 @@ import { Dimensions, Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AllergiesModal } from "./allergies-modal";
-import { BottomActions } from "./bottom-actions";
+import { BottomActions } from "./bottom-actions.ios";
 import { NUM_COLUMNS } from "./constants";
 import { FloatingSelectedBar } from "./floating-selected-bar";
 import { IngredientItemComponent } from "./ingredient-item";
