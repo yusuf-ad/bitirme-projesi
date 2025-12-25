@@ -10,19 +10,19 @@ import { useTheme } from "@/providers/theme-provider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  View,
+    ActivityIndicator,
+    Platform,
+    RefreshControl,
+    StyleSheet,
+    View,
 } from "react-native";
 import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOut,
-  Layout,
-  useAnimatedStyle,
-  withTiming,
+    FadeIn,
+    FadeInDown,
+    FadeOut,
+    Layout,
+    useAnimatedStyle,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -40,7 +40,7 @@ export default function MealplanTab() {
 
   // Animated container for smooth theme transitions
   const containerAnimation = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(Colors.background.secondary, { duration: 300 }),
+    backgroundColor: withTiming(Colors.background.primary, { duration: 300 }),
   }));
 
   useEffect(() => {

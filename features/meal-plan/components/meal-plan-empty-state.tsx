@@ -1,7 +1,7 @@
 import { Colors, getThemeColors } from "@/constants/theme";
 import {
-  SuggestedRecipe,
-  useSuggestedRecipes,
+    SuggestedRecipe,
+    useSuggestedRecipes,
 } from "@/hooks/use-suggested-recipes";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/providers/theme-provider";
@@ -11,14 +11,14 @@ import { router } from "expo-router";
 import { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  Easing,
-  FadeInDown,
-  FadeInRight,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSpring,
-  withTiming,
+    Easing,
+    FadeInDown,
+    FadeInRight,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSpring,
+    withTiming,
 } from "react-native-reanimated";
 
 interface MealPlanEmptyStateProps {
@@ -398,7 +398,7 @@ function RecipeCardSkeleton({ isDark, index }: RecipeCardSkeletonProps) {
         styles.recipeCard,
         {
           backgroundColor: isDark
-            ? ThemeColors.background.surface
+            ? ThemeColors.card.backgroundElevated
             : Colors.background.surface,
           borderColor: isDark ? ThemeColors.border.light : Colors.border.light,
         },
@@ -498,7 +498,7 @@ function SuggestedRecipeCard({
         animatedStyle,
         {
           backgroundColor: isDark
-            ? ThemeColors.background.surface
+            ? ThemeColors.card.backgroundElevated
             : Colors.background.surface,
           borderColor: isDark ? ThemeColors.border.light : Colors.border.light,
         },

@@ -1,14 +1,14 @@
 import { Colors, getThemeColors } from "@/constants/theme";
 import {
-  EmptyPantryState,
-  PantryCategory,
-  PantryCategoryPreview,
-  PantryItem,
-  PantryItemDetailSheet,
-  PantryScreenHeader,
-  PantrySkeleton,
-  RecipeIdeasView,
-  TabType,
+    EmptyPantryState,
+    PantryCategory,
+    PantryCategoryPreview,
+    PantryItem,
+    PantryItemDetailSheet,
+    PantryScreenHeader,
+    PantrySkeleton,
+    RecipeIdeasView,
+    TabType,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { usePantryQuery } from "@/hooks/use-pantry-query";
@@ -219,7 +219,7 @@ export default function PantryTab() {
       <View
         style={[
           styles.container,
-          { backgroundColor: Colors.background.secondary },
+          { backgroundColor: Colors.background.primary },
         ]}
       >
         <PantryScreenHeader
@@ -240,7 +240,7 @@ export default function PantryTab() {
     <View
       style={[
         styles.container,
-        { backgroundColor: Colors.background.secondary },
+        { backgroundColor: Colors.background.primary },
       ]}
     >
       <PantryScreenHeader

@@ -88,7 +88,7 @@ export function RecipeCard({
       >
         <View style={[
           styles.itemCard, 
-          { backgroundColor: themeColors.background.surface }
+          { backgroundColor: isDark ? themeColors.card.backgroundElevated : themeColors.background.surface }
         ]}>
           <View>
             <Image
