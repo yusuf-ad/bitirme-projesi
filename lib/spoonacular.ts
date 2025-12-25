@@ -828,7 +828,7 @@ export async function getIngredientInformation(
 
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching ingredient info for ID ${id}:`, error);
+    // Let the caller handle the error logging
     throw error;
   }
 }
