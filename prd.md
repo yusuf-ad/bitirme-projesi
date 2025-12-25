@@ -880,6 +880,8 @@ constants/
 - [x] hangi tarif replacedeyse o lunchsa lunch olsun
 - [x] onboardingte kaç öğün seçildiyse o öğünler gözüksün
 
+- [] recipes sayfasında filter çalışmıyor chicken seçiyorum boş dönüyo ama searchbara chicken yazınca chickenla ilgili yemekler geliyor
+
 ### meal plan
 
 - [x] var olan mealplan de üstüne yazsın

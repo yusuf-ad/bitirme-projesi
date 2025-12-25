@@ -7,13 +7,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -187,7 +187,21 @@ export default function ManualAdd() {
 
     setIsSaving(true);
     try {
-      // Categorize based on names
+      // 1. Fetch Spoonacular info (images/ids) first
+      const ingredientsToParse = cleaned.map(
+        (i) => `${i.parsedAmount} ${i.parsedUnit} ${i.name}`
+      );
+
+      let parsedResults: any[] = [];
+      try {
+        const { parseIngredients } = await import("@/lib/spoonacular");
+        parsedResults = await parseIngredients(ingredientsToParse);
+      } catch (err) {
+        console.warn("Failed to fetch spoonacular images:", err);
+        // Continue without images if API fails
+      }
+
+      // 2. Categorize based on names
       const ingredientNames = cleaned.map((i) => i.name);
       const categorizeRes = await fetch(generateAPIUrl("/api/categorize"), {
         method: "POST",
@@ -214,9 +228,15 @@ export default function ManualAdd() {
 
       const itemsToUpdate: { id: string; amount: number }[] = [];
 
-      cleaned.forEach((item) => {
+      cleaned.forEach((item, index) => {
         const name = item.name;
         const category = (categoryMap.get(name) as PantryCategory) || "Other";
+
+        // Find corresponding parsed result if available
+        const parsedData = parsedResults[index];
+        const spoonacularId = parsedData?.id;
+        const spoonacularImage = parsedData?.image;
+        const spoonacularName = parsedData?.name || name;
 
         const existingItem = existingItems.find(
           (existing) =>
@@ -235,9 +255,9 @@ export default function ManualAdd() {
             amount: item.parsedAmount,
             unit: item.parsedUnit,
             is_weight: item.isWeight,
-            spoonacular_id: undefined,
-            spoonacular_name: undefined,
-            spoonacular_image: undefined,
+            spoonacular_id: spoonacularId,
+            spoonacular_name: spoonacularName,
+            spoonacular_image: spoonacularImage,
             category,
             status: isShoppingList ? "shopping_list" : "pantry",
             checked: false,
@@ -277,16 +297,34 @@ export default function ManualAdd() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: top, backgroundColor: themeColors.background.primary }]}>
-      <View style={[styles.header, { borderBottomColor: themeColors.border.light }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: top, backgroundColor: themeColors.background.primary },
+      ]}
+    >
+      <View
+        style={[styles.header, { borderBottomColor: themeColors.border.light }]}
+      >
         <Pressable
-          style={[styles.iconButton, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f3f4f6" }]}
+          style={[
+            styles.iconButton,
+            {
+              backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f3f4f6",
+            },
+          ]}
           onPress={() => router.back()}
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={22} color={themeColors.text.primary} />
+          <Ionicons
+            name="chevron-back"
+            size={22}
+            color={themeColors.text.primary}
+          />
         </Pressable>
-        <Text style={[styles.title, { color: themeColors.text.primary }]}>Add Ingredients Manually</Text>
+        <Text style={[styles.title, { color: themeColors.text.primary }]}>
+          Add Ingredients Manually
+        </Text>
         <View style={{ width: 42 }} />
       </View>
 
@@ -300,22 +338,35 @@ export default function ManualAdd() {
       >
         {ingredients.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={[styles.emptyText, { color: themeColors.text.secondary }]}>No ingredients. Add one below.</Text>
+            <Text
+              style={[styles.emptyText, { color: themeColors.text.secondary }]}
+            >
+              No ingredients. Add one below.
+            </Text>
           </View>
         ) : (
           ingredients.map((item, index) => (
-            <View key={item.id} style={[
-                styles.row, 
-                { 
-                    backgroundColor: themeColors.background.surface,
-                    borderColor: themeColors.border.light
-                }
-            ]}>
+            <View
+              key={item.id}
+              style={[
+                styles.row,
+                {
+                  backgroundColor: themeColors.background.surface,
+                  borderColor: themeColors.border.light,
+                },
+              ]}
+            >
               <View style={styles.rowContent}>
                 <View style={styles.nameContainer}>
                   <View style={styles.editNameRow}>
                     <TextInput
-                      style={[styles.nameInput, { color: themeColors.text.primary, borderBottomColor: themeColors.accent.lilac }]}
+                      style={[
+                        styles.nameInput,
+                        {
+                          color: themeColors.text.primary,
+                          borderBottomColor: themeColors.accent.lilac,
+                        },
+                      ]}
                       placeholder="Ingredient name"
                       placeholderTextColor={themeColors.text.tertiary}
                       value={item.name}
@@ -331,7 +382,9 @@ export default function ManualAdd() {
                       <Ionicons
                         name="trash-outline"
                         size={20}
-                        color={isDark ? themeColors.semantic.error.main : "#ef4444"}
+                        color={
+                          isDark ? themeColors.semantic.error.main : "#ef4444"
+                        }
                       />
                     </Pressable>
                   </View>
@@ -339,19 +392,28 @@ export default function ManualAdd() {
 
                 <View style={styles.quantityControls}>
                   {item.isWeight ? (
-                    <View style={[
-                        styles.weightInputWrapper, 
-                        { 
-                            backgroundColor: isDark ? themeColors.background.tertiary : "#f9fafb",
-                            borderColor: themeColors.border.light
-                        }
-                    ]}>
+                    <View
+                      style={[
+                        styles.weightInputWrapper,
+                        {
+                          backgroundColor: isDark
+                            ? themeColors.background.tertiary
+                            : "#f9fafb",
+                          borderColor: themeColors.border.light,
+                        },
+                      ]}
+                    >
                       <TextInput
-                        style={[styles.amountInput, { 
-                            backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface,
+                        style={[
+                          styles.amountInput,
+                          {
+                            backgroundColor: isDark
+                              ? themeColors.background.surface
+                              : Colors.background.surface,
                             borderColor: themeColors.border.light,
-                            color: themeColors.text.primary
-                        }]}
+                            color: themeColors.text.primary,
+                          },
+                        ]}
                         value={
                           amountInputs[index] ??
                           Number(item.parsedAmount).toFixed(2)
@@ -371,34 +433,57 @@ export default function ManualAdd() {
                         }
                         returnKeyType="done"
                       />
-                      <Text style={[styles.unitStaticText, { color: themeColors.text.secondary }]}>
+                      <Text
+                        style={[
+                          styles.unitStaticText,
+                          { color: themeColors.text.secondary },
+                        ]}
+                      >
                         {item.parsedUnit}
                       </Text>
                     </View>
                   ) : (
-                    <View style={[
-                        styles.pieceControls, 
-                        { 
-                            backgroundColor: isDark ? themeColors.background.tertiary : "#f9fafb",
-                            borderColor: themeColors.border.light
-                        }
-                    ]}>
+                    <View
+                      style={[
+                        styles.pieceControls,
+                        {
+                          backgroundColor: isDark
+                            ? themeColors.background.tertiary
+                            : "#f9fafb",
+                          borderColor: themeColors.border.light,
+                        },
+                      ]}
+                    >
                       <Pressable
                         onPress={() => handleDecrement(index)}
-                        style={[styles.pieceBtn, { 
-                            backgroundColor: isDark ? themeColors.background.surface : "#f3f4f6",
-                            borderColor: themeColors.border.light
-                        }]}
+                        style={[
+                          styles.pieceBtn,
+                          {
+                            backgroundColor: isDark
+                              ? themeColors.background.surface
+                              : "#f3f4f6",
+                            borderColor: themeColors.border.light,
+                          },
+                        ]}
                         hitSlop={8}
                       >
-                        <Ionicons name="remove" size={16} color={themeColors.text.secondary} />
+                        <Ionicons
+                          name="remove"
+                          size={16}
+                          color={themeColors.text.secondary}
+                        />
                       </Pressable>
                       <TextInput
-                        style={[styles.amountInput, { 
-                            backgroundColor: isDark ? themeColors.background.surface : Colors.background.surface,
+                        style={[
+                          styles.amountInput,
+                          {
+                            backgroundColor: isDark
+                              ? themeColors.background.surface
+                              : Colors.background.surface,
                             borderColor: themeColors.border.light,
-                            color: themeColors.text.primary
-                        }]}
+                            color: themeColors.text.primary,
+                          },
+                        ]}
                         value={
                           amountInputs[index] ??
                           String(Math.round(item.parsedAmount))
@@ -420,13 +505,22 @@ export default function ManualAdd() {
                       />
                       <Pressable
                         onPress={() => handleIncrement(index)}
-                        style={[styles.pieceBtn, { 
-                            backgroundColor: isDark ? themeColors.background.surface : "#f3f4f6",
-                            borderColor: themeColors.border.light
-                        }]}
+                        style={[
+                          styles.pieceBtn,
+                          {
+                            backgroundColor: isDark
+                              ? themeColors.background.surface
+                              : "#f3f4f6",
+                            borderColor: themeColors.border.light,
+                          },
+                        ]}
                         hitSlop={8}
                       >
-                        <Ionicons name="add" size={16} color={themeColors.text.secondary} />
+                        <Ionicons
+                          name="add"
+                          size={16}
+                          color={themeColors.text.secondary}
+                        />
                       </Pressable>
                     </View>
                   )}
@@ -441,24 +535,34 @@ export default function ManualAdd() {
                           style={[
                             styles.unitChip,
                             {
-                                backgroundColor: isDark 
-                                    ? (selected ? "rgba(120, 73, 182, 0.2)" : themeColors.background.tertiary)
-                                    : (selected ? "#F2EEF8" : "#f9fafb"),
-                                borderColor: isDark
-                                    ? (selected ? themeColors.accent.lilac : themeColors.border.light)
-                                    : (selected ? "#7849B6" : "#e5e7eb")
-                            }
+                              backgroundColor: isDark
+                                ? selected
+                                  ? "rgba(120, 73, 182, 0.2)"
+                                  : themeColors.background.tertiary
+                                : selected
+                                ? "#F2EEF8"
+                                : "#f9fafb",
+                              borderColor: isDark
+                                ? selected
+                                  ? themeColors.accent.lilac
+                                  : themeColors.border.light
+                                : selected
+                                ? "#7849B6"
+                                : "#e5e7eb",
+                            },
                           ]}
                         >
                           <Text
                             style={[
                               styles.unitChipText,
                               {
-                                  color: selected 
-                                    ? (isDark ? themeColors.accent.lilac : "#7849B6")
-                                    : themeColors.text.secondary,
-                                  fontWeight: selected ? "600" : "400"
-                              }
+                                color: selected
+                                  ? isDark
+                                    ? themeColors.accent.lilac
+                                    : "#7849B6"
+                                  : themeColors.text.secondary,
+                                fontWeight: selected ? "600" : "400",
+                              },
                             ]}
                           >
                             {u.label}
@@ -473,25 +577,50 @@ export default function ManualAdd() {
           ))
         )}
 
-        <Pressable style={[
-            styles.addButton, 
-            { 
-                backgroundColor: isDark ? themeColors.background.surface : "#f9fafb",
-                borderColor: themeColors.border.light 
-            }
-        ]} onPress={addNewIngredient}>
-          <Ionicons name="add-circle-outline" size={24} color={isDark ? themeColors.accent.lilac : "#7849B6"} />
-          <Text style={[styles.addButtonText, { color: isDark ? themeColors.accent.lilac : "#7849B6" }]}>Add ingredient</Text>
+        <Pressable
+          style={[
+            styles.addButton,
+            {
+              backgroundColor: isDark
+                ? themeColors.background.surface
+                : "#f9fafb",
+              borderColor: themeColors.border.light,
+            },
+          ]}
+          onPress={addNewIngredient}
+        >
+          <Ionicons
+            name="add-circle-outline"
+            size={24}
+            color={isDark ? themeColors.accent.lilac : "#7849B6"}
+          />
+          <Text
+            style={[
+              styles.addButtonText,
+              { color: isDark ? themeColors.accent.lilac : "#7849B6" },
+            ]}
+          >
+            Add ingredient
+          </Text>
         </Pressable>
       </KeyboardAwareScrollView>
 
-      <View style={[styles.footer, { 
-          paddingBottom: bottom + 12, 
-          backgroundColor: themeColors.background.surface,
-          borderTopColor: themeColors.border.light
-        }]}>
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingBottom: bottom + 12,
+            backgroundColor: themeColors.background.surface,
+            borderTopColor: themeColors.border.light,
+          },
+        ]}
+      >
         <Pressable
-          style={[styles.primaryButton, { backgroundColor: isDark ? themeColors.accent.lilac : "#7849B6" }, isSaving && { opacity: 0.7 }]}
+          style={[
+            styles.primaryButton,
+            { backgroundColor: isDark ? themeColors.accent.lilac : "#7849B6" },
+            isSaving && { opacity: 0.7 },
+          ]}
           onPress={handleAddToPantry}
           disabled={isSaving}
         >
