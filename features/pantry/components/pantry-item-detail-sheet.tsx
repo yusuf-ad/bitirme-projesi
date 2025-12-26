@@ -315,14 +315,33 @@ export const PantryItemDetailSheet = forwardRef<
                 {/* Header / Title */}
                 <View style={styles.header}>
                   <View style={styles.imageContainer}>
-                    <Image
-                      source={{
-                        uri: `https://spoonacular.com/cdn/ingredients_250x250/${item.spoonacular_image}`,
-                      }}
-                      style={styles.image}
-                      contentFit="contain"
-                      transition={200}
-                    />
+                    {item.spoonacular_image ? (
+                      <Image
+                        source={{
+                          uri: `https://spoonacular.com/cdn/ingredients_250x250/${item.spoonacular_image}`,
+                        }}
+                        style={styles.image}
+                        contentFit="contain"
+                        transition={200}
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          styles.image,
+                          {
+                            backgroundColor: Colors.gray[200],
+                            justifyContent: "center",
+                            alignItems: "center",
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="image-outline"
+                          size={32}
+                          color={Colors.gray[400]}
+                        />
+                      </View>
+                    )}
                     <View style={styles.imageBadge}>
                       <Text style={styles.imageBadgeText}>
                         {formatBadgeAmount(item.amount, item.unit)}

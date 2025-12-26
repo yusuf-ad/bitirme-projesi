@@ -1,7 +1,9 @@
 import AntDesign from "@expo/vector-icons/build/AntDesign";
 import { useEffect } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import Animated, {
+  FadeInDown,
+  FadeOutDown,
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
@@ -40,7 +42,11 @@ export function FabButton({ currentRouteName }: FabButtonProps) {
   });
 
   return (
-    <View style={styles.fabContainer}>
+    <Animated.View
+      exiting={FadeOutDown}
+      entering={FadeInDown}
+      style={styles.fabContainer}
+    >
       {/* Main FAB Button */}
       <AnimatedPressable
         onPress={handleMainButtonPress}
@@ -50,7 +56,7 @@ export function FabButton({ currentRouteName }: FabButtonProps) {
           <AntDesign name="plus" size={24} color="#FFFFFF" />
         </Animated.View>
       </AnimatedPressable>
-    </View>
+    </Animated.View>
   );
 }
 

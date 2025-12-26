@@ -870,7 +870,7 @@ constants/
 - [x] diet-optionsda calori bilgileri hepsinde aynı defualtmacros da aynı
 - [] console logları sil!
 - [x] Forget Password Sayfasını düzelt
-- []anasayfaya en son eklenen veya çıkarılan yemekler, Anasayfadaki slotların son halinden shopping liste her zaman veri çekilecek.
+- [x]anasayfaya en son eklenen veya çıkarılan yemekler, Anasayfadaki slotların son halinden shopping liste her zaman veri çekilecek.
 
 ### ana sayfa
 
@@ -879,6 +879,8 @@ constants/
 - [] yunusun nota bakılacak ai generatedla ilgili
 - [x] hangi tarif replacedeyse o lunchsa lunch olsun
 - [x] onboardingte kaç öğün seçildiyse o öğünler gözüksün
+
+- [] recipes sayfasında filter çalışmıyor chicken seçiyorum boş dönüyo ama searchbara chicken yazınca chickenla ilgili yemekler geliyor
 
 ### meal plan
 

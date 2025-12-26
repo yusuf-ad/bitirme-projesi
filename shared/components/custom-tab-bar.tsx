@@ -110,7 +110,9 @@ export function CustomTabBar({
           );
         })}
       </View>
-      <FabButton currentRouteName={state.routes[state.index].name} />
+      {state.routes[state.index].name !== "(profile)" && (
+        <FabButton currentRouteName={state.routes[state.index].name} />
+      )}
     </View>
   );
 }

@@ -5,8 +5,8 @@ import { useAuthContext } from "@/hooks/use-auth-context";
 import { MEAL_TYPES } from "@/lib/constants";
 import { getIngredientInformation, Recipe } from "@/lib/spoonacular";
 import {
-    ComplexSearchOptions,
-    searchRecipesComplex,
+  ComplexSearchOptions,
+  searchRecipesComplex,
 } from "@/lib/spoonacular-complex-search";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { useTheme } from "@/providers/theme-provider";
@@ -14,14 +14,14 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PantryItem } from "../types";
@@ -137,8 +137,16 @@ export function RecipeIdeasView({
       if (allergyIds.length > 0 && allergyIdsChanged) {
         console.log("Fetching allergy ingredient names...");
         for (let i = 0; i < allergyIds.length; i++) {
+          const allergyId = allergyIds[i];
+
+          // Fallback for known invalid/deprecated IDs
+          if (allergyId === "20429") {
+            allergyNames.push("Basil");
+            continue;
+          }
+
           try {
-            const id = parseInt(allergyIds[i]);
+            const id = parseInt(allergyId);
             if (!isNaN(id)) {
               const info = await getIngredientInformation(id);
               if (info.name) {
@@ -146,10 +154,7 @@ export function RecipeIdeasView({
               }
             }
           } catch (e) {
-            console.error(
-              `Failed to fetch info for allergy ID ${allergyIds[i]}`,
-              e
-            );
+            console.warn(`Failed to fetch info for allergy ID ${allergyId}`, e);
           }
         }
         // Cache the results
@@ -287,7 +292,14 @@ export function RecipeIdeasView({
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={accentColor} />
-        <Text style={[styles.loadingMoreText, { color: themeColors.text.secondary }]}>Loading more recipes...</Text>
+        <Text
+          style={[
+            styles.loadingMoreText,
+            { color: themeColors.text.secondary },
+          ]}
+        >
+          Loading more recipes...
+        </Text>
       </View>
     );
   };
@@ -309,7 +321,10 @@ export function RecipeIdeasView({
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.filterScrollView}
-        contentContainerStyle={[styles.filterContainer, { borderBottomColor: themeColors.border.light }]}
+        contentContainerStyle={[
+          styles.filterContainer,
+          { borderBottomColor: themeColors.border.light },
+        ]}
         bounces={false}
       >
         {FILTER_OPTIONS.map((filter) => (
@@ -317,11 +332,11 @@ export function RecipeIdeasView({
             key={filter.value}
             style={[
               styles.filterButton,
-              { 
+              {
                 backgroundColor: themeColors.background.surface,
                 borderColor: themeColors.border.light,
               },
-              selectedFilter === filter.value && { 
+              selectedFilter === filter.value && {
                 backgroundColor: accentColor,
                 borderColor: accentColor,
               },
@@ -459,4 +474,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-

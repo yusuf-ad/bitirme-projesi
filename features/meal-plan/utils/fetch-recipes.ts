@@ -49,6 +49,12 @@ async function fetchAllergyNames(allergyIds: string[]): Promise<string[]> {
   const names: string[] = [];
 
   for (const allergyId of allergyIds) {
+    // Fallback for known invalid/deprecated IDs
+    if (allergyId === "20429") {
+      names.push("Basil");
+      continue;
+    }
+
     try {
       const id = parseInt(allergyId);
       if (!isNaN(id)) {
@@ -58,7 +64,8 @@ async function fetchAllergyNames(allergyIds: string[]): Promise<string[]> {
         }
       }
     } catch (e) {
-      console.error(`Failed to fetch info for allergy ID ${allergyId}`, e);
+      // Log as warning instead of error to prevent UI alerts/crashes
+      console.warn(`Failed to fetch info for allergy ID ${allergyId}`, e);
     }
   }
 
