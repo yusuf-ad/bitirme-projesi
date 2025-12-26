@@ -5,15 +5,16 @@ import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
+import { Image as ExpoImage } from "expo-image";
 import React, { useCallback, useMemo, useRef } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  Extrapolation,
-  interpolate,
-  SharedValue,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    Extrapolation,
+    interpolate,
+    SharedValue,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -33,7 +34,7 @@ interface FixedHeaderProps {
 }
 
 function getUserInitials(
-  profile: { full_name?: string | null } | null,
+  profile: { full_name?: string | null; avatar_url?: string | null } | null,
   session: { user?: { email?: string | null } | null } | null
 ) {
   if (profile?.full_name) {
@@ -336,14 +337,23 @@ export const FixedHeader = React.memo(function FixedHeader({
                   { backgroundColor: Colors.text.primary },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.headerAvatarText,
-                    { color: Colors.text.inverse },
-                  ]}
-                >
-                  {initials}
-                </Text>
+                {profile?.avatar_url ? (
+                  <ExpoImage
+                    source={{ uri: profile.avatar_url }}
+                    style={styles.headerAvatarImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.headerAvatarText,
+                      { color: Colors.text.inverse },
+                    ]}
+                  >
+                    {initials}
+                  </Text>
+                )}
               </View>
               <Animated.View style={profileNameStyle}>
                 <Text
@@ -448,6 +458,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden", // Ensure image doesn't bleed out
+  },
+  headerAvatarImage: {
+    width: "100%",
+    height: "100%",
   },
   headerAvatarText: {
     fontSize: 12,

@@ -1,31 +1,32 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors, Colors as StaticColors } from "@/constants/theme";
 import {
-  AIMealTypeOption,
-  AIRecipeGenerating,
-  AIRecipePreview,
-  CALORIE_RANGE_OPTIONS,
-  CalorieRangeOption,
-  ChipSection,
-  COOKING_TIME_OPTIONS,
-  CookingTimeOption,
-  DisplayCookingSkill,
-  DisplayGoal,
-  IngredientSelectionModal,
-  IngredientSelectionModalHandle,
-  MEAL_TYPE_OPTIONS,
-  SelectedIngredient,
-  UserPreferencesSection,
+    AIMealTypeOption,
+    AIRecipeGenerating,
+    AIRecipePreview,
+    CALORIE_RANGE_OPTIONS,
+    CalorieRangeOption,
+    ChipSection,
+    COOKING_TIME_OPTIONS,
+    CookingTimeOption,
+    DisplayCookingSkill,
+    DisplayGoal,
+    IngredientSelectionModal,
+    IngredientSelectionModalHandle,
+    MEAL_TYPE_OPTIONS,
+    SelectedIngredient,
+    UserPreferencesSection,
 } from "@/features/meal-plan";
 import { goalOptions } from "@/features/onboarding/sections/goals/goals-content";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import {
-  resolveAllergiesFast,
-  resolveDietPreferences,
+    resolveAllergiesFast,
+    resolveDietPreferences,
 } from "@/lib/allergies-diet-helpers";
 import { parseIngredients, Recipe } from "@/lib/spoonacular";
 import { supabase } from "@/lib/supabase";
 import { getUserOnboardingProfile } from "@/lib/supabase-onboarding";
 import { generateAPIUrl } from "@/lib/utils";
+import { useTheme } from "@/providers/theme-provider";
 import { StickyFooter } from "@/shared/components/sticky-footer";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -33,13 +34,13 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -68,24 +69,49 @@ function SelectedIngredientChip({
   ingredient: SelectedIngredient;
   onRemove: () => void;
 }) {
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true);
   const imageUrl = ingredient.image
     ? `${INGREDIENT_IMAGE_BASE_URL}/${ingredient.image}`
     : undefined;
 
   return (
-    <View style={styles.selectedIngredientChip}>
+    <View
+      style={[
+        styles.selectedIngredientChip,
+        {
+          backgroundColor: isDark
+            ? "rgba(191, 90, 242, 0.15)"
+            : StaticColors.lilac[100],
+          borderColor: isDark ? Colors.accent.lilac : StaticColors.lilac[300],
+        },
+      ]}
+    >
       {imageUrl && (
         <Image
           source={{ uri: imageUrl }}
-          style={styles.selectedIngredientImage}
+          style={[
+            styles.selectedIngredientImage,
+            { backgroundColor: Colors.background.surface },
+          ]}
           resizeMode="contain"
         />
       )}
-      <Text style={styles.selectedIngredientName} numberOfLines={1}>
+      <Text
+        style={[
+          styles.selectedIngredientName,
+          { color: isDark ? Colors.accent.lilac : StaticColors.lilac[900] },
+        ]}
+        numberOfLines={1}
+      >
         {ingredient.name}
       </Text>
       <Pressable onPress={onRemove} hitSlop={8}>
-        <MaterialIcons name="close" size={16} color={Colors.gray[500]} />
+        <MaterialIcons
+          name="close"
+          size={16}
+          color={isDark ? Colors.text.secondary : StaticColors.gray[500]}
+        />
       </Pressable>
     </View>
   );
@@ -96,6 +122,8 @@ export default function AiPlan() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { session } = useAuthContext();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true);
   const userId = session?.user?.id;
 
   // Modal ref
@@ -520,9 +548,19 @@ export default function AiPlan() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, backgroundColor: Colors.background.primary },
+      ]}
+    >
       {/* Header */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          { borderBottomColor: Colors.border.light },
+        ]}
+      >
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialIcons
             name="arrow-back"
@@ -530,7 +568,9 @@ export default function AiPlan() {
             color={Colors.text.primary}
           />
         </Pressable>
-        <Text style={styles.headerTitle}>AI Recipes Generator</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text.primary }]}>
+          AI Recipes Generator
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -542,11 +582,16 @@ export default function AiPlan() {
         {/* Key Ingredients Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Key Ingredients <Text style={styles.required}>*</Text>
+            <Text style={[styles.sectionTitle, { color: Colors.text.primary }]}>
+              Key Ingredients <Text style={[styles.required, { color: Colors.semantic.error.main }]}>*</Text>
             </Text>
             {selectedIngredients.length > 0 && (
-              <Text style={styles.selectedCount}>
+              <Text
+                style={[
+                  styles.selectedCount,
+                  { color: Colors.semantic.success.main },
+                ]}
+              >
                 {selectedIngredients.length} selected
               </Text>
             )}
@@ -573,11 +618,30 @@ export default function AiPlan() {
 
           {/* Add Ingredients Button */}
           <Pressable
-            style={styles.addIngredientsButton}
+            style={[
+              styles.addIngredientsButton,
+              {
+                backgroundColor: isDark
+                  ? "rgba(191, 90, 242, 0.1)"
+                  : StaticColors.lilac[100],
+                borderColor: isDark
+                  ? Colors.accent.lilac
+                  : StaticColors.lilac[300],
+              },
+            ]}
             onPress={handleOpenIngredientModal}
           >
-            <MaterialIcons name="add" size={20} color={Colors.lilac[700]} />
-            <Text style={styles.addIngredientsButtonText}>
+            <MaterialIcons
+              name="add"
+              size={20}
+              color={isDark ? Colors.accent.lilac : StaticColors.lilac[700]}
+            />
+            <Text
+              style={[
+                styles.addIngredientsButtonText,
+                { color: isDark ? Colors.accent.lilac : StaticColors.lilac[700] },
+              ]}
+            >
               {selectedIngredients.length > 0
                 ? "Add More Ingredients"
                 : "Select Ingredients from Pantry"}
@@ -639,7 +703,7 @@ export default function AiPlan() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: StaticColors.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -648,7 +712,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
+    borderBottomColor: StaticColors.gray[200],
   },
   backButton: {
     padding: 4,
@@ -656,7 +720,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   headerSpacer: {
     width: 32,
@@ -680,15 +744,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text.primary,
+    color: StaticColors.text.primary,
   },
   required: {
-    color: Colors.semantic.error.main,
+    color: StaticColors.semantic.error.main,
   },
   selectedCount: {
     fontSize: 13,
     fontWeight: "500",
-    color: Colors.green[700],
+    color: StaticColors.green[700],
   },
   selectedIngredientsContainer: {
     marginTop: 4,
@@ -703,21 +767,21 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     paddingRight: 10,
     paddingVertical: 4,
-    backgroundColor: Colors.lilac[100],
+    backgroundColor: StaticColors.lilac[100],
     borderRadius: 99,
     borderWidth: 1,
-    borderColor: Colors.lilac[300],
+    borderColor: StaticColors.lilac[300],
   },
   selectedIngredientImage: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.background.surface,
+    backgroundColor: StaticColors.background.surface,
   },
   selectedIngredientName: {
     fontSize: 13,
     fontWeight: "500",
-    color: Colors.lilac[900],
+    color: StaticColors.lilac[900],
     maxWidth: 100,
   },
   addIngredientsButton: {
@@ -728,13 +792,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.lilac[300],
+    borderColor: StaticColors.lilac[300],
     borderStyle: "dashed",
-    backgroundColor: Colors.lilac[100],
+    backgroundColor: StaticColors.lilac[100],
   },
   addIngredientsButtonText: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.lilac[700],
+    color: StaticColors.lilac[700],
   },
 });

@@ -31,8 +31,10 @@ export default function CalendarDay({
   // Dynamic container styles
   const getContainerStyle = () => {
     const baseStyle = {
-      backgroundColor: themeColors.background.surface,
-      opacity: isDark ? 0.7 : 0.5,
+      backgroundColor: isDark
+        ? themeColors.card.backgroundElevated
+        : themeColors.background.surface,
+      opacity: isDark ? 1 : 0.5,
     };
 
     if (isSelected && isPast) {

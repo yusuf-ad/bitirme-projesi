@@ -1,16 +1,16 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { Colors, getThemeColors } from "@/constants/theme";
 import {
-  PantryItem,
-  PantryItemDetailSheet,
-  ShoppingListItemsList,
+    PantryItem,
+    PantryItemDetailSheet,
+    ShoppingListItemsList,
 } from "@/features/pantry";
 import { pantryService } from "@/features/pantry/services/pantry-service";
 import { useTheme } from "@/providers/theme-provider";
 import {
-  AttachMenuOverlay,
-  AttachMenuProvider,
-  useAttachMenu,
+    AttachMenuOverlay,
+    AttachMenuProvider,
+    useAttachMenu,
 } from "@/shared/components/attach-menu";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/build/AntDesign";
@@ -18,16 +18,16 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  useAnimatedStyle,
-  withTiming,
+    useAnimatedStyle,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
