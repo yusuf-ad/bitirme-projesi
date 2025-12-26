@@ -1,4 +1,9 @@
 import { Colors, getThemeColors } from "@/constants/theme";
+import {
+  mealPlanIngredientsService,
+  MealPlanItemRecord,
+  MealSlot,
+} from "@/features/meal-plan";
 import { DateModal } from "@/features/meal-plan/components/date-modal";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
@@ -179,7 +184,11 @@ export default function AssignMealScreen() {
     fetchMealTimes();
   }, [session?.user?.id]);
 
-  const params = useLocalSearchParams<{ recipe?: string; mealSlot?: string }>();
+  const params = useLocalSearchParams<{
+    recipe?: string;
+    mealSlot?: string;
+    isAiGenerated?: string;
+  }>();
   const payload = useMemo<RecipePlanPayload | null>(() => {
     const rawValue = Array.isArray(params.recipe)
       ? params.recipe[0]
