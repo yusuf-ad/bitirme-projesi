@@ -131,7 +131,12 @@ export default function ShoppingListScreen() {
           `${movedCount} item${
             movedCount > 1 ? "s" : ""
           } added to your pantry.`,
-          [{ text: "OK" }]
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/(app)/pantry"),
+            },
+          ]
         );
         await fetchItems();
       }
