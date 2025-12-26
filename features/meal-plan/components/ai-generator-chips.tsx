@@ -4,11 +4,7 @@ import CustomButton from "@/shared/components/custom-button";
 import { StyleSheet, Text, View } from "react-native";
 
 // Types
-export type MealTypeOption =
-  | "breakfast"
-  | "lunch"
-  | "dinner"
-  | "surprise";
+export type MealTypeOption = "breakfast" | "lunch" | "dinner" | "surprise";
 export type CookingTimeOption = "<15" | "15-29" | "30-60" | "open";
 export type CalorieRangeOption =
   | "<200"
@@ -29,7 +25,6 @@ export const MEAL_TYPE_OPTIONS: ChipOption<MealTypeOption>[] = [
   { id: "breakfast", label: "Breakfast", emoji: "🔍" },
   { id: "lunch", label: "Lunch", emoji: "🥗" },
   { id: "dinner", label: "Dinner", emoji: "🍲" },
-  { id: "surprise", label: "Surprise Me", emoji: "👀" },
 ];
 
 export const COOKING_TIME_OPTIONS: ChipOption<CookingTimeOption>[] = [
@@ -65,25 +60,38 @@ export function SelectableChip<T extends string>({
     <CustomButton
       containerStyle={[
         styles.chip,
-        { 
-          backgroundColor: isSelected 
-             ? (isDark ? "rgba(76, 175, 80, 0.2)" : Colors.green[100])
-             : (isDark ? themeColors.background.surface : Colors.background.surface),
+        {
+          backgroundColor: isSelected
+            ? isDark
+              ? "rgba(76, 175, 80, 0.2)"
+              : Colors.green[100]
+            : isDark
+            ? themeColors.background.surface
+            : Colors.background.surface,
           borderColor: isSelected
-             ? (isDark ? Colors.green[400] : Colors.green[600])
-             : (isDark ? themeColors.border.light : Colors.gray[200])
-        }
+            ? isDark
+              ? Colors.green[400]
+              : Colors.green[600]
+            : isDark
+            ? themeColors.border.light
+            : Colors.gray[200],
+        },
       ]}
       onPress={onPress}
     >
       <Text style={styles.chipEmoji}>{option.emoji}</Text>
-      <Text style={[
-        styles.chipLabel,
-        { color: isSelected 
-            ? (isDark ? Colors.green[300] : Colors.green[900])
-            : themeColors.text.primary 
-        }
-      ]}>
+      <Text
+        style={[
+          styles.chipLabel,
+          {
+            color: isSelected
+              ? isDark
+                ? Colors.green[300]
+                : Colors.green[900]
+              : themeColors.text.primary,
+          },
+        ]}
+      >
         {option.label}
       </Text>
     </CustomButton>
@@ -105,17 +113,35 @@ export function InfoChip({
     <View
       style={[
         styles.infoChip,
-        variant === "negative" 
-          ? { backgroundColor: isDark ? "rgba(220, 38, 38, 0.15)" : Colors.semantic.error.light, borderColor: isDark ? Colors.semantic.error.main : Colors.semantic.error.main }
-          : { backgroundColor: isDark ? "rgba(191, 90, 242, 0.15)" : Colors.lilac[100], borderColor: isDark ? themeColors.accent.lilac : Colors.lilac[300] },
+        variant === "negative"
+          ? {
+              backgroundColor: isDark
+                ? "rgba(220, 38, 38, 0.15)"
+                : Colors.semantic.error.light,
+              borderColor: isDark
+                ? Colors.semantic.error.main
+                : Colors.semantic.error.main,
+            }
+          : {
+              backgroundColor: isDark
+                ? "rgba(191, 90, 242, 0.15)"
+                : Colors.lilac[100],
+              borderColor: isDark
+                ? themeColors.accent.lilac
+                : Colors.lilac[300],
+            },
       ]}
     >
       <Text
         style={[
           styles.infoChipLabel,
           variant === "negative"
-            ? { color: isDark ? Colors.semantic.error.light : Colors.semantic.error.dark }
-            : { color: isDark ? themeColors.accent.lilac : Colors.lilac[900] }
+            ? {
+                color: isDark
+                  ? Colors.semantic.error.light
+                  : Colors.semantic.error.dark,
+              }
+            : { color: isDark ? themeColors.accent.lilac : Colors.lilac[900] },
         ]}
       >
         {label}
@@ -143,7 +169,9 @@ export function ChipSection<T extends string>({
 
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: themeColors.text.primary }]}>
+        {title}
+      </Text>
       <View style={styles.chipsContainer}>
         {options.map((option) => (
           <SelectableChip
