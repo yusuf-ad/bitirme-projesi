@@ -16,14 +16,17 @@ export const useIngredientModal = (options: UseIngredientModalOptions = {}) => {
   const onboarding = useOnboarding();
 
   // Convert initial ingredients to Map
-  const buildInitialMap = useCallback((ingredients: Ingredient[]): Map<string, IngredientItem> => {
-    const map = new Map<string, IngredientItem>();
-    ingredients.forEach((ing) => {
-      const key = `${ing.id}`;
-      map.set(key, ing);
-    });
-    return map;
-  }, []);
+  const buildInitialMap = useCallback(
+    (ingredients: Ingredient[]): Map<string, IngredientItem> => {
+      const map = new Map<string, IngredientItem>();
+      ingredients.forEach((ing) => {
+        const key = `${ing.id}`;
+        map.set(key, ing);
+      });
+      return map;
+    },
+    []
+  );
 
   const [selectedIngredients, setSelectedIngredients] = useState<
     Map<string, IngredientItem>
@@ -168,22 +171,50 @@ export const useIngredientModal = (options: UseIngredientModalOptions = {}) => {
 
   // Display items - filtered for allergens
   const displayItems = useMemo(() => {
+    // Log parameters for debugging as requested
+    console.log("--- Ingredient Filter Debug ---");
+    console.log("Search Query:", searchQuery);
+    console.log("Has Searched:", hasSearched);
+    console.log("User Allergies:", userAllergies);
+    console.log(
+      "Selected Ingredients:",
+      Array.from(selectedIngredients.keys())
+    );
+
     if (!hasSearched) {
-      return POPULAR_INGREDIENTS.filter(
+      const filteredPopular = POPULAR_INGREDIENTS.filter(
         (item) => !containsAllergens(item.name)
       );
+      console.log(
+        "Displaying Popular Ingredients (Count):",
+        filteredPopular.length
+      );
+      return filteredPopular;
     }
-    return searchResults.filter(
-      (item) =>
-        !selectedIngredients.has(getIngredientKey(item)) &&
-        !containsAllergens(item.name)
-    );
+
+    console.log("Raw Search Results (Count):", searchResults.length);
+    const filteredSearch = searchResults.filter((item) => {
+      const isSelected = selectedIngredients.has(getIngredientKey(item));
+      const hasAllergen = containsAllergens(item.name);
+
+      if (item.name.toLowerCase().includes("chicken")) {
+        console.log(
+          `Checking item: ${item.name}, isSelected: ${isSelected}, hasAllergen: ${hasAllergen}`
+        );
+      }
+
+      return !isSelected && !hasAllergen;
+    });
+    console.log("Filtered Search Results (Count):", filteredSearch.length);
+    return filteredSearch;
   }, [
     hasSearched,
     searchResults,
     selectedIngredients,
     getIngredientKey,
     containsAllergens,
+    searchQuery, // Added searchQuery to dependency for logging updates
+    userAllergies, // Added userAllergies to dependency for logging updates
   ]);
 
   // Scroll handler for collapsing selected section

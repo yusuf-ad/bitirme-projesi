@@ -44,21 +44,33 @@ const recipeContainsAllIngredients = (
 
   // Get all used ingredient names from the recipe (lowercase for comparison)
   // usedIngredients comes from fillIngredients: true in API call
-  const usedIngredientNames = (recipe.usedIngredients || [])
-    .map((ing) => ing.name.toLowerCase());
+  // Get all ingredient names from both usedIngredients and extendedIngredients
+  // to ensure we don't miss any matches
+  const allIngredientNames = new Set<string>();
 
-  // If no usedIngredients data, skip this filter (API didn't return it)
-  if (usedIngredientNames.length === 0 && recipe.usedIngredients === undefined) {
+  recipe.usedIngredients?.forEach((ing) =>
+    allIngredientNames.add(ing.name.toLowerCase())
+  );
+  recipe.extendedIngredients?.forEach((ing) =>
+    allIngredientNames.add(ing.name.toLowerCase())
+  );
+
+  // If we have no ingredient data at all, skip strict filter (fail open)
+  if (allIngredientNames.size === 0) {
     return true;
   }
 
-  // Check if ALL required ingredients are in usedIngredients
+  // Check if ALL required ingredients are present
   return requiredIngredients.every((required) => {
     const requiredLower = required.toLowerCase();
-    // Check if any used ingredient matches the required ingredient name
-    return usedIngredientNames.some((usedName) =>
-      usedName.includes(requiredLower) || requiredLower.includes(usedName)
-    );
+    // Check if any ingredient matches the required ingredient name
+    // Using string inclusion for fuzzy matching
+    for (const text of allIngredientNames) {
+      if (text.includes(requiredLower) || requiredLower.includes(text)) {
+        return true;
+      }
+    }
+    return false;
   });
 };
 
@@ -66,9 +78,9 @@ const recipeContainsAllIngredients = (
  * Check if a recipe is a beverage/drink (to filter them out)
  */
 const isBeverageRecipe = (recipe: Recipe): boolean => {
-  const beverageTypes = ['beverage', 'drink', 'cocktail', 'smoothie', 'shake'];
+  const beverageTypes = ["beverage", "drink", "cocktail", "smoothie", "shake"];
   const dishTypes = recipe.dishTypes || [];
-  const title = recipe.title?.toLowerCase() || '';
+  const title = recipe.title?.toLowerCase() || "";
 
   // Check if any dishType is a beverage
   const hasBeverageDishType = dishTypes.some((type) =>
@@ -76,12 +88,16 @@ const isBeverageRecipe = (recipe: Recipe): boolean => {
   );
 
   // Also check title for common drink keywords
-  const hasBeverageInTitle = beverageTypes.some((bevType) =>
-    title.includes(bevType)
-  ) || title.includes('martini') || title.includes('mojito') ||
-    title.includes('margarita') || title.includes('gin') ||
-    title.includes('vodka') || title.includes('whiskey') ||
-    title.includes('rum') || title.includes('tequila');
+  const hasBeverageInTitle =
+    beverageTypes.some((bevType) => title.includes(bevType)) ||
+    title.includes("martini") ||
+    title.includes("mojito") ||
+    title.includes("margarita") ||
+    title.includes("gin") ||
+    title.includes("vodka") ||
+    title.includes("whiskey") ||
+    title.includes("rum") ||
+    title.includes("tequila");
 
   return hasBeverageDishType || hasBeverageInTitle;
 };
@@ -118,7 +134,16 @@ export function useRecipesQuery({
       minCalories ?? "",
       maxCalories ?? "",
     ],
-    [query, ingredients, cuisines, quickFilters, minReadyTime, maxReadyTime, minCalories, maxCalories]
+    [
+      query,
+      ingredients,
+      cuisines,
+      quickFilters,
+      minReadyTime,
+      maxReadyTime,
+      minCalories,
+      maxCalories,
+    ]
   );
 
   const {
@@ -151,10 +176,16 @@ export function useRecipesQuery({
       if (shouldSortByTime) sort = "time";
       if (isHealthy) sort = "healthiness";
 
-      const sortDirection = shouldSortByTime ? "desc" : isHealthy ? "desc" : undefined;
+      const sortDirection = shouldSortByTime
+        ? "desc"
+        : isHealthy
+        ? "desc"
+        : undefined;
 
       // Easy filter: max 30 minutes
-      const effectiveMaxReadyTime = isEasy ? Math.min(maxReadyTime ?? 30, 30) : maxReadyTime;
+      const effectiveMaxReadyTime = isEasy
+        ? Math.min(maxReadyTime ?? 30, 30)
+        : maxReadyTime;
 
       // Veg filter: vegetarian diet
       const diet = isVeg ? "vegetarian" : undefined;
@@ -174,9 +205,9 @@ export function useRecipesQuery({
         });
         let filtered = minReadyTime
           ? result.recipes.filter((recipe) => {
-            if (recipe.readyInMinutes == null) return false;
-            return recipe.readyInMinutes >= minReadyTime;
-          })
+              if (recipe.readyInMinutes == null) return false;
+              return recipe.readyInMinutes >= minReadyTime;
+            })
           : result.recipes;
 
         // Strict ingredient filter: recipe must contain ALL selected ingredients
@@ -217,16 +248,34 @@ export function useRecipesQuery({
 
         let filtered = minReadyTime
           ? recipes.filter((recipe) => {
-            if (recipe.readyInMinutes == null) return false;
-            return recipe.readyInMinutes >= minReadyTime;
-          })
+              if (recipe.readyInMinutes == null) return false;
+              return recipe.readyInMinutes >= minReadyTime;
+            })
           : recipes;
 
         // Strict ingredient filter: recipe must contain ALL selected ingredients
         const ingredientNamesList = ingredients.map((ing) => ing.name);
         if (ingredientNamesList.length > 0) {
-          filtered = filtered.filter((recipe) =>
-            recipeContainsAllIngredients(recipe, ingredientNamesList)
+          console.log(
+            "Applying strict client-side filter for:",
+            ingredientNamesList
+          );
+
+          filtered = filtered.filter((recipe) => {
+            const pass = recipeContainsAllIngredients(
+              recipe,
+              ingredientNamesList
+            );
+            if (!pass) {
+              console.log(
+                `Recipe '${recipe.title}' rejected. UsedIngredients:`,
+                recipe.usedIngredients?.map((i) => i.name)
+              );
+            }
+            return pass;
+          });
+          console.log(
+            `Filtered count: ${filtered.length} (from ${recipes.length})`
           );
         }
 
@@ -259,9 +308,7 @@ export function useRecipesQuery({
         return totalFetched < lastPage.totalResults ? totalFetched : undefined;
       } else {
         // Random mode: continue if API returned full page (regardless of filtering)
-        return rawCount >= pageSize
-          ? lastPage.offset + pageSize
-          : undefined;
+        return rawCount >= pageSize ? lastPage.offset + pageSize : undefined;
       }
     },
     initialPageParam: 0,
