@@ -136,14 +136,14 @@ export const POPULAR_CUISINES: {
   flag?: string;
 }[] = [
   { id: "American", name: "American", flag: "🇺🇸" },
+  { id: "Mexican", name: "Mexican", flag: "🇲🇽" },
+  { id: "French", name: "French", flag: "🇫🇷" },
+  { id: "Italian", name: "Italian", flag: "🇮🇹" },
+  { id: "Greek", name: "Greek", flag: "🇬🇷" },
+  { id: "Mediterranean", name: "Mediterranean", flag: "🏛️" },
+  { id: "Middle Eastern", name: "Middle Eastern", flag: "🇸🇦" },
+  { id: "Indian", name: "Indian", flag: "🇮🇳" },
   { id: "Asian", name: "Asian", flag: "🌏" },
   { id: "Chinese", name: "Chinese", flag: "🇨🇳" },
-  { id: "French", name: "French", flag: "🇫🇷" },
-  { id: "Greek", name: "Greek", flag: "🇬🇷" },
-  { id: "Indian", name: "Indian", flag: "🇮🇳" },
-  { id: "Italian", name: "Italian", flag: "🇮🇹" },
   { id: "Japanese", name: "Japanese", flag: "🇯🇵" },
-  { id: "Mediterranean", name: "Mediterranean", flag: "🏛️" },
-  { id: "Mexican", name: "Mexican", flag: "🇲🇽" },
-  { id: "Middle Eastern", name: "Middle Eastern", flag: "🇸🇦" },
 ];
