@@ -213,6 +213,10 @@ This project is developed for educational purposes.
 
 <div align="center">
 
-Healthy eating made easier with **Planned Eat**! 🥗
+
+https://github.com/user-attachments/assets/ae759ae2-f9a8-4dba-a424-1a7e727ed869
+
+
+Join our community of developers creating universal apps.
 
 </div>
