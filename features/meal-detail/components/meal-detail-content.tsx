@@ -460,8 +460,8 @@ export function MealDetailContent({
 
   // Helper to format scaled ingredient amount nicely
   const formatAmount = (amount: number) => {
-    // Round to 2 decimals max, avoid trailing zeros
-    return parseFloat(amount.toFixed(2));
+    // Round up to the nearest whole number
+    return Math.ceil(amount);
   };
 
   return (

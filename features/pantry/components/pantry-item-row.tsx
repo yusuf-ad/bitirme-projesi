@@ -3,9 +3,9 @@ import { useTheme } from "@/providers/theme-provider";
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-    FadeIn,
-    FadeOut,
-    LinearTransition,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
 } from "react-native-reanimated";
 import { PantryItem } from "../types";
 
@@ -26,7 +26,7 @@ export function PantryItemRow({
 }: PantryItemRowProps) {
   const { isDark } = useTheme();
   const themeColors = getThemeColors(isDark, true);
-  
+
   const accentColor = isDark ? themeColors.accent.lilac : Colors.lilac[900];
 
   return (
@@ -43,15 +43,19 @@ export function PantryItemRow({
         >
           <View
             style={[
-              styles.checkbox, 
-              { 
-                borderColor: isDark ? themeColors.border.light : Colors.lilac[300],
+              styles.checkbox,
+              {
+                borderColor: isDark
+                  ? themeColors.border.light
+                  : Colors.lilac[300],
                 backgroundColor: themeColors.background.surface,
               },
-              item.checked && { 
-                backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100],
+              item.checked && {
+                backgroundColor: isDark
+                  ? "rgba(191, 90, 242, 0.2)"
+                  : Colors.lilac[100],
                 borderColor: accentColor,
-              }
+              },
             ]}
           >
             {item.checked && (
@@ -64,23 +68,32 @@ export function PantryItemRow({
       <Pressable
         style={styles.itemContent}
         onPress={() => onToggle(item.id)}
-        android_ripple={{ color: isDark ? "rgba(191, 90, 242, 0.1)" : Colors.lilac[100] }}
+        android_ripple={{
+          color: isDark ? "rgba(191, 90, 242, 0.1)" : Colors.lilac[100],
+        }}
         hitSlop={4}
       >
-        <Text style={[
-          styles.itemName, 
-          { color: themeColors.text.primary },
-          item.checked && { color: themeColors.text.tertiary, textDecorationLine: "line-through" }
-        ]}>
+        <Text
+          style={[
+            styles.itemName,
+            { color: themeColors.text.primary },
+            item.checked && {
+              color: themeColors.text.tertiary,
+              textDecorationLine: "line-through",
+            },
+          ]}
+        >
           {item.name}
         </Text>
         {item.amount ? (
           <Text style={[styles.itemAmount, { color: accentColor }]}>
-            {item.amount} {item.unit}
+            {Math.ceil(item.amount)} {item.unit}
           </Text>
         ) : null}
         {showRecipe && item.recipe_name ? (
-          <Text style={[styles.itemRecipe, { color: accentColor }]}>{item.recipe_name}</Text>
+          <Text style={[styles.itemRecipe, { color: accentColor }]}>
+            {item.recipe_name}
+          </Text>
         ) : null}
       </Pressable>
 
@@ -135,4 +148,3 @@ const styles = StyleSheet.create({
     padding: 6,
   },
 });
-
