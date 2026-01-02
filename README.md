@@ -42,11 +42,17 @@ https://github.com/user-attachments/assets/ae759ae2-f9a8-4dba-a424-1a7e727ed869
 
 ## ✨ Features
 
-### 🤖 Smart Recipe Recommendations
+### 🤖 Smart AI Recipe Recommendations
 
 - **AI-powered recipe suggestions** based on available ingredients
 - Advanced filtering (meal type, cuisine, cook time, dietary restrictions)
 - Ingredient substitution suggestions
+
+<div align="center">
+  <img src="assets/ai-recipe-generator.png" width="300" alt="Smart AI Recipe Generator">
+  <br>
+  <em>The AI Recipes Generator allows users to select ingredients from their pantry, specify meal types, cooking times, calorie ranges, and personal goals to generate the perfect recipe.</em>
+</div>
 
 ### 🗓️ Weekly Meal Planner
 

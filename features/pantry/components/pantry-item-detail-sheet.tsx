@@ -207,10 +207,10 @@ export const PantryItemDetailSheet = forwardRef<
     const unitLower = (unit || "").toLowerCase();
     const formattedUnit = formatUnit(unit);
 
-    // Tiny amount logic for grams/ml being converted to kg/L
+    // Always use Math.ceil to round up for consistency
     if (unitLower === "g" || unitLower === "gram" || unitLower === "grams") {
       if (amount >= 1000) {
-        return `${(amount / 1000).toFixed(1)}kg`;
+        return `${Math.ceil(amount / 1000)}kg`;
       }
     }
     if (
@@ -219,14 +219,14 @@ export const PantryItemDetailSheet = forwardRef<
       unitLower === "milliliters"
     ) {
       if (amount >= 1000) {
-        return `${(amount / 1000).toFixed(2)}L`;
+        return `${Math.ceil(amount / 1000)}L`;
       }
     }
 
     // For everything else, or small amounts, just show Number + Unit
     // e.g. "1 L", "500 g", "12 pcs"
     // Use formatUnit to get the nice abbreviation
-    return `${Math.round(amount)}${formattedUnit}`;
+    return `${Math.ceil(amount)}${formattedUnit}`;
   };
 
   const handleQuantityChange = (delta: number) => {
@@ -538,7 +538,7 @@ export const PantryItemDetailSheet = forwardRef<
                     <View style={styles.quantityDisplayContainer}>
                       <View style={styles.quantityValueContainer}>
                         <Text style={styles.quantityDisplayValue}>
-                          {showAsWeight ? item.amount : Math.round(item.amount)}
+                          {Math.ceil(item.amount)}
                         </Text>
                         <Text style={styles.quantityDisplayUnit}>
                           {formatUnit(item.unit)}

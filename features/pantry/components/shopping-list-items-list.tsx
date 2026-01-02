@@ -17,10 +17,12 @@ interface ShoppingListItemsListProps {
 // Pre-compute badge content outside component
 function getBadgeContent(amount: number, unit: string): string {
   const unitLower = (unit || "").toLowerCase();
+
+  // Always round up for all units
   if (unitLower === "g" || unitLower === "gram" || unitLower === "grams") {
     return amount >= 1000
-      ? `${(amount / 1000).toFixed(1)}kg`
-      : `${Math.round(amount)}g`;
+      ? `${Math.ceil(amount / 1000)}kg`
+      : `${Math.ceil(amount)}g`;
   }
   if (
     unitLower === "ml" ||
@@ -28,20 +30,20 @@ function getBadgeContent(amount: number, unit: string): string {
     unitLower === "milliliters"
   ) {
     return amount >= 1000
-      ? `${(amount / 1000).toFixed(1)}l`
-      : `${Math.round(amount)}ml`;
+      ? `${Math.ceil(amount / 1000)}l`
+      : `${Math.ceil(amount)}ml`;
   }
   if (unitLower === "l" || unitLower === "liter" || unitLower === "liters") {
-    return `${amount.toFixed(1)}l`;
+    return `${Math.ceil(amount)}l`;
   }
   if (
     unitLower === "kg" ||
     unitLower === "kilogram" ||
     unitLower === "kilograms"
   ) {
-    return `${amount.toFixed(1)}kg`;
+    return `${Math.ceil(amount)}kg`;
   }
-  return String(Math.round(amount));
+  return String(Math.ceil(amount));
 }
 
 // Group items by category
@@ -102,38 +104,46 @@ const ItemCard = memo(
     const badge = getBadgeContent(amount, unit);
 
     return (
-      <View style={[
-        styles.itemCard, 
-        { backgroundColor: themeColors.background.surface },
-        checked && styles.itemCardChecked
-      ]}>
+      <View
+        style={[
+          styles.itemCard,
+          { backgroundColor: themeColors.background.surface },
+          checked && styles.itemCardChecked,
+        ]}
+      >
         <Pressable
           style={[
-            styles.checkbox, 
-            { 
-              borderColor: isDark ? themeColors.border.light : Colors.lilac[300],
+            styles.checkbox,
+            {
+              borderColor: isDark
+                ? themeColors.border.light
+                : Colors.lilac[300],
               backgroundColor: "transparent",
             },
-            checked && { 
-              backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100],
+            checked && {
+              backgroundColor: isDark
+                ? "rgba(191, 90, 242, 0.2)"
+                : Colors.lilac[100],
               borderColor: accentColor,
-            }
+            },
           ]}
           onPress={() => onToggle(id)}
           hitSlop={8}
         >
-          {checked && (
-            <Feather name="check" size={14} color={accentColor} />
-          )}
+          {checked && <Feather name="check" size={14} color={accentColor} />}
         </Pressable>
 
         <Pressable style={styles.itemContent} onPress={() => onToggle(id)}>
           <View
             style={[
               styles.imageContainer,
-              { 
-                backgroundColor: isDark ? themeColors.background.tertiary : "#FFFFFF",
-                borderColor: isDark ? themeColors.border.light : Colors.lilac[300],
+              {
+                backgroundColor: isDark
+                  ? themeColors.background.tertiary
+                  : "#FFFFFF",
+                borderColor: isDark
+                  ? themeColors.border.light
+                  : Colors.lilac[300],
               },
               checked && styles.imageContainerChecked,
             ]}
@@ -146,13 +156,15 @@ const ItemCard = memo(
               contentFit="contain"
               cachePolicy="memory-disk"
             />
-            <View style={[
-              styles.amountBadge,
-              { 
-                backgroundColor: accentColor,
-                borderColor: themeColors.background.surface,
-              }
-            ]}>
+            <View
+              style={[
+                styles.amountBadge,
+                {
+                  backgroundColor: accentColor,
+                  borderColor: themeColors.background.surface,
+                },
+              ]}
+            >
               <Text style={styles.amountBadgeText}>{badge}</Text>
             </View>
           </View>
@@ -160,16 +172,19 @@ const ItemCard = memo(
           <View style={styles.itemInfo}>
             <Text
               style={[
-                styles.itemName, 
+                styles.itemName,
                 { color: themeColors.text.primary },
-                checked && styles.itemNameChecked
+                checked && styles.itemNameChecked,
               ]}
               numberOfLines={2}
             >
               {name}
             </Text>
             {recipeName ? (
-              <Text style={[styles.itemRecipe, { color: accentColor }]} numberOfLines={1}>
+              <Text
+                style={[styles.itemRecipe, { color: accentColor }]}
+                numberOfLines={1}
+              >
                 {recipeName}
               </Text>
             ) : null}
@@ -209,7 +224,9 @@ const SectionHeader = memo(function SectionHeader({
   return (
     <View style={styles.sectionHeader}>
       <Text style={[styles.sectionTitle, { color: accentColor }]}>{title}</Text>
-      <Text style={[styles.sectionCount, { color: themeColors.text.tertiary }]}>{count}</Text>
+      <Text style={[styles.sectionCount, { color: themeColors.text.tertiary }]}>
+        {count}
+      </Text>
     </View>
   );
 });
@@ -230,12 +247,24 @@ const CategoryHeader = memo(function CategoryHeader({
 }) {
   return (
     <View style={styles.categoryHeader}>
-      <Text style={[styles.categoryTitle, { color: themeColors.text.secondary }]}>{title}</Text>
-      <View style={[
-        styles.categoryBadge,
-        { backgroundColor: isDark ? "rgba(191, 90, 242, 0.2)" : Colors.lilac[100] }
-      ]}>
-        <Text style={[styles.categoryCount, { color: accentColor }]}>{count}</Text>
+      <Text
+        style={[styles.categoryTitle, { color: themeColors.text.secondary }]}
+      >
+        {title}
+      </Text>
+      <View
+        style={[
+          styles.categoryBadge,
+          {
+            backgroundColor: isDark
+              ? "rgba(191, 90, 242, 0.2)"
+              : Colors.lilac[100],
+          },
+        ]}
+      >
+        <Text style={[styles.categoryCount, { color: accentColor }]}>
+          {count}
+        </Text>
       </View>
     </View>
   );
@@ -302,17 +331,17 @@ export function ShoppingListItemsList({
       switch (item.type) {
         case "s":
           return (
-            <SectionHeader 
-              title={item.t} 
-              count={item.c} 
+            <SectionHeader
+              title={item.t}
+              count={item.c}
               accentColor={accentColor}
               themeColors={themeColors}
             />
           );
         case "c":
           return (
-            <CategoryHeader 
-              title={item.t} 
+            <CategoryHeader
+              title={item.t}
               count={item.c}
               isDark={isDark}
               themeColors={themeColors}
@@ -344,7 +373,7 @@ export function ShoppingListItemsList({
   const keyExtractor = useCallback((item: ListItem) => item.k, []);
 
   return (
-     <FlatList
+    <FlatList
       data={listData}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
@@ -478,4 +507,3 @@ const styles = StyleSheet.create({
     padding: 6,
   },
 });
-
