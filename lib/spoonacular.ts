@@ -291,16 +291,19 @@ export interface IngredientSearchFilters {
 /**
  * Rastgele tarifler çeker (Complex Search endpoint kullanarak)
  * @param number - Çekilecek tarif sayısı (default: 10)
+ * @param offset - Başlangıç pozisyonu (pagination için, default: 0)
  * @param filters - Filtreleme parametreleri (diet, cuisine, includeIngredients, excludeIngredients)
  * @returns Tarif dizisi
  */
 export async function getRandomRecipes(
   number: number = TEST_NUMBER_OF_RESULTS,
+  offset: number = 0,
   filters?: RandomRecipesFilters
 ): Promise<Recipe[]> {
   try {
     const params = new URLSearchParams({
       number: number.toString(),
+      offset: offset.toString(),
       sort: filters?.sort ?? "random",
       addRecipeInformation: "true",
       addRecipeNutrition: "true",

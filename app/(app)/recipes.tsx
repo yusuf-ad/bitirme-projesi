@@ -1,23 +1,23 @@
 import { getThemeColors } from "@/constants/theme";
 import {
-    EmptyState,
-    EndMessage,
-    ErrorState,
-    FavoritesEmptyState,
-    FavoritesHeroCard,
-    FilterChips,
-    HomeHeader,
-    LoadingState,
-    READY_TIME_OPTIONS,
-    RecipeGrid,
-    SearchBar,
-    TimeFilterModal,
-    type ReadyTimeOption,
+  EmptyState,
+  EndMessage,
+  ErrorState,
+  FavoritesEmptyState,
+  FavoritesHeroCard,
+  FilterChips,
+  HomeHeader,
+  LoadingState,
+  READY_TIME_OPTIONS,
+  RecipeGrid,
+  SearchBar,
+  TimeFilterModal,
+  type ReadyTimeOption,
 } from "@/features/home";
 import {
-    CALORIE_OPTIONS,
-    CalorieFilterModal,
-    type CalorieOption,
+  CALORIE_OPTIONS,
+  CalorieFilterModal,
+  type CalorieOption,
 } from "@/features/home/components/calorie-filter-modal";
 import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
@@ -31,13 +31,13 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Platform,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    View,
+  Animated,
+  Dimensions,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "use-debounce";
@@ -240,11 +240,11 @@ export default function HomeTab() {
       const isCloseToBottom =
         layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
 
-      if (isCloseToBottom && !loading && hasMore) {
+      if (isCloseToBottom && !isFetchingNextPage && hasMore) {
         fetchNextPage();
       }
     },
-    [loading, hasMore, fetchNextPage]
+    [isFetchingNextPage, hasMore, fetchNextPage]
   );
 
   const handleTabChange = useCallback(

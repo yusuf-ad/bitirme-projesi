@@ -234,7 +234,7 @@ export function useRecipesQuery({
         };
       } else {
         // Random mode with filters
-        const recipes = await getRandomRecipes(pageSize, {
+        const recipes = await getRandomRecipes(pageSize, pageParam, {
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
