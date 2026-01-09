@@ -112,7 +112,7 @@ export function useRecipesQuery({
   ingredients = [],
   cuisines = [],
   quickFilters = [],
-  pageSize = 10,
+  pageSize = 20,
   minReadyTime = null,
   maxReadyTime = null,
   minCalories = null,
