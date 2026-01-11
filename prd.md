@@ -935,6 +935,26 @@ constants/
 - [x] Goal progress indicators - yunus
 - [x] History view - yunus
 
+// continue with googleı kaldır!
+// sosyal paylaşıma tıklayınca web sitesine atsın
+// forgot password çalışır hale getir
+
+### SUNUM OLAYI
+
+1. ilk adım hocalara telefonu ver!
+   a. giriş: "Günde ortalama 45 dakikamızı 'bu akşam ne yesek?' sorusuna harcıyoruz.
+   Yılda 88 kg yiyecek çöpe gidiyor. Peki ya bir uygulama sizin için
+   kişiselleştirilmiş yemek planları oluştursa?"
+
+1. projenin amacı, neyi farklı yapıyoruz, problem tanımı, nasıl çözüyoruz, hedef kitle
+1. kişiselleştirilmişi vurgula
+1. rakiplerden farkımız 😘
+1. veritabanı tasarımı/ güvenlik önlemleri
+1. hangi teknolojileri kullandık / kaç liraya mal oldu ucuza çözdük
+1. Proje Yönetimi ve Takım Çalışması (2 Dakika) commit tarihleri kaç commit attık vs
+1. uygulamayı tanıt(demo) 3 4 dakikalık video
+1. kapanış ve gelecek planları
+
 ### Phase 5: Enhancements (Weeks 10-11)
 
 ### Phase 6: Testing & Refinement (Weeks 12-13)

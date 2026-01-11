@@ -156,8 +156,14 @@ function SuccessCheckmark() {
       withTiming(1.2, { duration: 400, easing: Easing.out(Easing.back(2)) }),
       withTiming(1, { duration: 200 })
     );
-    ringScale.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
-    checkProgress.value = withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) });
+    ringScale.value = withTiming(1, {
+      duration: 600,
+      easing: Easing.out(Easing.ease),
+    });
+    checkProgress.value = withTiming(1, {
+      duration: 500,
+      easing: Easing.out(Easing.ease),
+    });
   }, []);
 
   const circleStyle = useAnimatedStyle(() => ({
@@ -196,7 +202,15 @@ function SuccessCheckmark() {
 }
 
 // Floating particle component
-function FloatingParticle({ delay, size, startX }: { delay: number; size: number; startX: number }) {
+function FloatingParticle({
+  delay,
+  size,
+  startX,
+}: {
+  delay: number;
+  size: number;
+  startX: number;
+}) {
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(0);
 
@@ -205,7 +219,10 @@ function FloatingParticle({ delay, size, startX }: { delay: number; size: number
       opacity.value = withTiming(0.6, { duration: 500 });
       translateY.value = withRepeat(
         withSequence(
-          withTiming(-200, { duration: 5000 + Math.random() * 3000, easing: Easing.linear }),
+          withTiming(-200, {
+            duration: 5000 + Math.random() * 3000,
+            easing: Easing.linear,
+          }),
           withTiming(0, { duration: 0 })
         ),
         -1
@@ -265,8 +282,12 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
       {/* Background Gradient */}
       <LinearGradient
         colors={["#F8F5FF", "#EDE7F6", "#E8E0F0"]}
@@ -297,27 +318,28 @@ export default function ForgotPasswordScreen() {
         showsVerticalScrollIndicator={false}
       >
         {isSuccess ? (
-          <Animated.View 
+          <Animated.View
             style={styles.successContainer}
             entering={FadeIn.duration(500)}
           >
             <SuccessCheckmark />
-            
-            <Animated.Text 
+
+            <Animated.Text
               style={styles.successTitle}
               entering={FadeInUp.delay(300).duration(500)}
             >
               Check your email
             </Animated.Text>
-            
-            <Animated.Text 
+
+            <Animated.Text
               style={styles.successSubtitle}
               entering={FadeInUp.delay(400).duration(500)}
             >
-              We've sent a password reset link to your email address. Please check your inbox.
+              We've sent a password reset link to your email address. Please
+              check your inbox.
             </Animated.Text>
 
-            <Animated.View 
+            <Animated.View
               style={styles.successButtonContainer}
               entering={FadeInUp.delay(500).duration(500)}
             >
@@ -343,7 +365,7 @@ export default function ForgotPasswordScreen() {
         ) : (
           <>
             {/* Header with back button */}
-            <Animated.View 
+            <Animated.View
               style={styles.header}
               entering={FadeInDown.duration(500)}
             >
@@ -359,7 +381,7 @@ export default function ForgotPasswordScreen() {
             </Animated.View>
 
             {/* Icon Section */}
-            <Animated.View 
+            <Animated.View
               style={styles.iconSection}
               entering={FadeInDown.delay(100).duration(600)}
             >
@@ -367,23 +389,28 @@ export default function ForgotPasswordScreen() {
             </Animated.View>
 
             {/* Title Section */}
-            <Animated.View 
+            <Animated.View
               style={styles.titleSection}
               entering={FadeInUp.delay(200).duration(500)}
             >
               <Text style={styles.title}>Forgot Password?</Text>
               <Text style={styles.subtitle}>
-                No worries! Enter your email address and we'll send you a link to reset your password.
+                No worries! Enter your email address and we'll send you a link
+                to reset your password.
               </Text>
             </Animated.View>
 
             {/* Form Card */}
-            <Animated.View 
+            <Animated.View
               style={styles.formCard}
               entering={FadeInUp.delay(300).duration(500)}
             >
               {Platform.OS === "ios" ? (
-                <BlurView intensity={60} tint="light" style={styles.formCardBlur}>
+                <BlurView
+                  intensity={60}
+                  tint="light"
+                  style={styles.formCardBlur}
+                >
                   <FormContent
                     control={control}
                     errors={errors}
@@ -408,7 +435,7 @@ export default function ForgotPasswordScreen() {
             </Animated.View>
 
             {/* Remember password link */}
-            <Animated.View 
+            <Animated.View
               style={styles.rememberContainer}
               entering={FadeInUp.delay(400).duration(500)}
             >
@@ -474,7 +501,11 @@ function FormContent({
         accessibilityLabel="Send reset link"
       >
         <LinearGradient
-          colors={isSubmitting ? [Colors.gray[300], Colors.gray[400]] : [Colors.lilac[700], Colors.lilac[900]]}
+          colors={
+            isSubmitting
+              ? [Colors.gray[300], Colors.gray[400]]
+              : [Colors.lilac[700], Colors.lilac[900]]
+          }
           style={styles.buttonGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -493,19 +524,6 @@ function FormContent({
           )}
         </LinearGradient>
       </CustomButton>
-
-      {/* Test button - remove in production */}
-      <Pressable
-        style={styles.testButton}
-        onPress={() =>
-          router.push({
-            pathname: "/(onboarding)/reset-password",
-            params: { token: "demo" },
-          })
-        }
-      >
-        <Text style={styles.testButtonText}>Test Reset Page →</Text>
-      </Pressable>
     </View>
   );
 }
@@ -570,7 +588,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Platform.OS === "android" ? "rgba(255, 255, 255, 0.9)" : "transparent",
+    backgroundColor:
+      Platform.OS === "android" ? "rgba(255, 255, 255, 0.9)" : "transparent",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(120, 73, 182, 0.15)",
