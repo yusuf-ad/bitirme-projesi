@@ -26,6 +26,7 @@ import { useRecipesQuery } from "@/hooks/use-recipes-query";
 import { Ingredient, Recipe } from "@/lib/spoonacular";
 import { useFilterStore } from "@/lib/stores/filter-store";
 import { verifyFavoriteRecipesSetup } from "@/lib/supabase-favorite-recipes-verification";
+import { useOnboarding } from "@/providers/onboarding-provider";
 import { useTheme } from "@/providers/theme-provider";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
@@ -87,6 +88,11 @@ export default function HomeTab() {
     refetchFavorites,
     toggleFavorite,
   } = useFavoriteRecipes();
+  const onboarding = useOnboarding();
+  const dislikedCuisines = useMemo(
+    () => onboarding?.dislikedCuisines || [],
+    [onboarding?.dislikedCuisines]
+  );
   const hasFavoritesError = Boolean(favoritesError);
 
   // Animated value for indicator
@@ -470,6 +476,7 @@ export default function HomeTab() {
         ref={cuisineModalRef}
         onCuisinesSelect={handleCuisinesSelect}
         initialSelectedCuisines={selectedCuisines}
+        dislikedCuisines={dislikedCuisines}
       />
       <TimeFilterModal
         ref={timeModalRef}
