@@ -74,6 +74,8 @@ const en = {
     appSettings: "App Settings",
     more: "More",
     editProfile: "Edit Profile",
+    developers: "Developers",
+    developersDesc: "Meet the team",
     editProfileDesc: "Avatar, name, contact details",
     unitsNutritionDesc: "Macro targets, measurement system",
     goalsMetricsDesc: "Weight, activity & progress",
@@ -407,6 +409,8 @@ const en = {
     helpCenterDesc: "Troubleshooting, billing and feature guides.",
     serviceStatus: "Service status",
     serviceStatusDesc: "Live uptime for recipes, auth and AI meal plans.",
+    website: "Website",
+    websiteDesc: "Visit our official web application.",
   },
   // Cuisines
   cuisines: {
@@ -435,6 +439,13 @@ const en = {
     dairy: "Dairy",
     gluten: "Gluten",
     nuts: "Nuts",
+  },
+  // Developers
+  developers: {
+    title: "Developers",
+    fullStack: "Full Stack Developer",
+    mobile: "Mobile Developer",
+    uiux: "UI/UX Designer",
   },
 };
 
@@ -500,6 +511,8 @@ const tr = {
     appSettings: "Uygulama Ayarları",
     more: "Daha Fazla",
     editProfile: "Profili Düzenle",
+    developers: "Geliştiriciler",
+    developersDesc: "Takımla tanışın",
     editProfileDesc: "Avatar, isim, iletişim bilgileri",
     unitsNutritionDesc: "Makro hedefleri, ölçü sistemi",
     goalsMetricsDesc: "Kilo, aktivite & ilerleme",
@@ -797,6 +810,13 @@ const tr = {
     tipText:
       "Ne kadar çok mutfak değerlendirirseniz, yemek önerilerinizi o kadar iyi kişiselleştirebiliriz!",
   },
+  // Developers
+  developers: {
+    title: "Geliştiriciler",
+    fullStack: "Full Stack Geliştirici",
+    mobile: "Mobil Geliştirici",
+    uiux: "UI/UX Tasarımcı",
+  },
   // Units & Nutrition
   unitsNutrition: {
     title: "Birimler & Beslenme",
@@ -833,6 +853,8 @@ const tr = {
     serviceStatus: "Servis durumu",
     serviceStatusDesc:
       "Tarifler, kimlik doğrulama ve AI öğün planları için canlı çalışma süresi.",
+    website: "Web Sitesi",
+    websiteDesc: "Resmi web uygulamamızı ziyaret edin.",
   },
   // Cuisines
   cuisines: {

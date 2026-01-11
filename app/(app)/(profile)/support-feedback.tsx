@@ -6,12 +6,13 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useMemo } from "react";
 import {
-    Linking,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,7 +29,7 @@ export default function SupportFeedbackScreen() {
         title: t("support.liveChat"),
         description: t("support.liveChatDesc"),
         icon: "message-text-outline",
-        action: () => Linking.openURL("https://plannedeat.app/support"),
+        action: () => Alert.alert(t("support.liveChat"), "Live chat is currently unavailable. Please contact us via email."),
       },
       {
         id: "email",
@@ -36,14 +37,18 @@ export default function SupportFeedbackScreen() {
         description: "support@plannedeat.app",
         icon: "email-outline",
         action: () =>
-          Linking.openURL("mailto:support@plannedeat.app?subject=Support request"),
+          Linking.openURL("mailto:support@plannedeat.app?subject=Support request").catch(() => 
+            Alert.alert("Error", "Could not open email client.")
+          ),
       },
       {
         id: "feedback",
         title: t("support.productFeedback"),
         description: t("support.productFeedbackDesc"),
         icon: "lightbulb-on-outline",
-        action: () => Linking.openURL("https://plannedeat.app/feedback"),
+        action: () => Linking.openURL("mailto:feedback@plannedeat.app?subject=Product Feedback").catch(() => 
+            Alert.alert("Error", "Could not open email client.")
+          ),
       },
     ],
     [t]
@@ -112,7 +117,7 @@ export default function SupportFeedbackScreen() {
         <View style={[styles.card, { backgroundColor: Colors.background.surface }]}>
           <Pressable
             style={styles.listRow}
-            onPress={() => Linking.openURL("https://plannedeat.app/help")}
+            onPress={() => Linking.openURL("https://github.com/senior-project-2026/Planned-Eat-Web/wiki")}
           >
             <View style={[styles.iconWrapper, { backgroundColor: isDark ? Colors.background.tertiary : "#F4F4F7" }]}>
               <MaterialCommunityIcons
@@ -136,7 +141,7 @@ export default function SupportFeedbackScreen() {
           <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#EFEFEF" }]} />
           <Pressable
             style={styles.listRow}
-            onPress={() => Linking.openURL("https://status.plannedeat.app")}
+            onPress={() => Linking.openURL("https://github.com/senior-project-2026/Planned-Eat-Web/actions")}
           >
             <View style={[styles.iconWrapper, { backgroundColor: isDark ? Colors.background.tertiary : "#F4F4F7" }]}>
               <MaterialCommunityIcons
@@ -149,6 +154,30 @@ export default function SupportFeedbackScreen() {
               <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>{t("support.serviceStatus")}</Text>
               <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
                 {t("support.serviceStatusDesc")}
+              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name="open-in-new"
+              size={20}
+              color={Colors.text.secondary}
+            />
+          </Pressable>
+          <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#EFEFEF" }]} />
+          <Pressable
+            style={styles.listRow}
+            onPress={() => Linking.openURL("https://senior-project-2026.github.io/Planned-Eat-Web/")}
+          >
+            <View style={[styles.iconWrapper, { backgroundColor: isDark ? Colors.background.tertiary : "#F4F4F7" }]}>
+              <MaterialCommunityIcons
+                name="web"
+                size={20}
+                color={Colors.lilac[900]}
+              />
+            </View>
+            <View style={styles.rowCopy}>
+              <Text style={[styles.rowTitle, { color: Colors.text.primary }]}>{t("support.website")}</Text>
+              <Text style={[styles.rowDescription, { color: Colors.text.secondary }]}>
+                {t("support.websiteDesc")}
               </Text>
             </View>
             <MaterialCommunityIcons

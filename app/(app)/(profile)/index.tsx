@@ -1,12 +1,12 @@
 import { ProfessionalLoadingScreen } from "@/components/ProfessionalLoadingScreen";
 import { getThemeColors } from "@/constants/theme";
 import {
-    FixedHeader,
-    HighlightCard,
-    HighlightCardComponent,
-    ProfileHeader,
-    SettingsSection,
-    SettingsSections,
+  FixedHeader,
+  HighlightCard,
+  HighlightCardComponent,
+  ProfileHeader,
+  SettingsSection,
+  SettingsSections,
 } from "@/features/profile";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -14,24 +14,24 @@ import { useOnboarding } from "@/providers/onboarding-provider";
 import { useTheme } from "@/providers/theme-provider";
 import { router } from "expo-router";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    Alert,
-    Dimensions,
-    FlatList,
-    Share,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Dimensions,
+  FlatList,
+  Share,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    useAnimatedScrollHandler,
-    useSharedValue,
+  useAnimatedScrollHandler,
+  useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -387,6 +387,14 @@ export default function ProfileTab() {
             onPress: () => router.push("/(app)/(profile)/support-feedback"),
             color: lilacColors.color900,
           },
+          {
+            id: "developers",
+            title: t("profile.developers"),
+            description: t("profile.developersDesc"),
+            icon: "xml",
+            onPress: () => router.push("/(app)/(profile)/developers"),
+            color: lilacColors.color900,
+          },
         ],
       },
     ],
@@ -493,7 +501,7 @@ export default function ProfileTab() {
 
         <View style={styles.footer}>
           <Text style={[styles.versionText, { color: Colors.text.tertiary }]}>
-            PlannedEat v1.0.0 • Made with ❤️
+            PlannedEat v1.0.0
           </Text>
         </View>
       </Animated.ScrollView>
