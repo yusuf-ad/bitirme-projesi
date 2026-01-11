@@ -33,48 +33,6 @@ const dedupeRecipes = (items: Recipe[]): Recipe[] => {
 };
 
 /**
- * Check if a recipe contains ALL of the specified ingredients
- * Uses usedIngredients field from fillIngredients API response
- */
-const recipeContainsAllIngredients = (
-  recipe: Recipe,
-  requiredIngredients: string[]
-): boolean => {
-  if (requiredIngredients.length === 0) return true;
-
-  // Get all used ingredient names from the recipe (lowercase for comparison)
-  // usedIngredients comes from fillIngredients: true in API call
-  // Get all ingredient names from both usedIngredients and extendedIngredients
-  // to ensure we don't miss any matches
-  const allIngredientNames = new Set<string>();
-
-  recipe.usedIngredients?.forEach((ing) =>
-    allIngredientNames.add(ing.name.toLowerCase())
-  );
-  recipe.extendedIngredients?.forEach((ing) =>
-    allIngredientNames.add(ing.name.toLowerCase())
-  );
-
-  // If we have no ingredient data at all, skip strict filter (fail open)
-  if (allIngredientNames.size === 0) {
-    return true;
-  }
-
-  // Check if ALL required ingredients are present
-  return requiredIngredients.every((required) => {
-    const requiredLower = required.toLowerCase();
-    // Check if any ingredient matches the required ingredient name
-    // Using string inclusion for fuzzy matching
-    for (const text of allIngredientNames) {
-      if (text.includes(requiredLower) || requiredLower.includes(text)) {
-        return true;
-      }
-    }
-    return false;
-  });
-};
-
-/**
  * Check if a recipe is a beverage/drink (to filter them out)
  */
 const isBeverageRecipe = (recipe: Recipe): boolean => {
@@ -187,6 +145,13 @@ export function useRecipesQuery({
         ? Math.min(maxReadyTime ?? 30, 30)
         : maxReadyTime;
 
+      // Add 1 minute buffer to maxReadyTime for API call
+      // Spoonacular API uses < (less than) instead of <= (less than or equal)
+      // So we add 1 to include boundary values (e.g., 45 min recipes when max is 45)
+      const apiMaxReadyTime = effectiveMaxReadyTime
+        ? effectiveMaxReadyTime + 1
+        : undefined;
+
       // Veg filter: vegetarian diet
       const diet = isVeg ? "vegetarian" : undefined;
 
@@ -196,27 +161,24 @@ export function useRecipesQuery({
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
-          maxReadyTime: effectiveMaxReadyTime ?? undefined,
+          maxReadyTime: apiMaxReadyTime,
           minCalories: minCalories ?? undefined,
           maxCalories: maxCalories ?? undefined,
           sort,
           sortDirection,
           diet,
         });
-        let filtered = minReadyTime
-          ? result.recipes.filter((recipe) => {
-              if (recipe.readyInMinutes == null) return false;
-              return recipe.readyInMinutes >= minReadyTime;
-            })
-          : result.recipes;
+        // Client-side time filtering for precise range matching
+        let filtered = result.recipes.filter((recipe) => {
+          if (recipe.readyInMinutes == null) return true; // Keep recipes without time info
+          if (minReadyTime && recipe.readyInMinutes < minReadyTime) return false;
+          if (effectiveMaxReadyTime && recipe.readyInMinutes > effectiveMaxReadyTime)
+            return false;
+          return true;
+        });
 
-        // Strict ingredient filter: recipe must contain ALL selected ingredients
-        const ingredientNamesList = ingredients.map((ing) => ing.name);
-        if (ingredientNamesList.length > 0) {
-          filtered = filtered.filter((recipe) =>
-            recipeContainsAllIngredients(recipe, ingredientNamesList)
-          );
-        }
+        // Note: API already filters by includeIngredients parameter
+        // No additional client-side ingredient filtering needed
 
         // Batch filter: servings >= 6
         if (isBatch) {
@@ -238,7 +200,7 @@ export function useRecipesQuery({
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
           excludeIngredients: "pork",
-          maxReadyTime: effectiveMaxReadyTime ?? undefined,
+          maxReadyTime: apiMaxReadyTime,
           minCalories: minCalories ?? undefined,
           maxCalories: maxCalories ?? undefined,
           sort,
@@ -246,38 +208,17 @@ export function useRecipesQuery({
           diet,
         });
 
-        let filtered = minReadyTime
-          ? recipes.filter((recipe) => {
-              if (recipe.readyInMinutes == null) return false;
-              return recipe.readyInMinutes >= minReadyTime;
-            })
-          : recipes;
+        // Client-side time filtering for precise range matching
+        let filtered = recipes.filter((recipe) => {
+          if (recipe.readyInMinutes == null) return true; // Keep recipes without time info
+          if (minReadyTime && recipe.readyInMinutes < minReadyTime) return false;
+          if (effectiveMaxReadyTime && recipe.readyInMinutes > effectiveMaxReadyTime)
+            return false;
+          return true;
+        });
 
-        // Strict ingredient filter: recipe must contain ALL selected ingredients
-        const ingredientNamesList = ingredients.map((ing) => ing.name);
-        if (ingredientNamesList.length > 0) {
-          console.log(
-            "Applying strict client-side filter for:",
-            ingredientNamesList
-          );
-
-          filtered = filtered.filter((recipe) => {
-            const pass = recipeContainsAllIngredients(
-              recipe,
-              ingredientNamesList
-            );
-            if (!pass) {
-              console.log(
-                `Recipe '${recipe.title}' rejected. UsedIngredients:`,
-                recipe.usedIngredients?.map((i) => i.name)
-              );
-            }
-            return pass;
-          });
-          console.log(
-            `Filtered count: ${filtered.length} (from ${recipes.length})`
-          );
-        }
+        // Note: API already filters by includeIngredients parameter
+        // No additional client-side ingredient filtering needed
 
         // Batch filter: servings >= 6
         if (isBatch) {
@@ -315,7 +256,10 @@ export function useRecipesQuery({
     enabled,
     // Cache configuration for expensive API
     gcTime: 1000 * 60 * 30, // Keep cache for 30 minutes (was cacheTime)
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    // When ingredients are selected, always fetch fresh data; otherwise cache for 5 minutes
+    staleTime: ingredients.length > 0 ? 0 : 1000 * 60 * 5,
+    // Ensure query refetches when filters change
+    refetchOnMount: "always",
   });
 
   // Flatten and deduplicate all pages

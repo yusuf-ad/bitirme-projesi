@@ -939,6 +939,8 @@ constants/
 // sosyal paylaşıma tıklayınca web sitesine atsın
 // forgot password çalışır hale getir
 
+12.günü seçince 11 den başlıyor!
+
 ### SUNUM OLAYI
 
 1. ilk adım hocalara telefonu ver!
@@ -954,6 +956,7 @@ constants/
 1. Proje Yönetimi ve Takım Çalışması (2 Dakika) commit tarihleri kaç commit attık vs
 1. uygulamayı tanıt(demo) 3 4 dakikalık video
 1. kapanış ve gelecek planları
+   tek bir filtreleme çalışsın mesela healthy veg easy batch varya sadece healthy seçilebilsin 2si birden seçilmesin
 
 ### Phase 5: Enhancements (Weeks 10-11)
 
