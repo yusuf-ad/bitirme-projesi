@@ -345,31 +345,6 @@ export function SignupTab() {
             )}
           </Animated.View>
 
-          {/* Divider */}
-          <Animated.View 
-            style={styles.dividerContainer}
-            entering={FadeInUp.delay(400).duration(500)}
-          >
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </Animated.View>
-
-          {/* Google Button */}
-          <Animated.View 
-            entering={FadeInUp.delay(450).duration(500)}
-          >
-            <CustomButton containerStyle={styles.googleButton}>
-              <Image
-                source={require("@/assets/icons/google-icon.svg")}
-                style={styles.googleIcon}
-              />
-              <Text style={styles.googleButtonText}>
-                Continue with Google
-              </Text>
-            </CustomButton>
-          </Animated.View>
-
           {/* Login Link */}
           <Animated.View 
             style={styles.loginContainer}
@@ -639,42 +614,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.gray[200],
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.gray[400],
-  },
-  googleButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(120, 73, 182, 0.15)",
-    marginBottom: 24,
-  },
-  googleButtonText: {
-    color: Colors.text.primary,
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
   },
   loginContainer: {
     flexDirection: "row",

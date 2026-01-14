@@ -50,7 +50,7 @@ export const SearchBar = ({
       </View>
       <TextInput
         style={styles.searchInput}
-        placeholder="What's in your pantry?"
+        placeholder="Search ingredients..."
         placeholderTextColor={Colors.gray[400]}
         value={searchQuery}
         onChangeText={setSearchQuery}
