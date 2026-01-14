@@ -958,6 +958,38 @@ constants/
 1. kapanış ve gelecek planları
    tek bir filtreleme çalışsın mesela healthy veg easy batch varya sadece healthy seçilebilsin 2si birden seçilmesin
 
+   3. KİŞİ - DEMO & PROJE YÖNETİMİ & KAPANIŞ (6-7 dakika)
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      A. Demo (4 dakika) - Önceden kaydedilmiş video ÖNERİLİR
+      Senaryo Akışı:
+      Senaryo Akışı:
+
+a. Kiler (Pantry)
+Kiler (Pantry) (45 sn) 2. otomatik doldurma göster 3. scan etmeyi göster orda düzeltmeyi yaptırt
+Malzeme ekleme (kamera veya manuel) detayları göster sonra geç!
+Kategori ve son kullanma tarihi
+
+b. recipes
+
+1. filtreleme göster alerjilerin otomatik filtrelenmesi olayını anlat
+1. ingredients instructionsı anlat
+1. favorilere ekleme
+1. meal plane eklemeyi göstert
+1. shopping listi göster
+
+c. ana sayfaya gel
+
+1. mealplani oluştur
+1. kullanıcı kaç öğün yiyorsa o olsun lunchı seç sonra
+1. replacea bas favorileri göster ai a geç filterleri göster
+1. generate recipeyi bas
+1. gene shopping liste
+1. geçmişi göster
+
+d. AI Chat
+AI Chat (30 sn)
+Soru-cevap gösterimi
+
 ### Phase 5: Enhancements (Weeks 10-11)
 
 ### Phase 6: Testing & Refinement (Weeks 12-13)

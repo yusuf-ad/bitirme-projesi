@@ -253,6 +253,13 @@ export function RecipeIdeasView({
     }
   }, [data?.pages, onTotalResultsChange]);
 
+  // Reset count to 0 when pantry is cleared
+  useEffect(() => {
+    if (pantryItems.length === 0) {
+      onTotalResultsChange?.(0);
+    }
+  }, [pantryItems.length, onTotalResultsChange]);
+
   // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
