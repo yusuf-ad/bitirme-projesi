@@ -6,11 +6,11 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import {
-    GestureResponderEvent,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  GestureResponderEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 interface RecipeCardProps {
@@ -30,7 +30,7 @@ export function RecipeCard({
 }: RecipeCardProps) {
   const { isDark } = useTheme();
   const themeColors = getThemeColors(isDark, true);
-  
+
   // Calorie bilgisini nutrition.nutrients array'inden çek
   const calories = recipe.nutrition?.nutrients?.find(
     (n) => n.name === "Calories"
@@ -61,19 +61,19 @@ export function RecipeCard({
   };
 
   // MIUI-style gradient colors for dark mode
-  const gradientColors = isDark 
-    ? [
+  const gradientColors = isDark
+    ? ([
         "rgba(191, 90, 242, 0.5)",
         "rgba(191, 90, 242, 0.3)",
         "rgba(191, 90, 242, 0.15)",
         "rgba(191, 90, 242, 0.05)",
-      ] as const
-    : [
+      ] as const)
+    : ([
         "rgba(120, 73, 182, 0.65)",
         "rgba(120, 73, 182, 0.45)",
         "rgba(120, 73, 182, 0.25)",
         "rgba(120, 73, 182, 0.08)",
-      ] as const;
+      ] as const);
 
   return (
     <Pressable
@@ -86,10 +86,16 @@ export function RecipeCard({
         end={{ x: 0, y: 1 }}
         style={[styles.gradientBorder, isChat && { height: 224 }]}
       >
-        <View style={[
-          styles.itemCard, 
-          { backgroundColor: isDark ? themeColors.card.backgroundElevated : themeColors.background.surface }
-        ]}>
+        <View
+          style={[
+            styles.itemCard,
+            {
+              backgroundColor: isDark
+                ? themeColors.card.backgroundElevated
+                : themeColors.background.surface,
+            },
+          ]}
+        >
           <View>
             <Image
               source={{ uri: recipe.image }}
@@ -102,7 +108,9 @@ export function RecipeCard({
               hitSlop={24}
               style={[
                 styles.favoriteButton,
-                isFavorite && { backgroundColor: themeColors.background.surface },
+                isFavorite && {
+                  backgroundColor: themeColors.background.surface,
+                },
               ]}
               onPress={handleToggleFavorite}
               android_ripple={{ color: Colors.lilac[300] }}
@@ -114,7 +122,7 @@ export function RecipeCard({
               <Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={20}
-                color={isFavorite ? "#F03E3E" : themeColors.text.primary}
+                color={isFavorite ? "#F03E3E" : "#fff"}
               />
             </Pressable>
           </View>
@@ -143,7 +151,13 @@ export function RecipeCard({
                       isChat && { width: 12, height: 12 },
                     ]}
                   />
-                  <Text style={[styles.metaText, { color: themeColors.text.secondary }, isChat && { fontSize: 11 }]}>
+                  <Text
+                    style={[
+                      styles.metaText,
+                      { color: themeColors.text.secondary },
+                      isChat && { fontSize: 11 },
+                    ]}
+                  >
                     {recipe.readyInMinutes}
                     {isChat ? "m" : " mins"}
                   </Text>
@@ -152,7 +166,13 @@ export function RecipeCard({
 
               {recipe.readyInMinutes !== undefined &&
                 calories !== undefined && (
-                  <Text style={[styles.separator, { color: themeColors.text.secondary }, isChat && { fontSize: 10 }]}>
+                  <Text
+                    style={[
+                      styles.separator,
+                      { color: themeColors.text.secondary },
+                      isChat && { fontSize: 10 },
+                    ]}
+                  >
                     |
                   </Text>
                 )}
@@ -166,7 +186,13 @@ export function RecipeCard({
                       isChat && { width: 12, height: 12 },
                     ]}
                   />
-                  <Text style={[styles.metaText, { color: themeColors.text.secondary }, isChat && { fontSize: 11 }]}>
+                  <Text
+                    style={[
+                      styles.metaText,
+                      { color: themeColors.text.secondary },
+                      isChat && { fontSize: 11 },
+                    ]}
+                  >
                     {Math.round(calories)} {isChat ? "cal" : "cal"}
                   </Text>
                 </View>
@@ -260,4 +286,3 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 });
-

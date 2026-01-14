@@ -4,69 +4,93 @@ import CustomButton from "@/shared/components/custom-button";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import {
-    BottomSheetBackdrop,
-    BottomSheetModal,
-    BottomSheetView
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { forwardRef, memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Dimensions,
-    Pressable,
-    StyleSheet,
-    Text,
-    View
-} from "react-native";
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface CuisineModalProps {
   onCuisinesSelect?: (cuisines: string[]) => void;
   initialSelectedCuisines?: string[];
+  dislikedCuisines?: string[];
 }
 
 // Memoized cuisine item
-const CuisineItem = memo(({
-  cuisine,
-  isSelected,
-  onToggle,
-  index,
-}: {
-  cuisine: (typeof POPULAR_CUISINES)[0];
-  isSelected: boolean;
-  onToggle: (id: string) => void;
-  index: number;
-}) => (
-  <Animated.View
-    entering={FadeInDown.delay(index * 40).duration(300)}
-    style={styles.cuisineItemWrapper}
-  >
-    <Pressable
-      style={({ pressed }) => [
-        styles.cuisineItem,
-        isSelected && styles.cuisineItemSelected,
-        pressed && styles.cuisineItemPressed,
-      ]}
-      onPress={() => onToggle(cuisine.id)}
+const CuisineItem = memo(
+  ({
+    cuisine,
+    isSelected,
+    onToggle,
+    index,
+    isDisliked,
+  }: {
+    cuisine: (typeof POPULAR_CUISINES)[0];
+    isSelected: boolean;
+    onToggle: (id: string) => void;
+    index: number;
+    isDisliked?: boolean;
+  }) => (
+    <Animated.View
+      entering={FadeInDown.delay(index * 40).duration(300)}
+      style={styles.cuisineItemWrapper}
     >
-      {cuisine.flag ? (
-        <Text style={styles.flagEmoji}>{cuisine.flag}</Text>
-      ) : (
-        <View style={styles.cuisineCircle} />
-      )}
-      <Text style={styles.cuisineText}>{cuisine.name}</Text>
-      {isSelected && (
-        <View style={styles.checkmark}>
-          <Ionicons name="checkmark" size={16} color="white" />
-        </View>
-      )}
-    </Pressable>
-  </Animated.View>
-));
+      <Pressable
+        style={({ pressed }) => [
+          styles.cuisineItem,
+          isSelected && styles.cuisineItemSelected,
+          pressed && !isDisliked && styles.cuisineItemPressed,
+          isDisliked && styles.cuisineItemDisliked,
+        ]}
+        onPress={() => !isDisliked && onToggle(cuisine.id)}
+        disabled={isDisliked}
+      >
+        {cuisine.flag ? (
+          <Text
+            style={[styles.flagEmoji, isDisliked && styles.flagEmojiDisliked]}
+          >
+            {cuisine.flag}
+          </Text>
+        ) : (
+          <View
+            style={[
+              styles.cuisineCircle,
+              isDisliked && styles.cuisineCircleDisliked,
+            ]}
+          />
+        )}
+        <Text
+          style={[styles.cuisineText, isDisliked && styles.cuisineTextDisliked]}
+        >
+          {cuisine.name}
+        </Text>
+        {isSelected && !isDisliked && (
+          <View style={styles.checkmark}>
+            <Ionicons name="checkmark" size={16} color="white" />
+          </View>
+        )}
+      </Pressable>
+    </Animated.View>
+  )
+);
 
 CuisineItem.displayName = "CuisineItem";
 
 export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
-  ({ onCuisinesSelect, initialSelectedCuisines = [] }, ref) => {
+  (
+    { onCuisinesSelect, initialSelectedCuisines = [], dislikedCuisines = [] },
+    ref
+  ) => {
     const { bottom } = useSafeAreaInsets();
     const [selectedCuisines, setSelectedCuisines] = useState<Set<string>>(
       new Set(initialSelectedCuisines)
@@ -78,8 +102,6 @@ export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
       setSelectedCuisines(new Set(initialSelectedCuisines));
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialCuisinesKey]);
-
-
 
     const renderBackdrop = useCallback(
       (props: any) => (
@@ -143,7 +165,15 @@ export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
         enablePanDownToClose
         enableDynamicSizing
       >
-        <BottomSheetView style={[styles.contentContainer, { paddingBottom: Math.max(bottom, 16), minHeight: Dimensions.get("window").height * 0.75 }]}>
+        <BottomSheetView
+          style={[
+            styles.contentContainer,
+            {
+              paddingBottom: Math.max(bottom, 16),
+              minHeight: Dimensions.get("window").height * 0.75,
+            },
+          ]}
+        >
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Search by Cuisine</Text>
@@ -163,7 +193,9 @@ export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
                 <Text style={styles.subtitle}>Selected</Text>
                 <View style={styles.cuisinesContainer}>
                   {selectedItems.map((cuisineId, index) => {
-                    const cuisine = POPULAR_CUISINES.find((c) => c.id === cuisineId);
+                    const cuisine = POPULAR_CUISINES.find(
+                      (c) => c.id === cuisineId
+                    );
                     if (!cuisine) return null;
                     return (
                       <CuisineItem
@@ -172,6 +204,7 @@ export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
                         isSelected={true}
                         onToggle={toggleCuisine}
                         index={index}
+                        isDisliked={dislikedCuisines.includes(cuisineId)}
                       />
                     );
                   })}
@@ -191,6 +224,7 @@ export const CuisineModal = forwardRef<BottomSheetModal, CuisineModalProps>(
                   isSelected={false}
                   onToggle={toggleCuisine}
                   index={index}
+                  isDisliked={dislikedCuisines.includes(cuisine.id)}
                 />
               ))}
             </View>
@@ -270,6 +304,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     transform: [{ scale: 0.95 }],
   },
+  cuisineItemDisliked: {
+    opacity: 0.4,
+  },
   cuisineCircle: {
     height: 52,
     width: 52,
@@ -277,14 +314,24 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lilac[100],
     marginBottom: 4,
   },
+  cuisineCircleDisliked: {
+    opacity: 0.5,
+  },
   flagEmoji: {
     fontSize: 40,
     marginBottom: 4,
+  },
+  flagEmojiDisliked: {
+    opacity: 0.5,
   },
   cuisineText: {
     fontSize: 14,
     color: Colors.text.primary,
     textAlign: "center",
+  },
+  cuisineTextDisliked: {
+    color: Colors.text.secondary,
+    textDecorationLine: "line-through",
   },
   checkmark: {
     position: "absolute",

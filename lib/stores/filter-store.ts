@@ -53,11 +53,12 @@ export const useFilterStore = create<FilterStore>((set) => ({
       maxCalories: max,
     }),
 
+  // Only one quick filter can be selected at a time (radio button behavior)
   toggleFilter: (filter) =>
     set((state) => ({
       selectedFilters: state.selectedFilters.includes(filter)
-        ? state.selectedFilters.filter((f) => f !== filter)
-        : [...state.selectedFilters, filter],
+        ? [] // Deselect if already selected
+        : [filter], // Replace with only this filter
     })),
 
   clearAllFilters: () =>

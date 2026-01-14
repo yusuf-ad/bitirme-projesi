@@ -1,17 +1,19 @@
-import { Colors } from "@/constants/theme";
+import { getThemeColors } from "@/constants/theme";
+import { useTheme } from "@/providers/theme-provider";
 import CustomButton from "@/shared/components/custom-button";
 import {
-    BottomSheetBackdrop,
-    BottomSheetModal,
-    BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import {
-    ForwardedRef,
-    forwardRef,
-    memo,
-    useCallback,
-    useMemo,
+  ForwardedRef,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
 } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -63,53 +65,6 @@ export const READY_TIME_OPTIONS: ReadyTimeOption[] = [
   },
 ];
 
-// Memoized option card
-const OptionCard = memo(({
-  option,
-  isActive,
-  onSelect,
-  index,
-}: {
-  option: ReadyTimeOption;
-  isActive: boolean;
-  onSelect: (option: ReadyTimeOption) => void;
-  index: number;
-}) => (
-  <Animated.View entering={FadeInDown.delay(50 + index * 40).duration(250)}>
-    <Pressable
-      onPress={() => onSelect(option)}
-      style={({ pressed }) => [
-        styles.optionCard,
-        isActive && styles.optionCardActive,
-        pressed && styles.optionCardPressed,
-      ]}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isActive }}
-    >
-      <View>
-        <Text
-          style={[
-            styles.optionLabel,
-            isActive && styles.optionLabelActive,
-          ]}
-        >
-          {option.label}
-        </Text>
-        <Text
-          style={[
-            styles.optionDescription,
-            isActive && styles.optionDescriptionActive,
-          ]}
-        >
-          {option.description}
-        </Text>
-      </View>
-    </Pressable>
-  </Animated.View>
-));
-
-OptionCard.displayName = "OptionCard";
-
 interface TimeFilterModalProps {
   selectedOptionId?: string | null;
   onSelect?: (option: ReadyTimeOption | null) => void;
@@ -120,6 +75,14 @@ export const TimeFilterModal = forwardRef(function TimeFilterModal(
   ref: ForwardedRef<BottomSheetModal>
 ) {
   const { bottom } = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const Colors = getThemeColors(isDark, true);
+
+  // Store latest onSelect in a ref to avoid stale closures in BottomSheetModal
+  const onSelectRef = useRef(onSelect);
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -142,12 +105,13 @@ export const TimeFilterModal = forwardRef(function TimeFilterModal(
   const handleSelect = useCallback(
     async (option: ReadyTimeOption | null) => {
       await Haptics.selectionAsync();
-      onSelect?.(option);
+      // Use ref to ensure we always call the latest onSelect callback
+      onSelectRef.current?.(option);
       if (typeof ref !== "function") {
         ref?.current?.dismiss();
       }
     },
-    [onSelect, ref]
+    [ref]
   );
 
   return (
@@ -156,35 +120,92 @@ export const TimeFilterModal = forwardRef(function TimeFilterModal(
       enableOverDrag={false}
       backdropComponent={renderBackdrop}
       handleStyle={styles.handleStyle}
-      handleIndicatorStyle={styles.handleIndicator}
+      handleIndicatorStyle={[
+        styles.handleIndicator,
+        { backgroundColor: Colors.lilac[200] },
+      ]}
+      backgroundStyle={{ backgroundColor: Colors.background.surface }}
     >
       <BottomSheetView
         style={[
           styles.content,
           {
             paddingBottom: Math.max(bottom, 16),
+            backgroundColor: Colors.background.surface,
           },
         ]}
       >
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(200)} style={styles.header}>
-          <Text style={styles.title}>Total time</Text>
-          <Text style={styles.subtitle}>
+        <Animated.View
+          entering={FadeInDown.duration(200)}
+          style={styles.header}
+        >
+          <Text style={[styles.title, { color: Colors.text.primary }]}>
+            Total time
+          </Text>
+          <Text style={[styles.subtitle, { color: Colors.gray[500] }]}>
             Based on Spoonacular ready-in-minutes filters
           </Text>
         </Animated.View>
 
         {/* Options with staggered animation */}
         <View style={styles.optionList}>
-          {READY_TIME_OPTIONS.map((option, index) => (
-            <OptionCard
-              key={option.id}
-              option={option}
-              isActive={option.id === activeOption?.id}
-              onSelect={handleSelect}
-              index={index}
-            />
-          ))}
+          {READY_TIME_OPTIONS.map((option, index) => {
+            const isActive = option.id === activeOption?.id;
+            return (
+              <Animated.View
+                key={option.id}
+                entering={FadeInDown.delay(50 + index * 40).duration(250)}
+              >
+                <Pressable
+                  onPress={() => handleSelect(option)}
+                  style={({ pressed }) => [
+                    styles.optionCard,
+                    {
+                      borderColor: isActive
+                        ? Colors.lilac[700]
+                        : Colors.border.light,
+                      backgroundColor: isActive
+                        ? isDark
+                          ? "rgba(180, 156, 218, 0.25)"
+                          : "rgba(180, 156, 218, 0.15)"
+                        : Colors.background.surface,
+                    },
+                    pressed && styles.optionCardPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <View>
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        {
+                          color: isActive
+                            ? Colors.lilac[isDark ? 400 : 900]
+                            : Colors.text.primary,
+                        },
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.optionDescription,
+                        {
+                          color: isActive
+                            ? Colors.lilac[isDark ? 300 : 800]
+                            : Colors.gray[500],
+                        },
+                      ]}
+                    >
+                      {option.description}
+                    </Text>
+                  </View>
+                </Pressable>
+              </Animated.View>
+            );
+          })}
         </View>
 
         {/* Clear button */}
@@ -193,13 +214,22 @@ export const TimeFilterModal = forwardRef(function TimeFilterModal(
             onPress={() => handleSelect(null)}
             containerStyle={[
               styles.clearButton,
-              activeOption && styles.clearButtonActive,
+              {
+                backgroundColor: activeOption
+                  ? Colors.lilac[900]
+                  : Colors.lilac[100],
+                borderColor: activeOption
+                  ? Colors.lilac[900]
+                  : Colors.lilac[200],
+              },
             ]}
           >
             <Text
               style={[
                 styles.clearText,
-                activeOption && styles.clearTextActive,
+                {
+                  color: activeOption ? "white" : Colors.lilac[800],
+                },
               ]}
             >
               Clear selection
@@ -220,34 +250,24 @@ const styles = StyleSheet.create({
   handleStyle: {
     display: "none",
   },
-  handleIndicator: {
-    backgroundColor: Colors.lilac[200],
-  },
+  handleIndicator: {},
   header: {
     gap: 4,
   },
   title: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text.primary,
   },
   subtitle: {
     fontSize: 14,
-    color: Colors.gray[500],
   },
   optionList: {
     gap: 12,
   },
   optionCard: {
     borderWidth: 1,
-    borderColor: Colors.border.light,
     borderRadius: 16,
     padding: 16,
-    backgroundColor: Colors.background.surface,
-  },
-  optionCardActive: {
-    borderColor: Colors.lilac[700],
-    backgroundColor: "rgba(180, 156, 218, 0.15)",
   },
   optionCardPressed: {
     transform: [{ scale: 0.98 }],
@@ -255,35 +275,17 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text.primary,
-  },
-  optionLabelActive: {
-    color: Colors.lilac[900],
   },
   optionDescription: {
     fontSize: 14,
-    color: Colors.gray[500],
     marginTop: 4,
   },
-  optionDescriptionActive: {
-    color: Colors.lilac[800],
-  },
   clearButton: {
-    backgroundColor: Colors.lilac[100],
     paddingVertical: 16,
     width: "100%",
     borderWidth: 1,
-    borderColor: Colors.lilac[200],
-  },
-  clearButtonActive: {
-    backgroundColor: Colors.lilac[900],
-    borderColor: Colors.lilac[900],
   },
   clearText: {
-    color: Colors.lilac[800],
     fontWeight: "600",
-  },
-  clearTextActive: {
-    color: "white",
   },
 });

@@ -6,15 +6,16 @@ import { useTheme } from "@/providers/theme-provider";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
-import React, { useCallback, useMemo, useRef } from "react";
+import { useRouter } from "expo-router";
+import React, { useCallback, useMemo } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-    Extrapolation,
-    interpolate,
-    SharedValue,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -71,9 +72,6 @@ export const FixedHeader = React.memo(function FixedHeader({
 
   // Memoize theme colors to prevent recalculation
   const Colors = useMemo(() => getThemeColors(isDark), [isDark]);
-
-  // Ref for theme toggle button to get position for circular reveal
-  const themeButtonRef = useRef<View>(null);
 
   // Scroll to top animation values
   const scrollToTopScale = useSharedValue(1);
@@ -198,6 +196,8 @@ export const FixedHeader = React.memo(function FixedHeader({
     };
   });
 
+  const router = useRouter();
+
   const handleSignOut = useCallback(() => {
     Alert.alert(t("profile.signOut"), t("profile.signOutConfirm"), [
       { text: t("common.cancel"), style: "cancel" },
@@ -207,7 +207,11 @@ export const FixedHeader = React.memo(function FixedHeader({
         onPress: async () => {
           try {
             await supabase.auth.signOut();
+            // Navigate to onboarding after successful sign out
+            // Use replace to avoid navigation stack issues
+            router.replace("/(onboarding)");
           } catch (error) {
+            console.error("Sign out error:", error);
             Alert.alert(
               t("common.error"),
               "We couldn't sign you out. Please try again."
@@ -216,7 +220,7 @@ export const FixedHeader = React.memo(function FixedHeader({
         },
       },
     ]);
-  }, [t]);
+  }, [t, router]);
 
   // Icon rotation value
   const iconRotation = useSharedValue(0);
@@ -238,12 +242,12 @@ export const FixedHeader = React.memo(function FixedHeader({
 
   const initials = useMemo(
     () => getUserInitials(profile, session ?? null),
-    [profile?.full_name, session?.user?.email]
+    [profile, session]
   );
 
   const displayName = useMemo(
     () => getUserDisplayName(profile, session ?? null),
-    [profile?.full_name, session?.user?.email]
+    [profile, session]
   );
 
   // Memoize static styles that depend on theme

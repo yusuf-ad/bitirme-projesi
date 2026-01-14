@@ -8,7 +8,7 @@ export const SPOONACULAR_BASE_URL = `https://${RAPIDAPI_HOST}/recipes`;
 export const SPOONACULAR_FOOD_BASE_URL = `https://${RAPIDAPI_HOST}/food`;
 
 // Rate limiting configuration
-const RATE_LIMIT_DELAY = 1000; // 1 second between requests
+const RATE_LIMIT_DELAY = 600; // 600ms between requests (safe for 2 req/sec limit)
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 2000; // 2 seconds initial retry delay
 
@@ -291,16 +291,19 @@ export interface IngredientSearchFilters {
 /**
  * Rastgele tarifler çeker (Complex Search endpoint kullanarak)
  * @param number - Çekilecek tarif sayısı (default: 10)
+ * @param offset - Başlangıç pozisyonu (pagination için, default: 0)
  * @param filters - Filtreleme parametreleri (diet, cuisine, includeIngredients, excludeIngredients)
  * @returns Tarif dizisi
  */
 export async function getRandomRecipes(
   number: number = TEST_NUMBER_OF_RESULTS,
+  offset: number = 0,
   filters?: RandomRecipesFilters
 ): Promise<Recipe[]> {
   try {
     const params = new URLSearchParams({
       number: number.toString(),
+      offset: offset.toString(),
       sort: filters?.sort ?? "random",
       addRecipeInformation: "true",
       addRecipeNutrition: "true",

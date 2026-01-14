@@ -7,40 +7,39 @@ import { CustomTextInput } from "@/shared/components/custom-text-input";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BlurView } from "expo-blur";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Platform,
-    Pressable,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Platform,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Animated, {
-    Easing,
-    FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming,
+  Easing,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 import Svg, {
-    Circle,
-    Defs,
-    G,
-    Path,
-    RadialGradient,
-    Stop,
+  Circle,
+  Defs,
+  G,
+  Path,
+  RadialGradient,
+  Stop,
 } from "react-native-svg";
 import { z } from "zod";
 
@@ -140,7 +139,15 @@ function AnimatedCreateIcon() {
 }
 
 // Floating particle component
-function FloatingParticle({ delay, size, startX }: { delay: number; size: number; startX: number }) {
+function FloatingParticle({
+  delay,
+  size,
+  startX,
+}: {
+  delay: number;
+  size: number;
+  startX: number;
+}) {
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(0);
 
@@ -149,7 +156,10 @@ function FloatingParticle({ delay, size, startX }: { delay: number; size: number
       opacity.value = withTiming(0.5, { duration: 500 });
       translateY.value = withRepeat(
         withSequence(
-          withTiming(-180, { duration: 5000 + Math.random() * 2000, easing: Easing.linear }),
+          withTiming(-180, {
+            duration: 5000 + Math.random() * 2000,
+            easing: Easing.linear,
+          }),
           withTiming(0, { duration: 0 })
         ),
         -1
@@ -252,8 +262,12 @@ export function SignupTab() {
   return (
     <>
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-        
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent
+        />
+
         {/* Background Gradient */}
         <LinearGradient
           colors={["#F8F5FF", "#EDE7F6", "#E8E0F0"]}
@@ -283,7 +297,7 @@ export function SignupTab() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header with back button */}
-          <Animated.View 
+          <Animated.View
             style={styles.header}
             entering={FadeInDown.duration(500)}
           >
@@ -299,7 +313,7 @@ export function SignupTab() {
           </Animated.View>
 
           {/* Icon Section */}
-          <Animated.View 
+          <Animated.View
             style={styles.iconSection}
             entering={FadeInDown.delay(100).duration(600)}
           >
@@ -307,7 +321,7 @@ export function SignupTab() {
           </Animated.View>
 
           {/* Title Section */}
-          <Animated.View 
+          <Animated.View
             style={styles.titleSection}
             entering={FadeInUp.delay(200).duration(500)}
           >
@@ -318,7 +332,7 @@ export function SignupTab() {
           </Animated.View>
 
           {/* Form Card */}
-          <Animated.View 
+          <Animated.View
             style={styles.formCard}
             entering={FadeInUp.delay(300).duration(500)}
           >
@@ -345,33 +359,8 @@ export function SignupTab() {
             )}
           </Animated.View>
 
-          {/* Divider */}
-          <Animated.View 
-            style={styles.dividerContainer}
-            entering={FadeInUp.delay(400).duration(500)}
-          >
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </Animated.View>
-
-          {/* Google Button */}
-          <Animated.View 
-            entering={FadeInUp.delay(450).duration(500)}
-          >
-            <CustomButton containerStyle={styles.googleButton}>
-              <Image
-                source={require("@/assets/icons/google-icon.svg")}
-                style={styles.googleIcon}
-              />
-              <Text style={styles.googleButtonText}>
-                Continue with Google
-              </Text>
-            </CustomButton>
-          </Animated.View>
-
           {/* Login Link */}
-          <Animated.View 
+          <Animated.View
             style={styles.loginContainer}
             entering={FadeInUp.delay(500).duration(500)}
           >
@@ -461,7 +450,11 @@ function FormContent({
         accessibilityLabel="Sign up"
       >
         <LinearGradient
-          colors={isSubmitting ? [Colors.gray[300], Colors.gray[400]] : [Colors.lilac[700], Colors.lilac[900]]}
+          colors={
+            isSubmitting
+              ? [Colors.gray[300], Colors.gray[400]]
+              : [Colors.lilac[700], Colors.lilac[900]]
+          }
           style={styles.buttonGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -544,7 +537,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Platform.OS === "android" ? "rgba(255, 255, 255, 0.9)" : "transparent",
+    backgroundColor:
+      Platform.OS === "android" ? "rgba(255, 255, 255, 0.9)" : "transparent",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(120, 73, 182, 0.15)",
@@ -639,42 +633,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.gray[200],
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.gray[400],
-  },
-  googleButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(120, 73, 182, 0.15)",
-    marginBottom: 24,
-  },
-  googleButtonText: {
-    color: Colors.text.primary,
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
   },
   loginContainer: {
     flexDirection: "row",
