@@ -6,6 +6,46 @@ const SPOONACULAR_BASE_URL = "https://spoonacular-recipe-food-nutrition-v1.p.rap
 const RAPIDAPI_HOST = "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com";
 const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || "";
 
+/**
+ * Resolves allergy IDs to ingredient names for API filtering
+ * Returns an array of ingredient names that should be excluded from recipes
+ */
+export function resolveAllergyNames(allergyIds: string[]): string[] {
+  return allergyIds
+    .map(id => {
+      // Try to parse as numeric ID first
+      const numericId = parseInt(id, 10);
+
+      if (!isNaN(numericId)) {
+        // Check popular ingredients
+        const popularIngredient = POPULAR_INGREDIENTS.find(
+          ing => ing.spoonacularId === numericId
+        );
+
+        if (popularIngredient) {
+          return popularIngredient.name;
+        }
+
+        // Return null for unknown IDs - they won't be included
+        return null;
+      }
+
+      // Handle name-prefixed IDs (e.g., "name-apple")
+      if (id.startsWith("name-")) {
+        const name = id
+          .replace("name-", "")
+          .split("-")
+          .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+          .join(" ");
+        return name;
+      }
+
+      // For plain string IDs, use as-is
+      return id;
+    })
+    .filter(Boolean) as string[];
+}
+
 export interface DisplayDietPreference {
   id: string;
   label: string;
@@ -27,7 +67,7 @@ export function resolveDietPreferences(dietIds: string[]): DisplayDietPreference
     .map(id => {
       const dietOption = DIET_OPTIONS.find(d => d.id === id);
       if (!dietOption) return null;
-      
+
       return {
         id: dietOption.id,
         label: dietOption.label,
@@ -69,7 +109,7 @@ export async function fetchIngredientInformation(
     }
 
     const data = await response.json();
-    
+
     return {
       name: data.name || `Ingredient ${ingredientId}`,
       image: data.image || "",
@@ -92,13 +132,13 @@ export async function resolveAllergiesWithImages(
   for (const id of allergyIds) {
     // Try to parse as numeric ID first
     const numericId = parseInt(id, 10);
-    
+
     if (!isNaN(numericId)) {
       // Check popular ingredients first (cached data)
       const popularIngredient = POPULAR_INGREDIENTS.find(
         ing => ing.spoonacularId === numericId
       );
-      
+
       if (popularIngredient) {
         resolvedAllergies.push({
           id,
@@ -108,7 +148,7 @@ export async function resolveAllergiesWithImages(
         });
         continue;
       }
-      
+
       // Fetch from Spoonacular API
       const apiData = await fetchIngredientInformation(numericId);
       if (apiData) {
@@ -132,12 +172,12 @@ export async function resolveAllergiesWithImages(
         .split("-")
         .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
         .join(" ");
-      
+
       // Try to find matching popular ingredient
       const popularIngredient = POPULAR_INGREDIENTS.find(
         ing => ing.name.toLowerCase() === name.toLowerCase()
       );
-      
+
       resolvedAllergies.push({
         id,
         name,
@@ -165,13 +205,13 @@ export function resolveAllergiesFast(allergyIds: string[]): DisplayAllergy[] {
     .map(id => {
       // Try to parse as numeric ID first
       const numericId = parseInt(id, 10);
-      
+
       if (!isNaN(numericId)) {
         // Check popular ingredients
         const popularIngredient = POPULAR_INGREDIENTS.find(
           ing => ing.spoonacularId === numericId
         );
-        
+
         if (popularIngredient) {
           return {
             id,
@@ -180,14 +220,14 @@ export function resolveAllergiesFast(allergyIds: string[]): DisplayAllergy[] {
             imageUrl: getAllergyImageUrl(popularIngredient.image),
           };
         }
-        
+
         // Fallback for numeric IDs not in popular ingredients
         return {
           id,
           name: `Ingredient ${numericId}`,
         };
       }
-      
+
       // Handle name-prefixed IDs
       if (id.startsWith("name-")) {
         const name = id
@@ -195,11 +235,11 @@ export function resolveAllergiesFast(allergyIds: string[]): DisplayAllergy[] {
           .split("-")
           .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
           .join(" ");
-        
+
         const popularIngredient = POPULAR_INGREDIENTS.find(
           ing => ing.name.toLowerCase() === name.toLowerCase()
         );
-        
+
         return {
           id,
           name,
@@ -207,7 +247,7 @@ export function resolveAllergiesFast(allergyIds: string[]): DisplayAllergy[] {
           imageUrl: getAllergyImageUrl(popularIngredient?.image),
         };
       }
-      
+
       // Fallback for unknown IDs
       return {
         id,

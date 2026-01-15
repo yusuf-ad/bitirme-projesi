@@ -6,10 +6,10 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-    Pressable,
-    StyleSheet,
-    Text,
-    View
+  Pressable,
+  StyleSheet,
+  Text,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DIET_OPTIONS } from "./diet-options";
@@ -23,6 +23,7 @@ interface DietAdjustTargetsProps {
 interface MacroRowProps {
   label: string;
   value: number;
+  kcal: number;
   onChange: (next: number) => void;
   isDark: boolean;
   Colors: any;
@@ -56,7 +57,44 @@ export function DietAdjustTargetsScreen({
     return Math.round(((grams * multiplier) / totalCals) * 100);
   };
 
-  const targetCalories = diet?.targetCalories ?? 2200;
+  // Calculate target calories based on user's body metrics and goals
+  // Using Mifflin-St Jeor formula for BMR
+  const targetCalories = useMemo(() => {
+    const { weight, height, age, selectedGender, selectedGoals } = onboarding;
+
+    // If we don't have enough data, fall back to diet default or 2200
+    if (!weight || !height || !age) {
+      return diet?.targetCalories ?? 2200;
+    }
+
+    // Calculate BMR using Mifflin-St Jeor formula
+    let bmr: number;
+    if (selectedGender === 'female') {
+      // Women: 10 × weight(kg) + 6.25 × height(cm) - 5 × age - 161
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    } else {
+      // Men (default): 10 × weight(kg) + 6.25 × height(cm) - 5 × age + 5
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    }
+
+    // Apply activity multiplier (moderate activity = 1.55)
+    // TODO: Add activity level selection in onboarding for more accuracy
+    const activityMultiplier = 1.55;
+    let tdee = Math.round(bmr * activityMultiplier);
+
+    // Adjust based on goals
+    if (selectedGoals.includes('lose-weight')) {
+      // Calorie deficit for weight loss (-500 kcal/day ≈ 0.5 kg/week)
+      tdee -= 500;
+    } else if (selectedGoals.includes('gain-weight') || selectedGoals.includes('build-muscle')) {
+      // Calorie surplus for weight/muscle gain (+300 kcal/day)
+      tdee += 300;
+    }
+
+    // Ensure minimum healthy calorie intake
+    const minCalories = selectedGender === 'female' ? 1200 : 1500;
+    return Math.max(tdee, minCalories);
+  }, [onboarding.weight, onboarding.height, onboarding.age, onboarding.selectedGender, onboarding.selectedGoals, diet]);
 
   // Initialize state with percentages
   const [proteinPct, setProteinPct] = useState(() => {
@@ -164,11 +202,11 @@ export function DietAdjustTargetsScreen({
 
   return (
     <View style={[
-        styles.screen, 
-        { 
-            paddingTop: insets.top + 12,
-            backgroundColor: Colors.background.secondary 
-        }
+      styles.screen,
+      {
+        paddingTop: insets.top + 12,
+        backgroundColor: Colors.background.secondary
+      }
     ]}>
       <Text style={[styles.title, { color: Colors.text.primary }]}>Adjust targets</Text>
       <Text style={[styles.subtitle, { color: Colors.text.secondary }]}>
@@ -200,6 +238,7 @@ export function DietAdjustTargetsScreen({
         <MacroRow
           label="Protein (%)"
           value={proteinPct}
+          kcal={Math.round(targetCalories * (proteinPct / 100))}
           onChange={(next) => handleMacroChange(setProteinPct, next)}
           isDark={isDark}
           Colors={Colors}
@@ -207,6 +246,7 @@ export function DietAdjustTargetsScreen({
         <MacroRow
           label="Fat (%)"
           value={fatPct}
+          kcal={Math.round(targetCalories * (fatPct / 100))}
           onChange={(next) => handleMacroChange(setFatPct, next)}
           isDark={isDark}
           Colors={Colors}
@@ -214,6 +254,7 @@ export function DietAdjustTargetsScreen({
         <MacroRow
           label="Carbohydrates (%)"
           value={carbPct}
+          kcal={Math.round(targetCalories * (carbPct / 100))}
           onChange={(next) => handleMacroChange(setCarbPct, next)}
           isDark={isDark}
           Colors={Colors}
@@ -222,9 +263,9 @@ export function DietAdjustTargetsScreen({
 
       <Pressable
         style={[
-            styles.primaryButton, 
-            { backgroundColor: Colors.lilac[900] },
-            !isValid && { backgroundColor: isDark ? Colors.gray[700] : Colors.gray[300], opacity: 0.5 }
+          styles.primaryButton,
+          { backgroundColor: Colors.lilac[900] },
+          !isValid && { backgroundColor: isDark ? Colors.gray[700] : Colors.gray[300], opacity: 0.5 }
         ]}
         onPress={() => isValid && handleSave()}
         disabled={!isValid}
@@ -232,11 +273,11 @@ export function DietAdjustTargetsScreen({
         <Text style={styles.primaryButtonText}>Save</Text>
       </Pressable>
 
-      <Pressable 
+      <Pressable
         style={[
-            styles.secondaryButton, 
-            { backgroundColor: isDark ? Colors.background.tertiary : "#E5E7EB" }
-        ]} 
+          styles.secondaryButton,
+          { backgroundColor: isDark ? Colors.background.tertiary : "#E5E7EB" }
+        ]}
         onPress={handleUseDefaults}
       >
         <Text style={[styles.secondaryButtonText, { color: Colors.text.primary }]}>Use defaults</Text>
@@ -247,7 +288,7 @@ export function DietAdjustTargetsScreen({
   );
 }
 
-function MacroRow({ label, value, onChange, isDark, Colors }: MacroRowProps) {
+function MacroRow({ label, value, kcal, onChange, isDark, Colors }: MacroRowProps) {
   const { selection } = useHaptics();
   const handlePress = async (next: number) => {
     selection();
@@ -265,7 +306,7 @@ function MacroRow({ label, value, onChange, isDark, Colors }: MacroRowProps) {
       </Pressable>
       <View style={styles.macroMiddle}>
         <Text style={[styles.macroLabel, { color: Colors.text.primary }]}>{label}</Text>
-        <Text style={[styles.macroValue, { color: Colors.text.secondary }]}>{value}%</Text>
+        <Text style={[styles.macroValue, { color: Colors.text.secondary }]}>{value}% • {kcal} kcal</Text>
       </View>
       <Pressable
         onPress={() => handlePress(value + MACRO_STEP)}

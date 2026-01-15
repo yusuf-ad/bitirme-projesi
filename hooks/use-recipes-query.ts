@@ -18,6 +18,7 @@ export interface UseRecipesQueryOptions {
   maxReadyTime?: number | null;
   minCalories?: number | null;
   maxCalories?: number | null;
+  excludeIngredients?: string[]; // Allergens and dislikes to exclude
 }
 
 // Deduplicate recipes by ID
@@ -75,6 +76,7 @@ export function useRecipesQuery({
   maxReadyTime = null,
   minCalories = null,
   maxCalories = null,
+  excludeIngredients = [],
 }: UseRecipesQueryOptions = {}) {
   // Create stable query key based on filters
   const queryKey = useMemo(
@@ -91,6 +93,7 @@ export function useRecipesQuery({
       maxReadyTime ?? "",
       minCalories ?? "",
       maxCalories ?? "",
+      excludeIngredients.sort().join(","),
     ],
     [
       query,
@@ -101,6 +104,7 @@ export function useRecipesQuery({
       maxReadyTime,
       minCalories,
       maxCalories,
+      excludeIngredients,
     ]
   );
 
@@ -137,8 +141,8 @@ export function useRecipesQuery({
       const sortDirection = shouldSortByTime
         ? "desc"
         : isHealthy
-        ? "desc"
-        : undefined;
+          ? "desc"
+          : undefined;
 
       // Easy filter: max 30 minutes
       const effectiveMaxReadyTime = isEasy
@@ -155,12 +159,16 @@ export function useRecipesQuery({
       // Veg filter: vegetarian diet
       const diet = isVeg ? "vegetarian" : undefined;
 
+      // Build excludeIngredients list - combine user allergies with default exclusions
+      const allExclusions = ["pork", ...excludeIngredients].filter(Boolean);
+      const excludeIngredientsParam = allExclusions.length > 0 ? allExclusions.join(",") : undefined;
+
       if (query.trim()) {
         // Search mode with filters
         const result = await searchRecipes(query, pageParam, pageSize, {
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
-          excludeIngredients: "pork",
+          excludeIngredients: excludeIngredientsParam,
           maxReadyTime: apiMaxReadyTime,
           minCalories: minCalories ?? undefined,
           maxCalories: maxCalories ?? undefined,
@@ -199,7 +207,7 @@ export function useRecipesQuery({
         const recipes = await getRandomRecipes(pageSize, pageParam, {
           cuisine: cuisineNames || undefined,
           includeIngredients: ingredientNames || undefined,
-          excludeIngredients: "pork",
+          excludeIngredients: excludeIngredientsParam,
           maxReadyTime: apiMaxReadyTime,
           minCalories: minCalories ?? undefined,
           maxCalories: maxCalories ?? undefined,

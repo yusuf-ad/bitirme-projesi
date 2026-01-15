@@ -23,6 +23,7 @@ import { CuisineModal } from "@/features/home/components/cuisine-modal";
 import { IngredientModal } from "@/features/home/components/ingredient-modal";
 import { useFavoriteRecipes } from "@/features/home/hooks/use-favorite-recipes";
 import { useRecipesQuery } from "@/hooks/use-recipes-query";
+import { resolveAllergyNames } from "@/lib/allergies-diet-helpers";
 import { Ingredient, Recipe } from "@/lib/spoonacular";
 import { useFilterStore } from "@/lib/stores/filter-store";
 import { verifyFavoriteRecipesSetup } from "@/lib/supabase-favorite-recipes-verification";
@@ -93,6 +94,13 @@ export default function HomeTab() {
     () => onboarding?.dislikedCuisines || [],
     [onboarding?.dislikedCuisines]
   );
+
+  // Resolve allergen names from onboarding for recipe filtering
+  const excludeIngredients = useMemo(
+    () => resolveAllergyNames(onboarding?.selectedAllergies || []),
+    [onboarding?.selectedAllergies]
+  );
+
   const hasFavoritesError = Boolean(favoritesError);
 
   // Animated value for indicator
@@ -125,7 +133,7 @@ export default function HomeTab() {
     ingredients: memoizedIngredients,
     cuisines: memoizedCuisines,
     quickFilters: memoizedFilters,
-
+    excludeIngredients,
     pageSize: 10,
     minReadyTime,
     maxReadyTime,
@@ -331,7 +339,7 @@ export default function HomeTab() {
           <SearchBar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onFilterPress={() => {}}
+            onFilterPress={() => { }}
             isSearching={loading && searchQuery.length > 0}
           />
 
